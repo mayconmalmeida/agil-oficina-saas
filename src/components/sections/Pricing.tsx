@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Check } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 export default function Pricing() {
   return (
@@ -35,7 +36,7 @@ export default function Pricing() {
                   Indicado para pequenas oficinas que estão começando.
                 </p>
                 <Button className="w-full bg-oficina hover:bg-blue-700 text-white text-lg py-6 shadow-lg hover:shadow-xl transition-all">
-                  <a href="#teste-gratis" className="w-full">Teste Grátis por 7 Dias</a>
+                  <Link to="/registrar?plano=essencial" className="w-full">Teste Grátis por 7 Dias</Link>
                 </Button>
                 <p className="text-sm text-oficina-gray mt-4 text-center">
                   Sem compromisso. Cancele quando quiser.
@@ -87,7 +88,7 @@ export default function Pricing() {
                   Para oficinas que querem crescer com automação e gestão completa.
                 </p>
                 <Button className="w-full bg-oficina-accent hover:bg-orange-600 text-white text-lg py-6 shadow-lg hover:shadow-xl transition-all">
-                  <a href="#teste-gratis" id="teste-gratis" className="w-full">Teste Grátis por 7 Dias</a>
+                  <Link to="/registrar?plano=premium" id="teste-gratis" className="w-full">Teste Grátis por 7 Dias</Link>
                 </Button>
                 <p className="text-sm text-oficina-gray mt-4 text-center">
                   Sem compromisso. Cancele quando quiser.

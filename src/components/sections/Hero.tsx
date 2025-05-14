@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
@@ -17,10 +18,10 @@ export default function Hero() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button className="bg-oficina-accent hover:bg-orange-600 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
-                <a href="#teste-gratis" className="flex items-center">
+                <Link to="/registrar" className="flex items-center">
                   Teste Grátis por 7 Dias
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </a>
+                </Link>
               </Button>
               <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white px-8 py-6 text-lg transition-colors">
                 <a href="#planos">Ver Planos</a>

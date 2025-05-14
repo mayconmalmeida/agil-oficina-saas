@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 export default function CTA() {
   return (
@@ -23,10 +24,10 @@ export default function CTA() {
           </p>
           
           <Button className="bg-white text-oficina hover:bg-gray-100 px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
-            <a href="#teste-gratis" className="flex items-center">
+            <Link to="/registrar" className="flex items-center">
               Começar Agora
               <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
           </Button>
           
           <p className="text-white/80 mt-6">
