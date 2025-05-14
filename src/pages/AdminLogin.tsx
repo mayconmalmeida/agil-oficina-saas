@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import LoginForm, { formSchema } from "@/components/admin/auth/LoginForm";
 import AuthConnectionStatus from "@/components/admin/auth/AuthConnectionStatus";
 import ErrorDisplay from "@/components/admin/auth/ErrorDisplay";
