@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email("Digite um email válido"),
@@ -19,6 +21,27 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Verificar se já está autenticado como admin
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Verificar se é admin
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+          
+        if (adminData) {
+          navigate("/admin/dashboard");
+        }
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -32,20 +55,25 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Iniciando login admin com:", values.email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
 
       if (error) {
+        console.error("Erro de autenticação:", error);
         toast({
           variant: "destructive",
           title: "Erro ao fazer login",
-          description: error.message,
+          description: `${error.message} (Código: ${error.status || 'desconhecido'})`,
         });
         return;
       }
 
+      console.log("Login bem-sucedido, verificando se é admin");
+      
       // Verifica se o usuário é um administrador
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
@@ -54,6 +82,7 @@ const AdminLogin = () => {
         .single();
 
       if (adminError || !adminData) {
+        console.error("Erro ao verificar admin:", adminError);
         await supabase.auth.signOut();
         toast({
           variant: "destructive",
@@ -70,10 +99,11 @@ const AdminLogin = () => {
 
       navigate("/admin/dashboard");
     } catch (error) {
+      console.error("Erro inesperado:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro durante o login. Tente novamente.",
+        description: "Ocorreu um erro durante o login. Verifique sua conexão.",
       });
     } finally {
       setIsLoading(false);
@@ -132,7 +162,14 @@ const AdminLogin = () => {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Entrando..." : "Entrar"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
                 </Button>
               </form>
             </Form>

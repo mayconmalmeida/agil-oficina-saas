@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,29 @@ const LoginPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Verificar se já está autenticado
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Verificar se é admin
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('email', session.user.email)
+          .single();
+          
+        if (adminData) {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,42 +58,56 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      console.log("Iniciando login com:", values.email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
 
       if (error) {
+        console.error("Erro de autenticação:", error);
         toast({
           variant: "destructive",
           title: "Erro ao fazer login",
-          description: error.message,
+          description: `${error.message} (Código: ${error.status || 'desconhecido'})`,
         });
         return;
       }
 
+      console.log("Login bem-sucedido, verificando tipo de usuário");
+      
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo de volta ao OficinaÁgil.",
       });
 
       // Verificar se é admin
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', values.email)
-        .single();
+      try {
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('email', values.email)
+          .single();
 
-      if (adminData) {
-        navigate("/admin/dashboard");
-      } else {
+        if (adminData) {
+          console.log("Usuário é admin, redirecionando para dashboard admin");
+          navigate("/admin/dashboard");
+        } else {
+          console.log("Usuário normal, redirecionando para dashboard");
+          navigate("/dashboard");
+        }
+      } catch (adminCheckError) {
+        console.error("Erro ao verificar tipo de usuário:", adminCheckError);
+        // Se falhar a verificação, direciona para dashboard comum
         navigate("/dashboard");
       }
     } catch (error) {
+      console.error("Erro inesperado:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro durante o login. Tente novamente.",
+        description: "Ocorreu um erro durante o login. Verifique sua conexão.",
       });
     } finally {
       setIsLoading(false);
