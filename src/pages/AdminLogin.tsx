@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
@@ -29,19 +29,27 @@ const AdminLogin = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        // Tentar obter a sessão atual como teste de conexão básico
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Verificação de conexão Supabase:", session ? "Conectado com sessão" : "Conectado sem sessão");
-        setConnectionStatus('connected');
+        console.log("Verificando conexão com Supabase...");
+        const isConnected = await testSupabaseConnection();
         
-        // Se já estiver autenticado como admin, redirecionar
-        if (session) {
-          checkAdminStatus(session);
+        if (isConnected) {
+          console.log("Conexão Supabase bem-sucedida");
+          setConnectionStatus('connected');
+          
+          // Verificar se já existe uma sessão
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log("Sessão existente encontrada", session);
+            checkAdminStatus(session);
+          }
+        } else {
+          setConnectionStatus('error');
+          setErrorMessage('Não foi possível conectar ao serviço de autenticação.');
         }
       } catch (error) {
         console.error("Erro ao verificar conexão com Supabase:", error);
         setConnectionStatus('error');
-        setErrorMessage('Não foi possível conectar ao serviço de autenticação. Verifique sua conexão ou tente novamente mais tarde.');
+        setErrorMessage('Falha ao verificar a conexão com o serviço de autenticação.');
       }
     };
     
@@ -57,6 +65,10 @@ const AdminLogin = () => {
         .single();
         
       if (adminData) {
+        toast({
+          title: "Já autenticado",
+          description: "Redirecionando para o painel administrativo.",
+        });
         navigate("/admin/dashboard");
       }
     } catch (error) {
@@ -96,12 +108,10 @@ const AdminLogin = () => {
         console.error("Erro de autenticação:", error);
         
         // Mensagens de erro mais específicas
-        if (error.message.includes('Failed to fetch')) {
-          setErrorMessage('Falha na conexão com o servidor de autenticação. Verifique sua conexão com a internet ou se as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão configuradas corretamente.');
-        } else if (error.message.includes('Invalid login credentials')) {
+        if (error.message.includes('Invalid login credentials')) {
           setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
         } else {
-          setErrorMessage(`${error.message || 'Erro desconhecido durante o login'}`);
+          setErrorMessage(error.message || 'Erro desconhecido durante o login');
         }
         
         toast({
@@ -140,11 +150,11 @@ const AdminLogin = () => {
       navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Erro inesperado:", error);
-      setErrorMessage('Ocorreu um erro durante o login. Verifique sua conexão com a internet e se as variáveis de ambiente estão configuradas corretamente.');
+      setErrorMessage('Ocorreu um erro durante o login. ' + (error.message || ''));
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro durante o login. Verifique sua conexão.",
+        description: "Ocorreu um erro durante o login.",
       });
     } finally {
       setIsLoading(false);
@@ -162,11 +172,20 @@ const AdminLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {connectionStatus === 'connected' && (
+              <Alert className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-600">
+                  Conexão com o servidor estabelecida.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {connectionStatus === 'error' && (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Problema de conexão com o servidor. Verifique as variáveis de ambiente do Supabase.
+                  Problema de conexão com o servidor. Verifique sua conexão com a internet.
                 </AlertDescription>
               </Alert>
             )}
@@ -245,9 +264,6 @@ const AdminLogin = () => {
             >
               Voltar para a página inicial
             </Button>
-            <p className="text-xs text-gray-500 text-center">
-              Configure as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para conectar ao Supabase.
-            </p>
           </CardFooter>
         </Card>
       </div>

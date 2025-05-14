@@ -1,26 +1,20 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Obter as variáveis de ambiente
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Use the provided Supabase credentials
+const supabaseUrl = "https://yjhcozddtbpzvnppcggf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0";
 
-// Log para verificar se as variáveis de ambiente estão sendo carregadas
-console.log('Environment variables loaded:', {
-  VITE_SUPABASE_URL: supabaseUrl || 'Undefined',
-  VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Defined (value hidden)' : 'Undefined'
+// Log for debugging that we're using fixed credentials
+console.log('Using fixed Supabase credentials:', {
+  SUPABASE_URL: supabaseUrl ? 'Defined' : 'Undefined',
+  SUPABASE_ANON_KEY: supabaseAnonKey ? 'Defined (value hidden)' : 'Undefined'
 });
 
-// Verificação mais robusta de variáveis de ambiente
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase environment variables are missing!');
-  console.error('Please make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your environment.');
-}
-
-// Criar cliente Supabase com opções aprimoradas
+// Create Supabase client
 export const supabase = createClient(
-  supabaseUrl || 'https://fallback-url.supabase.co',  // URL fallback para evitar erro crítico
-  supabaseAnonKey || 'fallback-key',  // Chave fallback para evitar erro crítico
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,
@@ -38,17 +32,18 @@ export const supabase = createClient(
   }
 );
 
-// Verificar conexão e logar eventos de autenticação
+// Verify connection and log auth events
 supabase.auth.onAuthStateChange((event, session) => {
   console.log('Supabase auth event:', event, session ? 'Session exists' : 'No session');
 });
 
-// Função auxiliar para testar a conexão com o Supabase
+// Function to test the Supabase connection
 export const testSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from('health_check').select('*').limit(1);
+    // Just test auth status as a simple connection test
+    const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
-    console.log('Supabase connection successful!');
+    console.log('Supabase connection successful!', data.session ? 'With session' : 'No session');
     return true;
   } catch (error) {
     console.error('Supabase connection test failed:', error);
