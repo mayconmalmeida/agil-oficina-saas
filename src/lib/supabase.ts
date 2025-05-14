@@ -28,8 +28,8 @@ export const supabase = createClient(
       detectSessionInUrl: true
     },
     global: {
-      fetch: (...args) => {
-        return fetch(...args).catch(err => {
+      fetch: (url: RequestInfo, init?: RequestInit) => {
+        return fetch(url, init).catch(err => {
           console.error('Supabase fetch error:', err);
           throw err;
         });
@@ -55,6 +55,3 @@ export const testSupabaseConnection = async () => {
     return false;
   }
 };
-
-// Removido a declaração duplicada de tipos para Vite Env
-// O arquivo src/vite-env.d.ts já possui essas definições
