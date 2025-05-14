@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, UserPlus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
@@ -22,6 +21,7 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -161,6 +161,81 @@ const AdminLogin = () => {
     }
   };
 
+  const registerAdminUser = async () => {
+    setIsRegistering(true);
+    setErrorMessage(null);
+    
+    try {
+      // Cadastrar o usuário admin
+      const adminEmail = "mayconintermediacao@gmail.com";
+      const adminPassword = "Admin@123";
+      
+      // Primeiro, criar o usuário na autenticação
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: adminEmail,
+        password: adminPassword,
+      });
+      
+      if (authError) {
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error("Não foi possível criar o usuário admin.");
+      }
+      
+      // Adicionar o usuário à tabela de admins
+      const { error: adminError } = await supabase
+        .from('admins')
+        .insert([
+          { 
+            id: authData.user.id,
+            email: adminEmail,
+            name: 'Administrador Sistema',
+            role: 'super_admin',
+            created_at: new Date().toISOString()
+          }
+        ]);
+        
+      if (adminError) {
+        throw adminError;
+      }
+      
+      toast({
+        title: "Administrador criado",
+        description: "O usuário administrador foi cadastrado com sucesso.",
+      });
+      
+      // Preencher os campos do formulário com as credenciais do admin
+      form.setValue('email', adminEmail);
+      form.setValue('password', adminPassword);
+      
+    } catch (error: any) {
+      console.error("Erro ao cadastrar admin:", error);
+      
+      if (error.message.includes('already registered')) {
+        setErrorMessage('Este email já está registrado. Tente fazer login.');
+        toast({
+          variant: "default",
+          title: "Usuário já existe",
+          description: "Este email já está registrado. Tente fazer login.",
+        });
+        
+        // Preencher o email no formulário de login
+        form.setValue('email', "mayconintermediacao@gmail.com");
+      } else {
+        setErrorMessage('Erro ao cadastrar administrador: ' + (error.message || ''));
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Não foi possível cadastrar o administrador.",
+        });
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8">
@@ -256,6 +331,28 @@ const AdminLogin = () => {
                 </Button>
               </form>
             </Form>
+            
+            <div className="mt-6">
+              <Button 
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={registerAdminUser}
+                disabled={isRegistering || connectionStatus !== 'connected'}
+              >
+                {isRegistering ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Cadastrando administrador...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Cadastrar Administrador
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
           <CardFooter className="flex justify-center flex-col space-y-2">
             <Button
