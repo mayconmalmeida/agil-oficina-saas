@@ -1,17 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Users, FileText, AlertCircle, CheckCircle } from "lucide-react";
-
-// Define defaults for environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-// Inicializando o cliente Supabase
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from "@/lib/supabase";
+import DashboardHeader from "@/components/admin/DashboardHeader";
+import StatsOverview from "@/components/admin/StatsOverview";
+import SectionLink from "@/components/admin/SectionLink";
 
 type UserStats = {
   totalUsers: number;
@@ -125,85 +119,25 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Painel Administrativo - OficinaÁgil</h1>
-          <Button onClick={handleLogout} variant="outline">Sair</Button>
-        </div>
-      </header>
+      <DashboardHeader 
+        title="Painel Administrativo - OficinaÁgil" 
+        onLogout={handleLogout} 
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <section className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Visão Geral</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Usuários Totais</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  Oficinas cadastradas no sistema
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Orçamentos</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.totalQuotes}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total de orçamentos gerados
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeUsers}</div>
-                <p className="text-xs text-muted-foreground">
-                  Ativos nos últimos 30 dias
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
-                <p className="text-xs text-muted-foreground">
-                  Assinaturas pagas ativas
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        <StatsOverview stats={stats} />
 
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium">Gerenciar Usuários</h2>
-            <Button onClick={() => navigate('/admin/users')}>
-              Ver Todos os Usuários
-            </Button>
-          </div>
-        </section>
+        <SectionLink 
+          title="Gerenciar Usuários"
+          buttonText="Ver Todos os Usuários"
+          onNavigate={() => navigate('/admin/users')}
+        />
 
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium">Gerenciar Assinaturas</h2>
-            <Button onClick={() => navigate('/admin/subscriptions')}>
-              Ver Todas as Assinaturas
-            </Button>
-          </div>
-        </section>
+        <SectionLink 
+          title="Gerenciar Assinaturas"
+          buttonText="Ver Todas as Assinaturas"
+          onNavigate={() => navigate('/admin/subscriptions')}
+        />
       </main>
     </div>
   );
