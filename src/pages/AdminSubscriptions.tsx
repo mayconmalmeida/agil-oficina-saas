@@ -78,7 +78,7 @@ const AdminSubscriptions = () => {
         throw error;
       }
 
-      // Properly format the data by extracting profile information
+      // Properly format the data by extracting profile information from the array's first element
       const formattedSubscriptions: Subscription[] = data.map(sub => ({
         id: sub.id,
         user_id: sub.user_id,
@@ -87,8 +87,8 @@ const AdminSubscriptions = () => {
         expires_at: sub.expires_at,
         payment_method: sub.payment_method,
         amount: sub.amount,
-        email: sub.profiles?.email || 'N/A',
-        nome_oficina: sub.profiles?.nome_oficina || 'N/A'
+        email: sub.profiles && sub.profiles[0]?.email || 'N/A',
+        nome_oficina: sub.profiles && sub.profiles[0]?.nome_oficina || 'N/A'
       }));
 
       setSubscriptions(formattedSubscriptions);
