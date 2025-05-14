@@ -1,17 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
 import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
 
-type Profile = {
-  email: string;
-  nome_oficina: string;
-};
-
+// Ensure this type definition matches the one in SubscriptionsTable
 type Subscription = {
   id: string;
   user_id: string;
@@ -20,9 +15,8 @@ type Subscription = {
   expires_at: string | null;
   payment_method: string;
   amount: number;
-  profiles: Profile;
-  email?: string;
-  nome_oficina?: string;
+  email: string;
+  nome_oficina: string;
 };
 
 const AdminSubscriptions = () => {
@@ -84,9 +78,15 @@ const AdminSubscriptions = () => {
         throw error;
       }
 
-      // Corrigindo a formatação dos dados
-      const formattedSubscriptions = data.map(sub => ({
-        ...sub,
+      // Properly format the data by extracting profile information
+      const formattedSubscriptions: Subscription[] = data.map(sub => ({
+        id: sub.id,
+        user_id: sub.user_id,
+        status: sub.status,
+        created_at: sub.created_at,
+        expires_at: sub.expires_at,
+        payment_method: sub.payment_method,
+        amount: sub.amount,
         email: sub.profiles?.email || 'N/A',
         nome_oficina: sub.profiles?.nome_oficina || 'N/A'
       }));
