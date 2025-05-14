@@ -29,10 +29,5 @@ supabase.auth.onAuthStateChange((event, session) => {
   console.log('Supabase auth event:', event, session ? 'Session exists' : 'No session');
 });
 
-// Adicionar definição de tipos para Vite Env
-declare module 'vite/client' {
-  interface ImportMetaEnv {
-    VITE_SUPABASE_URL?: string;
-    VITE_SUPABASE_ANON_KEY?: string;
-  }
-}
+// Removido a declaração duplicada de tipos para Vite Env
+// O arquivo src/vite-env.d.ts já possui essas definições
