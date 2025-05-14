@@ -1,239 +1,41 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { Loader2, AlertCircle, CheckCircle2, UserPlus } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-const formSchema = z.object({
-  email: z.string().email("Digite um email válido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-});
+import LoginForm, { formSchema } from "@/components/admin/auth/LoginForm";
+import AuthConnectionStatus from "@/components/admin/auth/AuthConnectionStatus";
+import ErrorDisplay from "@/components/admin/auth/ErrorDisplay";
+import AdminRegistrationButton from "@/components/admin/auth/AdminRegistrationButton";
+import { useAdminAuth, FormValues } from "@/hooks/useAdminAuth";
 
 const AdminLogin = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const { toast } = useToast();
+  const { 
+    isLoading, 
+    connectionStatus, 
+    errorMessage, 
+    isRegistering,
+    checkConnection,
+    handleLogin,
+    registerAdmin
+  } = useAdminAuth();
+  
   const navigate = useNavigate();
-
-  // Verificar conexão com o Supabase
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        console.log("Verificando conexão com Supabase...");
-        const isConnected = await testSupabaseConnection();
-        
-        if (isConnected) {
-          console.log("Conexão Supabase bem-sucedida");
-          setConnectionStatus('connected');
-          
-          // Verificar se já existe uma sessão
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            console.log("Sessão existente encontrada", session);
-            checkAdminStatus(session);
-          }
-        } else {
-          setConnectionStatus('error');
-          setErrorMessage('Não foi possível conectar ao serviço de autenticação.');
-        }
-      } catch (error) {
-        console.error("Erro ao verificar conexão com Supabase:", error);
-        setConnectionStatus('error');
-        setErrorMessage('Falha ao verificar a conexão com o serviço de autenticação.');
-      }
-    };
-    
-    checkConnection();
-  }, [navigate]);
-
-  const checkAdminStatus = async (session: any) => {
-    try {
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', session.user.email)
-        .single();
-        
-      if (adminData) {
-        toast({
-          title: "Já autenticado",
-          description: "Redirecionando para o painel administrativo.",
-        });
-        navigate("/admin/dashboard");
-      }
-    } catch (error) {
-      console.error("Erro ao verificar status de admin:", error);
-    }
-  };
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
-    },
+    }
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    
-    try {
-      console.log("Iniciando login admin com:", values.email);
-      
-      // Verificar novamente a conexão antes de tentar login
-      if (connectionStatus === 'error') {
-        const isConnected = await testSupabaseConnection();
-        if (!isConnected) {
-          throw new Error("Não foi possível conectar ao servidor. Verifique sua conexão com a internet.");
-        }
-      }
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
+  useEffect(() => {
+    checkConnection();
+  }, []);
 
-      if (error) {
-        console.error("Erro de autenticação:", error);
-        
-        // Mensagens de erro mais específicas
-        if (error.message.includes('Invalid login credentials')) {
-          setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
-        } else {
-          setErrorMessage(error.message || 'Erro desconhecido durante o login');
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: error.message || "Ocorreu um erro durante o login",
-        });
-        return;
-      }
-
-      console.log("Login bem-sucedido, verificando se é admin");
-      
-      // Verifica se o usuário é um administrador
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', values.email)
-        .single();
-
-      if (adminError || !adminData) {
-        console.error("Erro ao verificar admin:", adminError);
-        await supabase.auth.signOut();
-        toast({
-          variant: "destructive",
-          title: "Acesso negado",
-          description: "Você não tem permissão de administrador.",
-        });
-        return;
-      }
-
-      toast({
-        title: "Login bem-sucedido",
-        description: "Bem-vindo ao painel de administração.",
-      });
-
-      navigate("/admin/dashboard");
-    } catch (error: any) {
-      console.error("Erro inesperado:", error);
-      setErrorMessage('Ocorreu um erro durante o login. ' + (error.message || ''));
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro durante o login.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const registerAdminUser = async () => {
-    setIsRegistering(true);
-    setErrorMessage(null);
-    
-    try {
-      // Cadastrar o usuário admin
-      const adminEmail = "mayconintermediacao@gmail.com";
-      const adminPassword = "Admin@123";
-      
-      // Primeiro, criar o usuário na autenticação
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: adminEmail,
-        password: adminPassword,
-      });
-      
-      if (authError) {
-        throw authError;
-      }
-      
-      if (!authData.user) {
-        throw new Error("Não foi possível criar o usuário admin.");
-      }
-      
-      // Adicionar o usuário à tabela de admins
-      const { error: adminError } = await supabase
-        .from('admins')
-        .insert([
-          { 
-            id: authData.user.id,
-            email: adminEmail,
-            name: 'Administrador Sistema',
-            role: 'super_admin',
-            created_at: new Date().toISOString()
-          }
-        ]);
-        
-      if (adminError) {
-        throw adminError;
-      }
-      
-      toast({
-        title: "Administrador criado",
-        description: "O usuário administrador foi cadastrado com sucesso.",
-      });
-      
-      // Preencher os campos do formulário com as credenciais do admin
-      form.setValue('email', adminEmail);
-      form.setValue('password', adminPassword);
-      
-    } catch (error: any) {
-      console.error("Erro ao cadastrar admin:", error);
-      
-      if (error.message.includes('already registered')) {
-        setErrorMessage('Este email já está registrado. Tente fazer login.');
-        toast({
-          variant: "default",
-          title: "Usuário já existe",
-          description: "Este email já está registrado. Tente fazer login.",
-        });
-        
-        // Preencher o email no formulário de login
-        form.setValue('email', "mayconintermediacao@gmail.com");
-      } else {
-        setErrorMessage('Erro ao cadastrar administrador: ' + (error.message || ''));
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível cadastrar o administrador.",
-        });
-      }
-    } finally {
-      setIsRegistering(false);
-    }
+  const handleRegisterAdmin = async () => {
+    await registerAdmin(form);
   };
 
   return (
@@ -247,112 +49,20 @@ const AdminLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {connectionStatus === 'connected' && (
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-600">
-                  Conexão com o servidor estabelecida.
-                </AlertDescription>
-              </Alert>
-            )}
+            <AuthConnectionStatus status={connectionStatus} />
+            <ErrorDisplay message={errorMessage} />
             
-            {connectionStatus === 'error' && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Problema de conexão com o servidor. Verifique sua conexão com a internet.
-                </AlertDescription>
-              </Alert>
-            )}
+            <LoginForm 
+              onSubmit={handleLogin} 
+              isLoading={isLoading} 
+              isConnectionChecking={connectionStatus === 'checking'} 
+            />
             
-            {errorMessage && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {errorMessage}
-                </AlertDescription>
-              </Alert>
-            )}
-          
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="exemplo@oficinagil.com.br"
-                          type="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="******"
-                          type="password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || connectionStatus === 'checking'}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : connectionStatus === 'checking' ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando conexão...
-                    </>
-                  ) : (
-                    'Entrar'
-                  )}
-                </Button>
-              </form>
-            </Form>
-            
-            <div className="mt-6">
-              <Button 
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={registerAdminUser}
-                disabled={isRegistering || connectionStatus !== 'connected'}
-              >
-                {isRegistering ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Cadastrando administrador...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Cadastrar Administrador
-                  </>
-                )}
-              </Button>
-            </div>
+            <AdminRegistrationButton 
+              onRegister={handleRegisterAdmin}
+              isRegistering={isRegistering}
+              isDisabled={connectionStatus !== 'connected'}
+            />
           </CardContent>
           <CardFooter className="flex justify-center flex-col space-y-2">
             <Button
