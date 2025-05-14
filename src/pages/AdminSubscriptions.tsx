@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ const AdminSubscriptions = () => {
         nome_oficina: sub.profiles?.nome_oficina || 'N/A'
       }));
 
-      setSubscriptions(formattedSubscriptions);
+      setSubscriptions(formattedSubscriptions as Subscription[]);
     } catch (error) {
       console.error('Erro ao carregar assinaturas:', error);
       toast({
