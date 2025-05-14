@@ -8,6 +8,7 @@ import Pricing from '@/components/sections/Pricing';
 import FAQ from '@/components/sections/FAQ';
 import Contact from '@/components/sections/Contact';
 import CTA from '@/components/sections/CTA';
+import SocialProof from '@/components/sections/SocialProof';
 
 const Index = () => {
   return (
@@ -15,6 +16,7 @@ const Index = () => {
       <Navbar />
       <main className="flex-grow">
         <Hero />
+        <SocialProof />
         <Features />
         <HowItWorks />
         <Pricing />

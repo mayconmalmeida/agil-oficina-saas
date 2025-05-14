@@ -3,17 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from "@/lib/supabase";
 import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
 import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
@@ -102,7 +91,7 @@ const AdminSubscriptions = () => {
         nome_oficina: sub.profiles?.nome_oficina || 'N/A'
       }));
 
-      setSubscriptions(formattedSubscriptions as unknown as Subscription[]);
+      setSubscriptions(formattedSubscriptions);
     } catch (error) {
       console.error('Erro ao carregar assinaturas:', error);
       toast({
