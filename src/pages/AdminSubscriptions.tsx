@@ -16,21 +16,29 @@ import {
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
+// Define defaults for environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
 // Inicializando o cliente Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+type Profile = {
+  email: string;
+  nome_oficina: string;
+};
 
 type Subscription = {
   id: string;
   user_id: string;
-  email: string;
-  nome_oficina: string;
   status: string;
   created_at: string;
   expires_at: string | null;
   payment_method: string;
   amount: number;
+  profiles: Profile;
+  email?: string;
+  nome_oficina?: string;
 };
 
 const AdminSubscriptions = () => {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@supabase/supabase-js';
@@ -11,9 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Inicializando o cliente Supabase com variáveis de ambiente
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Define defaults for environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Inicializando o cliente Supabase
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const formSchema = z.object({
