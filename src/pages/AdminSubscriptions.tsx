@@ -15,6 +15,8 @@ import {
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from "@/lib/supabase";
+import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
+import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
 
 type Profile = {
   email: string;
@@ -40,7 +42,6 @@ const AdminSubscriptions = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Verificar se o usuário é um administrador
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -65,7 +66,6 @@ const AdminSubscriptions = () => {
           description: "Você não tem permissão de administrador.",
         });
       } else {
-        // Carregar assinaturas
         fetchSubscriptions();
       }
     };
@@ -75,7 +75,6 @@ const AdminSubscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
-      // Buscando todas as assinaturas com informações dos usuários
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
@@ -96,14 +95,14 @@ const AdminSubscriptions = () => {
         throw error;
       }
 
-      // Formatando os dados para apresentação
+      // Corrigindo a formatação dos dados
       const formattedSubscriptions = data.map(sub => ({
         ...sub,
         email: sub.profiles?.email || 'N/A',
         nome_oficina: sub.profiles?.nome_oficina || 'N/A'
       }));
 
-      setSubscriptions(formattedSubscriptions as Subscription[]);
+      setSubscriptions(formattedSubscriptions as unknown as Subscription[]);
     } catch (error) {
       console.error('Erro ao carregar assinaturas:', error);
       toast({
@@ -113,19 +112,6 @@ const AdminSubscriptions = () => {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Ativa</Badge>;
-      case 'cancelled':
-        return <Badge className="bg-amber-500">Cancelada</Badge>;
-      case 'expired':
-        return <Badge className="bg-red-500">Expirada</Badge>;
-      default:
-        return <Badge className="bg-gray-500">Desconhecido</Badge>;
     }
   };
 
@@ -139,54 +125,9 @@ const AdminSubscriptions = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Gerenciamento de Assinaturas</h1>
-          <Button onClick={() => navigate('/admin/dashboard')}>
-            Voltar ao Dashboard
-          </Button>
-        </div>
-      </header>
-
+      <SubscriptionHeader onBack={() => navigate('/admin/dashboard')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Table>
-          <TableCaption>Lista de todas as assinaturas</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Oficina</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Data de Início</TableHead>
-              <TableHead>Expira em</TableHead>
-              <TableHead>Método de Pagamento</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {subscriptions.map((sub) => (
-              <TableRow key={sub.id}>
-                <TableCell className="font-medium">{sub.nome_oficina}</TableCell>
-                <TableCell>{sub.email}</TableCell>
-                <TableCell>R$ {(sub.amount / 100).toFixed(2)}</TableCell>
-                <TableCell>{format(new Date(sub.created_at), 'dd/MM/yyyy')}</TableCell>
-                <TableCell>
-                  {sub.expires_at ? format(new Date(sub.expires_at), 'dd/MM/yyyy') : 'N/A'}
-                </TableCell>
-                <TableCell>{sub.payment_method || 'N/A'}</TableCell>
-                <TableCell className="text-center">
-                  {getStatusBadge(sub.status)}
-                </TableCell>
-              </TableRow>
-            ))}
-            {subscriptions.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  Nenhuma assinatura encontrada
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <SubscriptionsTable subscriptions={subscriptions} />
       </main>
     </div>
   );

@@ -1,22 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { FileText } from "lucide-react";
-import { format } from 'date-fns';
 import { supabase } from "@/lib/supabase";
+import UsersHeader from '@/components/admin/UsersHeader';
+import UsersTable from '@/components/admin/UsersTable';
 
-type User = {
+export type User = {
   id: string;
   email: string;
   nome_oficina: string;
@@ -33,7 +23,6 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Verificar se o usuário é um administrador
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -58,7 +47,6 @@ const AdminUsers = () => {
           description: "Você não tem permissão de administrador.",
         });
       } else {
-        // Carregar usuários
         fetchUsers();
       }
     };
@@ -68,7 +56,6 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Buscando todos os perfis de usuários com contagem de orçamentos
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -87,7 +74,6 @@ const AdminUsers = () => {
         throw error;
       }
 
-      // Buscar contagem de orçamentos para cada usuário
       const usersWithQuoteCounts = await Promise.all(data.map(async (user) => {
         const { count } = await supabase
           .from('orcamentos')
@@ -123,7 +109,6 @@ const AdminUsers = () => {
 
       if (error) throw error;
 
-      // Atualizar o estado local
       setUsers(users.map(user => 
         user.id === userId ? { ...user, is_active: !currentStatus } : user
       ));
@@ -154,82 +139,15 @@ const AdminUsers = () => {
     );
   }
 
-  const getSubscriptionStatusText = (status: string, trialEndsAt: string | null) => {
-    if (status === 'active') return 'Assinatura Ativa';
-    
-    if (trialEndsAt) {
-      const trialDate = new Date(trialEndsAt);
-      if (trialDate > new Date()) {
-        return `Em teste até ${format(trialDate, 'dd/MM/yyyy')}`;
-      }
-      return 'Teste expirado';
-    }
-    
-    return 'Sem assinatura';
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
-          <Button onClick={() => navigate('/admin/dashboard')}>
-            Voltar ao Dashboard
-          </Button>
-        </div>
-      </header>
-
+      <UsersHeader onBack={() => navigate('/admin/dashboard')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Table>
-          <TableCaption>Lista de todos os usuários registrados</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Oficina</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Data de Cadastro</TableHead>
-              <TableHead>Status do Plano</TableHead>
-              <TableHead className="text-center">Nº de Orçamentos</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.nome_oficina || 'Não definido'}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{format(new Date(user.created_at), 'dd/MM/yyyy')}</TableCell>
-                <TableCell>
-                  {getSubscriptionStatusText(user.subscription_status, user.trial_ends_at)}
-                </TableCell>
-                <TableCell className="text-center">{user.quote_count}</TableCell>
-                <TableCell className="text-center">
-                  <Switch
-                    checked={user.is_active}
-                    onCheckedChange={() => toggleUserStatus(user.id, user.is_active)}
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleViewQuotes(user.id)}
-                  >
-                    <FileText className="h-4 w-4 mr-1" />
-                    Orçamentos
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {users.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  Nenhum usuário encontrado
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+        <UsersTable 
+          users={users} 
+          onToggleStatus={toggleUserStatus}
+          onViewQuotes={handleViewQuotes}
+        />
       </main>
     </div>
   );
