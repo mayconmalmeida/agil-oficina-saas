@@ -8,12 +8,14 @@ import { supabase } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
 import Loading from '@/components/ui/loading';
+import { useOnboardingRedirect } from '@/hooks/useOnboardingRedirect';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading, handleLogin, setUserId } = useLogin();
   const [checkingSession, setCheckingSession] = useState(true);
+  const { handleRedirect } = useOnboardingRedirect();
 
   // Verificar se já está autenticado
   useEffect(() => {
@@ -45,42 +47,8 @@ const LoginPage: React.FC = () => {
             });
             navigate("/admin/dashboard");
           } else {
-            // Se não for admin, verificar próximo passo do onboarding
-            try {
-              const { data: onboardingData, error: onboardingError } = await supabase
-                .from('onboarding_status')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .single();
-              
-              if (onboardingError) {
-                console.log("Erro ou status de onboarding não encontrado:", onboardingError.message);
-                console.log("Redirecionando para tela de perfil");
-                navigate('/perfil-oficina');
-                return;
-              }
-              
-              if (onboardingData) {
-                console.log("Status de onboarding encontrado:", onboardingData);
-                if (!onboardingData.profile_completed) {
-                  navigate('/perfil-oficina');
-                } else if (!onboardingData.clients_added) {
-                  navigate('/clientes');
-                } else if (!onboardingData.services_added) {
-                  navigate('/produtos-servicos');
-                } else if (!onboardingData.budget_created) {
-                  navigate('/orcamentos/novo');
-                } else {
-                  navigate('/dashboard');
-                }
-              } else {
-                console.log("Nenhum dado de onboarding encontrado, indo para perfil-oficina");
-                navigate('/perfil-oficina');
-              }
-            } catch (error) {
-              console.error("Erro ao verificar status de onboarding:", error);
-              navigate('/perfil-oficina');
-            }
+            // Se não for admin, usar o hook de redirecionamento
+            handleRedirect(session.user.id, true);
           }
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
@@ -93,7 +61,7 @@ const LoginPage: React.FC = () => {
     };
     
     checkSession();
-  }, [navigate, toast, setUserId]);
+  }, [navigate, toast, setUserId, handleRedirect]);
 
   if (checkingSession) {
     return <Loading fullscreen text="Verificando autenticação..." />;
@@ -121,6 +89,11 @@ const LoginPage: React.FC = () => {
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
+            <div className="text-center text-sm">
+              <Link to="/esqueceu-senha" className="text-oficina hover:underline">
+                Esqueceu sua senha?
+              </Link>
+            </div>
             <div className="text-center text-sm">
               Não tem uma conta ainda?{' '}
               <Link to="/registrar" className="text-oficina hover:underline">

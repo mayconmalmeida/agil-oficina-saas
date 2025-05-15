@@ -5,12 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { LoginFormValues } from '@/components/auth/LoginForm';
 import { getNextOnboardingStep } from '@/utils/onboardingUtils';
+import { useOnboardingRedirect } from './useOnboardingRedirect';
 
 export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { handleRedirect } = useOnboardingRedirect();
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
@@ -66,17 +68,9 @@ export const useLogin = () => {
         const userId = data.user?.id;
         if (userId) {
           setUserId(userId);
-          // Forçar redirecionamento para próxima etapa
-          const nextStep = await getNextOnboardingStep(userId);
-          console.log("Próximo passo do onboarding:", nextStep);
+          // Usar o hook de redirecionamento específico
+          handleRedirect(userId, true);
           setIsLoading(false);
-          
-          // Redirecionamento imediato
-          if (nextStep) {
-            window.setTimeout(() => {
-              navigate(nextStep);
-            }, 100);
-          }
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
@@ -85,9 +79,7 @@ export const useLogin = () => {
           setUserId(data.user.id);
           console.log("Redirecionando para perfil-oficina após erro");
           setIsLoading(false);
-          window.setTimeout(() => {
-            navigate('/perfil-oficina');
-          }, 100);
+          navigate('/perfil-oficina');
         }
       }
     } catch (error) {
