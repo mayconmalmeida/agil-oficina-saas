@@ -121,24 +121,12 @@ const LoginPage: React.FC = () => {
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
-            <Link to="/esqueceu-senha" className="text-oficina hover:underline text-center text-sm w-full">
-              Esqueceu sua senha?
-            </Link>
             <div className="text-center text-sm">
               Não tem uma conta ainda?{' '}
               <Link to="/registrar" className="text-oficina hover:underline">
                 Registre-se
               </Link>
             </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate("/admin/login")}
-              className="mt-4 text-gray-500"
-            >
-              Acesso administrativo
-            </Button>
           </CardFooter>
         </Card>
       </div>

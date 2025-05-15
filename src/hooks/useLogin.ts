@@ -66,10 +66,17 @@ export const useLogin = () => {
         const userId = data.user?.id;
         if (userId) {
           setUserId(userId);
+          // Forçar redirecionamento para próxima etapa
           const nextStep = await getNextOnboardingStep(userId);
           console.log("Próximo passo do onboarding:", nextStep);
           setIsLoading(false);
-          navigate(nextStep);
+          
+          // Redirecionamento imediato
+          if (nextStep) {
+            window.setTimeout(() => {
+              navigate(nextStep);
+            }, 100);
+          }
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
@@ -78,7 +85,9 @@ export const useLogin = () => {
           setUserId(data.user.id);
           console.log("Redirecionando para perfil-oficina após erro");
           setIsLoading(false);
-          navigate('/perfil-oficina');
+          window.setTimeout(() => {
+            navigate('/perfil-oficina');
+          }, 100);
         }
       }
     } catch (error) {

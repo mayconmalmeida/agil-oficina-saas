@@ -17,6 +17,7 @@ import ProfileSetupPage from "./pages/ProfileSetupPage";
 import ClientsPage from "./pages/ClientsPage";
 import ServicesPage from "./pages/ServicesPage";
 import NewBudgetPage from "./pages/NewBudgetPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 // Create a new queryClient instance
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/registrar" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/perfil-oficina" element={<ProfileSetupPage />} />
           <Route path="/clientes" element={<ClientsPage />} />
