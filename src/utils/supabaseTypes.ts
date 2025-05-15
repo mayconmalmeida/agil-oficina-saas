@@ -22,7 +22,7 @@ type RPCParamMap = {
  * @param params The parameters to pass to the function
  * @returns The result of the RPC call
  */
-export const safeRpc = <T = any>(fn: string, params: any) => {
+export const safeRpc = <T = any>(fn: keyof RPCParamMap, params: RPCParamMap[typeof fn]) => {
   return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
