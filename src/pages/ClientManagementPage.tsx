@@ -1,20 +1,15 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, FileText, Users, Filter } from 'lucide-react';
+import { Search, Plus, Car, User, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ClientList from '@/components/clients/ClientList';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
 import EnhancedClientForm from '@/components/clients/EnhancedClientForm';
 import ClientSearchForm from '@/components/clients/ClientSearchForm';
-
-// Define interface for ClientList props to fix type error
-interface ExtendedClientList {
-  onSelectClient: (clientId: string) => void;
-  filters?: any; // Added filters prop
-}
 
 const ClientManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
@@ -66,14 +61,28 @@ const ClientManagementPage: React.FC = () => {
     }, 1500);
   };
   
+  const handleViewVehicles = () => {
+    navigate('/veiculos');
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Gestão de Clientes</h1>
-          <Button onClick={handleNewClient} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Novo Cliente
-          </Button>
+          <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={handleViewVehicles}
+              className="flex items-center gap-2"
+            >
+              <Car className="h-4 w-4" /> 
+              Ver Veículos
+            </Button>
+            <Button onClick={handleNewClient} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Novo Cliente
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -84,7 +93,7 @@ const ClientManagementPage: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                     <TabsList>
                       <TabsTrigger value="lista" className="flex items-center gap-2">
-                        <Users className="h-4 w-4" /> 
+                        <User className="h-4 w-4" /> 
                         Clientes
                       </TabsTrigger>
                       <TabsTrigger value="novo" className="flex items-center gap-2">

@@ -17,7 +17,7 @@ const NewBudgetPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <BudgetPageHeader 
-          title="Crie seu Primeiro Orçamento" 
+          title="Novo Orçamento" 
           subtitle="Registre um orçamento para seu cliente" 
         />
         

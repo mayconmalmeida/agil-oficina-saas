@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -38,15 +38,42 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
     setSearchTerm,
     clients, 
     isLoading: isLoadingClients, 
-    selectClient
+    selectClient,
+    selectedClient,
+    clearSelection
   } = useClientSearch();
+
+  // Reset search when form is reset
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (!form.getValues('cliente')) {
+        clearSelection();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, clearSelection]);
 
   // Quando um cliente for selecionado, atualize o formulário
   const handleSelectClient = (client: any) => {
-    form.setValue('cliente', client.nome);
-    form.setValue('veiculo', client.veiculo || '');
-    setClientSearchOpen(false);
     selectClient(client);
+    form.setValue('cliente', client.nome);
+    
+    // Format vehicle information
+    const vehicleInfo = formatVehicleInfo(client);
+    form.setValue('veiculo', vehicleInfo);
+    
+    setClientSearchOpen(false);
+  };
+  
+  // Formatar informações do veículo
+  const formatVehicleInfo = (client: any) => {
+    if (client.marca && client.modelo) {
+      let vehicleInfo = `${client.marca} ${client.modelo}`;
+      if (client.ano) vehicleInfo += ` (${client.ano})`;
+      if (client.placa) vehicleInfo += ` - Placa: ${client.placa}`;
+      return vehicleInfo;
+    }
+    return client.veiculo || '';
   };
 
   return (
@@ -70,8 +97,26 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                         onChange={(e) => {
                           field.onChange(e);
                           setSearchTerm(e.target.value);
+                          if (e.target.value === '' && selectedClient) {
+                            clearSelection();
+                            form.setValue('veiculo', '');
+                          }
                         }}
                       />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            field.onChange('');
+                            clearSelection();
+                            form.setValue('veiculo', '');
+                          }}
+                          className="absolute right-10 top-2 h-5 w-5 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     </div>
                   </FormControl>
@@ -98,7 +143,9 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                           >
                             <div>
                               <div className="font-medium">{client.nome}</div>
-                              <div className="text-xs text-muted-foreground">{client.telefone}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatVehicleInfo(client) || client.telefone}
+                              </div>
                             </div>
                           </CommandItem>
                         ))}
@@ -159,6 +206,11 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                 <Input 
                   placeholder="299,90" 
                   {...field} 
+                  onChange={(e) => {
+                    // Permitir apenas números e vírgula
+                    const value = e.target.value.replace(/[^\d,]/g, '');
+                    field.onChange(value);
+                  }}
                 />
               </FormControl>
               <FormMessage />

@@ -10,6 +10,10 @@ interface ClientSelectorProps {
     id: string;
     nome: string;
     veiculo: string;
+    placa?: string;
+    marca?: string;
+    modelo?: string;
+    ano?: string;
   }[];
 }
 
@@ -23,6 +27,10 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
   useEffect(() => {
     if (selectedClientId && selectedClientId !== selectedClient) {
       setSelectedClient(selectedClientId);
+      
+      // Limpe o veículo anterior primeiro
+      setValue('veiculo_id', '');
+      
       // Find the client to get its vehicle
       const client = clients.find(c => c.id === selectedClientId);
       if (client) {
@@ -30,6 +38,17 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
       }
     }
   }, [selectedClientId, setValue, clients, selectedClient]);
+
+  // Formatar o texto do veículo para exibição
+  const formatVehicleText = (client: any) => {
+    if (client.marca && client.modelo) {
+      let text = `${client.marca} ${client.modelo}`;
+      if (client.ano) text += ` (${client.ano})`;
+      if (client.placa) text += ` - Placa: ${client.placa}`;
+      return text;
+    }
+    return client.veiculo || 'Veículo não especificado';
+  };
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,6 +63,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
                 field.onChange(value);
               }}
               defaultValue={field.value}
+              value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
@@ -72,7 +92,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
             <Select
               disabled={!selectedClientId}
               onValueChange={field.onChange}
-              defaultValue={field.value}
+              value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
@@ -85,7 +105,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
                     .filter(c => c.id === selectedClientId)
                     .map((client) => (
                       <SelectItem key={client.id} value={client.id}>
-                        {client.veiculo}
+                        {formatVehicleText(client)}
                       </SelectItem>
                     ))}
               </SelectContent>
