@@ -4,7 +4,6 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { ProfileFormValues } from './profileSchema';
-import { formatPhoneNumber } from '@/utils/formatUtils';
 
 interface ProfileFormFieldProps {
   form: UseFormReturn<ProfileFormValues>;
@@ -35,14 +34,17 @@ const ProfileFormField: React.FC<ProfileFormFieldProps> = ({
           <FormControl>
             <Input 
               placeholder={placeholder}
-              {...field}
               onChange={(e) => {
                 const value = e.target.value;
                 const formatted = formatValue ? formatValue(value) : value;
                 field.onChange(formatted);
               }}
+              value={field.value || ''}
               disabled={disabled || isSuccess}
               className={isSuccess ? "bg-green-50 border-green-200" : ""}
+              name={String(field.name)}
+              onBlur={field.onBlur}
+              ref={field.ref}
             />
           </FormControl>
           <FormMessage />

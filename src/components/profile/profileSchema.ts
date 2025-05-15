@@ -7,3 +7,6 @@ export const profileSchema = z.object({
   logo_url: z.string().optional(),
   whatsapp_suporte: z.string().optional(),
 });
+
+// Export the type for use in components
+export type ProfileFormValues = z.infer<typeof profileSchema>;

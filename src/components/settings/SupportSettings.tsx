@@ -45,6 +45,14 @@ const SupportSettings: React.FC<{ userId?: string; initialValues?: { whatsapp_su
     setIsLoading(true);
     
     try {
+      // First check if the whatsapp_suporte column exists
+      const { error: columnCheckError } = await supabase.rpc('ensure_whatsapp_suporte_column');
+      
+      if (columnCheckError) {
+        console.log('Column check error, attempting direct update anyway:', columnCheckError);
+      }
+      
+      // Attempt the update
       const { error } = await supabase
         .from('profiles')
         .update({
