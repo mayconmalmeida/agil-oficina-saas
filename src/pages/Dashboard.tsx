@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
 import Loading from '@/components/ui/loading';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import RecentActivities from '@/components/dashboard/RecentActivities';
@@ -15,6 +16,12 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile, loading: profileLoading, userId, handleLogout } = useUserProfile();
   const { data, isLoading: dataLoading } = useDashboardData(userId);
+  
+  // Get premium features access
+  const { handlePremiumFeature } = usePremiumFeatures(
+    data.planType, 
+    data.daysRemaining
+  );
   
   const isLoading = profileLoading || dataLoading;
   
@@ -41,6 +48,28 @@ const Dashboard: React.FC = () => {
       icon: <Package className="h-5 w-5" />,
       href: "/produtos-servicos",
       color: "bg-green-100 hover:bg-green-200 text-green-700"
+    }
+  ];
+  
+  // Add premium feature actions
+  const premiumActions = [
+    {
+      title: "Relatórios",
+      onClick: () => {
+        if (handlePremiumFeature('reports')) {
+          navigate('/relatorios');
+        }
+      },
+      isPremium: true
+    },
+    {
+      title: "Marketing",
+      onClick: () => {
+        if (handlePremiumFeature('marketing_tools')) {
+          navigate('/marketing');
+        }
+      },
+      isPremium: true
     }
   ];
   
