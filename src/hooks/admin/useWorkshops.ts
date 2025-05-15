@@ -110,7 +110,7 @@ export const useWorkshops = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      const subscription = subscriptionData && subscriptionData[0] ? subscriptionData[0] : {};
+      const subscription: Subscription = subscriptionData && subscriptionData[0] ? subscriptionData[0] : {};
 
       // Get quote counts
       const { count: quoteCount } = await supabase
