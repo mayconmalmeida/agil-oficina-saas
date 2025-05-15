@@ -2,10 +2,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const Hero = () => {
   return (
-    <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 pt-16 pb-32 overflow-hidden">
+    <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 pt-16 pb-24 overflow-hidden">
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-900 mix-blend-multiply" />
       </div>
@@ -40,17 +41,16 @@ const Hero = () => {
         </div>
       </div>
       
-      <div className="relative mt-16 md:mt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative mt-16 md:mt-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative shadow-xl rounded-lg overflow-hidden">
-          <div className="absolute inset-0 h-full w-full bg-gradient-to-tr from-blue-900 to-transparent opacity-90"></div>
-          <img
-            className="w-full"
-            src="https://images.unsplash.com/photo-1613329671121-5d1cf551cc3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
-            alt="Oficina mecânica com sistema de gestão"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="sr-only">Ver demonstração</span>
-          </div>
+          <AspectRatio ratio={16/9} className="bg-blue-900/50">
+            <div className="absolute inset-0 h-full w-full bg-gradient-to-tr from-blue-900 to-transparent opacity-80"></div>
+            <img
+              className="w-full h-full object-cover"
+              src="https://images.unsplash.com/photo-1613329671121-5d1cf551cc3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
+              alt="Oficina mecânica com sistema de gestão"
+            />
+          </AspectRatio>
         </div>
       </div>
     </div>

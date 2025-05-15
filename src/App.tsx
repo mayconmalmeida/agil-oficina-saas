@@ -23,6 +23,13 @@ import WorkshopRegistrationPage from './pages/WorkshopRegistrationPage';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
+// New pages
+import SettingsPage from './pages/SettingsPage';
+import VehiclesPage from './pages/VehiclesPage';
+import VehicleRegistrationPage from './pages/VehicleRegistrationPage';
+import SchedulingPage from './pages/SchedulingPage';
+import SchedulesPage from './pages/SchedulesPage';
+
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -52,13 +59,24 @@ function App() {
         <Route path="/empresa/perfil" element={<CompanyProfilePage />} />
         <Route path="/configuracoes/oficina" element={<CompanyProfilePage />} />
         
-        {/* New routes */}
+        {/* Client routes */}
         <Route path="/clientes" element={<ClientManagementPage />} />
         <Route path="/clientes/novo" element={<ClientManagementPage />} />
+        
+        {/* Product routes */}
         <Route path="/produtos" element={<ProductsPage />} />
         <Route path="/produtos/novo" element={<ProductsPage />} />
+        
+        {/* Budget routes */}
         <Route path="/orcamentos" element={<BudgetPage />} />
         <Route path="/orcamentos/novo" element={<BudgetPage />} />
+        
+        {/* New routes */}
+        <Route path="/configuracoes" element={<SettingsPage />} />
+        <Route path="/veiculos" element={<VehiclesPage />} />
+        <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
+        <Route path="/agendamentos" element={<SchedulesPage />} />
+        <Route path="/agendamentos/novo" element={<SchedulingPage />} />
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

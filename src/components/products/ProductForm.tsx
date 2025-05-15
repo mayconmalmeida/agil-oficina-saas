@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 const productSchema = z.object({
   nome: z.string().min(1, 'Nome do produto é obrigatório'),
@@ -28,6 +29,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 const ProductForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -49,17 +51,53 @@ const ProductForm: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Here you would typically save the product to your backend
-      console.log('Product values:', values);
+      console.log('Submitting product values:', values);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Convert string values to proper types for database
+      const productData = {
+        nome: values.nome,
+        codigo: values.codigo || null,
+        tipo: values.tipo,
+        preco_custo: parseFloat(values.preco_custo.replace(',', '.')),
+        preco_venda: parseFloat(values.preco_venda.replace(',', '.')),
+        quantidade: parseInt(values.quantidade),
+        estoque_minimo: values.estoque_minimo ? parseInt(values.estoque_minimo) : null,
+        descricao: values.descricao || null,
+        fornecedor: values.fornecedor || null,
+        controlar_estoque: values.controlar_estoque,
+      };
+      
+      // Insert into the products table
+      const { data, error } = await supabase
+        .from('services') // We're using the services table for now
+        .insert({
+          nome: productData.nome,
+          tipo: productData.tipo,
+          valor: productData.preco_venda, // Map to existing column
+          descricao: productData.descricao,
+          // Other fields will be handled when we create a proper products table
+        })
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: 'Produto adicionado',
+        description: `${values.nome} foi adicionado com sucesso!`,
+      });
       
       // Reset the form
       form.reset();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar produto",
+        description: error.message || "Não foi possível salvar o produto. Tente novamente.",
+      });
     } finally {
       setIsLoading(false);
     }
