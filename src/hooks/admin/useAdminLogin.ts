@@ -89,13 +89,13 @@ export const useAdminLogin = () => {
         .from('admins')
         .select('email, nivel')
         .eq('email', values.email)
-        .limit(1);
+        .maybeSingle();
 
       if (adminError) {
         console.error("Erro ao verificar admin:", adminError);
         
         // Mensagem específica de erro de verificação de admin
-        if (adminError.message.includes('does not exist')) {
+        if (adminError.message?.includes('does not exist')) {
           setErrorMessage('A tabela de administradores não existe no banco de dados.');
         } else {
           setErrorMessage('Erro ao verificar permissões de administrador: ' + adminError.message);
@@ -113,7 +113,7 @@ export const useAdminLogin = () => {
         return;
       }
 
-      if (!adminData || adminData.length === 0) {
+      if (!adminData) {
         console.error("Usuário não é administrador");
         await supabase.auth.signOut();
         

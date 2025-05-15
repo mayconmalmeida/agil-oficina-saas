@@ -50,7 +50,65 @@ export const createAdminUser = async (email: string, password: string, nivel: st
   try {
     console.log(`Tentando criar admin com email: ${email}, nível: ${nivel}`);
     
-    // First check if user already exists in auth
+    // First check if admin already exists in admins table
+    const { data: existingAdmin, error: adminCheckError } = await supabase
+      .from('admins')
+      .select('email')
+      .eq('email', email)
+      .single();
+      
+    if (!adminCheckError && existingAdmin) {
+      console.log("Admin já existe na tabela de admins");
+      
+      // Try to sign in to see if auth user exists
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) {
+        console.log("Usuário auth não existe ou senha incorreta, criando novo usuário auth");
+        // Create auth user if it doesn't exist
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              is_admin: true,
+              nivel: nivel
+            }
+          }
+        });
+        
+        if (signUpError) {
+          console.error("Erro ao criar usuário auth:", signUpError);
+          throw signUpError;
+        }
+        
+        console.log("Usuário auth criado com sucesso para admin existente");
+      } else {
+        console.log("Usuário auth já existe e login bem-sucedido");
+      }
+      
+      // Admin already exists, update nivel if needed
+      if (existingAdmin.email === email) {
+        console.log(`Admin ${email} já existe, atualizando nivel para ${nivel}`);
+        const { error: updateError } = await supabase
+          .from('admins')
+          .update({ nivel })
+          .eq('email', email);
+          
+        if (updateError) {
+          console.error("Erro ao atualizar nivel do admin:", updateError);
+          throw updateError;
+        }
+      }
+      
+      return { email, nivel };
+    }
+    
+    // Create auth user first
+    console.log("Verificando se usuário auth já existe...");
     const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -60,7 +118,7 @@ export const createAdminUser = async (email: string, password: string, nivel: st
     
     // If user doesn't exist, create it
     if (checkError || !userId) {
-      console.log("Usuário não existe, criando novo usuário...");
+      console.log("Usuário auth não existe, criando novo usuário...");
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -82,22 +140,19 @@ export const createAdminUser = async (email: string, password: string, nivel: st
       }
       
       userId = authData.user.id;
-      console.log("Usuário criado com sucesso:", userId);
+      console.log("Usuário auth criado com sucesso:", userId);
     } else {
-      console.log("Usuário já existe:", userId);
+      console.log("Usuário auth já existe:", userId);
     }
     
-    // Now insert directly into admins table using service_role key to bypass RLS
+    // Now insert into admins table
     console.log("Adicionando à tabela de admins...");
     const { error: adminError } = await supabase
       .from('admins')
-      .upsert([
-        { 
-          email: email,
-          nivel: nivel
-        }
-      ])
-      .select();
+      .insert([{ 
+        email: email,
+        nivel: nivel
+      }]);
       
     if (adminError) {
       console.error("Erro ao adicionar admin:", adminError);
@@ -105,7 +160,7 @@ export const createAdminUser = async (email: string, password: string, nivel: st
     }
 
     console.log("Admin criado com sucesso!");
-    return { id: userId, email };
+    return { id: userId, email, nivel };
   } catch (error) {
     console.error("Erro completo ao criar admin:", error);
     throw error;

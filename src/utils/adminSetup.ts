@@ -13,57 +13,49 @@ export const createPredefinedAdmin = async () => {
     const password = "Oficina@123";
     const nivel = "superadmin";
     
-    // Verificar se o usuário já existe
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) {
-      console.log("Erro ao verificar se admin existe:", error.message);
-      // Se o erro não for de credenciais inválidas, reportar o erro
-      if (!error.message.includes("Invalid login credentials")) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao verificar admin",
-          description: error.message,
-        });
-        throw error;
-      }
-      
-      // Usuário não existe, vamos criar
-      console.log("Admin não existe, criando novo...");
+    try {
+      // Attempt to create the admin user
+      console.log("Criando admin predefinido com", email);
       const result = await createAdminUser(email, password, nivel);
       
       toast({
-        title: "Administrador criado com sucesso",
-        description: `Usuário admin criado com email ${email}`,
+        title: "Administrador configurado com sucesso",
+        description: `Usuário ${email} configurado como administrador. Você pode fazer login agora.`,
       });
       
-      return;
-    }
-    
-    if (data.user) {
-      console.log("Usuário já existe, verificando se é admin");
-      // Se usuário já existe, verificamos se já está como admin
-      const result = await setUserAsAdmin(email, nivel);
+      return result;
+    } catch (error: any) {
+      console.error("Erro ao criar admin predefinido:", error);
       
-      if (result.success) {
-        toast({
-          title: "Administrador configurado",
-          description: "O usuário já existe e foi configurado como administrador com sucesso.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao configurar admin",
-          description: result.message,
-        });
+      // If the error is due to the user already existing, try to set as admin
+      if (error.message?.includes('User already registered')) {
+        console.log("Usuário já existe, tentando configurar como admin");
+        const result = await setUserAsAdmin(email, nivel);
+        
+        if (result.success) {
+          toast({
+            title: "Administrador configurado",
+            description: "O usuário já existe e foi configurado como administrador com sucesso.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erro ao configurar admin",
+            description: result.message,
+          });
+        }
+        
+        return { email, nivel };
       }
       
-      return;
+      // For other errors, show the error message
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar administrador",
+        description: error.message || "Ocorreu um erro inesperado ao criar o administrador.",
+      });
+      throw error;
     }
-    
   } catch (error: any) {
     console.error("Erro ao criar admin:", error);
     toast({

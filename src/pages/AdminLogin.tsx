@@ -12,12 +12,13 @@ import type { FormValues } from "@/hooks/admin/types";
 import { useAdminLogin } from "@/hooks/admin/useAdminLogin";
 import { testSupabaseConnection } from "@/lib/supabase";
 import { createPredefinedAdmin } from "@/utils/adminSetup";
-import { UserPlus, Loader2 } from "lucide-react";
+import { UserPlus, Loader2, AlertTriangle } from "lucide-react";
 
 const AdminLogin = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [createAdminError, setCreateAdminError] = useState<string | null>(null);
   const { isLoading, handleLogin } = useAdminLogin();
   const navigate = useNavigate();
   
@@ -84,15 +85,18 @@ const AdminLogin = () => {
     }
     
     setIsCreatingAdmin(true);
+    setCreateAdminError(null);
+    
     try {
-      await createPredefinedAdmin();
+      const result = await createPredefinedAdmin();
       
       // Preencher o formulário com as credenciais predefinidas
       form.setValue('email', 'mayconintermediacao@gmail.com');
       form.setValue('password', 'Oficina@123');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar admin:", error);
+      setCreateAdminError(error.message || "Erro ao criar admin");
     } finally {
       setIsCreatingAdmin(false);
     }
@@ -131,7 +135,15 @@ const AdminLogin = () => {
                   </>
                 )}
               </Button>
-              {connectionStatus === 'connected' && (
+              
+              {createAdminError && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 flex items-center">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {createAdminError}
+                </div>
+              )}
+              
+              {connectionStatus === 'connected' && !createAdminError && (
                 <p className="text-xs text-gray-500 mt-2 text-center">
                   Primeiro clique aqui para criar o usuário admin predefinido
                 </p>

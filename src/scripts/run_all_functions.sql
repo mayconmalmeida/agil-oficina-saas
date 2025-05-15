@@ -7,3 +7,6 @@
 \i src/scripts/client_functions.sql
 \i src/scripts/service_functions.sql
 \i src/scripts/budget_functions.sql
+\i src/scripts/fix_admins_table.sql
+\i src/scripts/fix_admin_rls.sql
+
