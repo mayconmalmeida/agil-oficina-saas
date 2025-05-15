@@ -19,6 +19,7 @@ import NewBudgetPage from './pages/NewBudgetPage';
 import BudgetPage from './pages/BudgetPage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import CompanyProfilePage from './pages/CompanyProfilePage';
+import WorkshopRegistrationPage from './pages/WorkshopRegistrationPage';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -40,6 +41,7 @@ function App() {
         <Route path="/registrar" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
+        <Route path="/cadastro-oficina" element={<WorkshopRegistrationPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/painel" element={<Dashboard />} />
         <Route path="/onboarding/profile" element={<ProfileSetupPage />} />
