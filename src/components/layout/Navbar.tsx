@@ -2,10 +2,15 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
@@ -26,11 +31,15 @@ export default function Navbar() {
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue">
               <Link to="/registrar">Teste Grátis</Link>
             </Button>
-            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors">
-              <Link to="/login" className="flex items-center">
+            <Button 
+              variant="outline" 
+              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors"
+              onClick={handleLoginClick}
+            >
+              <div className="flex items-center">
                 <LogIn className="mr-2 h-4 w-4" />
                 Login
-              </Link>
+              </div>
             </Button>
           </div>
         </nav>
@@ -85,11 +94,18 @@ export default function Navbar() {
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors w-full">
               <Link to="/registrar">Teste Grátis</Link>
             </Button>
-            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full">
-              <Link to="/login" className="flex items-center justify-center">
+            <Button 
+              variant="outline" 
+              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate('/login');
+              }}
+            >
+              <div className="flex items-center justify-center">
                 <LogIn className="mr-2 h-4 w-4" />
                 Login
-              </Link>
+              </div>
             </Button>
           </nav>
         </div>

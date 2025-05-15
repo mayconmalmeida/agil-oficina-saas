@@ -31,6 +31,22 @@ export const useProfileSetup = () => {
       setUserId(session.user.id);
       
       try {
+        // First, check if the table exists and has the required columns
+        const { data: tableInfo, error: tableError } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(1);
+          
+        if (tableError && tableError.message.includes("relation \"profiles\" does not exist")) {
+          console.log('Creating profiles table with required columns');
+          // Create the table if it doesn't exist
+          const { error: createError } = await supabase.rpc('create_profile_table');
+          if (createError) {
+            console.error('Error creating profiles table:', createError);
+            throw createError;
+          }
+        }
+        
         // Check if the profile exists
         const { data } = await supabase
           .from('profiles')
