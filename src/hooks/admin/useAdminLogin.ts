@@ -34,6 +34,7 @@ export const useAdminLogin = () => {
       
       console.log("Iniciando login admin com:", values.email);
       
+      // Tentar login com supabase.auth.signInWithPassword
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -45,17 +46,26 @@ export const useAdminLogin = () => {
         // Mensagens de erro mais específicas
         if (error.message.includes('Invalid login credentials')) {
           setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
+          toast({
+            variant: "destructive",
+            title: "Credenciais inválidas",
+            description: "Verifique seu email e senha. Se este é o usuário predefinido, tente criá-lo primeiro clicando no botão 'Criar Admin'.",
+          });
         } else if (error.message.includes('Failed to fetch')) {
           setErrorMessage('Falha na conexão com o servidor. Verifique sua conexão de internet.');
+          toast({
+            variant: "destructive",
+            title: "Erro de conexão",
+            description: "Falha na conexão com o servidor. Verifique sua conexão de internet.",
+          });
         } else {
           setErrorMessage(error.message || 'Erro desconhecido durante o login');
+          toast({
+            variant: "destructive",
+            title: "Erro ao fazer login",
+            description: error.message || "Ocorreu um erro durante o login",
+          });
         }
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: error.message || "Ocorreu um erro durante o login",
-        });
         setIsLoading(false);
         return;
       }
@@ -74,10 +84,10 @@ export const useAdminLogin = () => {
 
       console.log("Login bem-sucedido, verificando se é admin");
       
-      // Verifica se o usuário é um administrador
+      // Verifica se o usuário é um administrador diretamente na tabela de admins
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
-        .select('email')
+        .select('email, nivel')
         .eq('email', values.email)
         .limit(1);
 

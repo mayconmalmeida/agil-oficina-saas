@@ -86,6 +86,13 @@ const AdminLogin = () => {
     setIsCreatingAdmin(true);
     try {
       await createPredefinedAdmin();
+      
+      // Preencher o formulário com as credenciais predefinidas
+      form.setValue('email', 'mayconintermediacao@gmail.com');
+      form.setValue('password', 'Oficina@123');
+      
+    } catch (error) {
+      console.error("Erro ao criar admin:", error);
     } finally {
       setIsCreatingAdmin(false);
     }
@@ -94,7 +101,7 @@ const AdminLogin = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8">
-        <Card>
+        <Card className="shadow-lg border-t-4 border-t-blue-600">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Admin Login</CardTitle>
             <CardDescription className="text-center">
@@ -105,18 +112,12 @@ const AdminLogin = () => {
             <AuthConnectionStatus status={connectionStatus} />
             <ErrorDisplay message={errorMessage} />
             
-            <LoginForm 
-              onSubmit={onSubmit} 
-              isLoading={isLoading} 
-              isConnectionChecking={connectionStatus === 'checking'} 
-            />
-            
-            <div className="mt-6">
+            <div className="mb-6">
               <Button 
                 onClick={handleCreateAdmin}
                 disabled={isCreatingAdmin || connectionStatus !== 'connected'}
                 variant="outline"
-                className="w-full"
+                className="w-full bg-green-50 border-green-300 hover:bg-green-100"
               >
                 {isCreatingAdmin ? (
                   <>
@@ -125,17 +126,32 @@ const AdminLogin = () => {
                   </>
                 ) : (
                   <>
-                    <UserPlus className="mr-2 h-4 w-4" />
+                    <UserPlus className="mr-2 h-4 w-4 text-green-600" />
                     Criar Admin (mayconintermediacao@gmail.com)
                   </>
                 )}
               </Button>
               {connectionStatus === 'connected' && (
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  Clique para criar um usuário admin com as credenciais predefinidas
+                  Primeiro clique aqui para criar o usuário admin predefinido
                 </p>
               )}
             </div>
+            
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t"></span>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">OU FAÇA LOGIN</span>
+              </div>
+            </div>
+            
+            <LoginForm 
+              onSubmit={onSubmit} 
+              isLoading={isLoading} 
+              isConnectionChecking={connectionStatus === 'checking'} 
+            />
           </CardContent>
           <CardFooter className="flex justify-center flex-col space-y-2">
             <Button

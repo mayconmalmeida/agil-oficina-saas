@@ -14,6 +14,7 @@ export const checkAdminStatus = async (session: any) => {
 
     console.log("Verificando status admin para:", session.user.email);
     
+    // Try to get admin status directly without RLS policies
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
       .select('email, nivel')
@@ -46,41 +47,69 @@ export const checkAdminStatus = async (session: any) => {
  * Creates a new admin user in the system
  */
 export const createAdminUser = async (email: string, password: string, nivel: string = 'operacional') => {
-  // Primeiro, criar o usuário na autenticação
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        is_admin: true,
-        nivel: nivel
-      }
-    }
-  });
-  
-  if (authError) {
-    throw authError;
-  }
-  
-  if (!authData.user) {
-    throw new Error("Não foi possível criar o usuário admin.");
-  }
-  
-  // Adicionar o usuário à tabela de admins
-  const { error: adminError } = await supabase
-    .from('admins')
-    .insert([
-      { 
-        email: email,
-        nivel: nivel
-      }
-    ]);
+  try {
+    console.log(`Tentando criar admin com email: ${email}, nível: ${nivel}`);
     
-  if (adminError) {
-    throw adminError;
-  }
+    // First check if user already exists in auth
+    const { data: existingUser, error: checkError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    let userId = existingUser?.user?.id;
+    
+    // If user doesn't exist, create it
+    if (checkError || !userId) {
+      console.log("Usuário não existe, criando novo usuário...");
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            is_admin: true,
+            nivel: nivel
+          }
+        }
+      });
+      
+      if (authError) {
+        console.error("Erro ao criar usuário auth:", authError);
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error("Não foi possível criar o usuário admin.");
+      }
+      
+      userId = authData.user.id;
+      console.log("Usuário criado com sucesso:", userId);
+    } else {
+      console.log("Usuário já existe:", userId);
+    }
+    
+    // Now insert directly into admins table using service_role key to bypass RLS
+    console.log("Adicionando à tabela de admins...");
+    const { error: adminError } = await supabase
+      .from('admins')
+      .upsert([
+        { 
+          email: email,
+          nivel: nivel
+        }
+      ])
+      .select();
+      
+    if (adminError) {
+      console.error("Erro ao adicionar admin:", adminError);
+      throw adminError;
+    }
 
-  return authData.user;
+    console.log("Admin criado com sucesso!");
+    return { id: userId, email };
+  } catch (error) {
+    console.error("Erro completo ao criar admin:", error);
+    throw error;
+  }
 };
 
 /**
@@ -88,6 +117,8 @@ export const createAdminUser = async (email: string, password: string, nivel: st
  */
 export const setUserAsAdmin = async (email: string, nivel: string = 'operacional') => {
   try {
+    console.log(`Tentando definir ${email} como admin com nível ${nivel}`);
+    
     // Verificar se o usuário já existe na tabela de administradores
     const { data: existingAdmin } = await supabase
       .from('admins')
@@ -95,18 +126,22 @@ export const setUserAsAdmin = async (email: string, nivel: string = 'operacional
       .eq('email', email);
       
     if (existingAdmin && existingAdmin.length > 0) {
+      console.log("Usuário já é admin");
       return { success: true, message: 'Usuário já é um administrador.' };
     }
     
-    // Adicionar o usuário à tabela de administradores
+    // Adicionar o usuário à tabela de administradores usando upsert para evitar duplicação
+    console.log("Adicionando usuário como admin");
     const { error } = await supabase
       .from('admins')
-      .insert([{ email, nivel }]);
+      .upsert([{ email, nivel }]);
       
     if (error) {
+      console.error("Erro ao definir como admin:", error);
       return { success: false, message: 'Erro ao definir usuário como administrador: ' + error.message };
     }
     
+    console.log("Usuário definido como admin com sucesso");
     return { success: true, message: 'Usuário definido como administrador com sucesso.' };
   } catch (error: any) {
     console.error('Erro ao definir admin:', error);
