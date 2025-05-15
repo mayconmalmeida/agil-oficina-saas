@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -80,7 +79,7 @@ export const useProductForm = (productId?: string) => {
             nome: data.nome || '',
             tipo: data.tipo as 'produto' | 'servico', // Cast to the expected enum type
             preco_venda: data.valor?.toString() || '',
-            preco_custo: data.valor ? (parseFloat(data.valor) * 0.7).toString() : '', // Convert number to string
+            preco_custo: data.valor ? (parseFloat(data.valor.toString()) * 0.7).toString() : '', // Ensure valor is a string before parsing
             quantidade: '0', // Default values for fields not in the services table
             estoque_minimo: '5',
             descricao: data.descricao || '',
