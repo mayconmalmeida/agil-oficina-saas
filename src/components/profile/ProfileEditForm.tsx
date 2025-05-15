@@ -67,34 +67,19 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
     setUploadProgress(0);
     
     try {
-      // Upload do arquivo para o storage
-      const fileName = `${userId}/${Date.now()}_${file.name}`;
+      // Ensure we create a safer filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/logo_${Date.now()}.${fileExt}`;
       
-      // Create a function to update the upload progress
-      const updateProgress = (event: ProgressEvent) => {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percent);
-      };
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null || prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 200);
       
-      // Set up the XHR for upload with progress tracking
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener('progress', updateProgress);
-      
-      // Create a Promise to handle the upload
-      const uploadPromise = new Promise<{path: string}>((resolve, reject) => {
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-              const response = JSON.parse(xhr.responseText);
-              resolve({path: response.Key});
-            } else {
-              reject(new Error('Upload failed'));
-            }
-          }
-        };
-      });
-      
-      // Use the Supabase upload without the progress callback
+      // Use the Supabase upload
       const { data, error } = await supabase.storage
         .from('logos')
         .upload(fileName, file, {
@@ -102,14 +87,16 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
           upsert: true
         });
         
+      clearInterval(progressInterval);
+      
       if (error) {
         throw error;
       }
       
-      // Simulate progress completion since we can't use the progress callback directly
+      // Set progress to complete
       setUploadProgress(100);
       
-      // Obter URL pública
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
         .getPublicUrl(data.path);
