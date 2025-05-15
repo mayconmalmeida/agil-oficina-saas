@@ -121,20 +121,25 @@ export const useOnboardingProgress = (userId?: string) => {
     return '/dashboard';
   }, []);
 
-  const redirectToNextStep = useCallback(async (immediate = false) => {
+  // Modified to return the path directly rather than a Promise
+  const redirectToNextStep = useCallback(async () => {
     if (!userId) return '/dashboard';
     
     try {
       const nextStep = await getNextOnboardingStep(userId);
-      if (immediate) {
-        navigate(nextStep);
-      }
       return nextStep;
     } catch (error) {
       console.error("Erro ao determinar próximo passo:", error);
       return '/dashboard';
     }
-  }, [userId, navigate]);
+  }, [userId]);
+
+  // New function that handles both getting the next step and navigating to it
+  const redirectToNextStepAndNavigate = useCallback(async () => {
+    const nextStep = await redirectToNextStep();
+    navigate(nextStep);
+    return nextStep;
+  }, [redirectToNextStep, navigate]);
 
   useEffect(() => {
     const loadStatus = async () => {
@@ -154,6 +159,7 @@ export const useOnboardingProgress = (userId?: string) => {
     loading,
     updateProgress,
     redirectToNextStep,
+    redirectToNextStepAndNavigate,
     getNextStep
   };
 };

@@ -14,15 +14,18 @@ import Loading from '@/components/dashboard/Loading';
 const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile, loading, userId, handleLogout } = useUserProfile();
-  const { status: onboardingStatus, loading: onboardingLoading, redirectToNextStep } = useOnboardingProgress(userId || undefined);
+  const { 
+    status: onboardingStatus, 
+    loading: onboardingLoading, 
+    redirectToNextStepAndNavigate 
+  } = useOnboardingProgress(userId || undefined);
   
   // Redirect to next onboarding step if not all steps are completed
   useEffect(() => {
     if (!onboardingLoading && onboardingStatus && !allStepsCompleted(onboardingStatus)) {
-      const nextStep = redirectToNextStep();
-      navigate(nextStep);
+      redirectToNextStepAndNavigate();
     }
-  }, [onboardingStatus, onboardingLoading, redirectToNextStep, navigate]);
+  }, [onboardingStatus, onboardingLoading, redirectToNextStepAndNavigate]);
   
   if (loading || onboardingLoading) {
     return <Loading />;
