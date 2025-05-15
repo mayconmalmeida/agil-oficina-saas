@@ -14,19 +14,22 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
-          nivel: string | null
+          is_superadmin: boolean | null
+          password: string
         }
         Insert: {
           created_at?: string | null
           email: string
           id?: string
-          nivel?: string | null
+          is_superadmin?: boolean | null
+          password: string
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
-          nivel?: string | null
+          is_superadmin?: boolean | null
+          password?: string
         }
         Relationships: []
       }

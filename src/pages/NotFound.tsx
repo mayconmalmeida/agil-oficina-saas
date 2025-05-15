@@ -2,17 +2,26 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home, LogIn } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const NotFound = () => {
   const location = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+    
+    // Show a toast notification to help users
+    toast({
+      title: "Página não encontrada",
+      description: `A rota ${location.pathname} não existe. Você foi redirecionado para a página 404.`,
+      variant: "destructive",
+    });
+  }, [location.pathname, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -28,6 +37,12 @@ const NotFound = () => {
             <Link to="/">
               <Home size={18} />
               Página Inicial
+            </Link>
+          </Button>
+          <Button variant="default" className="flex items-center gap-2" asChild>
+            <Link to="/login">
+              <LogIn size={18} />
+              Fazer Login
             </Link>
           </Button>
           <Button variant="outline" className="flex items-center gap-2" onClick={() => window.history.back()}>
