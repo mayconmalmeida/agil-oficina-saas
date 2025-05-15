@@ -31,6 +31,7 @@ const AdminLogin = () => {
     const checkConnection = async () => {
       try {
         setConnectionStatus('checking');
+        console.log("Verificando conexão com Supabase na página de admin login...");
         const isConnected = await testSupabaseConnection();
         
         if (isConnected) {
@@ -40,12 +41,18 @@ const AdminLogin = () => {
         } else {
           console.error("Falha na conexão com Supabase");
           setConnectionStatus('error');
-          setErrorMessage("Não foi possível conectar ao servidor. Conecte o Supabase para ativar funcionalidades de backend.");
+          setErrorMessage(
+            "Não foi possível conectar ao servidor. Conecte o Supabase para ativar funcionalidades de backend." + 
+            " Verifique se as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão configuradas."
+          );
         }
       } catch (error) {
         console.error("Erro ao verificar conexão:", error);
         setConnectionStatus('error');
-        setErrorMessage("Erro ao verificar conexão com o servidor.");
+        setErrorMessage(
+          "Erro ao verificar conexão com o servidor: " + 
+          (error instanceof Error ? error.message : "Erro desconhecido")
+        );
       }
     };
     

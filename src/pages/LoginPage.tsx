@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
 import Loading from '@/components/ui/loading';
@@ -15,9 +15,10 @@ import { useOnboardingRedirect } from '@/hooks/useOnboardingRedirect';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, userId, handleLogin, setUserId, checkConnection, isConnected } = useLogin();
+  const { isLoading, userId, handleLogin, setUserId, checkConnection } = useLogin();
   const [checkingSession, setCheckingSession] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const { handleRedirect } = useOnboardingRedirect();
 
   // Verificar conexão com o Supabase
@@ -25,51 +26,77 @@ const LoginPage: React.FC = () => {
     const verifyConnection = async () => {
       try {
         setConnectionStatus('checking');
-        const connected = await checkConnection();
+        console.log("Verificando conexão com Supabase na página de login...");
+        const connected = await testSupabaseConnection();
         setConnectionStatus(connected ? 'connected' : 'error');
+        
+        if (!connected) {
+          setConnectionError("Não foi possível conectar ao servidor. O sistema funcionará em modo de demonstração.");
+          console.log("Conexão com Supabase falhou, usando modo demo");
+        } else {
+          console.log("Conexão com Supabase estabelecida com sucesso");
+          setConnectionError(null);
+        }
       } catch (error) {
         console.error("Erro ao verificar conexão:", error);
         setConnectionStatus('error');
+        setConnectionError("Erro ao verificar conexão com o servidor: " + 
+          (error instanceof Error ? error.message : "Erro desconhecido"));
       }
     };
     
     verifyConnection();
-  }, [checkConnection]);
+    
+    // Re-verificar a cada minuto
+    const intervalId = setInterval(verifyConnection, 60000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Verificar se já está autenticado
   useEffect(() => {
     const checkSession = async () => {
       try {
         setCheckingSession(true);
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Verificando sessão existente...");
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Erro ao verificar sessão:", error);
+          setCheckingSession(false);
+          return;
+        }
         
         if (session) {
           console.log("Sessão existente encontrada:", session.user.email);
           setUserId(session.user.id);
           
           // Verificar se é admin
-          const { data: adminData, error: adminError } = await supabase
-            .from('admins')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-            
-          if (adminError) {
-            console.log("Erro ao verificar se é admin ou usuário não é admin:", adminError.message);
+          try {
+            const { data: adminData, error: adminError } = await supabase
+              .from('admins')
+              .select('*')
+              .eq('email', session.user.email)
+              .single();
+                
+            if (adminError) {
+              console.log("Erro ao verificar se é admin ou usuário não é admin:", adminError.message);
+            }
+                
+            if (adminData) {
+              console.log("Usuário é admin, redirecionando para dashboard admin");
+              toast({
+                title: "Login automático",
+                description: "Você foi redirecionado para o painel de administração.",
+              });
+              navigate("/admin/dashboard");
+              return;
+            }
+          } catch (adminCheckError) {
+            console.error("Erro ao verificar se é admin:", adminCheckError);
           }
-            
-          if (adminData) {
-            console.log("Usuário é admin, redirecionando para dashboard admin");
-            toast({
-              title: "Login automático",
-              description: "Você foi redirecionado para o painel de administração.",
-            });
-            navigate("/admin/dashboard");
-          } else {
-            console.log("Redirecionando usuário normal para perfil-oficina");
-            // Redirecionar diretamente para o perfil-oficina
-            navigate('/perfil-oficina');
-          }
+          
+          console.log("Redirecionando usuário normal para perfil-oficina");
+          navigate('/perfil-oficina');
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
         }
@@ -120,7 +147,7 @@ const LoginPage: React.FC = () => {
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar.
+                  {connectionError || "Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar."}
                   <div className="mt-2 text-sm">
                     (O sistema funcionará em modo de demonstração)
                   </div>

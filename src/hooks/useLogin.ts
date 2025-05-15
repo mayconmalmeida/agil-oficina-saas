@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import { supabase, testSupabaseConnection } from "@/lib/supabase";
+import { supabase, testSupabaseConnection, createProfileIfNotExists } from "@/lib/supabase";
 import { LoginFormValues } from '@/components/auth/LoginForm';
 import { getNextOnboardingStep } from '@/utils/onboardingUtils';
 import { useOnboardingRedirect } from './useOnboardingRedirect';
@@ -17,8 +17,10 @@ export const useLogin = () => {
 
   // Função para verificar conexão com o Supabase
   const checkConnection = async () => {
+    console.log("Verificando conexão com Supabase...");
     const connected = await testSupabaseConnection();
     setIsConnected(connected);
+    console.log("Status da conexão:", connected ? "Conectado" : "Desconectado");
     return connected;
   };
 
@@ -33,10 +35,9 @@ export const useLogin = () => {
         toast({
           variant: "destructive",
           title: "Erro de conexão",
-          description: "Não foi possível conectar ao servidor de autenticação. Conecte o Supabase para continuar.",
+          description: "Não foi possível conectar ao servidor de autenticação. Conecte o Supabase para continuar ou o sistema funcionará em modo de demonstração.",
         });
-        setIsLoading(false);
-        return;
+        console.log("Funcionando em modo demo (Supabase desconectado)");
       }
       
       console.log("Iniciando login com:", values.email);
@@ -59,8 +60,7 @@ export const useLogin = () => {
 
       console.log("Login bem-sucedido, verificando tipo de usuário");
       
-      // Lidar com o cliente Supabase dummy
-      // Em modo demo, não teremos dados.user válidos
+      // Lidar com o cliente Supabase dummy ou desconexão
       if (!data || !data.user) {
         console.log("Funcionando em modo demo (sem Supabase conectado)");
         
@@ -77,6 +77,25 @@ export const useLogin = () => {
         setIsLoading(false);
         navigate('/perfil-oficina');
         return;
+      }
+      
+      // Tentamos garantir que o usuário tenha um perfil
+      if (connected) {
+        console.log("Verificando/criando perfil para usuário:", data.user.id);
+        const profileResult = await createProfileIfNotExists(
+          data.user.id, 
+          data.user.email || values.email,
+          data.user.user_metadata?.full_name
+        );
+        
+        if (!profileResult.success) {
+          console.warn("Alerta: Não foi possível verificar/criar o perfil do usuário:", 
+            profileResult.error);
+          // Continuamos mesmo sem conseguir criar o perfil
+          // para permitir que o usuário entre no sistema
+        } else {
+          console.log("Perfil verificado/criado com sucesso");
+        }
       }
       
       toast({
@@ -104,7 +123,7 @@ export const useLogin = () => {
           return;
         }
         
-        // Para usuários normais, obter o próximo passo e redirecionar
+        // Para usuários normais
         const userId = data.user?.id;
         if (userId) {
           console.log("Usuário normal autenticado com ID:", userId);

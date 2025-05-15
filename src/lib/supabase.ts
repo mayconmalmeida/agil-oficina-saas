@@ -52,9 +52,11 @@ export const supabase = (() => {
   try {
     // Only create a real client if we have the required URL
     if (supabaseUrl && supabaseUrl.includes('supabase')) {
+      console.log("Creating real Supabase client with provided URL and key");
       return createClient(supabaseUrl, supabaseAnonKey);
     } else {
       // If URL is missing or invalid, use dummy client with proper type assertion
+      console.warn("Missing or invalid Supabase URL, using dummy client");
       return createDummyClient() as unknown as ReturnType<typeof createClient>;
     }
   } catch (error) {
@@ -73,19 +75,25 @@ export const testSupabaseConnection = async () => {
       return false;
     }
     
+    console.log('Attempting to test Supabase connection...');
+    
     // Uma forma simples de testar se a conexão está funcionando
     // é tentar fazer uma chamada de autenticação anônima
     const { data, error } = await supabase.auth.getSession();
     
-    if (error && error.message.includes('Failed to fetch')) {
+    if (error) {
       console.error('Erro de conexão com Supabase:', error);
+      if (error.message.includes('Failed to fetch')) {
+        console.error('Erro de conexão de rede. Verifique sua internet ou as variáveis de ambiente.');
+        return false;
+      }
       return false;
     }
     
-    console.log('Conexão com Supabase bem-sucedida');
+    console.log('Conexão com Supabase bem-sucedida:', data ? 'Dados recebidos' : 'Sem dados');
     return true;
   } catch (err) {
-    console.error('Erro ao testar conexão:', err);
+    console.error('Erro ao testar conexão com Supabase:', err);
     return false;
   }
 };
@@ -95,53 +103,109 @@ export const testSupabaseConnection = async () => {
  */
 export const ensureProfilesTable = async () => {
   try {
-    // Tenta executar a função RPC, que irá criar a tabela se não existir
-    const { data, error } = await supabase.rpc('ensure_profiles_table');
+    console.log('Verificando se a tabela profiles existe...');
+    
+    // Attempt to query the profiles table
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
     
     if (error) {
-      console.error('Erro ao verificar tabela profiles:', error);
+      console.error('Erro ao verificar tabela profiles:', error.message);
       
-      // Se a função RPC não existe, vamos tentar criar manualmente
-      if (error.message.includes('function "ensure_profiles_table" does not exist')) {
-        console.log('Criando função ensure_profiles_table...');
+      // Table might not exist
+      if (error.message.includes('does not exist')) {
+        console.log('A tabela profiles não existe. Tentando criar...');
         
-        // Criar a função SQL
-        const { error: sqlError } = await supabase.rpc('create_profile_table');
+        // Try to create the table via RPC function
+        const { data: rpcData, error: rpcError } = await supabase.rpc('create_profile_table');
         
-        if (sqlError) {
-          console.error('Erro ao criar função ensure_profiles_table:', sqlError);
-          
-          // Último recurso: tentar verificar se a tabela existe diretamente
-          try {
-            const { data: tableInfo, error: tableError } = await supabase
-              .from('profiles')
-              .select('*')
-              .limit(1);
-              
-            if (tableError && tableError.message.includes("relation \"profiles\" does not exist")) {
-              console.error('Tabela profiles não existe e não foi possível criá-la automaticamente');
-              return false;
-            } else {
-              console.log('Tabela profiles existe, mas pode não ter todas as colunas necessárias');
-              return true;
-            }
-          } catch (e) {
-            console.error('Erro ao verificar tabela profiles:', e);
-            return false;
-          }
-        } else {
-          console.log('Função ensure_profiles_table criada com sucesso');
-          return true;
+        if (rpcError) {
+          console.error('Erro ao criar tabela profiles via RPC:', rpcError);
+          return false;
         }
+        
+        console.log('Tabela profiles criada com sucesso via RPC');
+        return true;
       }
       
       return false;
     }
     
-    console.log('Tabela profiles verificada com sucesso:', data);
+    console.log('Tabela profiles existe e está acessível');
     return true;
   } catch (err) {
-    console.error('Erro ao verificar tabela profiles:', err);
+    console.error('Erro inesperado ao verificar tabela profiles:', err);
     return false;
+  }
+};
+
+/**
+ * Cria um perfil para um usuário caso não exista
+ */
+export const createProfileIfNotExists = async (userId: string, email: string, fullName?: string) => {
+  try {
+    console.log('Verificando se perfil existe para usuário:', userId);
+    
+    // Check if profile exists
+    const { data: existingProfile, error: queryError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (queryError) {
+      // If error is not found, create profile
+      if (queryError.code === 'PGRST116') {
+        console.log('Perfil não encontrado, criando novo perfil para:', email);
+        
+        // Try direct insert first
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({ 
+            id: userId, 
+            email: email, 
+            full_name: fullName || ''
+          })
+          .select();
+        
+        if (insertError) {
+          console.error('Erro ao inserir perfil diretamente:', insertError);
+          
+          // Try via RPC function as fallback (bypasses RLS)
+          try {
+            const { data: rpcData, error: rpcError } = await supabase.rpc(
+              'create_profile', 
+              { user_id: userId, user_email: email, user_full_name: fullName || '' }
+            );
+            
+            if (rpcError) {
+              console.error('Erro ao criar perfil via RPC:', rpcError);
+              return { success: false, error: rpcError };
+            }
+            
+            console.log('Perfil criado com sucesso via RPC');
+            return { success: true, profile: { id: userId, email } };
+          } catch (rpcCatchErr) {
+            console.error('Erro ao executar RPC para criar perfil:', rpcCatchErr);
+            return { success: false, error: rpcCatchErr };
+          }
+        }
+        
+        console.log('Perfil criado com sucesso via insert direto');
+        return { success: true, profile: insertData ? insertData[0] : { id: userId, email } };
+      } else {
+        console.error('Erro ao verificar perfil existente:', queryError);
+        return { success: false, error: queryError };
+      }
+    }
+    
+    console.log('Perfil já existe para o usuário');
+    return { success: true, profile: existingProfile };
+    
+  } catch (err) {
+    console.error('Erro inesperado ao criar perfil:', err);
+    return { success: false, error: err };
   }
 };
