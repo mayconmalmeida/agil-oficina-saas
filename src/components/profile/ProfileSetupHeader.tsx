@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
+import ProfileSetupProgress from './ProfileSetupProgress';
 
 interface ProfileSetupHeaderProps {
   saveSuccess?: boolean;
@@ -19,10 +19,7 @@ const ProfileSetupHeader: React.FC<ProfileSetupHeaderProps> = ({ saveSuccess = f
           Preencha as informações básicas da sua oficina
         </p>
         
-        <div className="mt-4">
-          <Progress value={25} className="h-2 w-full max-w-xs mx-auto" />
-          <p className="text-xs text-oficina-gray mt-1">Etapa 1 de 4</p>
-        </div>
+        <ProfileSetupProgress />
       </div>
       
       <CardHeader className="space-y-1">
