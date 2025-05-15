@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +9,12 @@ import ClientList from '@/components/clients/ClientList';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
 import EnhancedClientForm from '@/components/clients/EnhancedClientForm';
 import ClientSearchForm from '@/components/clients/ClientSearchForm';
+
+// Define interface for ClientList props to fix type error
+interface ExtendedClientList {
+  onSelectClient: (clientId: string) => void;
+  filters?: any; // Added filters prop
+}
 
 const ClientManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -58,6 +59,8 @@ export interface Profile {
   is_active?: boolean;
   trial_ends_at?: string | null;
   last_login?: string | null;
+  logo_url?: string;
+  documents?: Document[];
 }
 
 // Types for Subscription
@@ -83,6 +86,14 @@ export interface Service {
   tipo: string;
   valor: number;
   descricao?: string;
+  created_at: string;
+}
+
+// Types for Document
+export interface Document {
+  id: string;
+  name: string;
+  url: string;
   created_at: string;
 }
 

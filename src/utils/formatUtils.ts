@@ -1,60 +1,57 @@
 
 /**
- * Utility functions for formatting data
+ * Utilities for formatting values
  */
+export const formatUtils = {
+  /**
+   * Format a number as currency (BRL)
+   */
+  formatCurrency: (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  },
 
-/**
- * Format a currency value to Brazilian Real (BRL)
- */
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+  /**
+   * Format a date string to local date format
+   */
+  formatDate: (dateString: string): string => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR').format(date);
+  },
 
-/**
- * Format a date to Brazilian format (DD/MM/YYYY)
- */
-export const formatDate = (date: string | Date): string => {
-  if (!date) return '';
-  
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('pt-BR');
-};
+  /**
+   * Format a date string to include time
+   */
+  formatDateTime: (dateString: string): string => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  },
 
-/**
- * Format a date with time (DD/MM/YYYY HH:MM)
- */
-export const formatDateTime = (date: string | Date): string => {
-  if (!date) return '';
-  
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-};
-
-/**
- * Formats a phone number as (XX) XXXXX-XXXX
- */
-export const formatPhoneNumber = (value: string): string => {
-  if (!value) return '';
-  
-  // Remove all non-digit characters
-  const digits = value.replace(/\D/g, '');
-  
-  // Format according to Brazilian phone number pattern
-  if (digits.length <= 2) {
-    return `(${digits}`;
-  } else if (digits.length <= 7) {
-    return `(${digits.substring(0, 2)}) ${digits.substring(2)}`;
-  } else {
-    return `(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7, 11)}`;
+  /**
+   * Format a phone number to (XX) XXXXX-XXXX
+   */
+  formatPhoneNumber: (value: string): string => {
+    // Remove non-digit characters
+    const cleaned = value.replace(/\D/g, '');
+    
+    // Limit to 11 digits
+    const limited = cleaned.substring(0, 11);
+    
+    // Format as (XX) XXXXX-XXXX or (XX) XXXX-XXXX
+    if (limited.length <= 10) {
+      return limited.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
+    } else {
+      return limited.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
+    }
   }
 };
 
-export const formatUtils = {
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-  formatPhoneNumber
-};
+export const formatPhoneNumber = formatUtils.formatPhoneNumber;
