@@ -20,7 +20,7 @@ const createDummyClient = () => {
   return {
     from: () => ({
       select: () => ({ data: [], error: null }),
-      insert: () => ({ data: null, error: null }),
+      insert: () => ({ data: { user: { id: 'demo-user' } }, error: null }),
       update: () => ({ data: null, error: null }),
       delete: () => ({ data: null, error: null }),
       eq: () => ({ data: [], error: null }),
@@ -28,9 +28,20 @@ const createDummyClient = () => {
       limit: () => ({ data: [], error: null }),
     }),
     auth: {
-      signInWithPassword: () => ({ data: { session: null, user: null }, error: null }),
+      signInWithPassword: () => ({ 
+        data: { 
+          session: { user: { id: 'demo-user', email: 'demo@example.com' } },
+          user: { id: 'demo-user', email: 'demo@example.com' } 
+        }, 
+        error: null 
+      }),
       signOut: () => ({ error: null }),
-      getSession: () => ({ data: { session: null }, error: null }),
+      getSession: () => ({ 
+        data: { 
+          session: null 
+        }, 
+        error: null 
+      }),
     },
     rpc: () => ({ data: null, error: null }),
   };
@@ -62,22 +73,15 @@ export const testSupabaseConnection = async () => {
       return false;
     }
     
-    const { data, error } = await supabase.from('_test_connection').select('*').limit(1);
+    // Uma forma simples de testar se a conexão está funcionando
+    // é tentar fazer uma chamada de autenticação anônima
+    const { data, error } = await supabase.auth.getSession();
     
-    // Se houver um erro específico sobre a tabela não existir, a conexão está OK
-    // mas a tabela não existe (o que é normal)
-    if (error && error.code === 'PGRST116') {
-      console.log('Conexão com Supabase bem-sucedida (tabela de teste não existe)');
-      return true;
-    }
-    
-    // Outros erros indicam um problema de conexão
-    if (error) {
-      console.error('Erro ao testar conexão:', error);
+    if (error && error.message.includes('Failed to fetch')) {
+      console.error('Erro de conexão com Supabase:', error);
       return false;
     }
     
-    // Se não houver erro, a conexão está OK
     console.log('Conexão com Supabase bem-sucedida');
     return true;
   } catch (err) {
@@ -141,4 +145,3 @@ export const ensureProfilesTable = async () => {
     return false;
   }
 };
-

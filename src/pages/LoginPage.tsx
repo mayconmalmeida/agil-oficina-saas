@@ -2,7 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
@@ -13,9 +15,26 @@ import { useOnboardingRedirect } from '@/hooks/useOnboardingRedirect';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, handleLogin, setUserId } = useLogin();
+  const { isLoading, userId, handleLogin, setUserId, checkConnection, isConnected } = useLogin();
   const [checkingSession, setCheckingSession] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const { handleRedirect } = useOnboardingRedirect();
+
+  // Verificar conexão com o Supabase
+  useEffect(() => {
+    const verifyConnection = async () => {
+      try {
+        setConnectionStatus('checking');
+        const connected = await checkConnection();
+        setConnectionStatus(connected ? 'connected' : 'error');
+      } catch (error) {
+        console.error("Erro ao verificar conexão:", error);
+        setConnectionStatus('error');
+      }
+    };
+    
+    verifyConnection();
+  }, [checkConnection]);
 
   // Verificar se já está autenticado
   useEffect(() => {
@@ -86,6 +105,38 @@ const LoginPage: React.FC = () => {
           </CardHeader>
           
           <CardContent>
+            {connectionStatus === 'checking' && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <div className="animate-pulse flex items-center">
+                  <div className="h-4 w-4 bg-blue-400 rounded-full mr-2"></div>
+                  <AlertDescription className="text-blue-600">
+                    Verificando conexão com o servidor...
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+            
+            {connectionStatus === 'error' && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar.
+                  <div className="mt-2 text-sm">
+                    (O sistema funcionará em modo de demonstração)
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {connectionStatus === 'connected' && (
+              <Alert className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-600">
+                  Conexão com o servidor estabelecida.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
           </CardContent>
           

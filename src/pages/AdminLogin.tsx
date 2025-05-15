@@ -50,6 +50,11 @@ const AdminLogin = () => {
     };
     
     checkConnection();
+    
+    // Verificar conexão a cada 30 segundos
+    const intervalId = setInterval(checkConnection, 30000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   // Função para lidar com o login do administrador
