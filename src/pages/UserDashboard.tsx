@@ -35,8 +35,9 @@ const UserDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <WelcomeHeader 
-          officeName={userProfile?.nome_oficina} 
-          fullName={userProfile?.full_name} 
+          name={userProfile?.full_name} 
+          workshopName={userProfile?.nome_oficina}
+          logoUrl={userProfile?.logo_url}
         />
         
         <div className="grid gap-6 md:grid-cols-3">

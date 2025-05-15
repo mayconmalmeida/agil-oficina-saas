@@ -67,35 +67,47 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
     setUploadProgress(0);
     
     try {
-      // Verificar se o bucket existe
-      const { data: bucketExists } = await supabase
-        .storage
-        .getBucket('logos');
-        
-      if (!bucketExists) {
-        // Se não existir, tentar criar
-        toast({
-          title: "Criando área de armazenamento",
-          description: "Configurando o armazenamento para logos...",
-        });
-      }
-      
       // Upload do arquivo para o storage
       const fileName = `${userId}/${Date.now()}_${file.name}`;
+      
+      // Create a function to update the upload progress
+      const updateProgress = (event: ProgressEvent) => {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percent);
+      };
+      
+      // Set up the XHR for upload with progress tracking
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', updateProgress);
+      
+      // Create a Promise to handle the upload
+      const uploadPromise = new Promise<{path: string}>((resolve, reject) => {
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+              const response = JSON.parse(xhr.responseText);
+              resolve({path: response.Key});
+            } else {
+              reject(new Error('Upload failed'));
+            }
+          }
+        };
+      });
+      
+      // Use the Supabase upload without the progress callback
       const { data, error } = await supabase.storage
         .from('logos')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: true,
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setUploadProgress(percent);
-          },
+          upsert: true
         });
         
       if (error) {
         throw error;
       }
+      
+      // Simulate progress completion since we can't use the progress callback directly
+      setUploadProgress(100);
       
       // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
@@ -118,7 +130,9 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       });
     } finally {
       setUploading(false);
-      setUploadProgress(null);
+      setTimeout(() => {
+        setUploadProgress(null);
+      }, 1000);
     }
   };
   
