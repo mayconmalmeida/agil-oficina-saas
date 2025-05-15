@@ -1,123 +1,118 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { Check } from 'lucide-react';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 
-export default function Pricing() {
+const tiers = [
+  {
+    name: 'Essencial',
+    id: 'essencial',
+    href: '/cadastro-oficina?plano=Essencial',
+    price: 'R$ 69',
+    description: 'Ideal para oficinas de pequeno porte.',
+    features: [
+      'Cadastro de clientes ilimitado',
+      'Gestão de orçamentos',
+      'Controle de serviços',
+      'Relatórios básicos',
+      'Suporte via e-mail',
+    ],
+    most_popular: false,
+  },
+  {
+    name: 'Premium',
+    id: 'premium',
+    href: '/cadastro-oficina?plano=Premium',
+    price: 'R$ 129',
+    description: 'Recomendado para oficinas em crescimento.',
+    features: [
+      'Todos os recursos do plano Essencial',
+      'Módulo de estoque integrado',
+      'Agendamento de serviços',
+      'Relatórios avançados',
+      'Suporte prioritário',
+      'Backup automático',
+    ],
+    most_popular: true,
+  },
+];
+
+const Pricing = () => {
   return (
-    <section id="planos" className="py-20 bg-oficina-lightgray">
+    <div id="precos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-oficina-dark mb-4">
-            Planos Simples e Transparentes
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Planos Simples e Acessíveis
           </h2>
-          <p className="text-lg text-oficina-gray max-w-2xl mx-auto">
-            Escolha o plano ideal para o tamanho da sua oficina e comece a usar imediatamente.
+          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+            Escolha o plano ideal para sua oficina e aproveite 15 dias de teste grátis. Sem compromisso.
           </p>
         </div>
 
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
-          {/* Plano Essencial */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-full">
-            <div className="p-8 md:p-12 h-full flex flex-col">
-              <div className="mb-auto">
-                <div className="bg-blue-50 inline-block rounded-full px-3 py-1 text-sm font-medium text-oficina mb-6">
-                  💡 Plano Essencial
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {tiers.map((tier) => (
+            <div
+              key={tier.id}
+              className={`bg-white rounded-lg shadow-lg overflow-hidden ${
+                tier.most_popular ? 'ring-2 ring-blue-600' : ''
+              }`}
+            >
+              {tier.most_popular && (
+                <div className="bg-blue-600 text-white text-center py-2 text-sm font-semibold">
+                  Mais Popular
                 </div>
-                <h3 className="text-2xl font-bold text-oficina-dark mb-2">
-                  OficinaÁgil Essencial
-                </h3>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-oficina-dark">R$ 39,90</span>
-                  <span className="text-oficina-gray">/mês por usuário</span>
+              )}
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-gray-900">{tier.name}</h3>
+                <div className="mt-4 flex items-baseline">
+                  <span className="text-4xl font-bold tracking-tight text-gray-900">
+                    {tier.price}
+                  </span>
+                  <span className="ml-1 text-xl font-semibold text-gray-500">/mês</span>
                 </div>
-                <p className="text-oficina-gray mb-6">
-                  Indicado para pequenas oficinas que estão começando.
-                </p>
-                <Button className="w-full bg-oficina hover:bg-blue-700 text-white text-lg py-6 shadow-lg hover:shadow-xl transition-all">
-                  <Link to="/registrar?plano=essencial" className="w-full">Teste Grátis por 7 Dias</Link>
-                </Button>
-                <p className="text-sm text-oficina-gray mt-4 text-center">
-                  Sem compromisso. Cancele quando quiser.
-                </p>
+                <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
+                <Link
+                  to={tier.href}
+                  className={`mt-6 block w-full py-3 px-6 text-center font-medium rounded-md ${
+                    tier.most_popular
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  }`}
+                >
+                  {tier.most_popular ? 'Começar agora' : 'Iniciar teste grátis'}
+                </Link>
               </div>
-
-              <div className="mt-8">
-                <h4 className="font-semibold text-lg mb-4 text-oficina-dark">
-                  O que está incluído:
+              <div className="px-6 pt-6 pb-8">
+                <h4 className="text-sm font-semibold text-gray-900 tracking-wide uppercase">
+                  O que está incluído
                 </h4>
-                <ul className="space-y-3">
-                  {[
-                    "Sistema de orçamentos completo",
-                    "Cadastro de clientes ilimitado",
-                    "Cadastro de produtos e peças",
-                    "Controle de estoque",
-                    "Gestão de veículos",
-                    "Suporte técnico por e-mail",
-                    "Atualizações constantes"
-                  ].map((item, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-oficina-gray">{item}</span>
+                <ul className="mt-6 space-y-4">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <Check className="h-5 w-5 text-green-500" />
+                      </div>
+                      <p className="ml-3 text-sm text-gray-500">{feature}</p>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-          </div>
-
-          {/* Plano Premium */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-2 border-oficina-accent h-full relative">
-            <div className="absolute top-0 right-0 bg-oficina-accent text-white px-4 py-1 text-sm font-bold">
-              MAIS POPULAR
-            </div>
-            <div className="p-8 md:p-12 h-full flex flex-col">
-              <div className="mb-auto">
-                <div className="bg-amber-50 inline-block rounded-full px-3 py-1 text-sm font-medium text-amber-600 mb-6">
-                  🚀 Plano Premium
-                </div>
-                <h3 className="text-2xl font-bold text-oficina-dark mb-2">
-                  OficinaÁgil Premium
-                </h3>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-oficina-dark">R$ 79,90</span>
-                  <span className="text-oficina-gray">/mês por usuário</span>
-                </div>
-                <p className="text-oficina-gray mb-6">
-                  Para oficinas que querem crescer com automação e gestão completa.
-                </p>
-                <Button className="w-full bg-oficina-accent hover:bg-orange-600 text-white text-lg py-6 shadow-lg hover:shadow-xl transition-all">
-                  <Link to="/registrar?plano=premium" id="teste-gratis" className="w-full">Teste Grátis por 7 Dias</Link>
-                </Button>
-                <p className="text-sm text-oficina-gray mt-4 text-center">
-                  Sem compromisso. Cancele quando quiser.
-                </p>
-              </div>
-
-              <div className="mt-8">
-                <h4 className="font-semibold text-lg mb-4 text-oficina-dark">
-                  Tudo do plano Essencial, mais:
-                </h4>
-                <ul className="space-y-3">
-                  {[
-                    "Relatórios gerenciais",
-                    "Exportação XML para contabilidade",
-                    "Ferramenta de campanhas de marketing",
-                    "Agendamento de serviços",
-                    "Suporte técnico por e-mail e chat prioritário"
-                  ].map((item, index) => (
-                    <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      <span className="text-oficina-gray">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
+          ))}
+        </div>
+        
+        <div className="mt-10 text-center">
+          <p className="text-gray-600">
+            Precisa de um plano personalizado para sua rede de oficinas?{' '}
+            <a href="#contato" className="text-blue-600 font-medium hover:underline">
+              Entre em contato
+            </a>
+          </p>
         </div>
       </div>
-    </section>
+    </div>
   );
-}
+};
+
+export default Pricing;

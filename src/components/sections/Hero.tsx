@@ -1,47 +1,60 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
-export default function Hero() {
+const Hero = () => {
   return (
-    <section className="pt-32 pb-20 md:pt-36 md:pb-24 bg-gradient-to-b from-white to-gray-50">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-center">
-          <div className="md:w-1/2 md:pr-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-oficina-dark mb-4">
-              Sistema de orçamentos para <span className="text-oficina">oficinas mecânicas</span>
-            </h1>
-            <p className="text-lg md:text-xl text-oficina-gray mb-8">
-              Simplifique a gestão da sua oficina, agilize orçamentos e aumente seus resultados com o OficinaÁgil.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="bg-oficina-accent hover:bg-orange-600 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
-                <Link to="/registrar" className="flex items-center">
-                  Teste Grátis por 7 Dias
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white px-8 py-6 text-lg transition-colors">
-                <a href="#planos">Ver Planos</a>
-              </Button>
-            </div>
+    <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 pt-16 pb-32 overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-900 mix-blend-multiply" />
+      </div>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-20">
+        <div className="sm:text-center lg:text-left">
+          <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
+            <span className="block">Gestão completa para sua</span>
+            <span className="block text-blue-200">oficina mecânica</span>
+          </h1>
+          <p className="mt-3 text-base text-blue-100 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl max-w-2xl sm:mx-auto lg:mx-0">
+            Simplifique seu dia a dia, organize clientes, orçamentos e serviços em um só lugar.
+            OficinaÁgil é a solução que sua oficina precisa para crescer.
+          </p>
+          <div className="mt-8 sm:mt-10 sm:flex sm:justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
+            <Link
+              to="/cadastro-oficina?plano=Essencial"
+              className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 md:py-4 md:text-lg"
+            >
+              Começar agora
+            </Link>
+            <Link
+              to="#funcionalidades"
+              className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-500 bg-opacity-20 hover:bg-opacity-30 md:py-4 md:text-lg"
+            >
+              Saiba mais
+              <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
+            </Link>
           </div>
-          <div className="md:w-1/2 mt-12 md:mt-0 relative">
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 animate-float">
-              <img 
-                src="https://placehold.co/800x500/2563EB/FFFFFF/png?text=Dashboard+OficinaÁgil" 
-                alt="Dashboard do OficinaÁgil" 
-                className="w-full h-auto" 
-              />
-            </div>
-            <div className="absolute -bottom-6 -right-6 bg-oficina-accent text-white rounded-lg py-3 px-4 shadow-lg transform rotate-3">
-              <p className="text-sm font-bold">Simplifique seus orçamentos!</p>
-            </div>
+          <div className="mt-6 text-blue-100 text-sm">
+            <span className="italic">Experimente grátis por 15 dias, sem compromisso.</span>
           </div>
         </div>
       </div>
-    </section>
+      
+      <div className="relative mt-16 md:mt-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative shadow-xl rounded-lg overflow-hidden">
+          <div className="absolute inset-0 h-full w-full bg-gradient-to-tr from-blue-900 to-transparent opacity-90"></div>
+          <img
+            className="w-full"
+            src="https://images.unsplash.com/photo-1613329671121-5d1cf551cc3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80"
+            alt="Oficina mecânica com sistema de gestão"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="sr-only">Ver demonstração</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default Hero;
