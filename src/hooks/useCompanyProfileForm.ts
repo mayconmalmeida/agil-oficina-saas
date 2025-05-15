@@ -15,21 +15,24 @@ export const useCompanyProfileForm = ({ initialData, onSave }: UseCompanyProfile
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
+  // Convert any null values to empty strings for the form
+  const sanitizedInitialData = {
+    nome_oficina: initialData?.nome_oficina || '',
+    telefone: initialData?.telefone || '',
+    email: initialData?.email || '',
+    endereco: initialData?.endereco || '',
+    cidade: initialData?.cidade || '',
+    estado: initialData?.estado || '',
+    cep: initialData?.cep || '',
+    cnpj: initialData?.cnpj || '',
+    inscricao_estadual: initialData?.inscricao_estadual || '',
+    observacoes_orcamento: initialData?.observacoes_orcamento || '',
+    website: initialData?.website || '',
+  };
+  
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
-    defaultValues: {
-      nome_oficina: initialData?.nome_oficina || '',
-      telefone: initialData?.telefone || '',
-      email: initialData?.email || '',
-      endereco: initialData?.endereco || '',
-      cidade: initialData?.cidade || '',
-      estado: initialData?.estado || '',
-      cep: initialData?.cep || '',
-      cnpj: initialData?.cnpj || '',
-      inscricao_estadual: initialData?.inscricao_estadual || '',
-      observacoes_orcamento: initialData?.observacoes_orcamento || '',
-      website: initialData?.website || '',
-    }
+    defaultValues: sanitizedInitialData
   });
   
   const onSubmit = async (data: CompanyFormValues) => {
@@ -53,6 +56,11 @@ export const useCompanyProfileForm = ({ initialData, onSave }: UseCompanyProfile
         .eq('id', session.user.id);
         
       if (error) throw error;
+      
+      toast({
+        title: "Perfil atualizado",
+        description: "Informações da empresa atualizadas com sucesso.",
+      });
       
       onSave();
     } catch (error: any) {

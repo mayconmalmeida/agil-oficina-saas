@@ -6,6 +6,7 @@ import BasicInfoSection from './form-sections/BasicInfoSection';
 import AddressSection from './form-sections/AddressSection';
 import NotesSection from './form-sections/NotesSection';
 import FormSubmitButton from './FormSubmitButton';
+import { Card } from '@/components/ui/card';
 
 interface CompanyProfileFormProps {
   initialData: any;
@@ -21,9 +22,18 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ initialData, on
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <BasicInfoSection form={form} />
-        <AddressSection form={form} />
-        <NotesSection form={form} />
+        <Card className="p-4 shadow-sm">
+          <BasicInfoSection form={form} />
+        </Card>
+        
+        <Card className="p-4 shadow-sm">
+          <AddressSection form={form} />
+        </Card>
+        
+        <Card className="p-4 shadow-sm">
+          <NotesSection form={form} />
+        </Card>
+        
         <FormSubmitButton isLoading={isLoading} />
       </form>
     </Form>
