@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -35,6 +34,7 @@ type RPCParamMap = {
     p_observacoes: string; 
     p_status: string 
   };
+  'ensure_whatsapp_suporte_column': {}; // Add the new function
 };
 
 // Define valid RPC function names as a union type
@@ -71,8 +71,9 @@ export interface Profile {
   is_active?: boolean;
   trial_ends_at?: string | null;
   last_login?: string | null;
-  logo_url?: string; // Added logo_url field
-  documents?: Document[]; // Added documents field
+  logo_url?: string;
+  whatsapp_suporte?: string; // Added whatsapp_suporte field
+  documents?: Document[]; 
 }
 
 // Types for Subscription

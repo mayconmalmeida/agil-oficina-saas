@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 /**
  * Hook to ensure necessary database schema updates are applied
@@ -13,7 +14,7 @@ export const useEnsureDatabaseSchema = () => {
     const ensureSchema = async () => {
       try {
         // Check for whatsapp_suporte column in profiles table
-        const { error: columnError } = await supabase.rpc('ensure_whatsapp_suporte_column');
+        const { error: columnError } = await safeRpc('ensure_whatsapp_suporte_column', {});
         
         if (columnError) {
           console.error('Error ensuring database schema:', columnError);

@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 const supportSettingsSchema = z.object({
   whatsapp_suporte: z.string().min(8, { message: "Número de WhatsApp inválido" }),
@@ -17,7 +18,10 @@ const supportSettingsSchema = z.object({
 
 type SupportSettingsFormValues = z.infer<typeof supportSettingsSchema>;
 
-const SupportSettings: React.FC<{ userId?: string; initialValues?: { whatsapp_suporte?: string } }> = ({ 
+const SupportSettings: React.FC<{ 
+  userId?: string; 
+  initialValues?: { whatsapp_suporte?: string } 
+}> = ({ 
   userId,
   initialValues = {}
 }) => {
@@ -46,7 +50,7 @@ const SupportSettings: React.FC<{ userId?: string; initialValues?: { whatsapp_su
     
     try {
       // First check if the whatsapp_suporte column exists
-      const { error: columnCheckError } = await supabase.rpc('ensure_whatsapp_suporte_column');
+      const { error: columnCheckError } = await safeRpc('ensure_whatsapp_suporte_column', {});
       
       if (columnCheckError) {
         console.log('Column check error, attempting direct update anyway:', columnCheckError);

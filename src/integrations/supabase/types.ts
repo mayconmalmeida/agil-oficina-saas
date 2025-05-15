@@ -157,6 +157,7 @@ export type Database = {
           responsavel: string | null
           telefone: string | null
           trial_ends_at: string | null
+          whatsapp_suporte: string | null
         }
         Insert: {
           cep?: string | null
@@ -174,6 +175,7 @@ export type Database = {
           responsavel?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
+          whatsapp_suporte?: string | null
         }
         Update: {
           cep?: string | null
@@ -191,6 +193,7 @@ export type Database = {
           responsavel?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
+          whatsapp_suporte?: string | null
         }
         Relationships: []
       }
@@ -359,6 +362,10 @@ export type Database = {
       ensure_profiles_table: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      ensure_whatsapp_suporte_column: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       update_onboarding_step: {
         Args: { step: string }
