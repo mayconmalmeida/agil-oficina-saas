@@ -10,4 +10,5 @@
 \i src/scripts/fix_admins_table.sql
 \i src/scripts/fix_admin_rls.sql
 \i src/scripts/update_profiles_and_clients.sql
+\i src/scripts/agendamento_functions.sql
 

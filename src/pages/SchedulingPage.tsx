@@ -83,6 +83,33 @@ const scheduleSchema = z.object({
 
 type ScheduleForm = z.infer<typeof scheduleSchema>;
 
+// Function to create the agendamentos table if it doesn't exist
+async function ensureAgendamentosTable() {
+  try {
+    // First try to query the table to check if it exists
+    const { error: checkError } = await supabase
+      .from('agendamentos')
+      .select('id')
+      .limit(1);
+    
+    // If the table doesn't exist, create it using raw SQL
+    if (checkError && checkError.message.includes("relation") && checkError.message.includes("does not exist")) {
+      const { error } = await supabase.rpc('create_agendamentos_table');
+      
+      if (error) {
+        console.error('Failed to create agendamentos table:', error);
+        return false;
+      }
+      return true;
+    }
+    
+    return true; // Table exists
+  } catch (error) {
+    console.error('Error checking agendamentos table:', error);
+    return false;
+  }
+}
+
 const SchedulingPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -90,6 +117,7 @@ const SchedulingPage = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
+  const [tableReady, setTableReady] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -103,6 +131,16 @@ const SchedulingPage = () => {
   
   // Watch for client selection to filter vehicles
   const selectedClientId = form.watch('cliente_id');
+  
+  // Ensure the agendamentos table exists
+  useEffect(() => {
+    const initTable = async () => {
+      const isReady = await ensureAgendamentosTable();
+      setTableReady(isReady);
+    };
+    
+    initTable();
+  }, []);
   
   useEffect(() => {
     const fetchData = async () => {
@@ -177,25 +215,6 @@ const SchedulingPage = () => {
     setIsLoading(true);
     
     try {
-      // First, check if we have the agendamentos table
-      const { error: checkError } = await supabase
-        .from('agendamentos')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
-      
-      // If the table doesn't exist, create it
-      if (checkError && checkError.message.includes("relation") && checkError.message.includes("does not exist")) {
-        // Table doesn't exist, so we'll create it first
-        const { error: createTableError } = await supabase.rpc('create_agendamentos_table');
-        
-        if (createTableError) {
-          // If RPC fails, we can still try direct SQL (usually not available in client-side)
-          console.error('Failed to create table via RPC:', createTableError);
-          throw new Error('Não foi possível criar a tabela de agendamentos');
-        }
-      }
-      
       // Prepare data for insertion
       const scheduleData = {
         user_id: (await supabase.auth.getUser()).data.user?.id,
@@ -206,10 +225,10 @@ const SchedulingPage = () => {
         servico_id: data.servico_id,
         observacoes: data.observacoes || '',
         status: 'agendado',
-        created_at: new Date().toISOString(),
       };
       
-      // Insert the schedule
+      // Insert directly into the agendamentos table
+      // We're using the direct insert approach since the table should now exist
       const { error: insertError } = await supabase
         .from('agendamentos')
         .insert([scheduleData]);

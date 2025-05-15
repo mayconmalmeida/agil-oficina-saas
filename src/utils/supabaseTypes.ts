@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -22,6 +23,7 @@ type RPCParamMap = {
   'create_profiles_table': {};
   'create_subscriptions_table': {};
   'ensure_profiles_table': {};
+  'create_agendamentos_table': {}; // Add the missing function
 };
 
 // Define valid RPC function names as a union type
@@ -104,10 +106,10 @@ export interface Client {
   telefone: string;
   email?: string;
   veiculo: string;
-  marca?: string; // Added marca field
-  modelo?: string; // Added modelo field
-  ano?: string; // Added ano field
-  placa?: string; // Added placa field
+  marca?: string;
+  modelo?: string;
+  ano?: string;
+  placa?: string;
   created_at: string;
 }
 
@@ -121,6 +123,21 @@ export interface Budget {
   valor_total: number;
   status: string;
   created_at: string;
+}
+
+// Type for Agendamento (Scheduling)
+export interface Agendamento {
+  id: string;
+  user_id: string;
+  data_agendamento: string;
+  horario: string;
+  cliente_id: string;
+  veiculo_id: string;
+  servico_id: string;
+  observacoes?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Types for combined objects
