@@ -43,12 +43,12 @@ export const supabase = (() => {
     if (supabaseUrl && supabaseUrl.includes('supabase')) {
       return createClient(supabaseUrl, supabaseAnonKey);
     } else {
-      // If URL is missing or invalid, use dummy client
-      return createDummyClient() as ReturnType<typeof createClient>;
+      // If URL is missing or invalid, use dummy client with proper type assertion
+      return createDummyClient() as unknown as ReturnType<typeof createClient>;
     }
   } catch (error) {
     console.error('Failed to initialize Supabase client:', error);
-    return createDummyClient() as ReturnType<typeof createClient>;
+    return createDummyClient() as unknown as ReturnType<typeof createClient>;
   }
 })();
 
