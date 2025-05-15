@@ -27,32 +27,33 @@ export function useProfileForm({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
 
-  // Ensure storage bucket exists
-  const ensureStorageBucket = async () => {
+  // Verificar se o bucket existe
+  const checkAndCreateBucket = async () => {
     try {
-      // Check if bucket exists
-      const { data: buckets, error } = await supabase.storage.listBuckets();
+      // Antes de tentar criar, verifica se já existe
+      console.log("Verificando se o bucket 'logos' existe");
+      
+      // Apenas verifica se conseguimos listar os objetos (bucket existe)
+      const { data, error } = await supabase.storage
+        .from('logos')
+        .list(userId || '');
       
       if (error) {
-        console.error('Error checking buckets:', error);
-        return;
-      }
-      
-      // If logos bucket doesn't exist, try to create it
-      const logosBucketExists = buckets?.some(bucket => bucket.name === 'logos');
-      
-      if (!logosBucketExists) {
-        console.log('Logos bucket not found, attempting to create');
-        // Note: Client-side bucket creation may be restricted by RLS policies
-        // This can be handled in a backend function if needed
+        console.warn("Erro ao verificar bucket:", error.message);
+        // Não podemos criar buckets do lado do cliente
+        // Isso deve ser feito via SQL migrations
+      } else {
+        console.log("Bucket 'logos' está acessível");
       }
     } catch (err) {
-      console.error('Error ensuring storage bucket:', err);
+      console.error('Erro ao verificar bucket:', err);
     }
   };
 
-  // Call immediately to ensure bucket exists
-  ensureStorageBucket();
+  // Verifica bucket logo ao inicializar
+  if (userId) {
+    checkAndCreateBucket();
+  }
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -60,7 +61,7 @@ export function useProfileForm({
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
       logo_url: initialValues.logo_url || '',
-      whatsapp_suporte: '46991270777', // Default support number as requested
+      whatsapp_suporte: initialValues.whatsapp_suporte || '46991270777', // Valor padrão
     },
   });
 
@@ -77,7 +78,7 @@ export function useProfileForm({
     setIsLoading(true);
 
     try {
-      console.log('Saving profile with values:', values);
+      console.log('Salvando perfil com valores:', values);
 
       const { error } = await supabase
         .from('profiles')
@@ -89,7 +90,10 @@ export function useProfileForm({
         })
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao atualizar perfil:", error);
+        throw error;
+      }
 
       toast({
         title: "Perfil atualizado",
@@ -102,7 +106,7 @@ export function useProfileForm({
         onSaveSuccess();
       }
     } catch (error: any) {
-      console.error('Error saving profile:', error);
+      console.error('Erro ao salvar perfil:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar perfil",

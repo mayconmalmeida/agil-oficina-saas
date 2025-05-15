@@ -17,6 +17,18 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ value, onChange, error }) => {
     const file = e.target.files?.[0] || null;
     
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        // If you want to handle this error, you can add custom logic here
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        // If you want to handle this error, you can add custom logic here
+        return;
+      }
+      
       // Create preview
       const reader = new FileReader();
       reader.onload = () => {

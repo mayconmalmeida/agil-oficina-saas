@@ -67,9 +67,14 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
     setUploadProgress(0);
     
     try {
-      // Ensure we create a safer filename
+      // Ensure we create a safer filename without special characters
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/logo_${Date.now()}.${fileExt}`;
+      const timeStamp = Date.now();
+      const safeFileName = `logo_${timeStamp}.${fileExt}`;
+      
+      console.log("Iniciando upload para bucket 'logos'");
+      console.log("UserId:", userId);
+      console.log("Nome do arquivo:", safeFileName);
       
       // Simulate progress updates
       const progressInterval = setInterval(() => {
@@ -82,7 +87,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       // Use the Supabase upload
       const { data, error } = await supabase.storage
         .from('logos')
-        .upload(fileName, file, {
+        .upload(`${userId}/${safeFileName}`, file, {
           cacheControl: '3600',
           upsert: true
         });
@@ -90,8 +95,11 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       clearInterval(progressInterval);
       
       if (error) {
+        console.error("Erro no upload:", error);
         throw error;
       }
+      
+      console.log("Upload concluído com sucesso:", data);
       
       // Set progress to complete
       setUploadProgress(100);
@@ -100,6 +108,8 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
         .getPublicUrl(data.path);
+      
+      console.log("URL pública gerada:", publicUrl);
         
       setLogoUrl(publicUrl);
       

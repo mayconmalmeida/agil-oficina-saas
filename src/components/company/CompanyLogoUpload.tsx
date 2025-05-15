@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -48,10 +49,12 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
     setUploadProgress(0);
     
     try {
-      // Gera um nome único para o arquivo
+      // Gera um nome mais seguro para o arquivo, sem caracteres especiais ou espaços
       const fileExt = file.name.split('.').pop();
-      const fileName = `logo-${Date.now()}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
+      const timeStamp = Date.now();
+      const safeFileName = `logo-${timeStamp}.${fileExt}`;
+      // O caminho agora usa apenas o userId como pasta e um nome de arquivo simples
+      const filePath = `${userId}/${safeFileName}`;
       
       // Simulação de progresso (já que o supabase não fornece progresso real)
       const progressInterval = setInterval(() => {
@@ -60,6 +63,8 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
           return next > 95 ? 95 : next;
         });
       }, 100);
+      
+      console.log("Iniciando upload para bucket 'logos', caminho:", filePath);
       
       // Upload do arquivo
       const { data, error } = await supabase.storage
@@ -71,12 +76,19 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
       
       clearInterval(progressInterval);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro no upload:", error);
+        throw error;
+      }
+      
+      console.log("Upload concluído com sucesso, data:", data);
       
       // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('logos')
         .getPublicUrl(filePath);
+      
+      console.log("URL pública gerada:", publicUrl);
       
       setUploadProgress(100);
       setLogoUrl(publicUrl);
@@ -89,7 +101,10 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
         } as any)
         .eq('id', userId);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Erro ao atualizar perfil:", updateError);
+        throw updateError;
+      }
       
       toast({
         title: "Upload concluído",
@@ -99,6 +114,7 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
       onSave();
       
     } catch (error: any) {
+      console.error("Erro detalhado:", error);
       toast({
         variant: "destructive",
         title: "Erro no upload",

@@ -1,47 +1,50 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
-import { safeRpc } from '@/utils/supabaseTypes';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
-const supportSettingsSchema = z.object({
-  whatsapp_suporte: z.string().min(8, { message: "Número de WhatsApp inválido" }),
+// Schema para validação do formulário
+const supportSchema = z.object({
+  whatsapp_suporte: z.string()
+    .min(10, { message: "Número deve ter pelo menos 10 dígitos" })
+    .max(15, { message: "Número não deve exceder 15 dígitos" })
 });
 
-type SupportSettingsFormValues = z.infer<typeof supportSettingsSchema>;
+interface SupportSettingsProps {
+  userId?: string;
+  initialValues?: {
+    whatsapp_suporte?: string;
+  };
+}
 
-const SupportSettings: React.FC<{ 
-  userId?: string; 
-  initialValues?: { whatsapp_suporte?: string } 
-}> = ({ 
+const SupportSettings: React.FC<SupportSettingsProps> = ({ 
   userId,
   initialValues = {}
 }) => {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [saveSuccess, setSaveSuccess] = React.useState(false);
   const { toast } = useToast();
   
-  const form = useForm<SupportSettingsFormValues>({
-    resolver: zodResolver(supportSettingsSchema),
+  const form = useForm<z.infer<typeof supportSchema>>({
+    resolver: zodResolver(supportSchema),
     defaultValues: {
       whatsapp_suporte: initialValues.whatsapp_suporte || '46991270777',
-    },
+    }
   });
   
-  const onSubmit = async (values: SupportSettingsFormValues) => {
+  const onSubmit = async (values: z.infer<typeof supportSchema>) => {
     if (!userId) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "ID do usuário não encontrado. Por favor, faça login novamente.",
+        description: "ID de usuário não encontrado. Faça login novamente.",
       });
       return;
     }
@@ -49,41 +52,30 @@ const SupportSettings: React.FC<{
     setIsLoading(true);
     
     try {
-      // First check if the whatsapp_suporte column exists
-      const { error: columnCheckError } = await safeRpc('ensure_whatsapp_suporte_column', {});
+      console.log('Salvando número do WhatsApp:', values.whatsapp_suporte);
       
-      if (columnCheckError) {
-        console.log('Column check error, attempting direct update anyway:', columnCheckError);
-      }
-      
-      // Attempt the update
       const { error } = await supabase
         .from('profiles')
-        .update({
-          whatsapp_suporte: values.whatsapp_suporte,
+        .update({ 
+          whatsapp_suporte: values.whatsapp_suporte 
         })
         .eq('id', userId);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao atualizar configurações:", error);
+        throw error;
+      }
       
       toast({
-        title: "Configurações atualizadas",
-        description: "O número de suporte foi atualizado com sucesso.",
+        title: "Configurações salvas",
+        description: "Número do WhatsApp de suporte foi atualizado com sucesso.",
       });
-      
-      setSaveSuccess(true);
-      
-      // Reset success state after a bit
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
-      
     } catch (error: any) {
-      console.error('Error saving support settings:', error);
+      console.error('Erro ao salvar configurações:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: error.message || "Não foi possível salvar as configurações.",
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar as configurações. Tente novamente.",
       });
     } finally {
       setIsLoading(false);
@@ -95,53 +87,41 @@ const SupportSettings: React.FC<{
       <CardHeader>
         <CardTitle>Configurações de Suporte</CardTitle>
         <CardDescription>
-          Configure o número de WhatsApp para contato de suporte
+          Defina o número do WhatsApp para suporte aos seus clientes
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="whatsapp_suporte"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>WhatsApp para Suporte</FormLabel>
+                  <FormLabel>Número do WhatsApp de Suporte</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="46991270777" 
-                      {...field} 
-                      className={saveSuccess ? "border-green-500" : ""}
+                    <Input
+                      placeholder="46991270777"
+                      {...field}
+                      disabled={isLoading}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Este número será usado para contato via WhatsApp quando um usuário solicitar suporte
-                  </FormDescription>
+                  <p className="text-xs text-muted-foreground">
+                    Use o formato com DDD, sem +55 ou outros prefixos
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className={`${saveSuccess ? 'bg-green-500 hover:bg-green-600' : ''}`}
-            >
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Salvando...
                 </>
-              ) : saveSuccess ? (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvo!
-                </>
               ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar
-                </>
+                'Salvar Configurações'
               )}
             </Button>
           </form>
