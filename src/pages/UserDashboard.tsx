@@ -9,7 +9,7 @@ import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 import PlanInfoCard from '@/components/dashboard/PlanInfoCard';
 import OnboardingCard from '@/components/dashboard/OnboardingCard';
 import SupportCard from '@/components/dashboard/SupportCard';
-import Loading from '@/components/dashboard/Loading';
+import Loading from '@/components/ui/loading';
 
 const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const UserDashboard: React.FC = () => {
   }, [onboardingStatus, onboardingLoading, redirectToNextStepAndNavigate]);
   
   if (loading || onboardingLoading) {
-    return <Loading />;
+    return <Loading fullscreen text="Carregando seu dashboard..." />;
   }
   
   return (

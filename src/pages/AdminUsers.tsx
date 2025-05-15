@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import UsersHeader from '@/components/admin/UsersHeader';
 import UsersTable from '@/components/admin/UsersTable';
+import Loading from '@/components/ui/loading';
 
 export type User = {
   id: string;
@@ -132,11 +132,7 @@ const AdminUsers = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Carregando lista de usuários...</p>
-      </div>
-    );
+    return <Loading fullscreen text="Carregando lista de usuários..." />;
   }
 
   return (

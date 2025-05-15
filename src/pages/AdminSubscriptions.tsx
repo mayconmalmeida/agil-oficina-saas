@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
 import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
+import Loading from '@/components/ui/loading';
 
 // Ensure this type definition matches the one in SubscriptionsTable
 type Subscription = {
@@ -105,11 +105,7 @@ const AdminSubscriptions = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Carregando lista de assinaturas...</p>
-      </div>
-    );
+    return <Loading fullscreen text="Carregando lista de assinaturas..." />;
   }
 
   return (

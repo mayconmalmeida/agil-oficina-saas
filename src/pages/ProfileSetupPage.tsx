@@ -4,16 +4,13 @@ import { Card } from '@/components/ui/card';
 import ProfileSetupHeader from '@/components/profile/ProfileSetupHeader';
 import ProfileSetupForm from '@/components/profile/ProfileSetupForm';
 import { useProfileSetup } from '@/hooks/useProfileSetup';
+import Loading from '@/components/ui/loading';
 
 const ProfileSetupPage: React.FC = () => {
   const { isLoading, userId, profileData, saveSuccess, handleProfileSaved } = useProfileSetup();
   
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Carregando...</p>
-      </div>
-    );
+    return <Loading fullscreen text="Carregando perfil..." />;
   }
   
   return (
