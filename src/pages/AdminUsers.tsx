@@ -34,13 +34,13 @@ const AdminUsers = () => {
         return;
       }
 
-      const { data: adminData } = await supabase
+      const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('*')
         .eq('email', session.user.email)
         .single();
 
-      if (!adminData) {
+      if (adminError || !adminData) {
         await supabase.auth.signOut();
         navigate('/admin/login');
         toast({
@@ -80,30 +80,44 @@ const AdminUsers = () => {
         return;
       }
 
-      // Get quoteCounts for each user
-      const usersWithQuoteCounts = await Promise.all(profilesData.map(async (profile) => {
+      // Get quoteCounts and subscription status for each user
+      const usersWithDetails = await Promise.all(profilesData.map(async (profile: Profile) => {
         if (!profile) return null;
         
         // Get quote count
-        const { count, error: countError } = await supabase
-          .from('orcamentos')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', profile.id);
-        
-        if (countError) {
-          console.error('Error fetching quote count:', countError);
+        let quoteCount = 0;
+        try {
+          const { count, error: countError } = await supabase
+            .from('orcamentos')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', profile.id);
+          
+          if (!countError) {
+            quoteCount = count || 0;
+          }
+        } catch (error) {
+          console.error('Error fetching quote count:', error);
         }
         
         // Get subscription status
-        const { data: subscriptionData, error: subError } = await supabase
-          .from('subscriptions')
-          .select('status')
-          .eq('user_id', profile.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+        let subscriptionStatus = 'none';
+        let trialEndsAt = profile.trial_ends_at;
         
-        const subscription_status = subError ? 'none' : (subscriptionData?.status || 'none');
+        try {
+          const { data: subscriptionData, error: subError } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (!subError && subscriptionData) {
+            subscriptionStatus = subscriptionData.status || 'none';
+          }
+        } catch (error) {
+          console.error('Error fetching subscription status:', error);
+        }
 
         return {
           id: profile.id,
@@ -111,20 +125,20 @@ const AdminUsers = () => {
           nome_oficina: profile.nome_oficina || 'Não definido',
           is_active: profile.is_active || false,
           created_at: profile.created_at || new Date().toISOString(),
-          quote_count: count || 0,
-          subscription_status,
-          trial_ends_at: profile.trial_ends_at
+          quote_count: quoteCount,
+          subscription_status: subscriptionStatus,
+          trial_ends_at: trialEndsAt
         };
       }));
 
       // Filter out null values
-      setUsers(usersWithQuoteCounts.filter(Boolean) as User[]);
-    } catch (error) {
+      setUsers(usersWithDetails.filter(Boolean) as User[]);
+    } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar a lista de usuários.",
+        description: "Não foi possível carregar a lista de usuários: " + (error.message || "Erro desconhecido"),
       });
     } finally {
       setIsLoading(false);
@@ -148,12 +162,12 @@ const AdminUsers = () => {
         title: "Status atualizado",
         description: `Usuário ${!currentStatus ? "ativado" : "desativado"} com sucesso.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar status do usuário:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível atualizar o status do usuário.",
+        description: "Não foi possível atualizar o status do usuário: " + (error.message || "Erro desconhecido"),
       });
     }
   };

@@ -23,13 +23,13 @@ const AdminSubscriptions = () => {
         return;
       }
 
-      const { data: adminData } = await supabase
+      const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('*')
         .eq('email', session.user.email)
         .single();
 
-      if (!adminData) {
+      if (adminError || !adminData) {
         await supabase.auth.signOut();
         navigate('/admin/login');
         toast({
@@ -71,9 +71,9 @@ const AdminSubscriptions = () => {
         // Properly format the data by extracting profile information
         const formattedSubscriptions: SubscriptionWithProfile[] = data.map(sub => {
           // Extract profile data if available
-          const profileData = sub.profiles && (
-            Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles
-          );
+          const profileData = sub.profiles ? 
+            (Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles) : 
+            null;
           
           return {
             id: sub.id,
@@ -90,12 +90,12 @@ const AdminSubscriptions = () => {
 
         setSubscriptions(formattedSubscriptions);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar assinaturas:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar a lista de assinaturas.",
+        description: "Não foi possível carregar a lista de assinaturas: " + (error.message || "Erro desconhecido"),
       });
     } finally {
       setIsLoading(false);

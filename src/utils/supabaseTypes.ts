@@ -1,18 +1,22 @@
 
 import { supabase } from '@/lib/supabase';
 
+// Define specific parameter types for each RPC function
+type RPCParamMap = {
+  'create_profile': { user_id: string; user_email: string; user_full_name: string };
+  'create_subscription': { user_id: string; plan_type: string; start_date: string; end_date: string };
+  'update_onboarding_step': { step: string };
+  'create_budget': { p_user_id: string; p_cliente: string; p_veiculo: string; p_descricao: string; p_valor_total: number };
+  'create_client': { p_user_id: string; p_nome: string; p_telefone: string; p_email: string; p_veiculo: string };
+  'create_service': { p_user_id: string; p_nome: string; p_tipo: string; p_valor: number; p_descricao: string };
+  'create_profile_table': {};
+  'create_profiles_table': {};
+  'create_subscriptions_table': {};
+  'ensure_profiles_table': {};
+};
+
 // Utility type for RPC functions
-type RPCFunctionNames = 
-  | 'create_profile' 
-  | 'create_subscription' 
-  | 'update_onboarding_step'
-  | 'create_budget'
-  | 'create_client'
-  | 'create_service'
-  | 'create_profile_table'
-  | 'create_profiles_table'
-  | 'create_subscriptions_table'
-  | 'ensure_profiles_table';
+type RPCFunctionNames = keyof RPCParamMap;
 
 /**
  * Type-safe wrapper for calling Supabase RPC functions
@@ -20,8 +24,8 @@ type RPCFunctionNames =
  * @param params The parameters to pass to the function
  * @returns The result of the RPC call
  */
-export const safeRpc = <T = any>(fn: RPCFunctionNames, params?: Record<string, any>) => {
-  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
+export const safeRpc = <T = any>(fn: RPCFunctionNames, params: RPCParamMap[typeof fn]) => {
+  return supabase.rpc(fn, params as any) as unknown as Promise<{ data: T; error: any }>;
 };
 
 // Types for Profile
@@ -39,6 +43,7 @@ export interface Profile {
   plano?: string;
   is_active?: boolean;
   trial_ends_at?: string | null;
+  last_login?: string | null;
 }
 
 // Types for Subscription

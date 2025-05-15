@@ -21,8 +21,20 @@ try {
   const command = `supabase gen types typescript --project-id ${projectId} --schema public > ${typesPath}`;
   execSync(command, { stdio: 'inherit' });
   
+  // After generating types, append constants to make it easier to use RLS in our code
+  const appendConstants = `
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+`;
+  
+  fs.appendFileSync(typesPath, appendConstants);
+  
   console.log('Types generated successfully!');
   console.log(`Types file updated at: ${typesPath}`);
+  console.log('Remember to run "npm run update-types" if you make changes to your Supabase database schema.');
 } catch (error) {
   console.error('Error generating types:', error);
   process.exit(1);
