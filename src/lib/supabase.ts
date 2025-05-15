@@ -1,16 +1,67 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { toast } from '@/hooks/use-toast';
 
+// Get environment variables with fallback values for development
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Log environment variable status for debugging (not exposing actual values)
+console.log('Supabase environment variables status:', {
+  VITE_SUPABASE_URL: supabaseUrl ? 'Defined' : 'Undefined',
+  VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'Defined' : 'Undefined',
+});
+
+// Create dummy client for development if environment variables are missing
+const createDummyClient = () => {
+  console.warn('⚠️ Creating dummy Supabase client. App will work in demo mode only.');
+  
+  // Return a mock client that doesn't throw errors but doesn't actually connect to Supabase
+  return {
+    from: () => ({
+      select: () => ({ data: [], error: null }),
+      insert: () => ({ data: null, error: null }),
+      update: () => ({ data: null, error: null }),
+      delete: () => ({ data: null, error: null }),
+      eq: () => ({ data: [], error: null }),
+      single: () => ({ data: null, error: null }),
+      limit: () => ({ data: [], error: null }),
+    }),
+    auth: {
+      signInWithPassword: () => ({ data: { session: null, user: null }, error: null }),
+      signOut: () => ({ error: null }),
+      getSession: () => ({ data: { session: null }, error: null }),
+    },
+    rpc: () => ({ data: null, error: null }),
+  };
+};
+
+// Create the Supabase client with proper error handling
+export const supabase = (() => {
+  try {
+    // Only create a real client if we have the required URL
+    if (supabaseUrl && supabaseUrl.includes('supabase')) {
+      return createClient(supabaseUrl, supabaseAnonKey);
+    } else {
+      // If URL is missing or invalid, use dummy client
+      return createDummyClient() as ReturnType<typeof createClient>;
+    }
+  } catch (error) {
+    console.error('Failed to initialize Supabase client:', error);
+    return createDummyClient() as ReturnType<typeof createClient>;
+  }
+})();
 
 /**
  * Testa a conexão com o Supabase
  */
 export const testSupabaseConnection = async () => {
   try {
+    if (!supabaseUrl || !supabaseUrl.includes('supabase')) {
+      console.warn('Supabase connection skipped (URL not properly configured)');
+      return false;
+    }
+    
     const { data, error } = await supabase.from('_test_connection').select('*').limit(1);
     
     // Se houver um erro específico sobre a tabela não existir, a conexão está OK
