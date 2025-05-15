@@ -110,7 +110,7 @@ const AdminSubscriptions = () => {
     <div className="min-h-screen bg-gray-50">
       <SubscriptionHeader onBack={() => navigate('/admin/dashboard')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SubscriptionsTable subscriptions={subscriptions as any} />
+        <SubscriptionsTable subscriptions={subscriptions} />
       </main>
     </div>
   );

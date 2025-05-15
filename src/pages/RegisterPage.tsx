@@ -65,7 +65,7 @@ const RegisterPage: React.FC = () => {
       
       // Check if profiles table exists and has required columns
       console.log("Verificando se tabela de perfis existe...");
-      const { error: profilesError } = await safeRpc('create_profiles_table');
+      const { error: profilesError } = await safeRpc('create_profiles_table', {});
       
       if (profilesError) {
         console.error("Erro ao verificar tabela de perfis:", profilesError);
@@ -75,7 +75,7 @@ const RegisterPage: React.FC = () => {
       
       // Check if subscriptions table exists
       console.log("Verificando se tabela de assinaturas existe...");
-      const { error: subscriptionsError } = await safeRpc('create_subscriptions_table');
+      const { error: subscriptionsError } = await safeRpc('create_subscriptions_table', {});
       
       if (subscriptionsError) {
         console.error("Erro ao verificar tabela de assinaturas:", subscriptionsError);

@@ -25,7 +25,7 @@ type RPCFunctionNames = keyof RPCParamMap;
  * @returns The result of the RPC call
  */
 export const safeRpc = <T = any>(fn: RPCFunctionNames, params: RPCParamMap[typeof fn]) => {
-  return supabase.rpc(fn, params as any) as unknown as Promise<{ data: T; error: any }>;
+  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
 // Types for Profile

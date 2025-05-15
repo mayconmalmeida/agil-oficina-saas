@@ -56,7 +56,7 @@ export const ensureProfilesTable = async () => {
         console.log('A tabela profiles não existe. Tentando criar...');
         
         // Try to create the table via RPC function
-        const { error: rpcError } = await safeRpc('create_profile_table');
+        const { error: rpcError } = await safeRpc('create_profile_table', {});
         
         if (rpcError) {
           console.error('Erro ao criar tabela profiles via RPC:', rpcError);

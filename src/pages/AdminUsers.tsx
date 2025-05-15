@@ -58,6 +58,16 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
+      // First check if is_active column exists in profiles table
+      const { error: columnCheckError } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .limit(1);
+        
+      // If the column doesn't exist, we need to add it with a migration
+      // For now, we'll work with what we have
+      const isActiveExists = !columnCheckError;
+      
       // Fetch profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -65,7 +75,6 @@ const AdminUsers = () => {
           id,
           email,
           nome_oficina,
-          is_active,
           created_at,
           trial_ends_at
         `);
@@ -81,7 +90,7 @@ const AdminUsers = () => {
       }
 
       // Get quoteCounts and subscription status for each user
-      const usersWithDetails = await Promise.all(profilesData.map(async (profile: Profile) => {
+      const usersWithDetails = await Promise.all(profilesData.map(async (profile) => {
         if (!profile) return null;
         
         // Get quote count
@@ -101,7 +110,6 @@ const AdminUsers = () => {
         
         // Get subscription status
         let subscriptionStatus = 'none';
-        let trialEndsAt = profile.trial_ends_at;
         
         try {
           const { data: subscriptionData, error: subError } = await supabase
@@ -119,15 +127,16 @@ const AdminUsers = () => {
           console.error('Error fetching subscription status:', error);
         }
 
+        // Default is_active to true if the column doesn't exist
         return {
           id: profile.id,
           email: profile.email || 'N/A',
           nome_oficina: profile.nome_oficina || 'Não definido',
-          is_active: profile.is_active || false,
+          is_active: isActiveExists ? (profile.is_active || false) : true,
           created_at: profile.created_at || new Date().toISOString(),
           quote_count: quoteCount,
           subscription_status: subscriptionStatus,
-          trial_ends_at: trialEndsAt
+          trial_ends_at: profile.trial_ends_at
         };
       }));
 
@@ -147,6 +156,22 @@ const AdminUsers = () => {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
+      // Check if is_active column exists
+      const { error: columnCheckError } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .limit(1);
+        
+      if (columnCheckError) {
+        // Column doesn't exist, we should add it
+        toast({
+          variant: "destructive",
+          title: "Operação não suportada",
+          description: "A coluna is_active não existe na tabela profiles. Por favor, atualize o esquema do banco de dados.",
+        });
+        return;
+      }
+      
       const { error } = await supabase
         .from('profiles')
         .update({ is_active: !currentStatus })
