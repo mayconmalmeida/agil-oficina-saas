@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -7,7 +6,17 @@ type RPCParamMap = {
   'create_subscription': { user_id: string; plan_type: string; start_date: string; end_date: string };
   'update_onboarding_step': { step: string };
   'create_budget': { p_user_id: string; p_cliente: string; p_veiculo: string; p_descricao: string; p_valor_total: number };
-  'create_client': { p_user_id: string; p_nome: string; p_telefone: string; p_email: string; p_veiculo: string };
+  'create_client': { 
+    p_user_id: string; 
+    p_nome: string; 
+    p_telefone: string; 
+    p_email: string | null; 
+    p_veiculo: string;
+    p_marca: string;
+    p_modelo: string;
+    p_ano: string;
+    p_placa: string
+  };
   'create_service': { p_user_id: string; p_nome: string; p_tipo: string; p_valor: number; p_descricao: string };
   'create_profile_table': {};
   'create_profiles_table': {};
@@ -85,6 +94,10 @@ export interface Client {
   telefone: string;
   email?: string;
   veiculo: string;
+  marca?: string;
+  modelo?: string;
+  ano?: string;
+  placa?: string;
   created_at: string;
 }
 

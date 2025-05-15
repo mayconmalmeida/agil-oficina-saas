@@ -1,4 +1,3 @@
-
 -- Função para criar um perfil de usuário contornando RLS
 CREATE OR REPLACE FUNCTION create_profile(
   user_id UUID,
@@ -86,7 +85,11 @@ CREATE OR REPLACE FUNCTION create_client(
   p_nome TEXT,
   p_telefone TEXT,
   p_email TEXT,
-  p_veiculo TEXT
+  p_veiculo TEXT,
+  p_marca TEXT,
+  p_modelo TEXT,
+  p_ano TEXT,
+  p_placa TEXT
 ) RETURNS VOID AS $$
 BEGIN
   -- Cria a tabela clientes se não existir
@@ -98,6 +101,10 @@ BEGIN
       telefone TEXT NOT NULL,
       email TEXT,
       veiculo TEXT NOT NULL,
+      marca TEXT,
+      modelo TEXT,
+      ano TEXT,
+      placa TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc'', now())
     );
     
@@ -125,9 +132,22 @@ BEGIN
     END $$;
   ';
   
+  -- Add columns if they don't exist
+  BEGIN
+    EXECUTE '
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS marca TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS modelo TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS ano TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS placa TEXT;
+    ';
+  EXCEPTION WHEN OTHERS THEN
+    -- Handle errors
+    RAISE NOTICE 'Error updating clients table: %', SQLERRM;
+  END;
+  
   -- Insere o cliente
-  INSERT INTO clients (user_id, nome, telefone, email, veiculo)
-  VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo);
+  INSERT INTO clients (user_id, nome, telefone, email, veiculo, marca, modelo, ano, placa)
+  VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
