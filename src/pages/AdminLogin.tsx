@@ -8,18 +8,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import LoginForm, { formSchema } from "@/components/admin/auth/LoginForm";
 import AuthConnectionStatus from "@/components/admin/auth/AuthConnectionStatus";
 import ErrorDisplay from "@/components/admin/auth/ErrorDisplay";
-import AdminRegistrationButton from "@/components/admin/auth/AdminRegistrationButton";
-import { useAdminAuth, FormValues } from "@/hooks/useAdminAuth";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import type { FormValues } from "@/hooks/admin/types";
 
 const AdminLogin = () => {
   const { 
     isLoading, 
     connectionStatus, 
     errorMessage, 
-    isRegistering,
     checkConnection,
-    handleLogin,
-    registerAdmin
+    handleLogin
   } = useAdminAuth();
   
   const navigate = useNavigate();
@@ -34,10 +32,6 @@ const AdminLogin = () => {
   useEffect(() => {
     checkConnection();
   }, []);
-
-  const handleRegisterAdmin = async () => {
-    await registerAdmin(form);
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -57,12 +51,6 @@ const AdminLogin = () => {
               onSubmit={handleLogin} 
               isLoading={isLoading} 
               isConnectionChecking={connectionStatus === 'checking'} 
-            />
-            
-            <AdminRegistrationButton 
-              onRegister={handleRegisterAdmin}
-              isRegistering={isRegistering}
-              isDisabled={connectionStatus !== 'connected'}
             />
           </CardContent>
           <CardFooter className="flex justify-center flex-col space-y-2">

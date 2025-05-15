@@ -26,6 +26,7 @@ const formSchema = z.object({
 
 const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [tablesChecked, setTablesChecked] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,7 +38,41 @@ const RegisterPage: React.FC = () => {
     if (planoParam && ['essencial', 'premium'].includes(planoParam)) {
       setPlanoSelecionado(planoParam);
     }
+    
+    // Verificar se as tabelas existem
+    checkAndCreateTables();
   }, [location]);
+
+  // Função para verificar e criar tabelas necessárias
+  const checkAndCreateTables = async () => {
+    try {
+      // Verificar se a tabela profiles existe
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+
+      // Se a tabela não existir, criá-la
+      if (profilesError && profilesError.message.includes('does not exist')) {
+        await supabase.rpc('create_profiles_table');
+      }
+
+      // Verificar se a tabela subscriptions existe
+      const { error: subscriptionsError } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .limit(1);
+
+      // Se a tabela não existir, criá-la
+      if (subscriptionsError && subscriptionsError.message.includes('does not exist')) {
+        await supabase.rpc('create_subscriptions_table');
+      }
+
+      setTablesChecked(true);
+    } catch (error) {
+      console.error("Erro ao verificar tabelas:", error);
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

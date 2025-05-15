@@ -5,10 +5,11 @@ import { useAdminLogin } from './admin/useAdminLogin';
 import { useAdminRegistration } from './admin/useAdminRegistration';
 import { verifyConnection } from './admin/connectionUtils';
 import { checkAdminStatus } from './admin/adminAuthUtils';
-import { FormValues } from './admin/types';
+import type { FormValues } from './admin/types';
 import { UseFormReturn } from 'react-hook-form';
 
-export { FormValues } from './admin/types';
+// Usando "export type" para evitar o erro TS1205
+export type { FormValues } from './admin/types';
 
 export const useAdminAuth = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
