@@ -64,12 +64,15 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				oficina: {
-					dark: '#1A365D',
-					DEFAULT: '#2563EB',
-					light: '#60A5FA',
-					accent: '#F97316',
-					gray: '#64748B',
-					lightgray: '#F8FAFC'
+					dark: '#1E293B',        // Texto Primário - Cinza Escuro
+					DEFAULT: '#2563EB',     // Primária (Marca) - Azul Royal
+					light: '#3B82F6',       // Secundária de apoio - Azul Claro
+					accent: '#10B981',      // Destaque / Ação - Verde Limão
+					warning: '#F59E0B',     // Plano Expira / Trial - Amarelo 
+					error: '#EF4444',       // Alerta / Erro - Vermelho
+					gray: '#64748B',        // Cinza médio para textos secundários
+					lightgray: '#F8FAFC',   // Fundo Principal - Azul Neve
+					border: '#E2E8F0'       // Bordas / Detalhes - Cinza Claro
 				}
 			},
 			borderRadius: {

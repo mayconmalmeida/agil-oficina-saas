@@ -13,11 +13,11 @@ const NotesField: React.FC = () => {
       name="observacoes"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Observações</FormLabel>
+          <FormLabel className="text-oficina-dark">Observações</FormLabel>
           <FormControl>
             <Textarea
               placeholder="Observações sobre o agendamento (opcional)"
-              className="resize-none"
+              className="resize-none border-oficina-border"
               {...field}
             />
           </FormControl>

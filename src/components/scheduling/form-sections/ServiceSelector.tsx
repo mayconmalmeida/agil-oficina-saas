@@ -22,13 +22,13 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({ services }) => {
       name="servico_id"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Serviço</FormLabel>
+          <FormLabel className="text-oficina-dark">Serviço</FormLabel>
           <Select
             onValueChange={field.onChange}
             defaultValue={field.value}
           >
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger className="border-oficina-border">
                 <SelectValue placeholder="Selecione um serviço" />
               </SelectTrigger>
             </FormControl>
