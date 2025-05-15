@@ -131,7 +131,24 @@ const SchedulingPage = () => {
           .select('id, nome, placa, marca, modelo')
           .not('placa', 'is', null);
           
-        if (vehicleError) throw vehicleError;
+        if (vehicleError) {
+          console.error('Error fetching vehicles:', vehicleError);
+          setClients(clientData || []);
+          setServices(serviceData || []);
+          setVehicles([]);
+          setFilteredVehicles([]);
+          setLoadingData(false);
+          return;
+        }
+        
+        if (!vehicleData) {
+          setClients(clientData || []);
+          setServices(serviceData || []);
+          setVehicles([]);
+          setFilteredVehicles([]);
+          setLoadingData(false);
+          return;
+        }
         
         // Transform vehicle data
         const transformedVehicles = vehicleData.map(client => ({
@@ -154,6 +171,10 @@ const SchedulingPage = () => {
           title: "Erro ao carregar dados",
           description: "Não foi possível carregar os dados necessários.",
         });
+        setClients([]);
+        setServices([]);
+        setVehicles([]);
+        setFilteredVehicles([]);
       } finally {
         setLoadingData(false);
       }

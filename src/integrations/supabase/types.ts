@@ -35,28 +35,40 @@ export type Database = {
       }
       clients: {
         Row: {
+          ano: string | null
           created_at: string | null
           email: string | null
           id: string
+          marca: string | null
+          modelo: string | null
           nome: string
+          placa: string | null
           telefone: string
           user_id: string | null
           veiculo: string
         }
         Insert: {
+          ano?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
+          marca?: string | null
+          modelo?: string | null
           nome: string
+          placa?: string | null
           telefone: string
           user_id?: string | null
           veiculo: string
         }
         Update: {
+          ano?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
+          marca?: string | null
+          modelo?: string | null
           nome?: string
+          placa?: string | null
           telefone?: string
           user_id?: string | null
           veiculo?: string
@@ -271,13 +283,25 @@ export type Database = {
         Returns: undefined
       }
       create_client: {
-        Args: {
-          p_user_id: string
-          p_nome: string
-          p_telefone: string
-          p_email: string
-          p_veiculo: string
-        }
+        Args:
+          | {
+              p_user_id: string
+              p_nome: string
+              p_telefone: string
+              p_email: string
+              p_veiculo: string
+            }
+          | {
+              p_user_id: string
+              p_nome: string
+              p_telefone: string
+              p_email: string
+              p_veiculo: string
+              p_marca: string
+              p_modelo: string
+              p_ano: string
+              p_placa: string
+            }
         Returns: undefined
       }
       create_profile: {

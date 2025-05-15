@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -111,7 +110,6 @@ const VehicleRegistrationPage: React.FC = () => {
       if (clientError) throw clientError;
       
       // For now, store the vehicle information as an update to the client
-      // In a real implementation, you would create a separate vehicles table
       const { error } = await supabase
         .from('clients')
         .update({

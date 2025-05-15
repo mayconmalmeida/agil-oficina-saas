@@ -42,13 +42,26 @@ const VehiclesPage: React.FC = () => {
       setIsLoading(true);
       
       // For now, we're getting the vehicle information from the clients table
-      // In a real implementation, this would come from a separate vehicles table
       const { data, error } = await supabase
         .from('clients')
         .select('id, nome, placa, marca, modelo, ano')
         .not('placa', 'is', null);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching vehicles:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar veículos",
+          description: "Não foi possível carregar a lista de veículos.",
+        });
+        setVehicles([]);
+        return;
+      }
+      
+      if (!data) {
+        setVehicles([]);
+        return;
+      }
       
       // Transform the data to match our Vehicle interface
       const vehicleData = data.map(client => ({
@@ -68,6 +81,7 @@ const VehiclesPage: React.FC = () => {
         title: "Erro ao carregar veículos",
         description: "Não foi possível carregar a lista de veículos.",
       });
+      setVehicles([]);
     } finally {
       setIsLoading(false);
     }

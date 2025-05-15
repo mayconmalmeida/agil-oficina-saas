@@ -32,11 +32,11 @@ export function useClientSearch() {
 
       setIsLoading(true);
       try {
-        // Busca clientes por nome ou telefone
+        // Busca clientes por nome, telefone, ou placa
         const { data, error } = await supabase
           .from('clients')
           .select('*')
-          .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%`)
+          .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,placa.ilike.%${term}%`)
           .limit(10);
 
         if (error) {
