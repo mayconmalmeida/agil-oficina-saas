@@ -18,8 +18,8 @@ const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("E-mail inválido"),
   senha: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
-  nivel: z.enum(["superadmin", "operacional"], {
-    required_error: "Selecione um nível de permissão",
+  tipo: z.enum(["superadmin", "operacional"], {
+    required_error: "Selecione um tipo de permissão",
   }),
 });
 
@@ -43,7 +43,7 @@ const AdminRegister = () => {
 
       const { data: adminData, error } = await supabase
         .from('admins')
-        .select('email, nivel')
+        .select('email, is_superadmin')
         .eq('email', session.user.email)
         .single();
 
@@ -55,7 +55,7 @@ const AdminRegister = () => {
           title: "Acesso negado",
           description: "Você não tem permissão de administrador.",
         });
-      } else if (adminData.nivel !== 'superadmin') {
+      } else if (!adminData.is_superadmin) {
         navigate('/admin/dashboard');
         toast({
           variant: "destructive",
@@ -76,7 +76,7 @@ const AdminRegister = () => {
       nome: "",
       email: "",
       senha: "",
-      nivel: "operacional",
+      tipo: "operacional",
     },
   });
 
@@ -91,7 +91,7 @@ const AdminRegister = () => {
           data: {
             full_name: values.nome,
             is_admin: true,
-            nivel: values.nivel
+            is_superadmin: values.tipo === 'superadmin'
           }
         }
       });
@@ -112,7 +112,8 @@ const AdminRegister = () => {
         .insert([
           { 
             email: values.email,
-            nivel: values.nivel
+            is_superadmin: values.tipo === 'superadmin',
+            password: values.senha
           }
         ]);
         
@@ -128,7 +129,7 @@ const AdminRegister = () => {
 
       toast({
         title: "Administrador cadastrado com sucesso",
-        description: `${values.nome} foi adicionado como ${values.nivel === 'superadmin' ? 'Super Administrador' : 'Administrador Operacional'}.`,
+        description: `${values.nome} foi adicionado como ${values.tipo === 'superadmin' ? 'Super Administrador' : 'Administrador Operacional'}.`,
       });
       
       setIsLoading(false);
@@ -216,17 +217,17 @@ const AdminRegister = () => {
                 
                 <FormField
                   control={form.control}
-                  name="nivel"
+                  name="tipo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nível de Permissão</FormLabel>
+                      <FormLabel>Tipo de Permissão</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione um nível" />
+                            <SelectValue placeholder="Selecione um tipo" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

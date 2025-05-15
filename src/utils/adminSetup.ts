@@ -11,12 +11,12 @@ export const createPredefinedAdmin = async () => {
     console.log("Iniciando criação do admin predefinido");
     const email = "mayconintermediacao@gmail.com";
     const password = "Oficina@123";
-    const nivel = "superadmin";
+    const isSuper = true;
     
     try {
       // Attempt to create the admin user
       console.log("Criando admin predefinido com", email);
-      const result = await createAdminUser(email, password, nivel);
+      const result = await createAdminUser(email, password, isSuper);
       
       toast({
         title: "Administrador configurado com sucesso",
@@ -30,7 +30,7 @@ export const createPredefinedAdmin = async () => {
       // If the error is due to the user already existing, try to set as admin
       if (error.message?.includes('User already registered')) {
         console.log("Usuário já existe, tentando configurar como admin");
-        const result = await setUserAsAdmin(email, nivel);
+        const result = await setUserAsAdmin(email, isSuper);
         
         if (result.success) {
           toast({
@@ -45,7 +45,7 @@ export const createPredefinedAdmin = async () => {
           });
         }
         
-        return { email, nivel };
+        return { email, is_superadmin: isSuper };
       }
       
       // For other errors, show the error message

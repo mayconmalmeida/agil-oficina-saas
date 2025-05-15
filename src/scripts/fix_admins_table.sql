@@ -1,49 +1,73 @@
 
--- This script fixes the admins table and its RLS policies to prevent infinite recursion
+-- Fix the admins table so that both the password and nivel/is_superadmin field are properly set up
 
--- First, disable RLS temporarily to ensure we can fix everything
+-- First disable RLS to make changes
 ALTER TABLE IF EXISTS public.admins DISABLE ROW LEVEL SECURITY;
 
--- Make sure the admins table has the right structure
-CREATE TABLE IF NOT EXISTS public.admins (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT NOT NULL UNIQUE,
-  nivel TEXT DEFAULT 'operacional',
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+-- Check if nivel column exists and rename it to is_superadmin if it does
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'admins' 
+        AND column_name = 'nivel'
+    ) THEN
+        -- Rename nivel to is_superadmin
+        ALTER TABLE public.admins RENAME COLUMN nivel TO is_superadmin;
+        
+        -- Convert text values to boolean
+        UPDATE public.admins SET is_superadmin = 
+            CASE 
+                WHEN is_superadmin::text = 'superadmin' THEN true
+                ELSE false
+            END;
+            
+        -- Change column type to boolean
+        ALTER TABLE public.admins ALTER COLUMN is_superadmin TYPE boolean USING is_superadmin::boolean;
+        ALTER TABLE public.admins ALTER COLUMN is_superadmin SET DEFAULT false;
+    END IF;
+END $$;
 
--- Ensure the nivel field has a default value of 'operacional'
-ALTER TABLE public.admins ALTER COLUMN nivel SET DEFAULT 'operacional';
+-- Make sure the password field exists and is required
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'admins' 
+        AND column_name = 'password'
+    ) THEN
+        -- Add password field if it doesn't exist
+        ALTER TABLE public.admins ADD COLUMN password TEXT NOT NULL DEFAULT 'changeme';
+    END IF;
+END $$;
 
--- Drop any existing policies that might be causing problems
-DROP POLICY IF EXISTS "Admins can view their own accounts" ON public.admins;
-DROP POLICY IF EXISTS "Admins can update their own accounts" ON public.admins;
-DROP POLICY IF EXISTS "Only superadmins can create admin accounts" ON public.admins;
-DROP POLICY IF EXISTS "Only superadmins can delete admin accounts" ON public.admins;
-
--- Enable RLS again with better policies
+-- Re-enable RLS
 ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 
--- Create a policy to allow all authenticated users to view admin accounts
-CREATE POLICY "Anyone can view admin accounts"
-ON public.admins FOR SELECT
-TO authenticated
-USING (true);
+-- Create simplified RLS policies for admins table
+DROP POLICY IF EXISTS "Allow authenticated admin to read own data" ON public.admins;
+DROP POLICY IF EXISTS "Allow self-admin creation" ON public.admins;
+DROP POLICY IF EXISTS "Allow update on own admin data" ON public.admins;
 
--- Admins can insert rows (this will be checked at the application level)
-CREATE POLICY "Authenticated users can create admin accounts"
-ON public.admins FOR INSERT
-TO authenticated
-WITH CHECK (true);
+-- Create simple RLS policy that allows authenticated users to view admins
+CREATE POLICY "Allow authenticated users to view all admins" 
+  ON public.admins 
+  FOR SELECT 
+  TO authenticated 
+  USING (true);
 
--- Admins can update rows (this will be checked at the application level)
-CREATE POLICY "Authenticated users can update admin accounts"
-ON public.admins FOR UPDATE
-TO authenticated
-USING (true);
+-- Create simple RLS policy that allows authenticated users to insert into admins
+CREATE POLICY "Allow authenticated users to insert admins" 
+  ON public.admins 
+  FOR INSERT 
+  TO authenticated 
+  WITH CHECK (true);
 
--- Admins can delete rows (this will be checked at the application level)
-CREATE POLICY "Authenticated users can delete admin accounts"
-ON public.admins FOR DELETE
-TO authenticated
-USING (true);
+-- Create simple RLS policy that allows authenticated users to update admins
+CREATE POLICY "Allow authenticated users to update admins" 
+  ON public.admins 
+  FOR UPDATE 
+  TO authenticated 
+  USING (true);

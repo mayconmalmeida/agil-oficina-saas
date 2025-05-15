@@ -87,7 +87,7 @@ export const useAdminLogin = () => {
       // Verifica se o usuário é um administrador diretamente na tabela de admins
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
-        .select('email, nivel')
+        .select('email, is_superadmin')
         .eq('email', values.email)
         .maybeSingle();
 

@@ -17,7 +17,7 @@ export const checkAdminStatus = async (session: any) => {
     // Try to get admin status directly without RLS policies
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
-      .select('email, nivel')
+      .select('email, is_superadmin')
       .eq('email', session.user.email)
       .limit(1);
     
@@ -46,9 +46,9 @@ export const checkAdminStatus = async (session: any) => {
 /**
  * Creates a new admin user in the system
  */
-export const createAdminUser = async (email: string, password: string, nivel: string = 'operacional') => {
+export const createAdminUser = async (email: string, password: string, isSuper: boolean = false) => {
   try {
-    console.log(`Tentando criar admin com email: ${email}, nível: ${nivel}`);
+    console.log(`Tentando criar admin com email: ${email}, superadmin: ${isSuper}`);
     
     // First check if admin already exists in admins table
     const { data: existingAdmin, error: adminCheckError } = await supabase
@@ -75,7 +75,7 @@ export const createAdminUser = async (email: string, password: string, nivel: st
           options: {
             data: {
               is_admin: true,
-              nivel: nivel
+              is_superadmin: isSuper
             }
           }
         });
@@ -90,21 +90,21 @@ export const createAdminUser = async (email: string, password: string, nivel: st
         console.log("Usuário auth já existe e login bem-sucedido");
       }
       
-      // Admin already exists, update nivel if needed
+      // Admin already exists, update is_superadmin if needed
       if (existingAdmin.email === email) {
-        console.log(`Admin ${email} já existe, atualizando nivel para ${nivel}`);
+        console.log(`Admin ${email} já existe, atualizando is_superadmin para ${isSuper}`);
         const { error: updateError } = await supabase
           .from('admins')
-          .update({ nivel })
+          .update({ is_superadmin: isSuper })
           .eq('email', email);
           
         if (updateError) {
-          console.error("Erro ao atualizar nivel do admin:", updateError);
+          console.error("Erro ao atualizar is_superadmin do admin:", updateError);
           throw updateError;
         }
       }
       
-      return { email, nivel };
+      return { email, is_superadmin: isSuper };
     }
     
     // Create auth user first
@@ -125,7 +125,7 @@ export const createAdminUser = async (email: string, password: string, nivel: st
         options: {
           data: {
             is_admin: true,
-            nivel: nivel
+            is_superadmin: isSuper
           }
         }
       });
@@ -151,7 +151,8 @@ export const createAdminUser = async (email: string, password: string, nivel: st
       .from('admins')
       .insert([{ 
         email: email,
-        nivel: nivel
+        is_superadmin: isSuper,
+        password: password // We need to include this because it's required
       }]);
       
     if (adminError) {
@@ -160,7 +161,7 @@ export const createAdminUser = async (email: string, password: string, nivel: st
     }
 
     console.log("Admin criado com sucesso!");
-    return { id: userId, email, nivel };
+    return { id: userId, email, is_superadmin: isSuper };
   } catch (error) {
     console.error("Erro completo ao criar admin:", error);
     throw error;
@@ -170,9 +171,9 @@ export const createAdminUser = async (email: string, password: string, nivel: st
 /**
  * Função para definir um usuário existente como administrador
  */
-export const setUserAsAdmin = async (email: string, nivel: string = 'operacional') => {
+export const setUserAsAdmin = async (email: string, isSuper: boolean = false) => {
   try {
-    console.log(`Tentando definir ${email} como admin com nível ${nivel}`);
+    console.log(`Tentando definir ${email} como admin com permissões ${isSuper ? 'superadmin' : 'padrão'}`);
     
     // Verificar se o usuário já existe na tabela de administradores
     const { data: existingAdmin } = await supabase
@@ -187,9 +188,17 @@ export const setUserAsAdmin = async (email: string, nivel: string = 'operacional
     
     // Adicionar o usuário à tabela de administradores usando upsert para evitar duplicação
     console.log("Adicionando usuário como admin");
+    
+    // Need to include a password for this user
+    const tempPassword = Math.random().toString(36).substring(2, 15);
+    
     const { error } = await supabase
       .from('admins')
-      .upsert([{ email, nivel }]);
+      .upsert([{ 
+        email, 
+        is_superadmin: isSuper, 
+        password: tempPassword // Adding required password field
+      }]);
       
     if (error) {
       console.error("Erro ao definir como admin:", error);
@@ -207,11 +216,11 @@ export const setUserAsAdmin = async (email: string, nivel: string = 'operacional
 /**
  * Atualiza o nível de permissão de um administrador
  */
-export const updateAdminPermission = async (email: string, nivel: string) => {
+export const updateAdminPermission = async (email: string, isSuper: boolean) => {
   try {
     const { error } = await supabase
       .from('admins')
-      .update({ nivel })
+      .update({ is_superadmin: isSuper })
       .eq('email', email);
       
     if (error) {
