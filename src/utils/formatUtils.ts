@@ -54,4 +54,5 @@ export const formatUtils = {
   }
 };
 
+export const formatCurrency = formatUtils.formatCurrency;
 export const formatPhoneNumber = formatUtils.formatPhoneNumber;
