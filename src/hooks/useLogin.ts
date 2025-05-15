@@ -73,9 +73,9 @@ export const useLogin = () => {
         const demoUserId = "demo-user-" + Date.now();
         setUserId(demoUserId);
         
-        console.log("Redirecionando para perfil-oficina (modo demo)");
+        console.log("Redirecionando para dashboard (modo demo)");
         setIsLoading(false);
-        navigate('/perfil-oficina');
+        navigate('/dashboard');
         return;
       }
       
@@ -129,19 +129,19 @@ export const useLogin = () => {
           console.log("Usuário normal autenticado com ID:", userId);
           setUserId(userId);
           
-          // Forçar redirecionamento para perfil-oficina como primeiro passo
-          console.log("Redirecionando para perfil-oficina");
+          // Redirecionar para o dashboard em vez da página de perfil
+          console.log("Redirecionando para dashboard");
           setIsLoading(false);
-          navigate('/perfil-oficina');
+          navigate('/dashboard');
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
-        // Se falhar a verificação, tentamos redirecionar para a primeira etapa
+        // Se falhar a verificação, tentamos redirecionar para dashboard
         if (data.user?.id) {
           setUserId(data.user.id);
-          console.log("Redirecionando para perfil-oficina após erro");
+          console.log("Redirecionando para dashboard após erro");
           setIsLoading(false);
-          navigate('/perfil-oficina');
+          navigate('/dashboard');
         }
       }
     } catch (error) {
