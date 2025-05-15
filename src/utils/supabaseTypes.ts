@@ -13,8 +13,10 @@ type RPCParamMap = {
   'create_profiles_table': {};
   'create_subscriptions_table': {};
   'ensure_profiles_table': {};
-  [key: string]: any; // Add indexer to allow for any string key
 };
+
+// Define valid RPC function names as a union type
+type ValidRpcFunctions = keyof RPCParamMap;
 
 /**
  * Type-safe wrapper for calling Supabase RPC functions
@@ -22,8 +24,11 @@ type RPCParamMap = {
  * @param params The parameters to pass to the function
  * @returns The result of the RPC call
  */
-export const safeRpc = <T = any>(fn: keyof RPCParamMap, params: RPCParamMap[typeof fn]) => {
-  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
+export const safeRpc = <T = any, F extends ValidRpcFunctions = ValidRpcFunctions>(
+  fn: F, 
+  params: RPCParamMap[F]
+) => {
+  return supabase.rpc(fn as string, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
 // Types for Profile
