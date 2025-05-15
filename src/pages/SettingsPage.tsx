@@ -1,39 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import SupportSettings from '@/components/settings/SupportSettings';
-
-const passwordChangeSchema = z.object({
-  currentPassword: z.string().min(6, { message: 'A senha atual é obrigatória' }),
-  newPassword: z.string().min(6, { message: 'A nova senha deve ter pelo menos 6 caracteres' }),
-  confirmPassword: z.string().min(6, { message: 'A confirmação de senha é obrigatória' }),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "As senhas não conferem",
-  path: ["confirmPassword"],
-});
-
-const profileUpdateSchema = z.object({
-  nome_oficina: z.string().min(3, { message: 'O nome da oficina é obrigatório' }).optional(),
-  cnpj: z.string().optional(),
-  responsavel: z.string().optional(),
-  telefone: z.string().optional(),
-  endereco: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
-  cep: z.string().optional(),
-});
+import { 
+  ProfileSection, 
+  profileUpdateSchema 
+} from '@/components/settings/ProfileSection';
+import { 
+  SecuritySection, 
+  passwordChangeSchema 
+} from '@/components/settings/SecuritySection';
+import AppearanceSection from '@/components/settings/AppearanceSection';
+import { type ProfileFormValues } from '@/components/settings/ProfileSection';
+import { type PasswordFormValues } from '@/components/settings/SecuritySection';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
@@ -82,7 +68,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [userProfile, profileForm]);
   
-  const handleChangePassword = async (values: z.infer<typeof passwordChangeSchema>) => {
+  const handleChangePassword = async (values: PasswordFormValues) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({
@@ -116,7 +102,7 @@ const SettingsPage: React.FC = () => {
     }
   };
   
-  const handleUpdateProfile = async (values: z.infer<typeof profileUpdateSchema>) => {
+  const handleUpdateProfile = async (values: ProfileFormValues) => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -213,235 +199,27 @@ const SettingsPage: React.FC = () => {
               </TabsList>
               
               <TabsContent value="perfil">
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-medium">Informações da Oficina</h2>
-                    <p className="text-sm text-gray-500">Atualize as informações da sua oficina</p>
-                  </div>
-                  
-                  <Form {...profileForm}>
-                    <form onSubmit={profileForm.handleSubmit(handleUpdateProfile)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={profileForm.control}
-                          name="nome_oficina"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nome da Oficina</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="cnpj"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CNPJ</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="responsavel"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Responsável</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="telefone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Telefone</FormLabel>
-                              <FormControl>
-                                <Input {...field} value={field.value || ''} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-md font-medium">Endereço</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                          <FormField
-                            control={profileForm.control}
-                            name="endereco"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Endereço</FormLabel>
-                                <FormControl>
-                                  <Input {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={profileForm.control}
-                            name="cidade"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cidade</FormLabel>
-                                <FormControl>
-                                  <Input {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={profileForm.control}
-                            name="estado"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Estado</FormLabel>
-                                <FormControl>
-                                  <Input {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={profileForm.control}
-                            name="cep"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>CEP</FormLabel>
-                                <FormControl>
-                                  <Input {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </div>
+                <ProfileSection 
+                  form={profileForm} 
+                  onSubmit={handleUpdateProfile} 
+                  isLoading={isLoading}
+                />
               </TabsContent>
               
               <TabsContent value="seguranca">
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-medium">Alterar Senha</h2>
-                    <p className="text-sm text-gray-500">Atualize sua senha para manter sua conta segura</p>
-                  </div>
-                  
-                  <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(handleChangePassword)} className="space-y-4">
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Senha Atual</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nova Senha</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmar Nova Senha</FormLabel>
-                            <FormControl>
-                              <Input type="password" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? 'Alterando...' : 'Alterar Senha'}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-lg font-medium">Sessão</h2>
-                      <p className="text-sm text-gray-500">Encerre todas as sessões ativas</p>
-                    </div>
-                    
-                    <Button variant="destructive" onClick={handleLogout}>
-                      Sair de Todos os Dispositivos
-                    </Button>
-                  </div>
-                </div>
+                <SecuritySection 
+                  passwordForm={passwordForm}
+                  onPasswordChange={handleChangePassword}
+                  onLogout={handleLogout}
+                  isLoading={isLoading}
+                />
               </TabsContent>
               
               <TabsContent value="aparencia">
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-lg font-medium">Tema</h2>
-                    <p className="text-sm text-gray-500">Personalize a aparência da plataforma</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col gap-2">
-                      <span className="font-medium">Modo Escuro</span>
-                      <span className="text-sm text-gray-500">Habilite o modo escuro para reduzir o cansaço visual à noite</span>
-                    </div>
-                    <Switch
-                      checked={themeSetting === 'dark'}
-                      onCheckedChange={toggleTheme}
-                    />
-                  </div>
-                </div>
+                <AppearanceSection 
+                  themeSetting={themeSetting} 
+                  onToggleTheme={toggleTheme}
+                />
               </TabsContent>
               
               <TabsContent value="suporte">
