@@ -8,39 +8,38 @@ import { safeRpc } from '@/utils/supabaseTypes';
 export const supabase = supabaseClient;
 
 /**
- * Testa a conexão com o Supabase
+ * Tests the connection to Supabase and verifies authentication
  */
 export const testSupabaseConnection = async () => {
   try {
-    console.log('Attempting to test Supabase connection...');
+    console.log('Testing Supabase connection...');
     
-    // Uma forma simples de testar se a conexão está funcionando
-    // é tentar fazer uma chamada de autenticação anônima
+    // Try to get the current session to test connection
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
-      console.error('Erro de conexão com Supabase:', error);
+      console.error('Supabase connection error:', error);
       if (error.message.includes('Failed to fetch')) {
-        console.error('Erro de conexão de rede. Verifique sua internet ou as variáveis de ambiente.');
+        console.error('Network connection error. Check your internet or environment variables.');
         return false;
       }
       return false;
     }
     
-    console.log('Conexão com Supabase bem-sucedida:', data ? 'Dados recebidos' : 'Sem dados');
+    console.log('Supabase connection successful:', data ? 'Data received' : 'No data');
     return true;
   } catch (err) {
-    console.error('Erro ao testar conexão com Supabase:', err);
+    console.error('Error testing Supabase connection:', err);
     return false;
   }
 };
 
 /**
- * Verifica se a tabela profiles existe e tem as colunas necessárias
+ * Verifies if the profiles table exists and has the necessary columns
  */
 export const ensureProfilesTable = async () => {
   try {
-    console.log('Verificando se a tabela profiles existe...');
+    console.log('Checking if profiles table exists...');
     
     // Attempt to query the profiles table
     const { data, error } = await supabase
@@ -49,41 +48,41 @@ export const ensureProfilesTable = async () => {
       .limit(1);
     
     if (error) {
-      console.error('Erro ao verificar tabela profiles:', error.message);
+      console.error('Error checking profiles table:', error.message);
       
       // Table might not exist
       if (error.message.includes('does not exist')) {
-        console.log('A tabela profiles não existe. Tentando criar...');
+        console.log('Profiles table does not exist. Creating...');
         
-        // Try to create the table via RPC function
+        // Create the table via RPC function with security definer privileges
         const { error: rpcError } = await safeRpc('create_profile_table', {});
         
         if (rpcError) {
-          console.error('Erro ao criar tabela profiles via RPC:', rpcError);
+          console.error('Error creating profiles table via RPC:', rpcError);
           return false;
         }
         
-        console.log('Tabela profiles criada com sucesso via RPC');
+        console.log('Profiles table created successfully via RPC');
         return true;
       }
       
       return false;
     }
     
-    console.log('Tabela profiles existe e está acessível');
+    console.log('Profiles table exists and is accessible');
     return true;
   } catch (err) {
-    console.error('Erro inesperado ao verificar tabela profiles:', err);
+    console.error('Unexpected error checking profiles table:', err);
     return false;
   }
 };
 
 /**
- * Cria um perfil para um usuário caso não exista
+ * Creates a profile for a user if it doesn't exist, respecting RLS policies
  */
 export const createProfileIfNotExists = async (userId: string, email: string, fullName?: string) => {
   try {
-    console.log('Verificando se perfil existe para usuário:', userId);
+    console.log('Checking if profile exists for user:', userId);
     
     // Check if profile exists
     const { data: existingProfile, error: queryError } = await supabase
@@ -95,20 +94,21 @@ export const createProfileIfNotExists = async (userId: string, email: string, fu
     if (queryError) {
       // If error is not found, create profile
       if (queryError.code === 'PGRST116') {
-        console.log('Perfil não encontrado, criando novo perfil para:', email);
+        console.log('Profile not found, creating new profile for:', email);
         
-        // Try direct insert first
+        // Try direct insert first - will work if RLS policies allow it
         const { data: insertData, error: insertError } = await supabase
           .from('profiles')
           .insert({ 
             id: userId, 
             email: email, 
-            full_name: fullName || ''
+            full_name: fullName || '',
+            is_active: true 
           })
           .select();
         
         if (insertError) {
-          console.error('Erro ao inserir perfil diretamente:', insertError);
+          console.error('Error directly inserting profile:', insertError);
           
           // Try via RPC function as fallback (bypasses RLS)
           try {
@@ -119,31 +119,36 @@ export const createProfileIfNotExists = async (userId: string, email: string, fu
             });
             
             if (rpcError) {
-              console.error('Erro ao criar perfil via RPC:', rpcError);
+              console.error('Error creating profile via RPC:', rpcError);
+              toast({
+                variant: "destructive",
+                title: "Erro de perfil",
+                description: "Não foi possível criar seu perfil. Por favor, tente novamente mais tarde."
+              });
               return { success: false, error: rpcError };
             }
             
-            console.log('Perfil criado com sucesso via RPC');
+            console.log('Profile created successfully via RPC');
             return { success: true, profile: { id: userId, email } };
           } catch (rpcCatchErr) {
-            console.error('Erro ao executar RPC para criar perfil:', rpcCatchErr);
+            console.error('Error executing RPC to create profile:', rpcCatchErr);
             return { success: false, error: rpcCatchErr };
           }
         }
         
-        console.log('Perfil criado com sucesso via insert direto');
+        console.log('Profile created successfully via direct insert');
         return { success: true, profile: insertData ? insertData[0] : { id: userId, email } };
       } else {
-        console.error('Erro ao verificar perfil existente:', queryError);
+        console.error('Error checking existing profile:', queryError);
         return { success: false, error: queryError };
       }
     }
     
-    console.log('Perfil já existe para o usuário');
+    console.log('Profile already exists for user');
     return { success: true, profile: existingProfile };
     
   } catch (err) {
-    console.error('Erro inesperado ao criar perfil:', err);
+    console.error('Unexpected error creating profile:', err);
     return { success: false, error: err };
   }
 };
