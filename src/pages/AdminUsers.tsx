@@ -31,6 +31,13 @@ type WorkshopDetails = Workshop & {
   cep: string | null;
 };
 
+// Define the subscription type to fix the TypeScript error
+type Subscription = {
+  status?: string;
+  ends_at?: string;
+  started_at?: string;
+};
+
 const AdminUsers = () => {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,8 +112,9 @@ const AdminUsers = () => {
           .select('*', { count: 'exact', head: true })
           .eq('user_id', profile.id);
 
+        // Fix here: Properly handle subscriptions as array and extract status
         const subscriptionsData = Array.isArray(profile.subscriptions) ? profile.subscriptions : [];
-        const subscription = subscriptionsData[0] || {};
+        const subscription: Subscription = subscriptionsData[0] || {};
         const subscription_status = subscription.status || 'inactive';
         const trial_ends_at = profile.trial_ends_at;
         
