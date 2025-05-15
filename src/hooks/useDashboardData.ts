@@ -7,7 +7,7 @@ import { useRecentActivities } from '@/hooks/dashboard/useRecentActivities';
 import { useWorkshopStatus } from '@/hooks/dashboard/useWorkshopStatus';
 import { useChartData } from '@/hooks/dashboard/useChartData';
 
-export { WorkshopStatus, DashboardData } from '@/types/dashboardTypes';
+export type { WorkshopStatus, DashboardData } from '@/types/dashboardTypes';
 
 export const useDashboardData = (userId?: string) => {
   const { counts, isLoading: countsLoading } = useDashboardCounts(userId);
