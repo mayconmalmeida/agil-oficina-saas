@@ -1,0 +1,9 @@
+
+-- Main file to run all function definitions
+
+-- Include all the individual function files
+\i src/scripts/profile_functions.sql
+\i src/scripts/subscription_functions.sql
+\i src/scripts/client_functions.sql
+\i src/scripts/service_functions.sql
+\i src/scripts/budget_functions.sql
