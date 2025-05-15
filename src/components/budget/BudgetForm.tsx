@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { budgetFormSchema, BudgetFormValues } from './budgetSchema';
-import { useClientSearch } from '@/hooks/useClientSearch';
+import { useClientSearch, Client } from '@/hooks/useClientSearch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -54,7 +54,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
   }, [form, clearSelection]);
 
   // Quando um cliente for selecionado, atualize o formulário
-  const handleSelectClient = (client: any) => {
+  const handleSelectClient = (client: Client) => {
     selectClient(client);
     form.setValue('cliente', client.nome);
     
@@ -66,7 +66,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
   };
   
   // Formatar informações do veículo
-  const formatVehicleInfo = (client: any) => {
+  const formatVehicleInfo = (client: Client) => {
     if (client.marca && client.modelo) {
       let vehicleInfo = `${client.marca} ${client.modelo}`;
       if (client.ano) vehicleInfo += ` (${client.ano})`;
@@ -74,6 +74,14 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
       return vehicleInfo;
     }
     return client.veiculo || '';
+  };
+
+  const handlePopoverOpenChange = (open: boolean) => {
+    // Only open if there's a search term with at least 2 characters
+    if (open && (!searchTerm || searchTerm.length < 2)) {
+      return;
+    }
+    setClientSearchOpen(open);
   };
 
   return (
@@ -85,7 +93,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Cliente</FormLabel>
-              <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+              <Popover open={clientSearchOpen} onOpenChange={handlePopoverOpenChange}>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <div className="relative">
@@ -93,7 +101,6 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                         {...field} 
                         placeholder="Buscar cliente..." 
                         className="pr-10"
-                        onClick={() => setClientSearchOpen(true)}
                         onChange={(e) => {
                           field.onChange(e);
                           setSearchTerm(e.target.value);
@@ -101,6 +108,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                             clearSelection();
                             form.setValue('veiculo', '');
                           }
+                          // Open popover only if there's input with at least 2 characters
+                          setClientSearchOpen(e.target.value.length >= 2);
                         }}
                       />
                       {field.value && (
@@ -121,7 +130,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                     </div>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5}>
+                <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5} width="target">
                   <Command>
                     <CommandInput 
                       placeholder="Digite o nome do cliente..." 
@@ -137,7 +146,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                         {clients.map((client) => (
                           <CommandItem
                             key={client.id}
-                            value={client.nome}
+                            value={client.id} // Use ID as the value for unique identification
                             onSelect={() => handleSelectClient(client)}
                             className="cursor-pointer"
                           >
@@ -169,8 +178,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                 <Input 
                   placeholder="Fiat Uno 2018, Placa ABC-1234" 
                   {...field} 
-                  readOnly={field.value !== ''}
-                  className={field.value !== '' ? "bg-gray-100" : ""}
+                  readOnly={selectedClient !== null}
+                  className={selectedClient !== null ? "bg-gray-100" : ""}
                 />
               </FormControl>
               <FormMessage />

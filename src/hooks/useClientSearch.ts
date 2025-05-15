@@ -66,16 +66,16 @@ export function useClientSearch() {
     debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
 
-  const selectClient = (client: Client) => {
+  const selectClient = useCallback((client: Client) => {
     console.log('Selected client:', client);
     setSelectedClient(client);
-    setSearchTerm(client.nome); // Atualiza o termo de busca com o nome do cliente selecionado
-  };
+    setSearchTerm(client.nome);
+  }, []);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedClient(null);
     setSearchTerm('');
-  };
+  }, []);
 
   return {
     searchTerm,
