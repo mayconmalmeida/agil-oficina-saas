@@ -9,7 +9,16 @@ type ConnectionStatusProps = {
 
 const AuthConnectionStatus: React.FC<ConnectionStatusProps> = ({ status }) => {
   if (status === 'checking') {
-    return null;
+    return (
+      <Alert className="mb-4 bg-blue-50 border-blue-200">
+        <div className="animate-pulse flex items-center">
+          <div className="h-4 w-4 bg-blue-400 rounded-full mr-2"></div>
+          <AlertDescription className="text-blue-600">
+            Verificando conexão com o servidor...
+          </AlertDescription>
+        </div>
+      </Alert>
+    );
   }
   
   return (
@@ -27,7 +36,7 @@ const AuthConnectionStatus: React.FC<ConnectionStatusProps> = ({ status }) => {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Problema de conexão com o servidor. Verifique sua conexão com a internet.
+            Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar.
           </AlertDescription>
         </Alert>
       )}

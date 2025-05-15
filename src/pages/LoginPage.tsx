@@ -1,65 +1,103 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
+import Loading from '@/components/ui/loading';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading, handleLogin, setUserId } = useLogin();
+  const [checkingSession, setCheckingSession] = useState(true);
 
   // Verificar se já está autenticado
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setUserId(session.user.id);
+      try {
+        setCheckingSession(true);
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Verificar se é admin
-        const { data: adminData } = await supabase
-          .from('admins')
-          .select('*')
-          .eq('email', session.user.email)
-          .single();
+        if (session) {
+          console.log("Sessão existente encontrada:", session.user.email);
+          setUserId(session.user.id);
           
-        if (adminData) {
-          toast({
-            title: "Login automático",
-            description: "Você foi redirecionado para o painel de administração.",
-          });
-          navigate("/admin/dashboard");
-        } else {
-          // Se não for admin, verificar próximo passo do onboarding
-          try {
-            const { data: onboardingData } = await supabase
-              .from('onboarding_status')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
+          // Verificar se é admin
+          const { data: adminData, error: adminError } = await supabase
+            .from('admins')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
             
-            if (onboardingData) {
-              if (!onboardingData.profile_completed) navigate('/perfil-oficina');
-              else if (!onboardingData.clients_added) navigate('/clientes');
-              else if (!onboardingData.services_added) navigate('/produtos-servicos');
-              else if (!onboardingData.budget_created) navigate('/orcamentos/novo');
-              else navigate('/dashboard');
-            } else {
+          if (adminError) {
+            console.log("Erro ao verificar se é admin:", adminError.message);
+          }
+            
+          if (adminData) {
+            console.log("Usuário é admin, redirecionando para dashboard admin");
+            toast({
+              title: "Login automático",
+              description: "Você foi redirecionado para o painel de administração.",
+            });
+            navigate("/admin/dashboard");
+          } else {
+            // Se não for admin, verificar próximo passo do onboarding
+            try {
+              const { data: onboardingData, error: onboardingError } = await supabase
+                .from('onboarding_status')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+              
+              if (onboardingError) {
+                console.log("Erro ou status de onboarding não encontrado:", onboardingError.message);
+                console.log("Redirecionando para tela de perfil");
+                navigate('/perfil-oficina');
+                return;
+              }
+              
+              if (onboardingData) {
+                console.log("Status de onboarding encontrado:", onboardingData);
+                if (!onboardingData.profile_completed) {
+                  navigate('/perfil-oficina');
+                } else if (!onboardingData.clients_added) {
+                  navigate('/clientes');
+                } else if (!onboardingData.services_added) {
+                  navigate('/produtos-servicos');
+                } else if (!onboardingData.budget_created) {
+                  navigate('/orcamentos/novo');
+                } else {
+                  navigate('/dashboard');
+                }
+              } else {
+                console.log("Nenhum dado de onboarding encontrado, indo para perfil-oficina");
+                navigate('/perfil-oficina');
+              }
+            } catch (error) {
+              console.error("Erro ao verificar status de onboarding:", error);
               navigate('/perfil-oficina');
             }
-          } catch (error) {
-            console.error("Erro ao verificar status de onboarding:", error);
-            navigate('/perfil-oficina');
           }
+        } else {
+          console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
         }
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
+      } finally {
+        setCheckingSession(false);
       }
     };
     
     checkSession();
   }, [navigate, toast, setUserId]);
+
+  if (checkingSession) {
+    return <Loading fullscreen text="Verificando autenticação..." />;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 px-4">
@@ -92,6 +130,15 @@ const LoginPage: React.FC = () => {
                 Registre-se
               </Link>
             </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate("/admin/login")}
+              className="mt-4 text-gray-500"
+            >
+              Acesso administrativo
+            </Button>
           </CardFooter>
         </Card>
       </div>

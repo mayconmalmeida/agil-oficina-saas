@@ -21,15 +21,17 @@ export const useProfileSetup = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log("Nenhuma sessão encontrada, redirecionando para login");
           toast({
             variant: "destructive",
             title: "Acesso não autorizado",
-            description: "Você precisa fazer login para acessar este recurso.",
+            description: "Você precisa fazer login para configurar seu perfil.",
           });
           navigate('/login');
           return;
         }
         
+        console.log("Sessão encontrada para usuário:", session.user.email);
         setUserId(session.user.id);
         
         // Check if profile exists
@@ -48,6 +50,7 @@ export const useProfileSetup = () => {
             console.error('Erro ao buscar perfil:', error);
           }
         } else if (data) {
+          console.log('Perfil encontrado:', data);
           setProfileData({
             nome_oficina: data.nome_oficina || '',
             telefone: data.telefone || ''
@@ -71,13 +74,25 @@ export const useProfileSetup = () => {
   const handleProfileSaved = async () => {
     // Mark profile as completed
     if (userId) {
-      await updateProgress('profile_completed', true);
-      setSaveSuccess(true);
+      console.log("Atualizando progresso de onboarding após salvar perfil");
+      const updated = await updateProgress('profile_completed', true);
       
-      // Navigate after a short delay to show the success state
-      setTimeout(() => {
-        navigate('/clientes');
-      }, 1500);
+      if (updated) {
+        setSaveSuccess(true);
+        
+        // Navigate after a short delay to show the success state
+        setTimeout(() => {
+          console.log("Redirecionando para próxima etapa: clientes");
+          navigate('/clientes');
+        }, 1500);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Atenção",
+          description: "Seu perfil foi salvo, mas não conseguimos atualizar seu progresso. Clique em 'Próxima Etapa' manualmente.",
+        });
+        setSaveSuccess(true);
+      }
     }
   };
 

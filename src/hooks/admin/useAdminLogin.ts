@@ -41,6 +41,7 @@ export const useAdminLogin = () => {
         return;
       }
 
+      // Verifica se a sessão foi criada corretamente
       if (!data.session || !data.user) {
         setErrorMessage("Sessão de login inválida.");
         toast({
@@ -75,7 +76,6 @@ export const useAdminLogin = () => {
         return;
       }
 
-      // Modificado para verificar se há algum resultado no array
       if (!adminData || adminData.length === 0) {
         console.error("Usuário não é administrador");
         await supabase.auth.signOut();
@@ -96,6 +96,8 @@ export const useAdminLogin = () => {
         description: "Bem-vindo ao painel de administração.",
       });
 
+      // Garantir que o redirecionamento aconteça
+      console.log("Redirecionando para dashboard admin");
       navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Erro inesperado:", error);

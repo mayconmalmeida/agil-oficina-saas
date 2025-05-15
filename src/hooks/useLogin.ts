@@ -30,6 +30,7 @@ export const useLogin = () => {
           title: "Erro ao fazer login",
           description: `${error.message} (Código: ${error.status || 'desconhecido'})`,
         });
+        setIsLoading(false);
         return;
       }
 
@@ -39,6 +40,12 @@ export const useLogin = () => {
         title: "Login realizado com sucesso!",
         description: "Bem-vindo de volta ao OficinaÁgil.",
       });
+
+      if (!data.user) {
+        console.error("Login bem-sucedido, mas dados de usuário ausentes");
+        setIsLoading(false);
+        return;
+      }
 
       // Verificar se é admin
       try {
@@ -50,6 +57,7 @@ export const useLogin = () => {
 
         if (adminData) {
           console.log("Usuário é admin, redirecionando para dashboard admin");
+          setIsLoading(false);
           navigate("/admin/dashboard");
           return;
         }
@@ -57,15 +65,21 @@ export const useLogin = () => {
         // Para usuários normais, obter o próximo passo e redirecionar
         const userId = data.user?.id;
         if (userId) {
+          setUserId(userId);
           const nextStep = await getNextOnboardingStep(userId);
           console.log("Próximo passo do onboarding:", nextStep);
+          setIsLoading(false);
           navigate(nextStep);
-          setUserId(userId);
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
-        // Se falhar a verificação, armazena o ID e deixa o efeito redirecionar
-        setUserId(data.user?.id || null);
+        // Se falhar a verificação, tentamos redirecionar para a primeira etapa
+        if (data.user?.id) {
+          setUserId(data.user.id);
+          console.log("Redirecionando para perfil-oficina após erro");
+          setIsLoading(false);
+          navigate('/perfil-oficina');
+        }
       }
     } catch (error) {
       console.error("Erro inesperado:", error);
@@ -74,7 +88,6 @@ export const useLogin = () => {
         title: "Erro",
         description: "Ocorreu um erro durante o login. Verifique sua conexão.",
       });
-    } finally {
       setIsLoading(false);
     }
   };
