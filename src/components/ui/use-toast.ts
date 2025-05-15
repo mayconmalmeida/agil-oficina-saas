@@ -1,5 +1,5 @@
 
-// Corrigindo para exportar de maneira adequada
-import { useToast, toast } from "@/hooks/use-toast";
+// Direct export from the original implementation
+import { useToast, toast } from "@/components/ui/toast";
 
 export { useToast, toast };
