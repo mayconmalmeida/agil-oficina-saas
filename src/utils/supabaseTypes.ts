@@ -1,32 +1,35 @@
 
 import { supabase } from '@/lib/supabase';
 
-// Type helper for RPC functions
-export type RpcFunction = 
-  | "create_profile" 
-  | "create_subscription" 
-  | "update_onboarding_step"
-  | "create_budget"
-  | "create_client"
-  | "create_service"
-  | "create_profile_table"
-  | "create_profiles_table"
-  | "create_subscriptions_table"
-  | "ensure_profiles_table";
+// Utility type for RPC functions
+type RPCFunctionNames = 
+  | 'create_profile' 
+  | 'create_subscription' 
+  | 'update_onboarding_step'
+  | 'create_budget'
+  | 'create_client'
+  | 'create_service'
+  | 'create_profile_table'
+  | 'create_profiles_table'
+  | 'create_subscriptions_table'
+  | 'ensure_profiles_table';
 
-// Type-safe wrapper for RPC calls
-export const safeRpc = <T>(fn: RpcFunction, params?: Record<string, any>) => {
-  // @ts-ignore - We're using this to bypass TypeScript's strict checking
-  // since our generated types don't include all the RPC functions
-  return supabase.rpc(fn, params) as Promise<{ data: T | null; error: any }>;
+/**
+ * Type-safe wrapper for calling Supabase RPC functions
+ * @param fn The RPC function name
+ * @param params The parameters to pass to the function
+ * @returns The result of the RPC call
+ */
+export const safeRpc = <T = any>(fn: RPCFunctionNames, params?: Record<string, any>) => {
+  return supabase.rpc(fn as any, params) as Promise<{ data: T; error: any }>;
 };
 
-// Profile type that matches our database schema
+// Types for Profile
 export interface Profile {
   id: string;
-  created_at?: string;
   email?: string;
   full_name?: string;
+  created_at?: string;
   nome_oficina?: string;
   telefone?: string;
   endereco?: string;
@@ -37,43 +40,22 @@ export interface Profile {
   is_active?: boolean;
 }
 
-// Subscription type that matches our database schema
+// Types for Subscription
 export interface Subscription {
   id: string;
   user_id: string;
+  status: string;
   plan?: string;
-  status?: string;
-  created_at?: string;
-  started_at?: string;
+  created_at: string;
   ends_at?: string;
+  started_at?: string;
   payment_method?: string;
   amount?: number;
+  expires_at?: string;
+  trial_ends_at?: string;
 }
 
-// Budget type that matches our database schema
-export interface Budget {
-  id: string;
-  user_id: string;
-  cliente: string;
-  veiculo: string;
-  descricao: string;
-  valor_total: number;
-  status?: string;
-  created_at?: string;
-}
-
-// Client type that matches our database schema
-export interface Client {
-  id: string;
-  user_id: string;
-  nome: string;
-  telefone: string;
-  email?: string;
-  veiculo: string;
-  created_at?: string;
-}
-
-// Service type that matches our database schema
+// Types for Service
 export interface Service {
   id: string;
   user_id: string;
@@ -81,5 +63,37 @@ export interface Service {
   tipo: string;
   valor: number;
   descricao?: string;
-  created_at?: string;
+  created_at: string;
+}
+
+// Types for Client
+export interface Client {
+  id: string;
+  user_id: string;
+  nome: string;
+  telefone: string;
+  email?: string;
+  veiculo: string;
+  created_at: string;
+}
+
+// Types for Budget (Orçamento)
+export interface Budget {
+  id: string;
+  user_id: string;
+  cliente: string;
+  veiculo: string;
+  descricao: string;
+  valor_total: number;
+  status: string;
+  created_at: string;
+}
+
+// Types for combined objects
+export interface SubscriptionWithProfile extends Subscription {
+  profiles?: Profile;
+}
+
+export interface ProfileWithSubscriptions extends Profile {
+  subscriptions?: Subscription[];
 }
