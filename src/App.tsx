@@ -13,6 +13,10 @@ import AdminSubscriptions from "./pages/AdminSubscriptions";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import UserDashboard from "./pages/UserDashboard";
+import ProfileSetupPage from "./pages/ProfileSetupPage";
+import ClientsPage from "./pages/ClientsPage";
+import ServicesPage from "./pages/ServicesPage";
+import NewBudgetPage from "./pages/NewBudgetPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +31,10 @@ const App = () => (
           <Route path="/registrar" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<UserDashboard />} />
+          <Route path="/perfil-oficina" element={<ProfileSetupPage />} />
+          <Route path="/clientes" element={<ClientsPage />} />
+          <Route path="/produtos-servicos" element={<ServicesPage />} />
+          <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />

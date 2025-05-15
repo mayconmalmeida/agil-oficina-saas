@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 const formSchema = z.object({
   email: z.string().email("Digite um email válido"),
@@ -22,12 +23,16 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
+  const { redirectToNextStep } = useOnboardingProgress(userId || undefined);
 
   // Verificar se já está autenticado
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        setUserId(session.user.id);
+        
         // Verificar se é admin
         const { data: adminData } = await supabase
           .from('admins')
@@ -38,13 +43,25 @@ const LoginPage: React.FC = () => {
         if (adminData) {
           navigate("/admin/dashboard");
         } else {
-          navigate("/dashboard");
+          // Deixa o userId ser definido, e o efeito abaixo vai redirecionar
+          // baseado no status de onboarding
         }
       }
     };
     
     checkSession();
   }, [navigate]);
+  
+  // Redirecionar baseado no status de onboarding quando userId for definido
+  useEffect(() => {
+    if (userId) {
+      const checkOnboarding = async () => {
+        const nextStep = redirectToNextStep(true); // true para redirecionar imediatamente
+      };
+      
+      checkOnboarding();
+    }
+  }, [userId, redirectToNextStep]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,13 +111,13 @@ const LoginPage: React.FC = () => {
           console.log("Usuário é admin, redirecionando para dashboard admin");
           navigate("/admin/dashboard");
         } else {
-          console.log("Usuário normal, redirecionando para dashboard");
-          navigate("/dashboard");
+          console.log("Usuário normal, armazenando ID e deixando o efeito redirecionar");
+          setUserId(data.user?.id || null);
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
         // Se falhar a verificação, direciona para dashboard comum
-        navigate("/dashboard");
+        setUserId(data.user?.id || null);
       }
     } catch (error) {
       console.error("Erro inesperado:", error);
