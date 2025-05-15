@@ -1,31 +1,35 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Package, FileText } from "lucide-react";
+import { Users, Package, FileText, Car, CalendarClock } from "lucide-react";
 
 type DashboardStatsProps = {
   totalClients: number;
   totalServices: number;
   totalBudgets: number;
+  openServices: number;
+  scheduledServices: number;
   isLoading?: boolean;
 }
 
 const DashboardStats = ({ 
   totalClients, 
   totalServices, 
-  totalBudgets, 
+  totalBudgets,
+  openServices,
+  scheduledServices,
   isLoading = false 
 }: DashboardStatsProps) => {
   const stats = [
     {
-      title: "Clientes",
+      title: "Clientes Ativos",
       value: totalClients,
       icon: Users,
       description: "clientes cadastrados",
       color: "bg-blue-100 text-blue-700"
     },
     {
-      title: "Produtos/Serviços",
+      title: "Produtos & Serviços",
       value: totalServices,
       icon: Package,
       description: "itens disponíveis",
@@ -37,13 +41,27 @@ const DashboardStats = ({
       icon: FileText,
       description: "orçamentos criados",
       color: "bg-amber-100 text-amber-700"
+    },
+    {
+      title: "Serviços em Aberto",
+      value: openServices,
+      icon: Car,
+      description: "ordens em andamento",
+      color: "bg-orange-100 text-orange-700"
+    },
+    {
+      title: "Agendamentos",
+      value: scheduledServices,
+      icon: CalendarClock,
+      description: "serviços agendados",
+      color: "bg-purple-100 text-purple-700"
     }
   ];
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -57,7 +75,7 @@ const DashboardStats = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
       {stats.map((stat) => (
         <Card key={stat.title} className="transition-all duration-300 hover:shadow-md">
           <CardContent className="p-6">

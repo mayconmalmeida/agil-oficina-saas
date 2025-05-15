@@ -11,7 +11,8 @@ import WorkshopStatusCard from '@/components/dashboard/WorkshopStatusCard';
 import PlanNotice from '@/components/dashboard/PlanNotice';
 import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, Users, Settings } from 'lucide-react';
+import { BarChart3, CalendarClock, Users, FileText, Package, Settings, Car } from 'lucide-react';
+import DashboardCharts from '@/components/dashboard/DashboardCharts';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -19,9 +20,9 @@ const Dashboard: React.FC = () => {
   const { data, isLoading: dataLoading } = useDashboardData(userId);
   
   // Get premium features access
-  const { handlePremiumFeature } = usePremiumFeatures(
-    data.planType, 
-    data.daysRemaining
+  const { handlePremiumFeature, isPremium } = usePremiumFeatures(
+    data?.planType || 'essencial', 
+    data?.daysRemaining || 0
   );
   
   const isLoading = profileLoading || dataLoading;
@@ -39,46 +40,45 @@ const Dashboard: React.FC = () => {
       color: "bg-amber-100 hover:bg-amber-200 text-amber-700"
     },
     {
-      title: "Adicionar Cliente",
+      title: "Novo Agendamento",
+      icon: <CalendarClock className="h-5 w-5" />,
+      href: "/agendamentos/novo",
+      color: "bg-purple-100 hover:bg-purple-200 text-purple-700",
+      isPremium: true
+    },
+    {
+      title: "Novo Cliente",
       icon: <Users className="h-5 w-5" />,
-      href: "/clientes",
+      href: "/clientes/novo",
       color: "bg-blue-100 hover:bg-blue-200 text-blue-700"
     },
     {
-      title: "Novo Serviço",
+      title: "Novo Produto",
       icon: <Package className="h-5 w-5" />,
-      href: "/produtos-servicos",
+      href: "/produtos/novo",
       color: "bg-green-100 hover:bg-green-200 text-green-700"
     },
     {
-      title: "Editar Perfil",
+      title: "Novo Veículo",
+      icon: <Car className="h-5 w-5" />,
+      href: "/veiculos/novo",
+      color: "bg-orange-100 hover:bg-orange-200 text-orange-700"
+    },
+    {
+      title: "Configurações",
       icon: <Settings className="h-5 w-5" />,
-      href: "/perfil/editar",
-      color: "bg-purple-100 hover:bg-purple-200 text-purple-700"
+      href: "/configuracoes",
+      color: "bg-gray-100 hover:bg-gray-200 text-gray-700"
     }
   ];
   
-  // Add premium feature actions
-  const premiumActions = [
-    {
-      title: "Relatórios",
-      onClick: () => {
-        if (handlePremiumFeature('reports')) {
-          navigate('/relatorios');
-        }
-      },
-      isPremium: true
-    },
-    {
-      title: "Marketing",
-      onClick: () => {
-        if (handlePremiumFeature('marketing_tools')) {
-          navigate('/marketing');
-        }
-      },
-      isPremium: true
+  const handleQuickAction = (action: any) => {
+    if (action.isPremium && !isPremium) {
+      handlePremiumFeature('advanced_scheduling');
+      return;
     }
-  ];
+    navigate(action.href);
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
               key={action.title}
               variant="outline"
               className={`flex items-center gap-2 ${action.color} border-0`}
-              onClick={() => navigate(action.href)}
+              onClick={() => handleQuickAction(action)}
             >
               {action.icon}
               {action.title}
@@ -107,14 +107,40 @@ const Dashboard: React.FC = () => {
         
         {/* Stats Cards */}
         <section className="mb-8">
-          <h2 className="text-lg font-medium mb-4">Resumo Geral</h2>
+          <h2 className="text-lg font-medium mb-4">Visão Geral</h2>
           <DashboardStats 
             totalClients={data.totalClients}
             totalServices={data.totalServices}
             totalBudgets={data.totalBudgets}
+            openServices={data.openServices}
+            scheduledServices={data.scheduledServices}
             isLoading={isLoading}
           />
         </section>
+        
+        {/* Premium Charts Section */}
+        {(isPremium || data.daysRemaining > 0) && (
+          <section className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-medium">Relatórios Mensais</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handlePremiumFeature('reports') && navigate('/relatorios')}
+                className="text-sm"
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Ver todos relatórios
+              </Button>
+            </div>
+            <DashboardCharts 
+              monthlyRevenue={data.monthlyRevenue}
+              topServices={data.topServices}
+              topProducts={data.topProducts}
+              isLoading={isLoading}
+            />
+          </section>
+        )}
         
         {/* Status & Recent Activities */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
