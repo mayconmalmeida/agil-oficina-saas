@@ -3,9 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
-import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
-import Loading from '@/components/ui/loading';
+import SubscriptionHeader from "@/components/admin/SubscriptionHeader";
+import SubscriptionsTable from "@/components/admin/SubscriptionsTable";
 import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
 
 const AdminSubscriptions = () => {
@@ -14,6 +13,7 @@ const AdminSubscriptions = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Verificar se o usuário é um administrador
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -23,13 +23,13 @@ const AdminSubscriptions = () => {
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
+      const { data: adminData } = await supabase
         .from('admins')
         .select('*')
         .eq('email', session.user.email)
         .single();
 
-      if (adminError || !adminData) {
+      if (!adminData) {
         await supabase.auth.signOut();
         navigate('/admin/login');
         toast({
@@ -38,6 +38,7 @@ const AdminSubscriptions = () => {
           description: "Você não tem permissão de administrador.",
         });
       } else {
+        // Carregar assinaturas
         fetchSubscriptions();
       }
     };
@@ -47,70 +48,73 @@ const AdminSubscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
+      setIsLoading(true);
+      
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
-          id,
-          user_id,
-          status,
-          created_at,
-          expires_at,
-          payment_method,
-          amount,
-          profiles (
+          *,
+          profiles:user_id (
             email,
             nome_oficina
           )
-        `);
-
+        `)
+        .order('created_at', { ascending: false });
+        
       if (error) {
-        throw error;
-      }
-
-      if (data) {
-        // Properly format the data by extracting profile information
-        const formattedSubscriptions: SubscriptionWithProfile[] = data.map(sub => {
-          // Extract profile data if available
-          const profileData = sub.profiles ? 
-            (Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles) : 
-            null;
-          
-          return {
-            id: sub.id,
-            user_id: sub.user_id,
-            status: sub.status || 'unknown',
-            created_at: sub.created_at,
-            expires_at: sub.expires_at,
-            payment_method: sub.payment_method || 'N/A',
-            amount: sub.amount || 0,
-            email: profileData?.email || 'N/A',
-            nome_oficina: profileData?.nome_oficina || 'N/A'
-          };
+        console.error('Erro ao carregar assinaturas:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar as assinaturas.",
         });
-
-        setSubscriptions(formattedSubscriptions);
+        setIsLoading(false);
+        return;
       }
-    } catch (error: any) {
-      console.error('Erro ao carregar assinaturas:', error);
+      
+      // Map the data to a format that the component expects
+      const formattedData: SubscriptionWithProfile[] = data?.map(item => {
+        return {
+          id: item.id,
+          user_id: item.user_id,
+          status: item.status,
+          created_at: item.created_at,
+          expires_at: item.ends_at || '',
+          payment_method: item.payment_method || '',
+          amount: item.amount,
+          email: item.profiles?.email || '',
+          nome_oficina: item.profiles?.nome_oficina || '',
+        };
+      }) || [];
+      
+      setSubscriptions(formattedData);
+    } catch (error) {
+      console.error('Erro inesperado ao carregar assinaturas:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar a lista de assinaturas: " + (error.message || "Erro desconhecido"),
+        description: "Ocorreu um erro inesperado ao carregar as assinaturas.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return <Loading fullscreen text="Carregando lista de assinaturas..." />;
-  }
+  const handleBack = () => {
+    navigate('/admin/dashboard');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SubscriptionHeader onBack={() => navigate('/admin/dashboard')} />
+      <SubscriptionHeader onBack={handleBack} />
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SubscriptionsTable subscriptions={subscriptions} />
+        <div className="bg-white shadow rounded-lg p-6">
+          <SubscriptionsTable 
+            subscriptions={subscriptions}
+            isLoading={isLoading}
+          />
+        </div>
       </main>
     </div>
   );

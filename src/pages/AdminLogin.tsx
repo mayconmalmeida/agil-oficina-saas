@@ -11,10 +11,13 @@ import { useForm } from "react-hook-form";
 import type { FormValues } from "@/hooks/admin/types";
 import { useAdminLogin } from "@/hooks/admin/useAdminLogin";
 import { testSupabaseConnection } from "@/lib/supabase";
+import { createPredefinedAdmin } from "@/utils/adminSetup";
+import { UserPlus, Loader2 } from "lucide-react";
 
 const AdminLogin = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const { isLoading, handleLogin } = useAdminLogin();
   const navigate = useNavigate();
   
@@ -73,6 +76,21 @@ const AdminLogin = () => {
     await handleLogin(values);
   };
 
+  // Função para criar o usuário admin predefinido
+  const handleCreateAdmin = async () => {
+    if (connectionStatus === 'error') {
+      setErrorMessage("Não é possível criar um admin sem uma conexão com o servidor. Por favor, conecte o Supabase primeiro.");
+      return;
+    }
+    
+    setIsCreatingAdmin(true);
+    try {
+      await createPredefinedAdmin();
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8">
@@ -92,6 +110,32 @@ const AdminLogin = () => {
               isLoading={isLoading} 
               isConnectionChecking={connectionStatus === 'checking'} 
             />
+            
+            <div className="mt-6">
+              <Button 
+                onClick={handleCreateAdmin}
+                disabled={isCreatingAdmin || connectionStatus !== 'connected'}
+                variant="outline"
+                className="w-full"
+              >
+                {isCreatingAdmin ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Configurando admin...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Criar Admin (mayconintermediacao@gmail.com)
+                  </>
+                )}
+              </Button>
+              {connectionStatus === 'connected' && (
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Clique para criar um usuário admin com as credenciais predefinidas
+                </p>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="flex justify-center flex-col space-y-2">
             <Button

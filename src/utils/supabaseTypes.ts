@@ -13,6 +13,7 @@ type RPCParamMap = {
   'create_profiles_table': {};
   'create_subscriptions_table': {};
   'ensure_profiles_table': {};
+  [key: string]: any; // Add indexer to allow for any string key
 };
 
 // Utility type for RPC functions
@@ -108,3 +109,4 @@ export interface SubscriptionWithProfile extends Partial<Subscription> {
 export interface ProfileWithSubscriptions extends Profile {
   subscriptions?: Subscription[];
 }
+
