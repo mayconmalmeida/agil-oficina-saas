@@ -16,11 +16,19 @@ const setAdminEmail = async (email: string) => {
       return { success: true };
     }
     
-    // Inserir na tabela admin
+    // Generate a temporary password - in a real application, you might want to
+    // generate a more secure password or have the user set it
+    const tempPassword = Math.random().toString(36).substring(2, 15);
+    
+    // Inserir na tabela admin with required password field
     const { error } = await supabase
       .from('admins')
       .insert([
-        { email: email }
+        { 
+          email: email,
+          password: tempPassword, // Adding the required password field
+          is_superadmin: true // Setting as superadmin by default
+        }
       ]);
       
     if (error) {
