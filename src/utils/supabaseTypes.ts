@@ -21,7 +21,7 @@ type RPCFunctionNames =
  * @returns The result of the RPC call
  */
 export const safeRpc = <T = any>(fn: RPCFunctionNames, params?: Record<string, any>) => {
-  return supabase.rpc(fn as any, params) as Promise<{ data: T; error: any }>;
+  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
 // Types for Profile
@@ -38,6 +38,7 @@ export interface Profile {
   cep?: string;
   plano?: string;
   is_active?: boolean;
+  trial_ends_at?: string | null;
 }
 
 // Types for Subscription
@@ -50,7 +51,7 @@ export interface Subscription {
   ends_at?: string;
   started_at?: string;
   payment_method?: string;
-  amount?: number;
+  amount: number;
   expires_at?: string;
   trial_ends_at?: string;
 }
@@ -90,8 +91,13 @@ export interface Budget {
 }
 
 // Types for combined objects
-export interface SubscriptionWithProfile extends Subscription {
-  profiles?: Profile;
+export interface SubscriptionWithProfile extends Partial<Subscription> {
+  profiles?: {
+    email: string;
+    nome_oficina: string;
+  };
+  email?: string;
+  nome_oficina?: string;
 }
 
 export interface ProfileWithSubscriptions extends Profile {

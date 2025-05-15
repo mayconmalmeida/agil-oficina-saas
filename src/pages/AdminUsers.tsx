@@ -82,6 +82,8 @@ const AdminUsers = () => {
 
       // Get quoteCounts for each user
       const usersWithQuoteCounts = await Promise.all(profilesData.map(async (profile) => {
+        if (!profile) return null;
+        
         // Get quote count
         const { count, error: countError } = await supabase
           .from('orcamentos')
@@ -115,7 +117,8 @@ const AdminUsers = () => {
         };
       }));
 
-      setUsers(usersWithQuoteCounts);
+      // Filter out null values
+      setUsers(usersWithQuoteCounts.filter(Boolean) as User[]);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       toast({
@@ -132,7 +135,7 @@ const AdminUsers = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: !currentStatus } as Partial<Profile>)
+        .update({ is_active: !currentStatus })
         .eq('id', userId);
 
       if (error) throw error;

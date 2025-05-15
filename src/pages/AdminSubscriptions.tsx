@@ -6,13 +6,7 @@ import { supabase } from "@/lib/supabase";
 import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
 import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
 import Loading from '@/components/ui/loading';
-import { Subscription, Profile } from '@/utils/supabaseTypes';
-
-// Ensure this type definition matches the one in SubscriptionsTable
-type SubscriptionWithProfile = Subscription & {
-  email: string;
-  nome_oficina: string;
-};
+import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
 
 const AdminSubscriptions = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithProfile[]>([]);
@@ -77,10 +71,10 @@ const AdminSubscriptions = () => {
         // Properly format the data by extracting profile information
         const formattedSubscriptions: SubscriptionWithProfile[] = data.map(sub => {
           // Extract profile data if available
-          const profileData = Array.isArray(sub.profiles) && sub.profiles.length > 0 
-            ? sub.profiles[0] 
-            : { email: 'N/A', nome_oficina: 'N/A' };
-
+          const profileData = sub.profiles && (
+            Array.isArray(sub.profiles) ? sub.profiles[0] : sub.profiles
+          );
+          
           return {
             id: sub.id,
             user_id: sub.user_id,
@@ -89,8 +83,8 @@ const AdminSubscriptions = () => {
             expires_at: sub.expires_at,
             payment_method: sub.payment_method || 'N/A',
             amount: sub.amount || 0,
-            email: profileData.email || 'N/A',
-            nome_oficina: profileData.nome_oficina || 'N/A'
+            email: profileData?.email || 'N/A',
+            nome_oficina: profileData?.nome_oficina || 'N/A'
           };
         });
 
@@ -116,7 +110,7 @@ const AdminSubscriptions = () => {
     <div className="min-h-screen bg-gray-50">
       <SubscriptionHeader onBack={() => navigate('/admin/dashboard')} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SubscriptionsTable subscriptions={subscriptions} />
+        <SubscriptionsTable subscriptions={subscriptions as any} />
       </main>
     </div>
   );
