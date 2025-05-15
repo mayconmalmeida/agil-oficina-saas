@@ -10,8 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { Progress } from '@/components/ui/progress';
 
 const formSchema = z.object({
   nome_oficina: z.string().min(1, 'Nome da oficina é obrigatório'),
@@ -21,6 +22,7 @@ const formSchema = z.object({
 
 const ProfileSetupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>(undefined);
@@ -102,12 +104,14 @@ const ProfileSetupPage: React.FC = () => {
       // Mark profile as completed
       await updateProgress('profile_completed', true);
       
-      toast({
-        title: "Perfil salvo com sucesso!",
-        description: "Vamos continuar com os próximos passos.",
-      });
+      // Show success animation
+      setSaveSuccess(true);
       
-      navigate('/clientes');
+      // Navigate after a short delay to show the success state
+      setTimeout(() => {
+        navigate('/clientes');
+      }, 1500);
+      
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
@@ -130,11 +134,19 @@ const ProfileSetupPage: React.FC = () => {
           <p className="mt-2 text-oficina-gray">
             Preencha as informações básicas da sua oficina
           </p>
+          
+          <div className="mt-4">
+            <Progress value={25} className="h-2 w-full max-w-xs mx-auto" />
+            <p className="text-xs text-oficina-gray mt-1">Etapa 1 de 4</p>
+          </div>
         </div>
         
-        <Card>
+        <Card className={`transition-all duration-300 ${saveSuccess ? 'border-green-500 shadow-md' : ''}`}>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl">Informações da Oficina</CardTitle>
+            <CardTitle className="text-xl flex items-center justify-between">
+              <span>Informações da Oficina</span>
+              {saveSuccess && <CheckCircle className="h-5 w-5 text-green-500 animate-fade-in" />}
+            </CardTitle>
             <CardDescription>
               Estas informações aparecerão nos orçamentos e comunicações com seus clientes
             </CardDescription>
@@ -152,6 +164,8 @@ const ProfileSetupPage: React.FC = () => {
                         <Input 
                           placeholder="Auto Center São Paulo" 
                           {...field} 
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -168,7 +182,9 @@ const ProfileSetupPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="(11) 99999-9999" 
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -185,7 +201,9 @@ const ProfileSetupPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="Av. Paulista, 1000 - São Paulo/SP" 
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -195,13 +213,20 @@ const ProfileSetupPage: React.FC = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-oficina hover:bg-blue-700"
-                  disabled={isLoading}
+                  className={`w-full transition-colors ${saveSuccess 
+                    ? "bg-green-500 hover:bg-green-600" 
+                    : "bg-oficina hover:bg-blue-700"}`}
+                  disabled={isLoading || saveSuccess}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                       Salvando...
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Salvo com sucesso!
                     </>
                   ) : (
                     'Salvar e Continuar'

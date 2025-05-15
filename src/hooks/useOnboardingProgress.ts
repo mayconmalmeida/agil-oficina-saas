@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -18,7 +18,7 @@ export const useOnboardingProgress = (userId?: string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const fetchStatus = async (uid: string) => {
+  const fetchStatus = useCallback(async (uid: string) => {
     try {
       setLoading(true);
       
@@ -66,9 +66,9 @@ export const useOnboardingProgress = (userId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const updateProgress = async (field: keyof Omit<OnboardingStatus, 'user_id'>, value: boolean = true) => {
+  const updateProgress = useCallback(async (field: keyof Omit<OnboardingStatus, 'user_id'>, value: boolean = true) => {
     if (!userId) return false;
     
     try {
@@ -88,14 +88,28 @@ export const useOnboardingProgress = (userId?: string) => {
       }
       
       setStatus(prev => prev ? { ...prev, [field]: value } : null);
+      
+      // Show success toast
+      const stepMessages = {
+        profile_completed: "Perfil configurado com sucesso!",
+        clients_added: "Cliente adicionado com sucesso!",
+        services_added: "Serviço/produto adicionado com sucesso!",
+        budget_created: "Orçamento criado com sucesso!"
+      };
+      
+      toast({
+        title: "Etapa concluída",
+        description: stepMessages[field] || "Progresso atualizado!"
+      });
+      
       return true;
     } catch (err) {
       console.error('Unexpected error in updateProgress:', err);
       return false;
     }
-  };
+  }, [userId, toast]);
   
-  const getNextStep = (currentStatus: OnboardingStatus | null) => {
+  const getNextStep = useCallback((currentStatus: OnboardingStatus | null) => {
     if (!currentStatus) return '/dashboard';
     
     if (!currentStatus.profile_completed) return '/perfil-oficina';
@@ -104,26 +118,28 @@ export const useOnboardingProgress = (userId?: string) => {
     if (!currentStatus.budget_created) return '/orcamentos/novo';
     
     return '/dashboard';
-  };
+  }, []);
 
-  const redirectToNextStep = (immediate = false) => {
+  const redirectToNextStep = useCallback((immediate = false) => {
     const nextStep = getNextStep(status);
     if (immediate) {
       navigate(nextStep);
     }
     return nextStep;
-  };
+  }, [status, getNextStep, navigate]);
 
   useEffect(() => {
     const loadStatus = async () => {
       if (userId) {
         const data = await fetchStatus(userId);
         setStatus(data);
+      } else {
+        setLoading(false);
       }
     };
     
     loadStatus();
-  }, [userId]);
+  }, [userId, fetchStatus]);
 
   return {
     status,

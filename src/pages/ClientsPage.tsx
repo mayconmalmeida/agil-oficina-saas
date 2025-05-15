@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 const formSchema = z.object({
@@ -22,6 +23,7 @@ const formSchema = z.object({
 
 const ClientsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | undefined>(undefined);
@@ -91,16 +93,14 @@ const ClientsPage: React.FC = () => {
       // Mark clients as added
       await updateProgress('clients_added', true);
       
-      toast({
-        title: "Cliente adicionado com sucesso!",
-        description: "Vamos continuar com os próximos passos.",
-      });
+      // Show success state
+      setSaveSuccess(true);
       
-      // Reset form
-      form.reset();
+      // Navigate after a short delay
+      setTimeout(() => {
+        navigate('/produtos-servicos');
+      }, 1500);
       
-      // Navigate to services page
-      navigate('/produtos-servicos');
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
@@ -130,11 +130,19 @@ const ClientsPage: React.FC = () => {
           <p className="mt-2 text-oficina-gray">
             Cadastre os dados básicos do cliente e seu veículo
           </p>
+          
+          <div className="mt-4">
+            <Progress value={50} className="h-2 w-full max-w-xs mx-auto" />
+            <p className="text-xs text-oficina-gray mt-1">Etapa 2 de 4</p>
+          </div>
         </div>
         
-        <Card>
+        <Card className={`transition-all duration-300 ${saveSuccess ? 'border-green-500 shadow-md' : ''}`}>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl">Dados do Cliente</CardTitle>
+            <CardTitle className="text-xl flex items-center justify-between">
+              <span>Dados do Cliente</span>
+              {saveSuccess && <CheckCircle className="h-5 w-5 text-green-500 animate-fade-in" />}
+            </CardTitle>
             <CardDescription>
               Informações para contato e identificação
             </CardDescription>
@@ -151,7 +159,9 @@ const ClientsPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="João da Silva" 
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -168,7 +178,9 @@ const ClientsPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="(11) 99999-9999" 
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -186,7 +198,9 @@ const ClientsPage: React.FC = () => {
                         <Input 
                           placeholder="cliente@exemplo.com" 
                           type="email"
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -203,7 +217,9 @@ const ClientsPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="Fiat Uno 2018, Placa ABC-1234" 
-                          {...field} 
+                          {...field}
+                          disabled={saveSuccess}
+                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -213,28 +229,37 @@ const ClientsPage: React.FC = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-oficina hover:bg-blue-700"
-                  disabled={isLoading}
+                  className={`w-full transition-colors ${saveSuccess 
+                    ? "bg-green-500 hover:bg-green-600" 
+                    : "bg-oficina hover:bg-blue-700"}`}
+                  disabled={isLoading || saveSuccess}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
                       Adicionando...
                     </>
+                  ) : saveSuccess ? (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Cliente adicionado!
+                    </>
                   ) : (
                     'Adicionar Cliente e Continuar'
                   )}
                 </Button>
                 
-                <div className="text-center mt-4">
-                  <Button 
-                    variant="link" 
-                    onClick={skipStep}
-                    type="button"
-                  >
-                    Pular esta etapa por enquanto
-                  </Button>
-                </div>
+                {!saveSuccess && (
+                  <div className="text-center mt-4">
+                    <Button 
+                      variant="link" 
+                      onClick={skipStep}
+                      type="button"
+                    >
+                      Pular esta etapa por enquanto
+                    </Button>
+                  </div>
+                )}
               </form>
             </Form>
           </CardContent>
