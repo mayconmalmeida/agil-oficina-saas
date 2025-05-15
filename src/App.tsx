@@ -22,6 +22,13 @@ import CompanyProfilePage from './pages/CompanyProfilePage';
 import NotFound from './pages/NotFound';
 import { Toaster } from '@/components/ui/toaster';
 
+// Admin Pages
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminSubscriptions from './pages/AdminSubscriptions';
+import AdminRegister from './pages/AdminRegister';
+
 function App() {
   return (
     <Router>
@@ -46,6 +53,13 @@ function App() {
         <Route path="/produtos/novo" element={<ProductsPage />} />
         <Route path="/orcamentos" element={<BudgetPage />} />
         <Route path="/orcamentos/novo" element={<BudgetPage />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+        <Route path="/admin/register" element={<AdminRegister />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

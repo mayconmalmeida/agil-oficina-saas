@@ -16,7 +16,7 @@ export const checkAdminStatus = async (session: any) => {
     
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
-      .select('email')
+      .select('email, nivel')
       .eq('email', session.user.email)
       .limit(1);
     
@@ -45,11 +45,17 @@ export const checkAdminStatus = async (session: any) => {
 /**
  * Creates a new admin user in the system
  */
-export const createAdminUser = async (email: string, password: string) => {
+export const createAdminUser = async (email: string, password: string, nivel: string = 'operacional') => {
   // Primeiro, criar o usuário na autenticação
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        is_admin: true,
+        nivel: nivel
+      }
+    }
   });
   
   if (authError) {
@@ -66,6 +72,7 @@ export const createAdminUser = async (email: string, password: string) => {
     .insert([
       { 
         email: email,
+        nivel: nivel
       }
     ]);
     
@@ -79,7 +86,7 @@ export const createAdminUser = async (email: string, password: string) => {
 /**
  * Função para definir um usuário existente como administrador
  */
-export const setUserAsAdmin = async (email: string) => {
+export const setUserAsAdmin = async (email: string, nivel: string = 'operacional') => {
   try {
     // Verificar se o usuário já existe na tabela de administradores
     const { data: existingAdmin } = await supabase
@@ -94,7 +101,7 @@ export const setUserAsAdmin = async (email: string) => {
     // Adicionar o usuário à tabela de administradores
     const { error } = await supabase
       .from('admins')
-      .insert([{ email }]);
+      .insert([{ email, nivel }]);
       
     if (error) {
       return { success: false, message: 'Erro ao definir usuário como administrador: ' + error.message };
@@ -104,5 +111,25 @@ export const setUserAsAdmin = async (email: string) => {
   } catch (error: any) {
     console.error('Erro ao definir admin:', error);
     return { success: false, message: error.message || 'Erro ao definir usuário como administrador.' };
+  }
+};
+
+/**
+ * Atualiza o nível de permissão de um administrador
+ */
+export const updateAdminPermission = async (email: string, nivel: string) => {
+  try {
+    const { error } = await supabase
+      .from('admins')
+      .update({ nivel })
+      .eq('email', email);
+      
+    if (error) {
+      return { success: false, message: 'Erro ao atualizar permissões: ' + error.message };
+    }
+    
+    return { success: true, message: 'Permissões atualizadas com sucesso.' };
+  } catch (error: any) {
+    return { success: false, message: error.message || 'Erro ao atualizar permissões.' };
   }
 };
