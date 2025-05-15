@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { LoginFormValues } from '@/components/auth/LoginForm';
+import { getNextOnboardingStep } from '@/utils/onboardingUtils';
 
 export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -50,13 +51,20 @@ export const useLogin = () => {
         if (adminData) {
           console.log("Usuário é admin, redirecionando para dashboard admin");
           navigate("/admin/dashboard");
-        } else {
-          console.log("Usuário normal, armazenando ID e deixando o efeito redirecionar");
-          setUserId(data.user?.id || null);
+          return;
+        }
+        
+        // Para usuários normais, obter o próximo passo e redirecionar
+        const userId = data.user?.id;
+        if (userId) {
+          const nextStep = await getNextOnboardingStep(userId);
+          console.log("Próximo passo do onboarding:", nextStep);
+          navigate(nextStep);
+          setUserId(userId);
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);
-        // Se falhar a verificação, direciona para dashboard comum
+        // Se falhar a verificação, armazena o ID e deixa o efeito redirecionar
         setUserId(data.user?.id || null);
       }
     } catch (error) {

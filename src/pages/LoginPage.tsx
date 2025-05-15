@@ -4,15 +4,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, userId, handleLogin, setUserId } = useLogin();
-  const { redirectToNextStep } = useOnboardingProgress(userId || undefined);
+  const { isLoading, handleLogin, setUserId } = useLogin();
 
   // Verificar se já está autenticado
   useEffect(() => {
@@ -34,24 +32,34 @@ const LoginPage: React.FC = () => {
             description: "Você foi redirecionado para o painel de administração.",
           });
           navigate("/admin/dashboard");
+        } else {
+          // Se não for admin, verificar próximo passo do onboarding
+          try {
+            const { data: onboardingData } = await supabase
+              .from('onboarding_status')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            if (onboardingData) {
+              if (!onboardingData.profile_completed) navigate('/perfil-oficina');
+              else if (!onboardingData.clients_added) navigate('/clientes');
+              else if (!onboardingData.services_added) navigate('/produtos-servicos');
+              else if (!onboardingData.budget_created) navigate('/orcamentos/novo');
+              else navigate('/dashboard');
+            } else {
+              navigate('/perfil-oficina');
+            }
+          } catch (error) {
+            console.error("Erro ao verificar status de onboarding:", error);
+            navigate('/perfil-oficina');
+          }
         }
-        // Se não for admin, o efeito abaixo irá redirecionar baseado no status de onboarding
       }
     };
     
     checkSession();
   }, [navigate, toast, setUserId]);
-  
-  // Redirecionar baseado no status de onboarding quando userId for definido
-  useEffect(() => {
-    if (userId) {
-      const checkOnboarding = async () => {
-        redirectToNextStep(true); // true para redirecionar imediatamente
-      };
-      
-      checkOnboarding();
-    }
-  }, [userId, redirectToNextStep]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 px-4">

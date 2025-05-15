@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { getNextOnboardingStep } from '@/utils/onboardingUtils';
 
 export type OnboardingStatus = {
   user_id: string;
@@ -120,13 +121,20 @@ export const useOnboardingProgress = (userId?: string) => {
     return '/dashboard';
   }, []);
 
-  const redirectToNextStep = useCallback((immediate = false) => {
-    const nextStep = getNextStep(status);
-    if (immediate) {
-      navigate(nextStep);
+  const redirectToNextStep = useCallback(async (immediate = false) => {
+    if (!userId) return '/dashboard';
+    
+    try {
+      const nextStep = await getNextOnboardingStep(userId);
+      if (immediate) {
+        navigate(nextStep);
+      }
+      return nextStep;
+    } catch (error) {
+      console.error("Erro ao determinar próximo passo:", error);
+      return '/dashboard';
     }
-    return nextStep;
-  }, [status, getNextStep, navigate]);
+  }, [userId, navigate]);
 
   useEffect(() => {
     const loadStatus = async () => {
