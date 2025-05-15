@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -114,8 +113,8 @@ const AdminUsers = () => {
 
         // Fix here: Properly handle subscriptions as array and extract status
         const subscriptionsData = Array.isArray(profile.subscriptions) ? profile.subscriptions : [];
-        const subscription: Subscription = subscriptionsData[0] || {};
-        const subscription_status = subscription.status || 'inactive';
+        const subscription: Subscription = subscriptionsData[0] || {}; 
+        const subscription_status = subscription?.status || 'inactive';
         const trial_ends_at = profile.trial_ends_at;
         
         const workshop: Workshop = {
