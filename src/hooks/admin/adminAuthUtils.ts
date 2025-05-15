@@ -50,11 +50,7 @@ export const createAdminUser = async (email: string, password: string) => {
     .from('admins')
     .insert([
       { 
-        id: authData.user.id,
         email: email,
-        name: 'Administrador Sistema',
-        role: 'super_admin',
-        created_at: new Date().toISOString()
       }
     ]);
     
@@ -63,4 +59,36 @@ export const createAdminUser = async (email: string, password: string) => {
   }
 
   return authData.user;
+};
+
+/**
+ * Função para definir um usuário existente como administrador
+ */
+export const setUserAsAdmin = async (email: string) => {
+  try {
+    // Verificar se o usuário já existe na tabela de administradores
+    const { data: existingAdmin } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', email)
+      .single();
+      
+    if (existingAdmin) {
+      return { success: true, message: 'Usuário já é um administrador.' };
+    }
+    
+    // Adicionar o usuário à tabela de administradores
+    const { error } = await supabase
+      .from('admins')
+      .insert([{ email }]);
+      
+    if (error) {
+      return { success: false, message: 'Erro ao definir usuário como administrador: ' + error.message };
+    }
+    
+    return { success: true, message: 'Usuário definido como administrador com sucesso.' };
+  } catch (error: any) {
+    console.error('Erro ao definir admin:', error);
+    return { success: false, message: error.message || 'Erro ao definir usuário como administrador.' };
+  }
 };

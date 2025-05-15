@@ -15,22 +15,27 @@ export const verifyConnection = async () => {
       // Verificar se já existe uma sessão
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Verificar se a tabela de admins existe
+      // Verificar se a tabela de admins existe e se tem dados
       try {
-        const { error: adminTableError } = await supabase
+        const { data: adminsData, error: adminTableError } = await supabase
           .from('admins')
-          .select('id')
+          .select('id, email')
           .limit(1);
           
-        // Se a tabela não existir, criar
-        if (adminTableError && adminTableError.message.includes('does not exist')) {
-          // Aqui poderíamos criar a tabela admin via RPC, mas vamos apenas reportar o erro
-          console.error("Tabela de admins não existe");
+        // Se a tabela não existir ou der erro
+        if (adminTableError) {
+          console.error("Erro ao acessar tabela de admins:", adminTableError);
           return { 
             success: false, 
-            error: 'A tabela de administradores não está configurada. Entre em contato com o suporte.'
+            error: 'A tabela de administradores não está configurada corretamente. Entre em contato com o suporte.'
           };
         }
+        
+        // Verificar se há algum admin cadastrado
+        if (adminsData && adminsData.length === 0) {
+          console.log("Nenhum administrador cadastrado ainda");
+        }
+        
       } catch (tableError) {
         console.error("Erro ao verificar tabela de admins:", tableError);
       }

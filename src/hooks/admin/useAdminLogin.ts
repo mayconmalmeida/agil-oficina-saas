@@ -46,18 +46,22 @@ export const useAdminLogin = () => {
       // Verifica se o usuário é um administrador
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
-        .select('*')
+        .select('email')
         .eq('email', values.email)
         .single();
 
       if (adminError || !adminData) {
-        console.error("Erro ao verificar admin:", adminError);
+        console.error("Erro ao verificar admin:", adminError || "Usuário não é administrador");
         await supabase.auth.signOut();
+        
         toast({
           variant: "destructive",
           title: "Acesso negado",
           description: "Você não tem permissão de administrador.",
         });
+        
+        setErrorMessage("Este usuário não tem permissão de administrador.");
+        setIsLoading(false);
         return;
       }
 
