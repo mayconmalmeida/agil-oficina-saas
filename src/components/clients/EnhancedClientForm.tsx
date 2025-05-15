@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -11,6 +10,7 @@ import { formatPhoneNumber } from '@/utils/formatUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 export const clientFormSchema = z.object({
   nome: z.string().min(1, 'Nome do cliente é obrigatório'),
@@ -115,14 +115,15 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
       // Preparar os dados do veículo formatados
       const veiculoFormatado = `${values.veiculo.marca} ${values.veiculo.modelo} ${values.veiculo.ano}, Placa: ${values.veiculo.placa}`;
       
-      const { error } = await supabase.rpc('create_client', {
+      // Use the safeRpc function to ensure type safety
+      const { error } = await safeRpc('create_client', {
         p_user_id: session.user.id,
         p_nome: values.nome,
         p_telefone: values.telefone,
         p_email: values.email || null,
         p_veiculo: veiculoFormatado,
         p_marca: values.veiculo.marca,
-        p_modelo: values.veiculo.modelo,
+        p_modelo: values.veiculo.modelo, 
         p_ano: values.veiculo.ano,
         p_placa: values.veiculo.placa
       });
