@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -105,7 +104,9 @@ const CompanyDocuments: React.FC<CompanyDocumentsProps> = ({ documents: initialD
       // Atualizar o perfil com os novos documentos
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ documents: updatedDocuments })
+        .update({ 
+          documents: updatedDocuments 
+        } as any)
         .eq('id', userId);
       
       if (updateError) throw updateError;
@@ -145,7 +146,9 @@ const CompanyDocuments: React.FC<CompanyDocumentsProps> = ({ documents: initialD
       // Atualizar o perfil
       const { error } = await supabase
         .from('profiles')
-        .update({ documents: updatedDocuments })
+        .update({ 
+          documents: updatedDocuments 
+        } as any)
         .eq('id', userId);
       
       if (error) throw error;

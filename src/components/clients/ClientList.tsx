@@ -1,9 +1,9 @@
-
 import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye, FileText } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { formatPhoneNumber } from '@/utils/formatUtils';
+import { Client } from '@/utils/supabaseTypes';
 
 interface ClientListProps {
   onSelectClient: (clientId: string) => void;
@@ -11,110 +11,65 @@ interface ClientListProps {
   filters?: any; // Added filters prop
 }
 
-// Mock data - replace with actual data from your API
-const mockClients = [
-  {
-    id: "1",
-    nome: "João Silva",
-    telefone: "(11) 98765-4321",
-    email: "joao.silva@email.com",
-    documento: "123.456.789-00",
-    veiculos: 2,
-    ultimaVisita: "2023-05-12",
-  },
-  {
-    id: "2",
-    nome: "Maria Oliveira",
-    telefone: "(11) 91234-5678",
-    email: "maria.oliveira@email.com",
-    documento: "987.654.321-00",
-    veiculos: 1,
-    ultimaVisita: "2023-06-23",
-  },
-  {
-    id: "3",
-    nome: "Carlos Pereira",
-    telefone: "(11) 92345-6789",
-    email: "carlos.pereira@email.com",
-    documento: "456.789.123-00",
-    veiculos: 3,
-    ultimaVisita: "2023-04-05",
-  },
-];
+const ClientList: React.FC<ClientListProps> = ({ onSelectClient, searchQuery, filters }) => {
+  const clients: Client[] = [
+    {
+      id: '1',
+      user_id: 'user123',
+      nome: 'João da Silva',
+      telefone: '(11) 99999-9999',
+      email: 'joao@example.com',
+      veiculo: 'Fiat Uno 2020, Placa ABC-1234',
+      created_at: '2024-01-25T10:00:00Z'
+    },
+    {
+      id: '2',
+      user_id: 'user123',
+      nome: 'Maria Souza',
+      telefone: '(21) 88888-8888',
+      email: 'maria@example.com',
+      veiculo: 'Volkswagen Gol 2018, Placa DEF-5678',
+      created_at: '2024-01-24T15:30:00Z'
+    },
+    {
+      id: '3',
+      user_id: 'user123',
+      nome: 'Carlos Pereira',
+      telefone: '(31) 77777-7777',
+      email: 'carlos@example.com',
+      veiculo: 'Ford Ka 2022, Placa GHI-9012',
+      created_at: '2024-01-23T20:45:00Z'
+    },
+  ];
 
-const ClientList: React.FC<ClientListProps> = ({ onSelectClient, searchQuery = '' }) => {
-  // Filter clients based on search query
-  const filteredClients = mockClients.filter(client => {
-    if (!searchQuery) return true;
-    
-    const searchLower = searchQuery.toLowerCase();
+  const filteredClients = clients.filter(client => {
+    const searchStr = searchQuery ? searchQuery.toLowerCase() : '';
     return (
-      client.nome.toLowerCase().includes(searchLower) ||
-      client.telefone.includes(searchQuery) ||
-      client.email.toLowerCase().includes(searchLower) ||
-      client.documento.includes(searchQuery)
+      client.nome.toLowerCase().includes(searchStr) ||
+      client.telefone.includes(searchStr) ||
+      (client.email && client.email.toLowerCase().includes(searchStr)) ||
+      client.veiculo.toLowerCase().includes(searchStr)
     );
   });
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  };
-  
+
   return (
-    <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead className="hidden md:table-cell">Email</TableHead>
-            <TableHead className="hidden md:table-cell">CPF/CNPJ</TableHead>
-            <TableHead>Veículos</TableHead>
-            <TableHead>Última visita</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredClients.map((client) => (
-            <TableRow key={client.id}>
-              <TableCell className="font-medium">{client.nome}</TableCell>
-              <TableCell>{client.telefone}</TableCell>
-              <TableCell className="hidden md:table-cell">{client.email}</TableCell>
-              <TableCell className="hidden md:table-cell">{client.documento}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{client.veiculos}</Badge>
-              </TableCell>
-              <TableCell>{formatDate(client.ultimaVisita)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onSelectClient(client.id)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          
-          {filteredClients.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                Nenhum cliente encontrado.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {filteredClients.map(client => (
+        <Card key={client.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSelectClient(client.id)}>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">{client.nome}</h3>
+                <p className="text-sm text-gray-500">{client.veiculo}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm">{formatPhoneNumber(client.telefone)}</p>
+                {client.email && <p className="text-sm text-gray-600">{client.email}</p>}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

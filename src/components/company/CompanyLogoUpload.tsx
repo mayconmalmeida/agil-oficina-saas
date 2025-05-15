@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -85,7 +84,9 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
       // Atualiza o perfil com o novo logo
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ logo_url: publicUrl })
+        .update({ 
+          logo_url: publicUrl 
+        } as any)
         .eq('id', userId);
       
       if (updateError) throw updateError;
@@ -122,7 +123,9 @@ const CompanyLogoUpload: React.FC<CompanyLogoUploadProps> = ({ initialLogo, user
       // Remove o logo do perfil
       const { error } = await supabase
         .from('profiles')
-        .update({ logo_url: null })
+        .update({ 
+          logo_url: null 
+        } as any)
         .eq('id', userId);
       
       if (error) throw error;
