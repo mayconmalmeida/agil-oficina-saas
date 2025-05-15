@@ -12,3 +12,4 @@
 \i src/scripts/update_profiles_and_clients.sql
 \i src/scripts/agendamento_functions.sql
 
+

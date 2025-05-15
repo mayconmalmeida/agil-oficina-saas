@@ -39,3 +39,47 @@ BEGIN
     USING (auth.uid() = user_id);
 END;
 $function$;
+
+-- Create a function to insert an agendamento
+CREATE OR REPLACE FUNCTION public.create_agendamento(
+  p_user_id UUID, 
+  p_data TEXT, 
+  p_horario TEXT, 
+  p_cliente_id UUID, 
+  p_veiculo_id UUID, 
+  p_servico_id UUID, 
+  p_observacoes TEXT, 
+  p_status TEXT
+)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+BEGIN
+  -- Ensure table exists first
+  PERFORM create_agendamentos_table();
+  
+  -- Insert the agendamento
+  INSERT INTO public.agendamentos (
+    user_id, 
+    data_agendamento, 
+    horario, 
+    cliente_id, 
+    veiculo_id, 
+    servico_id, 
+    observacoes, 
+    status
+  )
+  VALUES (
+    p_user_id, 
+    p_data::DATE, 
+    p_horario, 
+    p_cliente_id, 
+    p_veiculo_id, 
+    p_servico_id, 
+    p_observacoes, 
+    p_status
+  );
+END;
+$function$;

@@ -23,7 +23,17 @@ type RPCParamMap = {
   'create_profiles_table': {};
   'create_subscriptions_table': {};
   'ensure_profiles_table': {};
-  'create_agendamentos_table': {}; // Add the missing function
+  'create_agendamentos_table': {}; 
+  'create_agendamento': { 
+    p_user_id: string; 
+    p_data: string; 
+    p_horario: string; 
+    p_cliente_id: string; 
+    p_veiculo_id: string; 
+    p_servico_id: string; 
+    p_observacoes: string; 
+    p_status: string 
+  };
 };
 
 // Define valid RPC function names as a union type
