@@ -95,8 +95,8 @@ const LoginPage: React.FC = () => {
             console.error("Erro ao verificar se é admin:", adminCheckError);
           }
           
-          console.log("Redirecionando usuário normal para perfil-oficina");
-          navigate('/perfil-oficina');
+          console.log("Redirecionando usuário normal para dashboard");
+          navigate('/dashboard');
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
         }
