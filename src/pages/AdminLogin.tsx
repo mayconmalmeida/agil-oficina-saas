@@ -42,8 +42,7 @@ const AdminLogin = () => {
           console.error("Falha na conexão com Supabase");
           setConnectionStatus('error');
           setErrorMessage(
-            "Não foi possível conectar ao servidor. Conecte o Supabase para ativar funcionalidades de backend." + 
-            " Verifique se as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão configuradas."
+            "Não foi possível conectar ao servidor. Conecte o Supabase para ativar funcionalidades de backend."
           );
         }
       } catch (error) {

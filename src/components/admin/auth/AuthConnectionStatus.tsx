@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, WifiOff } from "lucide-react";
 
 type ConnectionStatusProps = {
   status: 'checking' | 'connected' | 'error';
@@ -34,9 +34,15 @@ const AuthConnectionStatus: React.FC<ConnectionStatusProps> = ({ status }) => {
       
       {status === 'error' && (
         <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
+          <WifiOff className="h-4 w-4" />
           <AlertDescription>
-            Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar.
+            <strong>⚠️ Problema de conexão com o servidor</strong><br />
+            Não foi possível estabelecer conexão com o Supabase.<br />
+            Verifique se as variáveis <code className="bg-red-100 px-1 rounded">VITE_SUPABASE_URL</code> e <code className="bg-red-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> estão corretamente configuradas.<br />
+            Clique no botão <strong>Supabase</strong> no canto superior direito para tentar reconectar.
+            <div className="mt-2 text-xs italic">
+              Sem essa conexão, funcionalidades administrativas estarão indisponíveis.
+            </div>
           </AlertDescription>
         </Alert>
       )}

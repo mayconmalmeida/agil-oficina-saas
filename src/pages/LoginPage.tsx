@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
@@ -144,13 +144,13 @@ const LoginPage: React.FC = () => {
             )}
             
             {connectionStatus === 'error' && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {connectionError || "Problema de conexão com o servidor. Clique no botão verde Supabase no canto superior direito para conectar."}
-                  <div className="mt-2 text-sm">
-                    (O sistema funcionará em modo de demonstração)
-                  </div>
+              <Alert className="mb-4 bg-yellow-50 border-yellow-300">
+                <WifiOff className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-700">
+                  <strong>⚠️ Sistema em Modo de Demonstração</strong><br />
+                  Estamos enfrentando problemas de conexão com o servidor.<br />
+                  Algumas funcionalidades podem estar limitadas no momento.<br />
+                  Enquanto isso, você pode explorar o sistema normalmente em modo de demonstração.
                 </AlertDescription>
               </Alert>
             )}
