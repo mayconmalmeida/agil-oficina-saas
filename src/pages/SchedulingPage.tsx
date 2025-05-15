@@ -41,6 +41,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import Loading from '@/components/ui/loading';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 // Define interfaces
 interface Client {
@@ -178,29 +179,23 @@ const SchedulingPage = () => {
     
     try {
       // Prepare data for insertion
-      const scheduleData = {
-        user_id: (await supabase.auth.getUser()).data.user?.id,
-        data_agendamento: format(data.data, 'yyyy-MM-dd'),
-        horario: data.horario,
-        cliente_id: data.cliente_id,
-        veiculo_id: data.veiculo_id,
-        servico_id: data.servico_id,
-        observacoes: data.observacoes || '',
-        status: 'agendado',
-      };
+      const userId = (await supabase.auth.getUser()).data.user?.id;
       
-      // Use custom SQL query to insert the data since we might not have updated types yet
-      const { error: insertError } = await supabase
-        .rpc('create_agendamento', {
-          p_user_id: scheduleData.user_id,
-          p_data: scheduleData.data_agendamento,
-          p_horario: scheduleData.horario,
-          p_cliente_id: scheduleData.cliente_id,
-          p_veiculo_id: scheduleData.veiculo_id, 
-          p_servico_id: scheduleData.servico_id,
-          p_observacoes: scheduleData.observacoes,
-          p_status: scheduleData.status
-        });
+      if (!userId) {
+        throw new Error("Usuário não autenticado");
+      }
+      
+      // Use the safeRpc function to call the create_agendamento RPC
+      const { error: insertError } = await safeRpc('create_agendamento', {
+        p_user_id: userId,
+        p_data: format(data.data, 'yyyy-MM-dd'),
+        p_horario: data.horario,
+        p_cliente_id: data.cliente_id,
+        p_veiculo_id: data.veiculo_id, 
+        p_servico_id: data.servico_id,
+        p_observacoes: data.observacoes || '',
+        p_status: 'agendado'
+      });
       
       if (insertError) throw insertError;
       

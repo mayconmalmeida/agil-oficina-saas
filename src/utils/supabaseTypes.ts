@@ -23,7 +23,8 @@ type RPCParamMap = {
   'create_profiles_table': {};
   'create_subscriptions_table': {};
   'ensure_profiles_table': {};
-  'create_agendamentos_table': {}; 
+  'check_admin_permission': { user_email: string; required_level: string };
+  'create_agendamentos_table': {};
   'create_agendamento': { 
     p_user_id: string; 
     p_data: string; 

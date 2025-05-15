@@ -272,6 +272,23 @@ export type Database = {
         Args: { user_email: string; required_level: string }
         Returns: boolean
       }
+      create_agendamento: {
+        Args: {
+          p_user_id: string
+          p_data: string
+          p_horario: string
+          p_cliente_id: string
+          p_veiculo_id: string
+          p_servico_id: string
+          p_observacoes: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      create_agendamentos_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_budget: {
         Args: {
           p_user_id: string
