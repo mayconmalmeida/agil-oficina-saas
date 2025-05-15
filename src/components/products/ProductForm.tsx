@@ -7,8 +7,12 @@ import InventorySection from '@/components/products/form-sections/InventorySecti
 import AdditionalInfoSection from '@/components/products/form-sections/AdditionalInfoSection';
 import ProductFormSubmitButton from '@/components/products/ProductFormSubmitButton';
 
-const ProductForm: React.FC = () => {
-  const { form, isLoading, productType, controlStock, handleSubmit } = useProductForm();
+interface ProductFormProps {
+  productId?: string;
+}
+
+const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
+  const { form, isLoading, productType, controlStock, handleSubmit, isEditing } = useProductForm(productId);
   
   return (
     <Form {...form}>
@@ -21,7 +25,7 @@ const ProductForm: React.FC = () => {
         
         <AdditionalInfoSection form={form} />
         
-        <ProductFormSubmitButton isLoading={isLoading} />
+        <ProductFormSubmitButton isLoading={isLoading} isEditing={isEditing} />
       </form>
     </Form>
   );

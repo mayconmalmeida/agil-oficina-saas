@@ -1,84 +1,96 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Edit, Trash2, Package, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/utils/formatUtils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { X, Edit, Package, Archive } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import ProductForm from './ProductForm';
 
 interface ProductDetailsPanelProps {
   productId: string;
   onClose: () => void;
 }
 
-interface ProductDetails {
-  id: string;
-  nome: string;
-  codigo?: string;
-  tipo: 'produto' | 'servico';
-  preco_custo: number;
-  preco_venda: number;
-  quantidade: number;
-  estoque_minimo: number;
-  descricao?: string;
-  fornecedor?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, onClose }) => {
+  const [product, setProduct] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const { toast } = useToast();
   
   useEffect(() => {
-    const fetchProductDetails = async () => {
+    const fetchProduct = async () => {
       setIsLoading(true);
-      
       try {
-        // In a real app, this would be an API call to fetch the product details
-        // For now we'll simulate it with mock data
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .eq('id', productId)
+          .single();
         
-        // Mock data
-        const mockProduct: ProductDetails = {
-          id: productId,
-          nome: "Óleo 5W30 Sintético",
-          codigo: "OL-5W30-1L",
-          tipo: "produto",
-          preco_custo: 29.90,
-          preco_venda: 49.90,
-          quantidade: 15,
-          estoque_minimo: 5,
-          descricao: "Óleo sintético para motor de alta performance",
-          fornecedor: "Auto Peças Brasil",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        if (error) {
+          throw error;
+        }
         
-        setProduct(mockProduct);
-      } catch (error) {
-        console.error('Error fetching product details:', error);
+        setProduct(data);
+      } catch (error: any) {
+        console.error('Error fetching product:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar produto",
+          description: error.message || "Não foi possível carregar os dados do produto.",
+        });
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchProductDetails();
-  }, [productId]);
+    fetchProduct();
+  }, [productId, toast, isEditing]);
+  
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+  
+  if (isEditing) {
+    return (
+      <Card className="w-full h-full">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <CardTitle className="text-lg">Editar Produto</CardTitle>
+          <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <ProductForm productId={productId} />
+        </CardContent>
+      </Card>
+    );
+  }
   
   if (isLoading) {
     return (
-      <Card className="h-full animate-pulse">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+      <Card className="w-full h-full">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <Skeleton className="h-6 w-40" />
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-            </div>
-          ))}
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-24 w-full" />
         </CardContent>
       </Card>
     );
@@ -86,99 +98,68 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
   
   if (!product) {
     return (
-      <Card className="h-full">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg">Detalhes do Produto</CardTitle>
+      <Card className="w-full h-full">
+        <CardHeader className="flex flex-row justify-between items-center pb-2">
+          <CardTitle className="text-lg">Produto não encontrado</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">Produto não encontrado</p>
-          </div>
+        <CardContent>
+          <p className="text-muted-foreground">Não foi possível encontrar os detalhes deste produto.</p>
         </CardContent>
       </Card>
     );
   }
   
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
+    <Card className="w-full h-full">
+      <CardHeader className="flex flex-row justify-between items-center pb-2">
         <CardTitle className="text-lg">{product.nome}</CardTitle>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={handleEdit}>
+            <Edit className="h-4 w-4 mr-1" /> Editar
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-center p-4 bg-gray-100 rounded-md">
-          <Package className="h-16 w-16 text-oficina" />
+        <div className="flex justify-between items-center">
+          <Badge variant={product.tipo === 'produto' ? 'default' : 'secondary'}>
+            {product.tipo === 'produto' ? (
+              <><Package className="h-3 w-3 mr-1" /> Produto</>
+            ) : (
+              <>Serviço</>
+            )}
+          </Badge>
+          <span className="font-semibold text-lg">{formatCurrency(product.valor)}</span>
         </div>
-        
-        <div>
-          <h3 className="text-sm text-gray-500 mb-1">Código/Referência</h3>
-          <p className="font-medium">{product.codigo || 'Não informado'}</p>
-        </div>
-        
-        <div>
-          <h3 className="text-sm text-gray-500 mb-1">Tipo</h3>
-          <p className="font-medium capitalize">{product.tipo === 'produto' ? 'Produto/Peça' : 'Serviço'}</p>
-        </div>
-        
-        <div>
-          <h3 className="text-sm text-gray-500 mb-1">Preço de Custo</h3>
-          <p className="font-medium">{formatCurrency(product.preco_custo)}</p>
-        </div>
-        
-        <div>
-          <h3 className="text-sm text-gray-500 mb-1">Preço de Venda</h3>
-          <p className="font-medium text-lg text-oficina">{formatCurrency(product.preco_venda)}</p>
-        </div>
-        
-        {product.tipo === 'produto' && (
-          <div>
-            <h3 className="text-sm text-gray-500 mb-1">Estoque</h3>
-            <div className="flex gap-1 items-center">
-              <span className={`h-2.5 w-2.5 rounded-full ${product.quantidade <= product.estoque_minimo 
-                ? 'bg-red-500' 
-                : product.quantidade <= product.estoque_minimo * 2 
-                  ? 'bg-yellow-500' 
-                  : 'bg-green-500'}`}>
-              </span>
-              <p className="font-medium">{product.quantidade} unidades</p>
-              <span className="text-xs text-gray-500 ml-1">
-                (Min: {product.estoque_minimo})
-              </span>
-            </div>
-          </div>
-        )}
         
         {product.descricao && (
-          <div>
-            <h3 className="text-sm text-gray-500 mb-1">Descrição</h3>
-            <p className="text-sm">{product.descricao}</p>
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-1">Descrição</h4>
+            <p className="text-sm text-muted-foreground">{product.descricao}</p>
           </div>
         )}
         
-        {product.fornecedor && (
-          <div>
-            <h3 className="text-sm text-gray-500 mb-1">Fornecedor</h3>
-            <p className="font-medium">{product.fornecedor}</p>
+        <div className="border-t pt-4 mt-4">
+          <h4 className="text-sm font-medium mb-2">Detalhes adicionais</h4>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-muted-foreground">Criado em:</span>
+              <p>{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
+            </div>
+            {product.codigo && (
+              <div>
+                <span className="text-muted-foreground">Código:</span>
+                <p>{product.codigo}</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </CardContent>
-      
-      <CardFooter className="flex flex-col space-y-2 pt-4 border-t">
-        <Button variant="outline" className="w-full flex items-center" size="sm">
-          <Edit className="h-4 w-4 mr-2" />
-          Editar Produto
-        </Button>
-        <Button variant="outline" className="w-full flex items-center text-red-600 hover:text-red-700 hover:bg-red-50" size="sm">
-          <Trash2 className="h-4 w-4 mr-2" />
-          Excluir Produto
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -42,6 +42,14 @@ const SchedulingForm: React.FC<SchedulingFormProps> = ({ onSubmit, isLoading, cl
       observacoes: '',
     },
   });
+
+  // Handle form errors
+  const formErrors = methods.formState.errors;
+  useEffect(() => {
+    if (Object.keys(formErrors).length > 0) {
+      console.log('Form errors:', formErrors);
+    }
+  }, [formErrors]);
 
   return (
     <Card className="w-full max-w-4xl mx-auto">

@@ -32,11 +32,13 @@ export function useClientSearch() {
 
       setIsLoading(true);
       try {
+        console.log('Searching for term:', term);
+        
         // Busca clientes por nome, telefone, placa ou veículo
         const { data, error } = await supabase
           .from('clients')
           .select('*')
-          .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,placa.ilike.%${term}%,veiculo.ilike.%${term}%`)
+          .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,placa.ilike.%${term}%,veiculo.ilike.%${term}%,marca.ilike.%${term}%,modelo.ilike.%${term}%`)
           .limit(20);
 
         if (error) {
@@ -49,6 +51,7 @@ export function useClientSearch() {
           return;
         }
 
+        console.log('Search results:', data);
         setClients(data || []);
       } catch (error) {
         console.error('Erro inesperado:', error);
@@ -64,6 +67,7 @@ export function useClientSearch() {
   }, [searchTerm, debouncedSearch]);
 
   const selectClient = (client: Client) => {
+    console.log('Selected client:', client);
     setSelectedClient(client);
     setSearchTerm(client.nome); // Atualiza o termo de busca com o nome do cliente selecionado
   };

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { safeRpc } from '@/utils/supabaseTypes';
@@ -16,6 +17,8 @@ const ServicesPage: React.FC = () => {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOnboarding = location.pathname.includes('onboarding');
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const { updateProgress } = useOnboardingProgress(userId);
   
@@ -74,16 +77,27 @@ const ServicesPage: React.FC = () => {
         return;
       }
       
-      // Mark services as added
-      await updateProgress('services_added', true);
+      // Mark services as added if in onboarding
+      if (isOnboarding) {
+        await updateProgress('services_added', true);
+      }
       
       // Show success state
       setSaveSuccess(true);
       
-      // Navigate after a short delay
-      setTimeout(() => {
-        navigate('/orcamento');
-      }, 1500);
+      // Navigate after a short delay, but only during onboarding
+      if (isOnboarding) {
+        setTimeout(() => {
+          navigate('/onboarding/orcamento');
+        }, 1500);
+      } else {
+        // Reset the form after success if not in onboarding
+        setTimeout(() => {
+          setSaveSuccess(false);
+          // Redirect to services list or reset the form
+          navigate('/servicos');
+        }, 1500);
+      }
       
     } catch (error) {
       console.error('Erro inesperado:', error);
@@ -98,9 +112,11 @@ const ServicesPage: React.FC = () => {
   };
   
   const skipStep = async () => {
-    if (userId) {
+    if (userId && isOnboarding) {
       await updateProgress('services_added', true);
-      navigate('/orcamento');
+      navigate('/onboarding/orcamento');
+    } else {
+      navigate('/servicos');
     }
   };
   

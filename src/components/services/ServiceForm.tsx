@@ -20,6 +20,8 @@ const serviceFormSchema = z.object({
   }),
   valor: z.string().min(1, {
     message: "Por favor insira um valor.",
+  }).refine((val) => /^\d+([,.]\d{1,2})?$/.test(val), {
+    message: "Formato inválido. Use apenas números com até 2 casas decimais."
   }),
   descricao: z.string().optional(),
 });
@@ -49,6 +51,26 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
       descricao: '',
     },
   });
+
+  // Format number to currency as user types
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Remove non-numeric characters except commas and dots
+    value = value.replace(/[^\d,.]/g, '');
+    
+    // Replace commas with dots for calculation
+    const numericValue = value.replace(',', '.');
+    
+    // Check if it's a valid number
+    if (!isNaN(parseFloat(numericValue))) {
+      // Format with max 2 decimal places
+      form.setValue('valor', value);
+    } else if (value === '' || value === ',' || value === '.') {
+      // Allow empty value or single comma/dot
+      form.setValue('valor', value);
+    }
+  };
 
   return (
     <Form {...form}>
@@ -95,14 +117,19 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
         <FormField
           control={form.control}
           name="valor"
-          render={({ field }) => (
+          render={({ field: { value, onChange, ...restField } }) => (
             <FormItem>
               <FormLabel>Valor (R$)</FormLabel>
               <FormControl>
                 <Input
                   type="text"
                   placeholder="Ex: 150,00"
-                  {...field}
+                  value={value}
+                  onChange={(e) => {
+                    onChange(e);
+                    handleValorChange(e);
+                  }}
+                  {...restField}
                 />
               </FormControl>
               <FormDescription>
