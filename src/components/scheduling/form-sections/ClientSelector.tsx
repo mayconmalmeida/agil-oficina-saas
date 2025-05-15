@@ -7,13 +7,14 @@ import { SchedulingFormValues } from '../SchedulingForm';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { X, Search } from 'lucide-react';
-import { useClientSearch } from '@/hooks/useClientSearch';
+import { useClientSearch, Client } from '@/hooks/useClientSearch';
 
 interface ClientSelectorProps {
   clients: {
     id: string;
     nome: string;
     veiculo: string;
+    telefone: string; // Add telefone property to match Client interface
     placa?: string;
     marca?: string;
     modelo?: string;
@@ -56,7 +57,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
   };
   
   // Handle client selection from search results
-  const handleClientSelect = (client: any) => {
+  const handleClientSelect = (client: Client) => {
     selectClient(client);
     setValue('cliente_id', client.id);
     setShowSearch(false);

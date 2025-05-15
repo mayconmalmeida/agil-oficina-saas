@@ -45,7 +45,7 @@ export const useProductForm = (productId?: string) => {
     defaultValues: {
       nome: '',
       codigo: '',
-      tipo: 'produto',
+      tipo: 'produto', // Default to 'produto'
       preco_custo: '',
       preco_venda: '',
       quantidade: '0',
@@ -78,9 +78,9 @@ export const useProductForm = (productId?: string) => {
           // Format the data to match the form fields
           form.reset({
             nome: data.nome || '',
-            tipo: data.tipo || 'produto',
+            tipo: data.tipo as 'produto' | 'servico', // Cast to the expected enum type
             preco_venda: data.valor?.toString() || '',
-            preco_custo: data.valor ? (parseFloat(data.valor) * 0.7).toString() : '', // Estimate cost as 70% of selling price if not available
+            preco_custo: data.valor ? (parseFloat(data.valor) * 0.7).toString() : '', // Convert number to string
             quantidade: '0', // Default values for fields not in the services table
             estoque_minimo: '5',
             descricao: data.descricao || '',
