@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase, ensureProfilesTable } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -31,28 +31,24 @@ export const useProfileSetup = () => {
       setUserId(session.user.id);
       
       try {
-        // First, check if the table exists and has the required columns
-        const { data: tableInfo, error: tableError } = await supabase
-          .from('profiles')
-          .select('*')
-          .limit(1);
-          
-        if (tableError && tableError.message.includes("relation \"profiles\" does not exist")) {
-          console.log('Creating profiles table with required columns');
-          // Create the table if it doesn't exist
-          const { error: createError } = await supabase.rpc('create_profile_table');
-          if (createError) {
-            console.error('Error creating profiles table:', createError);
-            throw createError;
-          }
-        }
+        // Verificar e garantir que a tabela profiles existe com as colunas necessárias
+        await ensureProfilesTable();
         
-        // Check if the profile exists
-        const { data } = await supabase
+        // Verificar se o perfil existe
+        const { data, error } = await supabase
           .from('profiles')
           .select('nome_oficina, telefone')
           .eq('id', session.user.id)
           .single();
+          
+        if (error) {
+          console.error('Erro ao buscar perfil:', error);
+          if (error.code === 'PGRST116') {
+            console.log('Perfil não encontrado, criando um novo');
+          } else {
+            throw error;
+          }
+        }
           
         if (data) {
           setProfileData({
@@ -61,7 +57,12 @@ export const useProfileSetup = () => {
           });
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Erro ao buscar perfil:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar perfil",
+          description: "Ocorreu um erro ao buscar suas informações. Tente novamente mais tarde.",
+        });
       } finally {
         setIsLoading(false);
       }
