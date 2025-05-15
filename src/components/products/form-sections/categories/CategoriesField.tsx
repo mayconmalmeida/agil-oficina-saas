@@ -13,15 +13,16 @@ const CategoriesField: React.FC<CategoriesFieldProps> = ({ form }) => {
   return (
     <FormField
       control={form.control}
-      name="categorias"
-      render={({ field }) => (
+      name="categorias" // This field doesn't exist yet in ProductFormValues
+      render={({ field: { value, onChange, ...field } }) => (
         <FormItem>
           <FormLabel>Categorias</FormLabel>
           <FormControl>
             <Input 
               placeholder="Ex: Manutenção, Peças, Acessórios" 
               {...field} 
-              value={field.value || ''}
+              value={value || ''}
+              onChange={(e) => onChange(e.target.value)}
             />
           </FormControl>
           <FormDescription>

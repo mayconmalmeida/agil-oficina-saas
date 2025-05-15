@@ -130,7 +130,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading }) 
                     </div>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5} width="target">
+                <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5}>
                   <Command>
                     <CommandInput 
                       placeholder="Digite o nome do cliente..." 

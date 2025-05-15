@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,7 @@ const SettingsPage: React.FC = () => {
   const [themeSetting, setThemeSetting] = useState('light');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { profile, isLoadingProfile } = useUserProfile();
+  const { userProfile, loading: isLoadingProfile } = useUserProfile();
   
   const passwordForm = useForm({
     resolver: zodResolver(passwordChangeSchema),
@@ -56,32 +55,32 @@ const SettingsPage: React.FC = () => {
   const profileForm = useForm({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
-      nome_oficina: profile?.nome_oficina || '',
-      cnpj: profile?.cnpj || '',
-      responsavel: profile?.responsavel || '',
-      telefone: profile?.telefone || '',
-      endereco: profile?.endereco || '',
-      cidade: profile?.cidade || '',
-      estado: profile?.estado || '',
-      cep: profile?.cep || '',
+      nome_oficina: userProfile?.nome_oficina || '',
+      cnpj: userProfile?.cnpj || '',
+      responsavel: userProfile?.responsavel || '',
+      telefone: userProfile?.telefone || '',
+      endereco: userProfile?.endereco || '',
+      cidade: userProfile?.cidade || '',
+      estado: userProfile?.estado || '',
+      cep: userProfile?.cep || '',
     },
   });
   
   // Update form values when profile is loaded
-  React.useEffect(() => {
-    if (profile) {
+  useEffect(() => {
+    if (userProfile) {
       profileForm.reset({
-        nome_oficina: profile?.nome_oficina || '',
-        cnpj: profile?.cnpj || '',
-        responsavel: profile?.responsavel || '',
-        telefone: profile?.telefone || '',
-        endereco: profile?.endereco || '',
-        cidade: profile?.cidade || '',
-        estado: profile?.estado || '',
-        cep: profile?.cep || '',
+        nome_oficina: userProfile?.nome_oficina || '',
+        cnpj: userProfile?.cnpj || '',
+        responsavel: userProfile?.responsavel || '',
+        telefone: userProfile?.telefone || '',
+        endereco: userProfile?.endereco || '',
+        cidade: userProfile?.cidade || '',
+        estado: userProfile?.estado || '',
+        cep: userProfile?.cep || '',
       });
     }
-  }, [profile, profileForm]);
+  }, [userProfile, profileForm]);
   
   const handleChangePassword = async (values: z.infer<typeof passwordChangeSchema>) => {
     setIsLoading(true);

@@ -24,6 +24,7 @@ export const productSchema = z.object({
     }),
   descricao: z.string().optional(),
   fornecedor: z.string().optional(),
+  categorias: z.string().optional(),
   controlar_estoque: z.boolean().default(true),
 });
 
