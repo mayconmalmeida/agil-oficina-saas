@@ -35,7 +35,7 @@ const Hero = () => {
             </Link>
           </div>
           <div className="mt-6 text-blue-100 text-sm">
-            <span className="italic">Experimente grátis por 15 dias, sem compromisso.</span>
+            <span className="italic">Experimente grátis por 7 dias, sem compromisso.</span>
           </div>
         </div>
       </div>

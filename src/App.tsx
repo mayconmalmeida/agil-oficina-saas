@@ -50,6 +50,7 @@ function App() {
         <Route path="/onboarding/orcamento" element={<NewBudgetPage />} />
         <Route path="/perfil/editar" element={<ProfileEditPage />} />
         <Route path="/empresa/perfil" element={<CompanyProfilePage />} />
+        <Route path="/configuracoes/oficina" element={<CompanyProfilePage />} />
         
         {/* New routes */}
         <Route path="/clientes" element={<ClientManagementPage />} />
