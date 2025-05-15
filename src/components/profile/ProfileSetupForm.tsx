@@ -11,9 +11,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { CardContent } from '@/components/ui/card';
 
+// Enhanced schema with better validation
 const formSchema = z.object({
-  nome_oficina: z.string().min(1, 'Nome da oficina é obrigatório'),
-  telefone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
+  nome_oficina: z.string()
+    .min(3, 'Nome da oficina deve ter pelo menos 3 caracteres')
+    .max(50, 'Nome da oficina deve ter no máximo 50 caracteres'),
+  telefone: z.string()
+    .min(10, 'Telefone deve ter pelo menos 10 dígitos')
+    .max(15, 'Telefone deve ter no máximo 15 dígitos')
+    .regex(/^[0-9() -]+$/, 'Telefone deve conter apenas números, parênteses, espaços e hífens')
+    .refine((val) => {
+      // Count only digits
+      const digitCount = val.replace(/\D/g, '').length;
+      return digitCount >= 10 && digitCount <= 11;
+    }, 'Telefone deve ter entre 10 e 11 dígitos numéricos'),
 });
 
 export type ProfileFormValues = z.infer<typeof formSchema>;
@@ -42,7 +53,27 @@ const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
     },
+    mode: 'onBlur', // Validate on blur for better user experience
   });
+  
+  // Format phone number as user types
+  const formatPhoneNumber = (value: string) => {
+    if (!value) return value;
+    
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Format based on length
+    if (digits.length <= 2) {
+      return `(${digits}`;
+    } else if (digits.length <= 6) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    } else if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    } else {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+    }
+  };
   
   const onSubmit = async (values: ProfileFormValues) => {
     if (!userId) {
@@ -157,6 +188,10 @@ const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({
                   <Input 
                     placeholder="(11) 99999-9999" 
                     {...field}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      field.onChange(formatted);
+                    }}
                     disabled={saveSuccess}
                     className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                   />
