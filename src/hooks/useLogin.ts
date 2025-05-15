@@ -38,24 +38,35 @@ export const useLogin = () => {
 
       console.log("Login bem-sucedido, verificando tipo de usuário");
       
+      // Verificar se temos um usuário na resposta
+      if (!data || !data.user) {
+        console.error("Login bem-sucedido, mas dados de usuário ausentes");
+        toast({
+          variant: "destructive",
+          title: "Erro ao processar dados do usuário",
+          description: "Não foi possível obter os dados do usuário após o login.",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo de volta ao OficinaÁgil.",
       });
 
-      if (!data.user) {
-        console.error("Login bem-sucedido, mas dados de usuário ausentes");
-        setIsLoading(false);
-        return;
-      }
-
       // Verificar se é admin
       try {
-        const { data: adminData } = await supabase
+        console.log("Verificando se o usuário é administrador:", data.user.email);
+        const { data: adminData, error: adminError } = await supabase
           .from('admins')
           .select('*')
           .eq('email', values.email)
           .single();
+
+        if (adminError) {
+          console.log("Usuário não é admin ou ocorreu erro na verificação:", adminError.message);
+        }
 
         if (adminData) {
           console.log("Usuário é admin, redirecionando para dashboard admin");
@@ -67,10 +78,13 @@ export const useLogin = () => {
         // Para usuários normais, obter o próximo passo e redirecionar
         const userId = data.user?.id;
         if (userId) {
+          console.log("Usuário normal autenticado com ID:", userId);
           setUserId(userId);
-          // Usar o hook de redirecionamento específico
-          handleRedirect(userId, true);
+          
+          // Forçar redirecionamento para perfil-oficina como primeiro passo
+          console.log("Redirecionando para perfil-oficina");
           setIsLoading(false);
+          navigate('/perfil-oficina');
         }
       } catch (adminCheckError) {
         console.error("Erro ao verificar tipo de usuário:", adminCheckError);

@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
             .single();
             
           if (adminError) {
-            console.log("Erro ao verificar se é admin:", adminError.message);
+            console.log("Erro ao verificar se é admin ou usuário não é admin:", adminError.message);
           }
             
           if (adminData) {
@@ -47,8 +47,9 @@ const LoginPage: React.FC = () => {
             });
             navigate("/admin/dashboard");
           } else {
-            // Se não for admin, usar o hook de redirecionamento
-            handleRedirect(session.user.id, true);
+            console.log("Redirecionando usuário normal para perfil-oficina");
+            // Redirecionar diretamente para o perfil-oficina
+            navigate('/perfil-oficina');
           }
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
