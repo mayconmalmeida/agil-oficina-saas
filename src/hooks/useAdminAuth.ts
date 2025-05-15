@@ -29,7 +29,8 @@ export const useAdminAuth = () => {
         
         // Check admin status if session exists
         if (result.session) {
-          return checkAdminStatus(result.session);
+          const isAdmin = await checkAdminStatus(result.session);
+          return isAdmin;
         }
       } else {
         setConnectionStatus('error');

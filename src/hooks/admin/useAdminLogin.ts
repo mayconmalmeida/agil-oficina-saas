@@ -41,13 +41,24 @@ export const useAdminLogin = () => {
         return;
       }
 
+      if (!data.session || !data.user) {
+        setErrorMessage("Sessão de login inválida.");
+        toast({
+          variant: "destructive",
+          title: "Erro ao fazer login",
+          description: "Não foi possível iniciar sua sessão",
+        });
+        return;
+      }
+
       console.log("Login bem-sucedido, verificando se é admin");
       
       // Verifica se o usuário é um administrador
       const { data: adminData, error: adminError } = await supabase
         .from('admins')
         .select('email')
-        .eq('email', values.email);
+        .eq('email', values.email)
+        .limit(1);
 
       if (adminError) {
         console.error("Erro ao verificar admin:", adminError);

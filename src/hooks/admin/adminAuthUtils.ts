@@ -7,18 +7,34 @@ import { toast } from "@/hooks/use-toast";
  */
 export const checkAdminStatus = async (session: any) => {
   try {
+    if (!session || !session.user || !session.user.email) {
+      console.error("Sessão inválida ou sem email");
+      return false;
+    }
+
+    console.log("Verificando status admin para:", session.user.email);
+    
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
-      .select('*')
-      .eq('email', session.user.email);
+      .select('email')
+      .eq('email', session.user.email)
+      .limit(1);
+    
+    if (adminError) {
+      console.error("Erro ao verificar status de admin:", adminError);
+      return false;
+    }
       
     if (adminData && adminData.length > 0) {
+      console.log("Usuário é administrador:", session.user.email);
       toast({
         title: "Já autenticado",
         description: "Redirecionando para o painel administrativo.",
       });
       return true;
     }
+    
+    console.log("Usuário não é administrador:", session.user.email);
     return false;
   } catch (error) {
     console.error("Erro ao verificar status de admin:", error);

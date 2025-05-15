@@ -110,18 +110,24 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      // 2. Adicionar perfil na tabela de perfis
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          { 
-            id: authData.user?.id,
-            email: values.email,
-            full_name: values.full_name,
-          }
-        ]);
+      if (!authData.user) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao registrar",
+          description: "Não foi possível criar o usuário",
+        });
+        return;
+      }
+
+      // 2. Adicionar perfil na tabela de perfis - Use RPC para contornar RLS
+      const { error: profileError } = await supabase.rpc('create_profile', { 
+        user_id: authData.user.id,
+        user_email: values.email, 
+        user_full_name: values.full_name 
+      });
 
       if (profileError) {
+        console.error("Erro ao criar perfil:", profileError);
         toast({
           variant: "destructive",
           title: "Erro ao criar perfil",
@@ -130,24 +136,20 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      // 3. Criar uma assinatura de teste
+      // 3. Criar uma assinatura de teste - Use RPC para contornar RLS
       const dataAtual = new Date();
       const dataExpiracao = new Date();
       dataExpiracao.setDate(dataExpiracao.getDate() + 7); // 7 dias de teste
 
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .insert([
-          { 
-            user_id: authData.user?.id,
-            plan: planoSelecionado,
-            status: 'trial',
-            started_at: dataAtual.toISOString(),
-            ends_at: dataExpiracao.toISOString(),
-          }
-        ]);
+      const { error: subscriptionError } = await supabase.rpc('create_subscription', {
+        user_id: authData.user.id,
+        plan_type: planoSelecionado,
+        start_date: dataAtual.toISOString(),
+        end_date: dataExpiracao.toISOString()
+      });
 
       if (subscriptionError) {
+        console.error("Erro ao criar assinatura:", subscriptionError);
         toast({
           variant: "destructive",
           title: "Erro ao criar assinatura",
