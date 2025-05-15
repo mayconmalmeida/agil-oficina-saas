@@ -37,24 +37,44 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
         <div className="grid gap-6 py-4 md:grid-cols-2">
           {/* Plano Essencial */}
           <div className="border rounded-md p-5 space-y-4">
-            <div className="font-medium text-lg">Essencial</div>
+            <div className="font-medium text-lg">OficinaÁgil Essencial</div>
             <div>
               <div className="text-2xl font-bold">R$ 39,90<span className="text-sm font-normal">/mês</span></div>
-              <div className="text-sm text-muted-foreground">R$ 430,92/ano (10% de desconto)</div>
+              <div className="text-sm text-muted-foreground">por usuário</div>
+            </div>
+            
+            <div className="text-xs text-muted-foreground">
+              Indicado para pequenas oficinas que estão começando.
             </div>
             
             <ul className="space-y-2 text-sm">
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Orçamentos ilimitados</span>
+                <span>Sistema de orçamentos completo</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Cadastro de clientes</span>
+                <span>Cadastro de clientes ilimitado</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Gestão de estoque básica</span>
+                <span>Cadastro de produtos e peças</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Controle de estoque</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Gestão de veículos</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Suporte técnico por e-mail</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Atualizações constantes</span>
               </li>
             </ul>
             
@@ -63,7 +83,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
                 onClick={() => handleUpgrade('essencial', 'monthly')} 
                 className="w-full"
               >
-                Mensal
+                Assinar Mensal
               </Button>
               <Button 
                 onClick={() => handleUpgrade('essencial', 'yearly')} 
@@ -80,28 +100,40 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
             <div className="absolute -top-3 right-4 bg-purple-600 text-white text-xs px-3 py-1 rounded-full">
               RECOMENDADO
             </div>
-            <div className="font-medium text-lg">Premium</div>
+            <div className="font-medium text-lg">OficinaÁgil Premium</div>
             <div>
               <div className="text-2xl font-bold">R$ 79,90<span className="text-sm font-normal">/mês</span></div>
-              <div className="text-sm text-muted-foreground">R$ 863,12/ano (10% de desconto)</div>
+              <div className="text-sm text-muted-foreground">por usuário</div>
+            </div>
+            
+            <div className="text-xs text-muted-foreground">
+              Para oficinas que querem crescer com automação e gestão completa.
             </div>
             
             <ul className="space-y-2 text-sm">
-              <li className="flex items-start">
+              <li className="flex items-start font-medium">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Tudo do plano Essencial</span>
+                <span>Tudo do plano Essencial, mais:</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Relatórios avançados</span>
+                <span>Relatórios gerenciais</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Agendamentos integrados</span>
+                <span>Exportação XML para contabilidade</span>
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                <span>Suporte prioritário</span>
+                <span>Ferramenta de campanhas de marketing</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Agendamento de serviços</span>
+              </li>
+              <li className="flex items-start">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                <span>Suporte técnico prioritário por e-mail e chat</span>
               </li>
             </ul>
             
@@ -110,7 +142,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
                 onClick={() => handleUpgrade('premium', 'monthly')} 
                 className="w-full bg-purple-600 hover:bg-purple-700"
               >
-                Mensal
+                Assinar Mensal
               </Button>
               <Button 
                 onClick={() => handleUpgrade('premium', 'yearly')} 

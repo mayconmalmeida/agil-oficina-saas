@@ -55,13 +55,20 @@ const ClientsPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      // Prepare vehicle information as a formatted string for legacy compatibility
+      const veiculoFormatado = `${values.veiculo.marca} ${values.veiculo.modelo} ${values.veiculo.ano}, Placa: ${values.veiculo.placa}`;
+      
       // Create clients table if not exists using RPC function
       const { error } = await safeRpc('create_client', {
         p_user_id: userId,
         p_nome: values.nome,
         p_telefone: values.telefone,
         p_email: values.email || null,
-        p_veiculo: values.veiculo
+        p_veiculo: veiculoFormatado,
+        p_marca: values.veiculo.marca,
+        p_modelo: values.veiculo.modelo,
+        p_ano: values.veiculo.ano,
+        p_placa: values.veiculo.placa
       });
       
       if (error) {
