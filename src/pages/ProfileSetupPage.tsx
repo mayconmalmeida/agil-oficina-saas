@@ -17,7 +17,6 @@ import { Progress } from '@/components/ui/progress';
 const formSchema = z.object({
   nome_oficina: z.string().min(1, 'Nome da oficina é obrigatório'),
   telefone: z.string().min(10, 'Telefone deve ter pelo menos 10 dígitos'),
-  endereco: z.string().min(1, 'Endereço é obrigatório'),
 });
 
 const ProfileSetupPage: React.FC = () => {
@@ -33,7 +32,6 @@ const ProfileSetupPage: React.FC = () => {
     defaultValues: {
       nome_oficina: '',
       telefone: '',
-      endereco: '',
     },
   });
   
@@ -52,17 +50,21 @@ const ProfileSetupPage: React.FC = () => {
       
       setUserId(session.user.id);
       
-      // Fetch existing profile data
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (data && !error) {
-        form.setValue('nome_oficina', data.nome_oficina || '');
-        form.setValue('telefone', data.telefone || '');
-        form.setValue('endereco', data.endereco || '');
+      // Create the table and column if they don't exist
+      try {
+        // First check if the profile exists
+        const { data } = await supabase
+          .from('profiles')
+          .select('nome_oficina, telefone')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (data) {
+          form.setValue('nome_oficina', data.nome_oficina || '');
+          form.setValue('telefone', data.telefone || '');
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
       }
     };
     
@@ -82,23 +84,51 @@ const ProfileSetupPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          nome_oficina: values.nome_oficina,
-          telefone: values.telefone,
-          endereco: values.endereco
-        })
-        .eq('id', userId);
+        .select('id')
+        .eq('id', userId)
+        .single();
         
-      if (error) {
-        console.error('Erro ao atualizar perfil:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao salvar perfil",
-          description: error.message || "Ocorreu um erro ao salvar seu perfil.",
-        });
-        return;
+      if (existingProfile) {
+        // Profile exists, update it
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            nome_oficina: values.nome_oficina,
+            telefone: values.telefone,
+          })
+          .eq('id', userId);
+          
+        if (error) {
+          console.error('Erro ao atualizar perfil:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao salvar perfil",
+            description: error.message || "Ocorreu um erro ao salvar seu perfil.",
+          });
+          return;
+        }
+      } else {
+        // Profile doesn't exist, insert it
+        const { error } = await supabase
+          .from('profiles')
+          .insert([{
+            id: userId,
+            nome_oficina: values.nome_oficina,
+            telefone: values.telefone,
+          }]);
+          
+        if (error) {
+          console.error('Erro ao criar perfil:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao salvar perfil",
+            description: error.message || "Ocorreu um erro ao salvar seu perfil.",
+          });
+          return;
+        }
       }
       
       // Mark profile as completed
@@ -182,25 +212,6 @@ const ProfileSetupPage: React.FC = () => {
                       <FormControl>
                         <Input 
                           placeholder="(11) 99999-9999" 
-                          {...field}
-                          disabled={saveSuccess}
-                          className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="endereco"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Endereço</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Av. Paulista, 1000 - São Paulo/SP" 
                           {...field}
                           disabled={saveSuccess}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}

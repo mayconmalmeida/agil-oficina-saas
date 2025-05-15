@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,9 +22,17 @@ export default function Navbar() {
           <a href="#planos" className="text-oficina-gray hover:text-oficina-dark transition-colors">Planos</a>
           <a href="#faq" className="text-oficina-gray hover:text-oficina-dark transition-colors">FAQ</a>
           <a href="#contato" className="text-oficina-gray hover:text-oficina-dark transition-colors">Contato</a>
-          <Button className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue">
-            <a href="#teste-gratis">Teste Grátis</a>
-          </Button>
+          <div className="flex space-x-3">
+            <Button className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue">
+              <Link to="/registrar">Teste Grátis</Link>
+            </Button>
+            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors">
+              <Link to="/login" className="flex items-center">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Link>
+            </Button>
+          </div>
         </nav>
 
         {/* Mobile menu button */}
@@ -74,7 +83,13 @@ export default function Navbar() {
               Contato
             </a>
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors w-full">
-              <a href="#teste-gratis">Teste Grátis</a>
+              <Link to="/registrar">Teste Grátis</Link>
+            </Button>
+            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full">
+              <Link to="/login" className="flex items-center justify-center">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Link>
             </Button>
           </nav>
         </div>
