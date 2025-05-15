@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
 import { supabase as supabaseClient } from '@/integrations/supabase/client';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 // Export the supabase client from our integration
 export const supabase = supabaseClient;
@@ -55,7 +56,7 @@ export const ensureProfilesTable = async () => {
         console.log('A tabela profiles não existe. Tentando criar...');
         
         // Try to create the table via RPC function
-        const { data: rpcData, error: rpcError } = await supabase.rpc('create_profile_table');
+        const { error: rpcError } = await safeRpc('create_profile_table');
         
         if (rpcError) {
           console.error('Erro ao criar tabela profiles via RPC:', rpcError);
@@ -111,10 +112,11 @@ export const createProfileIfNotExists = async (userId: string, email: string, fu
           
           // Try via RPC function as fallback (bypasses RLS)
           try {
-            const { data: rpcData, error: rpcError } = await supabase.rpc(
-              'create_profile', 
-              { user_id: userId, user_email: email, user_full_name: fullName || '' }
-            );
+            const { error: rpcError } = await safeRpc('create_profile', { 
+              user_id: userId, 
+              user_email: email, 
+              user_full_name: fullName || '' 
+            });
             
             if (rpcError) {
               console.error('Erro ao criar perfil via RPC:', rpcError);

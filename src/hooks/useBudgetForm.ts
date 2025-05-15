@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { BudgetFormValues } from '@/components/budget/budgetSchema';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 export const useBudgetForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +47,7 @@ export const useBudgetForm = () => {
     
     try {
       // Create budgets table if not exists using RPC function
-      const { error } = await supabase.rpc('create_budget', {
+      const { error } = await safeRpc("create_budget", {
         p_user_id: userId,
         p_cliente: values.cliente,
         p_veiculo: values.veiculo,

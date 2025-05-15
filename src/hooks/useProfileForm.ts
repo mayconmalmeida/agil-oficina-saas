@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { profileFormSchema, ProfileFormValues } from '@/components/profile/profileSchema';
+import { Profile } from '@/utils/supabaseTypes';
 
 interface UseProfileFormProps {
   userId: string | undefined;
@@ -56,7 +57,7 @@ export const useProfileForm = ({ userId, onSaveSuccess, initialValues = { nome_o
           .update({
             nome_oficina: values.nome_oficina,
             telefone: values.telefone,
-          })
+          } as Partial<Profile>)
           .eq('id', userId);
           
         if (error) {
@@ -76,7 +77,7 @@ export const useProfileForm = ({ userId, onSaveSuccess, initialValues = { nome_o
             id: userId,
             nome_oficina: values.nome_oficina,
             telefone: values.telefone,
-          }]);
+          } as Profile]);
           
         if (error) {
           console.error('Erro ao criar perfil:', error);

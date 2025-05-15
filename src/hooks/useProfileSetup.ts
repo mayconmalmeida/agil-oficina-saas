@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { Profile } from '@/utils/supabaseTypes';
 
 export const useProfileSetup = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +38,7 @@ export const useProfileSetup = () => {
         // Check if profile exists
         const { data, error } = await supabase
           .from('profiles')
-          .select('nome_oficina, telefone')
+          .select('*')
           .eq('id', session.user.id)
           .single();
           
@@ -51,9 +52,10 @@ export const useProfileSetup = () => {
           }
         } else if (data) {
           console.log('Perfil encontrado:', data);
+          const profile = data as Profile;
           setProfileData({
-            nome_oficina: data.nome_oficina || '',
-            telefone: data.telefone || ''
+            nome_oficina: profile.nome_oficina || '',
+            telefone: profile.telefone || ''
           });
         }
       } catch (error) {

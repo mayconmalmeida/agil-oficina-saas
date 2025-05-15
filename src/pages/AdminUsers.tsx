@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -5,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import UsersHeader from '@/components/admin/UsersHeader';
 import UsersTable from '@/components/admin/UsersTable';
 import Loading from '@/components/ui/loading';
+import { Profile } from '@/utils/supabaseTypes';
 
 export type User = {
   id: string;
@@ -56,7 +58,8 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
           id,
@@ -64,26 +67,51 @@ const AdminUsers = () => {
           nome_oficina,
           is_active,
           created_at,
-          trial_ends_at,
-          subscriptions (
-            status
-          )
+          trial_ends_at
         `);
 
-      if (error) {
-        throw error;
+      if (profilesError) {
+        throw profilesError;
       }
 
-      const usersWithQuoteCounts = await Promise.all(data.map(async (user) => {
-        const { count } = await supabase
+      if (!profilesData) {
+        setUsers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get quoteCounts for each user
+      const usersWithQuoteCounts = await Promise.all(profilesData.map(async (profile) => {
+        // Get quote count
+        const { count, error: countError } = await supabase
           .from('orcamentos')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+          .eq('user_id', profile.id);
+        
+        if (countError) {
+          console.error('Error fetching quote count:', countError);
+        }
+        
+        // Get subscription status
+        const { data: subscriptionData, error: subError } = await supabase
+          .from('subscriptions')
+          .select('status')
+          .eq('user_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        const subscription_status = subError ? 'none' : (subscriptionData?.status || 'none');
 
         return {
-          ...user,
+          id: profile.id,
+          email: profile.email || 'N/A',
+          nome_oficina: profile.nome_oficina || 'Não definido',
+          is_active: profile.is_active || false,
+          created_at: profile.created_at || new Date().toISOString(),
           quote_count: count || 0,
-          subscription_status: user.subscriptions && user.subscriptions[0]?.status || 'none',
+          subscription_status,
+          trial_ends_at: profile.trial_ends_at
         };
       }));
 
@@ -104,7 +132,7 @@ const AdminUsers = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: !currentStatus })
+        .update({ is_active: !currentStatus } as Partial<Profile>)
         .eq('id', userId);
 
       if (error) throw error;

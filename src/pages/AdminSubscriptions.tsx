@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -5,22 +6,16 @@ import { supabase } from "@/lib/supabase";
 import SubscriptionHeader from '@/components/admin/SubscriptionHeader';
 import SubscriptionsTable from '@/components/admin/SubscriptionsTable';
 import Loading from '@/components/ui/loading';
+import { Subscription, Profile } from '@/utils/supabaseTypes';
 
 // Ensure this type definition matches the one in SubscriptionsTable
-type Subscription = {
-  id: string;
-  user_id: string;
-  status: string;
-  created_at: string;
-  expires_at: string | null;
-  payment_method: string;
-  amount: number;
+type SubscriptionWithProfile = Subscription & {
   email: string;
   nome_oficina: string;
 };
 
 const AdminSubscriptions = () => {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [subscriptions, setSubscriptions] = useState<SubscriptionWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -78,20 +73,29 @@ const AdminSubscriptions = () => {
         throw error;
       }
 
-      // Properly format the data by extracting profile information from the array's first element
-      const formattedSubscriptions: Subscription[] = data.map(sub => ({
-        id: sub.id,
-        user_id: sub.user_id,
-        status: sub.status,
-        created_at: sub.created_at,
-        expires_at: sub.expires_at,
-        payment_method: sub.payment_method,
-        amount: sub.amount,
-        email: sub.profiles && sub.profiles[0]?.email || 'N/A',
-        nome_oficina: sub.profiles && sub.profiles[0]?.nome_oficina || 'N/A'
-      }));
+      if (data) {
+        // Properly format the data by extracting profile information
+        const formattedSubscriptions: SubscriptionWithProfile[] = data.map(sub => {
+          // Extract profile data if available
+          const profileData = Array.isArray(sub.profiles) && sub.profiles.length > 0 
+            ? sub.profiles[0] 
+            : { email: 'N/A', nome_oficina: 'N/A' };
 
-      setSubscriptions(formattedSubscriptions);
+          return {
+            id: sub.id,
+            user_id: sub.user_id,
+            status: sub.status || 'unknown',
+            created_at: sub.created_at,
+            expires_at: sub.expires_at,
+            payment_method: sub.payment_method || 'N/A',
+            amount: sub.amount || 0,
+            email: profileData.email || 'N/A',
+            nome_oficina: profileData.nome_oficina || 'N/A'
+          };
+        });
+
+        setSubscriptions(formattedSubscriptions);
+      }
     } catch (error) {
       console.error('Erro ao carregar assinaturas:', error);
       toast({

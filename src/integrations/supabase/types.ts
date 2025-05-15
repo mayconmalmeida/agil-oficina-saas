@@ -27,6 +27,36 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          nome: string
+          telefone: string
+          user_id: string | null
+          veiculo: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          telefone: string
+          user_id?: string | null
+          veiculo: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          telefone?: string
+          user_id?: string | null
+          veiculo?: string
+        }
+        Relationships: []
+      }
       onboarding_status: {
         Row: {
           budget_created: boolean | null
@@ -59,50 +89,140 @@ export type Database = {
           },
         ]
       }
+      orcamentos: {
+        Row: {
+          cliente: string
+          created_at: string | null
+          descricao: string
+          id: string
+          status: string | null
+          user_id: string | null
+          valor_total: number
+          veiculo: string
+        }
+        Insert: {
+          cliente: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+          status?: string | null
+          user_id?: string | null
+          valor_total: number
+          veiculo: string
+        }
+        Update: {
+          cliente?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          status?: string | null
+          user_id?: string | null
+          valor_total?: number
+          veiculo?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          cep: string | null
+          cidade: string | null
           created_at: string | null
           email: string | null
+          endereco: string | null
+          estado: string | null
           full_name: string | null
           id: string
+          nome_oficina: string | null
+          plano: string | null
+          telefone: string | null
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          full_name?: string | null
+          id: string
+          nome_oficina?: string | null
+          plano?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          full_name?: string | null
+          id?: string
+          nome_oficina?: string | null
+          plano?: string | null
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          user_id: string | null
+          valor: number
         }
         Insert: {
           created_at?: string | null
-          email?: string | null
-          full_name?: string | null
-          id: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          user_id?: string | null
+          valor: number
         }
         Update: {
           created_at?: string | null
-          email?: string | null
-          full_name?: string | null
+          descricao?: string | null
           id?: string
+          nome?: string
+          tipo?: string
+          user_id?: string | null
+          valor?: number
         }
         Relationships: []
       }
       subscriptions: {
         Row: {
+          amount: number | null
           created_at: string | null
           ends_at: string | null
           id: string
+          payment_method: string | null
           plan: string | null
           started_at: string | null
           status: string | null
           user_id: string | null
         }
         Insert: {
+          amount?: number | null
           created_at?: string | null
           ends_at?: string | null
           id?: string
+          payment_method?: string | null
           plan?: string | null
           started_at?: string | null
           status?: string | null
           user_id?: string | null
         }
         Update: {
+          amount?: number | null
           created_at?: string | null
           ends_at?: string | null
           id?: string
+          payment_method?: string | null
           plan?: string | null
           started_at?: string | null
           status?: string | null
@@ -115,8 +235,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_budget: {
+        Args: {
+          p_user_id: string
+          p_cliente: string
+          p_veiculo: string
+          p_descricao: string
+          p_valor_total: number
+        }
+        Returns: undefined
+      }
+      create_client: {
+        Args: {
+          p_user_id: string
+          p_nome: string
+          p_telefone: string
+          p_email: string
+          p_veiculo: string
+        }
+        Returns: undefined
+      }
       create_profile: {
         Args: { user_id: string; user_email: string; user_full_name: string }
+        Returns: undefined
+      }
+      create_profile_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_profiles_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_service: {
+        Args: {
+          p_user_id: string
+          p_nome: string
+          p_tipo: string
+          p_valor: number
+          p_descricao: string
+        }
         Returns: undefined
       }
       create_subscription: {
@@ -127,6 +285,14 @@ export type Database = {
           end_date: string
         }
         Returns: undefined
+      }
+      create_subscriptions_table: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      ensure_profiles_table: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       update_onboarding_step: {
         Args: { step: string }

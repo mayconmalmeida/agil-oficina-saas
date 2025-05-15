@@ -8,6 +8,7 @@ import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import ClientsPageHeader from '@/components/clients/ClientsPageHeader';
 import ClientFormCard from '@/components/clients/ClientFormCard';
 import { ClientFormValues } from '@/components/clients/ClientForm';
+import { safeRpc } from '@/utils/supabaseTypes';
 
 const ClientsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +56,7 @@ const ClientsPage: React.FC = () => {
     
     try {
       // Create clients table if not exists using RPC function
-      const { error } = await supabase.rpc('create_client', {
+      const { error } = await safeRpc('create_client', {
         p_user_id: userId,
         p_nome: values.nome,
         p_telefone: values.telefone,

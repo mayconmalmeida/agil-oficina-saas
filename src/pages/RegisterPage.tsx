@@ -1,336 +1,201 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { safeRpc } from '@/utils/supabaseTypes';
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
-
-const formSchema = z.object({
-  full_name: z.string().min(3, "Nome completo deve ter pelo menos 3 caracteres"),
-  telefone: z.string().min(10, "Telefone inválido"),
-  email: z.string().email("Digite um email válido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "Confirme sua senha")
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
+import { RegisterFormValues } from '@/components/auth/RegisterForm';
 
 const RegisterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [tablesChecked, setTablesChecked] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [planoSelecionado, setPlanoSelecionado] = useState<string>("premium"); // default
-  
+
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const planoParam = queryParams.get('plano');
-    if (planoParam && ['essencial', 'premium'].includes(planoParam)) {
-      setPlanoSelecionado(planoParam);
-    }
-    
-    // Verificar se as tabelas existem
-    checkAndCreateTables();
-  }, [location]);
+    ensureRequiredTables();
+  }, []);
 
-  // Função para verificar e criar tabelas necessárias
-  const checkAndCreateTables = async () => {
-    try {
-      // Verificar se a tabela profiles existe
-      const { error: profilesError } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
-
-      // Se a tabela não existir, criá-la
-      if (profilesError && profilesError.message.includes('does not exist')) {
-        await supabase.rpc('create_profiles_table');
-      }
-
-      // Verificar se a tabela subscriptions existe
-      const { error: subscriptionsError } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .limit(1);
-
-      // Se a tabela não existir, criá-la
-      if (subscriptionsError && subscriptionsError.message.includes('does not exist')) {
-        await supabase.rpc('create_subscriptions_table');
-      }
-
-      setTablesChecked(true);
-    } catch (error) {
-      console.error("Erro ao verificar tabelas:", error);
-    }
-  };
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      full_name: "",
-      telefone: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
-    
     try {
-      // 1. Registrar o usuário com Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
           data: {
-            full_name: values.full_name,
-            telefone: values.telefone,
-            plano: planoSelecionado
-          }
-        }
+            full_name: values.fullName,
+          },
+        },
       });
 
-      if (authError) {
+      if (error) {
+        console.error("Erro ao registrar:", error);
         toast({
           variant: "destructive",
           title: "Erro ao registrar",
-          description: authError.message,
+          description: error.message,
         });
+        setIsLoading(false);
         return;
       }
 
-      if (!authData.user) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao registrar",
-          description: "Não foi possível criar o usuário",
-        });
-        return;
-      }
-
-      // 2. Adicionar perfil na tabela de perfis - Use RPC para contornar RLS
-      const { error: profileError } = await supabase.rpc('create_profile', { 
-        user_id: authData.user.id,
-        user_email: values.email, 
-        user_full_name: values.full_name 
-      });
-
-      if (profileError) {
-        console.error("Erro ao criar perfil:", profileError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar perfil",
-          description: profileError.message,
-        });
-        return;
-      }
-
-      // 3. Criar uma assinatura de teste - Use RPC para contornar RLS
-      const dataAtual = new Date();
-      const dataExpiracao = new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + 7); // 7 dias de teste
-
-      const { error: subscriptionError } = await supabase.rpc('create_subscription', {
-        user_id: authData.user.id,
-        plan_type: planoSelecionado,
-        start_date: dataAtual.toISOString(),
-        end_date: dataExpiracao.toISOString()
-      });
-
-      if (subscriptionError) {
-        console.error("Erro ao criar assinatura:", subscriptionError);
-        toast({
-          variant: "destructive",
-          title: "Erro ao criar assinatura",
-          description: subscriptionError.message,
-        });
-        return;
-      }
-
+      console.log("Registro bem-sucedido, redirecionando para:", '/perfil-oficina');
       toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Bem-vindo ao OficinaÁgil. Seu período de teste de 7 dias foi iniciado.",
+        title: "Registro realizado com sucesso!",
+        description: "Verifique seu e-mail para confirmar o cadastro.",
       });
-
-      // Redirecionar para o dashboard do cliente
-      navigate("/dashboard");
+      navigate('/perfil-oficina');
     } catch (error) {
-      console.error("Erro no cadastro:", error);
+      console.error("Erro inesperado:", error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro durante o cadastro. Tente novamente.",
+        description: "Ocorreu um erro durante o registro. Tente novamente.",
       });
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
-
-  return (
-    <div className="flex min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <div className="flex-1 flex flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div className="mx-auto w-full max-w-md">
-          <div className="flex justify-center mb-8">
-            <Link to="/" className="text-2xl font-bold text-oficina-dark">
-              Oficina<span className="text-oficina-accent">Ágil</span>
-            </Link>
-          </div>
-          
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Experimente Grátis</CardTitle>
-              <CardDescription className="text-center">
-                Crie sua conta e comece a usar o OficinaÁgil agora mesmo.
-                <div className="mt-2 font-semibold text-oficina">
-                  Plano selecionado: {planoSelecionado === 'premium' ? 'Premium' : 'Essencial'}
-                </div>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="full_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome da sua oficina" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="telefone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telefone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="(11) 98765-4321" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>E-mail</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="exemplo@oficina.com" 
-                            type="email" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="******" 
-                            type="password" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmar Senha</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="******" 
-                            type="password" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-oficina-accent hover:bg-orange-600"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                        Processando...
-                      </>
-                    ) : (
-                      'Iniciar Teste Gratuito'
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-2 text-center text-sm">
-              <p className="text-gray-500">
-                Ao criar uma conta, você concorda com nossos 
-                <Link to="/termos" className="text-oficina hover:underline mx-1">Termos de Serviço</Link> 
-                e 
-                <Link to="/privacidade" className="text-oficina hover:underline mx-1">Política de Privacidade</Link>.
-              </p>
-              <p>
-                Já tem uma conta?
-                <Link to="/login" className="text-oficina hover:underline ml-1">
-                  Entre aqui
-                </Link>
-              </p>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
+  
+  const ensureRequiredTables = async () => {
+    try {
+      setIsInitializing(true);
       
-      <div className="hidden lg:block relative w-0 flex-1">
-        <div className="absolute inset-0 h-full w-full bg-oficina">
-          <div className="flex flex-col h-full justify-center items-center px-8">
-            <div className="max-w-md text-center text-white">
-              <h2 className="text-3xl font-bold mb-6">Experimente o OficinaÁgil por 7 dias sem compromisso</h2>
-              <ul className="space-y-4 text-left list-disc pl-6 mb-8">
-                <li>Orçamentos profissionais em segundos</li>
-                <li>Gestão completa de clientes e veículos</li>
-                <li>Controle de estoque e serviços</li>
-                <li>Aumente suas vendas e fidelização</li>
-                <li>Interface simples e intuitiva</li>
-              </ul>
-              <p className="text-sm opacity-80">Sem necessidade de cartão de crédito. Cancele quando quiser.</p>
+      // Check if profiles table exists and has required columns
+      console.log("Verificando se tabela de perfis existe...");
+      const { error: profilesError } = await safeRpc('create_profiles_table');
+      
+      if (profilesError) {
+        console.error("Erro ao verificar tabela de perfis:", profilesError);
+      } else {
+        console.log("Tabela de perfis verificada com sucesso!");
+      }
+      
+      // Check if subscriptions table exists
+      console.log("Verificando se tabela de assinaturas existe...");
+      const { error: subscriptionsError } = await safeRpc('create_subscriptions_table');
+      
+      if (subscriptionsError) {
+        console.error("Erro ao verificar tabela de assinaturas:", subscriptionsError);
+      } else {
+        console.log("Tabela de assinaturas verificada com sucesso!");
+      }
+      
+    } catch (error) {
+      console.error("Erro ao inicializar tabelas:", error);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-8">
+        <div className="bg-white shadow-md rounded-md p-8">
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
+            Crie sua conta
+          </h2>
+          <p className="text-center text-gray-600 mb-6">
+            Comece a gerenciar sua oficina de forma eficiente.
+          </p>
+          
+          {/* Formulário de registro */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const values = Object.fromEntries(formData.entries()) as unknown as RegisterFormValues;
+              handleRegister(values);
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Nome Completo
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
             </div>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Senha
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                required
+              />
+            </div>
+            <div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-oficina hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={isLoading || isInitializing}
+              >
+                {isLoading || isInitializing ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Criando conta...
+                  </>
+                ) : (
+                  "Criar conta"
+                )}
+              </button>
+            </div>
+          </form>
+          
+          <div className="mt-6 text-center">
+            <Link to="/login" className="text-sm text-oficina-gray hover:underline">
+              Já tem uma conta? Faça login
+            </Link>
           </div>
         </div>
       </div>
