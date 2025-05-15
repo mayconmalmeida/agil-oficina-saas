@@ -1,37 +1,29 @@
 
 import React from 'react';
-import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
-import ProfileSetupProgress from './ProfileSetupProgress';
+import { CheckCircle2 } from 'lucide-react';
 
 interface ProfileSetupHeaderProps {
   saveSuccess?: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
-const ProfileSetupHeader: React.FC<ProfileSetupHeaderProps> = ({ saveSuccess = false }) => {
+const ProfileSetupHeader: React.FC<ProfileSetupHeaderProps> = ({ 
+  saveSuccess = false,
+  title = "Configure seu Perfil",
+  subtitle = "Informe os dados básicos da sua oficina"
+}) => {
   return (
-    <>
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-oficina-dark">
-          Configure sua Oficina
-        </h1>
-        <p className="mt-2 text-oficina-gray">
-          Preencha as informações básicas da sua oficina
-        </p>
-        
-        <ProfileSetupProgress />
-      </div>
+    <div className="text-center mb-6 relative">
+      <h1 className="text-2xl font-bold mb-2">{title}</h1>
+      <p className="text-gray-600 mb-1">{subtitle}</p>
       
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-xl flex items-center justify-between">
-          <span>Informações da Oficina</span>
-          {saveSuccess && <CheckCircle className="h-5 w-5 text-green-500 animate-fade-in" />}
-        </CardTitle>
-        <CardDescription>
-          Estas informações aparecerão nos orçamentos e comunicações com seus clientes
-        </CardDescription>
-      </CardHeader>
-    </>
+      {saveSuccess && (
+        <div className="absolute -top-5 -right-5 bg-green-100 p-2 rounded-full animate-bounce">
+          <CheckCircle2 className="h-6 w-6 text-green-600" />
+        </div>
+      )}
+    </div>
   );
 };
 

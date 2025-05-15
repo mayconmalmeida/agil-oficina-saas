@@ -9,8 +9,9 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import RecentActivities from '@/components/dashboard/RecentActivities';
 import WorkshopStatusCard from '@/components/dashboard/WorkshopStatusCard';
 import PlanNotice from '@/components/dashboard/PlanNotice';
+import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, Users } from 'lucide-react';
+import { Package, FileText, Users, Settings } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -48,6 +49,12 @@ const Dashboard: React.FC = () => {
       icon: <Package className="h-5 w-5" />,
       href: "/produtos-servicos",
       color: "bg-green-100 hover:bg-green-200 text-green-700"
+    },
+    {
+      title: "Editar Perfil",
+      icon: <Settings className="h-5 w-5" />,
+      href: "/perfil/editar",
+      color: "bg-purple-100 hover:bg-purple-200 text-purple-700"
     }
   ];
   
@@ -77,14 +84,11 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Olá, {userProfile?.full_name || 'Usuário'}!
-          </h1>
-          <p className="text-gray-600">
-            Bem-vindo(a) ao painel da {userProfile?.nome_oficina || 'sua oficina'}
-          </p>
-        </div>
+        <WelcomeHeader 
+          name={userProfile?.full_name || 'Usuário'}
+          workshopName={userProfile?.nome_oficina || 'sua oficina'}
+          logoUrl={userProfile?.logo_url || null}
+        />
         
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-4 mb-8">
