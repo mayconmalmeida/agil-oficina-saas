@@ -28,7 +28,9 @@ export const safeRpc = <T = any, F extends ValidRpcFunctions = ValidRpcFunctions
   fn: F, 
   params: RPCParamMap[F]
 ) => {
-  return supabase.rpc(fn as string, params) as unknown as Promise<{ data: T; error: any }>;
+  // We need to tell TypeScript that fn is already one of the valid function names
+  // This avoids the conversion to string which was causing the type error
+  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
 // Types for Profile
