@@ -10,10 +10,9 @@ export const checkAdminStatus = async (session: any) => {
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
       .select('*')
-      .eq('email', session.user.email)
-      .single();
+      .eq('email', session.user.email);
       
-    if (adminData) {
+    if (adminData && adminData.length > 0) {
       toast({
         title: "Já autenticado",
         description: "Redirecionando para o painel administrativo.",
@@ -70,10 +69,9 @@ export const setUserAsAdmin = async (email: string) => {
     const { data: existingAdmin } = await supabase
       .from('admins')
       .select('*')
-      .eq('email', email)
-      .single();
+      .eq('email', email);
       
-    if (existingAdmin) {
+    if (existingAdmin && existingAdmin.length > 0) {
       return { success: true, message: 'Usuário já é um administrador.' };
     }
     

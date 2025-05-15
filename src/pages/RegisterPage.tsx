@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const formSchema = z.object({
-  nome_oficina: z.string().min(3, "Nome da oficina deve ter pelo menos 3 caracteres"),
+  full_name: z.string().min(3, "Nome completo deve ter pelo menos 3 caracteres"),
   telefone: z.string().min(10, "Telefone inválido"),
   email: z.string().email("Digite um email válido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
@@ -77,7 +76,7 @@ const RegisterPage: React.FC = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nome_oficina: "",
+      full_name: "",
       telefone: "",
       email: "",
       password: "",
@@ -95,7 +94,7 @@ const RegisterPage: React.FC = () => {
         password: values.password,
         options: {
           data: {
-            nome_oficina: values.nome_oficina,
+            full_name: values.full_name,
             telefone: values.telefone,
             plano: planoSelecionado
           }
@@ -118,9 +117,7 @@ const RegisterPage: React.FC = () => {
           { 
             id: authData.user?.id,
             email: values.email,
-            nome_oficina: values.nome_oficina,
-            telefone: values.telefone,
-            plano: planoSelecionado,
+            full_name: values.full_name,
           }
         ]);
 
@@ -143,12 +140,10 @@ const RegisterPage: React.FC = () => {
         .insert([
           { 
             user_id: authData.user?.id,
+            plan: planoSelecionado,
             status: 'trial',
-            created_at: dataAtual.toISOString(),
-            expires_at: dataExpiracao.toISOString(),
-            payment_method: 'trial',
-            amount: 0,
-            plano: planoSelecionado
+            started_at: dataAtual.toISOString(),
+            ends_at: dataExpiracao.toISOString(),
           }
         ]);
 
@@ -205,12 +200,12 @@ const RegisterPage: React.FC = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="nome_oficina"
+                    name="full_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome da Oficina</FormLabel>
+                        <FormLabel>Nome Completo</FormLabel>
                         <FormControl>
-                          <Input placeholder="Auto Center Silva" {...field} />
+                          <Input placeholder="Nome da sua oficina" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
