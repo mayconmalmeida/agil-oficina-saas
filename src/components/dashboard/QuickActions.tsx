@@ -37,8 +37,7 @@ const QuickActions = () => {
       title: "Novo Agendamento",
       icon: CalendarClock,
       href: "/agendamentos/novo",
-      color: "bg-purple-100 hover:bg-purple-200 text-purple-700",
-      isPremium: true
+      color: "bg-purple-100 hover:bg-purple-200 text-purple-700"
     },
     {
       title: "Novo Cliente",
@@ -67,10 +66,6 @@ const QuickActions = () => {
   ];
   
   const handleQuickAction = (action: QuickAction) => {
-    if (action.isPremium && !isPremium) {
-      handlePremiumFeature('advanced_scheduling');
-      return;
-    }
     navigate(action.href);
   };
   
@@ -87,11 +82,6 @@ const QuickActions = () => {
           >
             <action.icon className="h-6 w-6" />
             <span className="text-sm text-center">{action.title}</span>
-            {action.isPremium && !isPremium && (
-              <span className="absolute top-2 right-2">
-                <Plus className="h-3 w-3" />
-              </span>
-            )}
           </Button>
         ))}
       </div>

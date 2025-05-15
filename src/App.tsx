@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -37,10 +37,14 @@ import AdminUsers from './pages/AdminUsers';
 import AdminSubscriptions from './pages/AdminSubscriptions';
 import AdminRegister from './pages/AdminRegister';
 
+// Layout
+import DashboardLayout from './components/layout/DashboardLayout';
+
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/entrar" element={<LoginPage />} />
@@ -49,34 +53,33 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
         <Route path="/cadastro-oficina" element={<WorkshopRegistrationPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/painel" element={<Dashboard />} />
+        
+        {/* Onboarding routes */}
         <Route path="/onboarding/profile" element={<ProfileSetupPage />} />
         <Route path="/onboarding/clientes" element={<ClientsPage />} />
         <Route path="/onboarding/produtos-servicos" element={<ServicesPage />} />
         <Route path="/onboarding/orcamento" element={<NewBudgetPage />} />
-        <Route path="/perfil/editar" element={<ProfileEditPage />} />
-        <Route path="/empresa/perfil" element={<CompanyProfilePage />} />
-        <Route path="/configuracoes/oficina" element={<CompanyProfilePage />} />
         
-        {/* Client routes */}
-        <Route path="/clientes" element={<ClientManagementPage />} />
-        <Route path="/clientes/novo" element={<ClientManagementPage />} />
-        
-        {/* Product routes */}
-        <Route path="/produtos" element={<ProductsPage />} />
-        <Route path="/produtos/novo" element={<ProductsPage />} />
-        
-        {/* Budget routes */}
-        <Route path="/orcamentos" element={<BudgetPage />} />
-        <Route path="/orcamentos/novo" element={<BudgetPage />} />
-        
-        {/* New routes */}
-        <Route path="/configuracoes" element={<SettingsPage />} />
-        <Route path="/veiculos" element={<VehiclesPage />} />
-        <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
-        <Route path="/agendamentos" element={<SchedulesPage />} />
-        <Route path="/agendamentos/novo" element={<SchedulingPage />} />
+        {/* Protected dashboard routes */}
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/painel" element={<Dashboard />} />
+          <Route path="/clientes" element={<ClientManagementPage />} />
+          <Route path="/clientes/novo" element={<ClientManagementPage />} />
+          <Route path="/produtos" element={<ProductsPage />} />
+          <Route path="/produtos/novo" element={<ProductsPage />} />
+          <Route path="/servicos" element={<ServicesPage />} />
+          <Route path="/orcamentos" element={<BudgetPage />} />
+          <Route path="/orcamentos/novo" element={<BudgetPage />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
+          <Route path="/configuracoes/oficina" element={<CompanyProfilePage />} />
+          <Route path="/perfil/editar" element={<ProfileEditPage />} />
+          <Route path="/empresa/perfil" element={<CompanyProfilePage />} />
+          <Route path="/veiculos" element={<VehiclesPage />} />
+          <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
+          <Route path="/agendamentos" element={<SchedulesPage />} />
+          <Route path="/agendamentos/novo" element={<SchedulingPage />} />
+        </Route>
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

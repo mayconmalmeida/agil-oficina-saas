@@ -125,39 +125,22 @@ const SchedulingPage = () => {
           
         if (serviceError) throw serviceError;
         
-        // Fetch vehicles (from clients for now)
+        // Fetch vehicles (clients with vehicle data)
         const { data: vehicleData, error: vehicleError } = await supabase
           .from('clients')
           .select('id, nome, placa, marca, modelo')
           .not('placa', 'is', null);
           
-        if (vehicleError) {
-          console.error('Error fetching vehicles:', vehicleError);
-          setClients(clientData || []);
-          setServices(serviceData || []);
-          setVehicles([]);
-          setFilteredVehicles([]);
-          setLoadingData(false);
-          return;
-        }
-        
-        if (!vehicleData) {
-          setClients(clientData || []);
-          setServices(serviceData || []);
-          setVehicles([]);
-          setFilteredVehicles([]);
-          setLoadingData(false);
-          return;
-        }
+        if (vehicleError) throw vehicleError;
         
         // Transform vehicle data
-        const transformedVehicles = vehicleData.map(client => ({
+        const transformedVehicles = vehicleData ? vehicleData.map(client => ({
           id: client.id,
           cliente_nome: client.nome,
           placa: client.placa || 'N/A',
           marca: client.marca || 'N/A',
           modelo: client.modelo || 'N/A',
-        }));
+        })) : [];
         
         setClients(clientData || []);
         setServices(serviceData || []);
@@ -171,10 +154,6 @@ const SchedulingPage = () => {
           title: "Erro ao carregar dados",
           description: "Não foi possível carregar os dados necessários.",
         });
-        setClients([]);
-        setServices([]);
-        setVehicles([]);
-        setFilteredVehicles([]);
       } finally {
         setLoadingData(false);
       }
@@ -198,9 +177,29 @@ const SchedulingPage = () => {
     setIsLoading(true);
     
     try {
+      // First, check if we have the agendamentos table
+      const { error: checkError } = await supabase
+        .from('agendamentos')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+      
+      // If the table doesn't exist, create it
+      if (checkError && checkError.message.includes("relation") && checkError.message.includes("does not exist")) {
+        // Table doesn't exist, so we'll create it first
+        const { error: createTableError } = await supabase.rpc('create_agendamentos_table');
+        
+        if (createTableError) {
+          // If RPC fails, we can still try direct SQL (usually not available in client-side)
+          console.error('Failed to create table via RPC:', createTableError);
+          throw new Error('Não foi possível criar a tabela de agendamentos');
+        }
+      }
+      
       // Prepare data for insertion
       const scheduleData = {
-        data: format(data.data, 'yyyy-MM-dd'),
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        data_agendamento: format(data.data, 'yyyy-MM-dd'),
         horario: data.horario,
         cliente_id: data.cliente_id,
         veiculo_id: data.veiculo_id,
@@ -210,11 +209,12 @@ const SchedulingPage = () => {
         created_at: new Date().toISOString(),
       };
       
-      // For now, we'll just log it as we don't have a schedules table yet
-      console.log('Schedule data:', scheduleData);
+      // Insert the schedule
+      const { error: insertError } = await supabase
+        .from('agendamentos')
+        .insert([scheduleData]);
       
-      // Simulate successful insertion
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (insertError) throw insertError;
       
       toast({
         title: "Agendamento realizado",
@@ -244,7 +244,7 @@ const SchedulingPage = () => {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Novo Agendamento</h1>
         <Button variant="outline" onClick={() => navigate('/agendamentos')}>

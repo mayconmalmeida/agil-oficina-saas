@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -100,16 +101,7 @@ const VehicleRegistrationPage: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // First, find the client
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('id, nome')
-        .eq('id', data.cliente_id)
-        .single();
-        
-      if (clientError) throw clientError;
-      
-      // For now, store the vehicle information as an update to the client
+      // Update the client record with vehicle information
       const { error } = await supabase
         .from('clients')
         .update({
@@ -124,7 +116,7 @@ const VehicleRegistrationPage: React.FC = () => {
       
       toast({
         title: "Veículo cadastrado",
-        description: `Veículo de ${clientData.nome} cadastrado com sucesso!`,
+        description: `Veículo cadastrado com sucesso!`,
       });
       
       // Reset form
@@ -150,7 +142,7 @@ const VehicleRegistrationPage: React.FC = () => {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Cadastrar Novo Veículo</h1>
         <Button variant="outline" onClick={() => navigate('/veiculos')}>
