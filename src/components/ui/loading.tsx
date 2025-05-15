@@ -44,9 +44,9 @@ const Loading: React.FC<LoadingProps> = ({
   );
 
   return (
-    <div className={containerClasses}>
+    <div className={containerClasses} data-testid="loading-component">
       <div className="text-center">
-        <Loader2 className={cn(spinnerSizes[size], "animate-spin mx-auto mb-2")} />
+        <Loader2 className={cn(spinnerSizes[size], "animate-spin mx-auto mb-2 text-oficina")} />
         {text && (
           <p className={cn(
             "text-oficina-gray",

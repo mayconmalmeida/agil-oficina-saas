@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, ensureProfilesTable } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -16,25 +16,23 @@ export const useProfileSetup = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Acesso não autorizado",
-          description: "Você precisa fazer login para acessar este recurso.",
-        });
-        navigate('/login');
-        return;
-      }
-      
-      setUserId(session.user.id);
-      
       try {
-        // Verificar e garantir que a tabela profiles existe com as colunas necessárias
-        await ensureProfilesTable();
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Verificar se o perfil existe
+        if (!session) {
+          toast({
+            variant: "destructive",
+            title: "Acesso não autorizado",
+            description: "Você precisa fazer login para acessar este recurso.",
+          });
+          navigate('/login');
+          return;
+        }
+        
+        setUserId(session.user.id);
+        
+        // Check if profile exists
         const { data, error } = await supabase
           .from('profiles')
           .select('nome_oficina, telefone')
@@ -42,22 +40,21 @@ export const useProfileSetup = () => {
           .single();
           
         if (error) {
-          console.error('Erro ao buscar perfil:', error);
+          console.log('Perfil não encontrado ou erro ao buscar:', error.message);
           if (error.code === 'PGRST116') {
             console.log('Perfil não encontrado, criando um novo');
+            // If no profile exists, we'll create one when the user submits the form
           } else {
-            throw error;
+            console.error('Erro ao buscar perfil:', error);
           }
-        }
-          
-        if (data) {
+        } else if (data) {
           setProfileData({
             nome_oficina: data.nome_oficina || '',
             telefone: data.telefone || ''
           });
         }
       } catch (error) {
-        console.error('Erro ao buscar perfil:', error);
+        console.error('Erro ao verificar usuário:', error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar perfil",
