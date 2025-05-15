@@ -26,6 +26,7 @@ export type Workshop = {
   id: string;
   nome_oficina: string;
   email: string;
+  telefone?: string | null;
   cnpj: string | null;
   responsavel: string | null;
   plano: string | null;

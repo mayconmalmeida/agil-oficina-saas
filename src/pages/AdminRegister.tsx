@@ -41,13 +41,13 @@ const AdminRegister = () => {
         return;
       }
 
-      const { data: adminData } = await supabase
+      const { data: adminData, error } = await supabase
         .from('admins')
         .select('email, nivel')
         .eq('email', session.user.email)
         .single();
 
-      if (!adminData) {
+      if (error || !adminData) {
         await supabase.auth.signOut();
         navigate('/admin/login');
         toast({

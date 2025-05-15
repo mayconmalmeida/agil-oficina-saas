@@ -14,16 +14,19 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          nivel: string | null
         }
         Insert: {
           created_at?: string | null
           email: string
           id?: string
+          nivel?: string | null
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
+          nivel?: string | null
         }
         Relationships: []
       }
@@ -126,6 +129,7 @@ export type Database = {
         Row: {
           cep: string | null
           cidade: string | null
+          cnpj: string | null
           created_at: string | null
           email: string | null
           endereco: string | null
@@ -135,12 +139,14 @@ export type Database = {
           is_active: boolean | null
           nome_oficina: string | null
           plano: string | null
+          responsavel: string | null
           telefone: string | null
           trial_ends_at: string | null
         }
         Insert: {
           cep?: string | null
           cidade?: string | null
+          cnpj?: string | null
           created_at?: string | null
           email?: string | null
           endereco?: string | null
@@ -150,12 +156,14 @@ export type Database = {
           is_active?: boolean | null
           nome_oficina?: string | null
           plano?: string | null
+          responsavel?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
         }
         Update: {
           cep?: string | null
           cidade?: string | null
+          cnpj?: string | null
           created_at?: string | null
           email?: string | null
           endereco?: string | null
@@ -165,6 +173,7 @@ export type Database = {
           is_active?: boolean | null
           nome_oficina?: string | null
           plano?: string | null
+          responsavel?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
         }
@@ -244,6 +253,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_admin_permission: {
+        Args: { user_email: string; required_level: string }
+        Returns: boolean
+      }
       create_budget: {
         Args: {
           p_user_id: string

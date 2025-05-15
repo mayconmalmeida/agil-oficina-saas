@@ -21,23 +21,8 @@ import {
 } from "lucide-react";
 import DashboardHeader from "@/components/admin/DashboardHeader";
 import UsersHeader from "@/components/admin/UsersHeader";
-import UsersTable from "@/components/admin/UsersTable";
+import UsersTable, { Workshop } from "@/components/admin/UsersTable";
 import { Label } from '@/components/ui/label';
-
-type Workshop = {
-  id: string;
-  nome_oficina: string;
-  email: string;
-  telefone: string | null;
-  cnpj: string | null;
-  responsavel: string | null;
-  plano: string | null;
-  is_active: boolean;
-  created_at: string;
-  trial_ends_at: string | null;
-  subscription_status: string;
-  quote_count: number;
-};
 
 type WorkshopDetails = Workshop & {
   endereco: string | null;
@@ -114,22 +99,33 @@ const AdminUsers = () => {
       }
 
       // Get quote counts for each workshop
-      const workshopsWithStats = await Promise.all(profiles.map(async (profile) => {
+      const workshopsWithStats = await Promise.all((profiles || []).map(async (profile) => {
         const { count, error: countError } = await supabase
           .from('orcamentos')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', profile.id);
 
-        const subscription = profile.subscriptions?.[0] || {};
+        const subscriptionsData = Array.isArray(profile.subscriptions) ? profile.subscriptions : [];
+        const subscription = subscriptionsData[0] || {};
         const subscription_status = subscription.status || 'inactive';
         const trial_ends_at = profile.trial_ends_at;
         
-        return {
-          ...profile,
-          quote_count: count || 0,
-          subscription_status,
-          trial_ends_at
+        const workshop: Workshop = {
+          id: profile.id,
+          nome_oficina: profile.nome_oficina || '',
+          email: profile.email || '',
+          telefone: profile.telefone,
+          cnpj: profile.cnpj,
+          responsavel: profile.responsavel,
+          plano: profile.plano,
+          is_active: profile.is_active || false,
+          created_at: profile.created_at || '',
+          trial_ends_at: profile.trial_ends_at,
+          subscription_status: subscription_status,
+          quote_count: count || 0
         };
+        
+        return workshop;
       }));
 
       setWorkshops(workshopsWithStats);
@@ -162,7 +158,7 @@ const AdminUsers = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      const subscription = subscriptionData?.[0] || {};
+      const subscription = subscriptionData && subscriptionData[0] ? subscriptionData[0] : {};
 
       // Get quote counts
       const { count: quoteCount } = await supabase
@@ -170,12 +166,29 @@ const AdminUsers = () => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
 
-      setSelectedWorkshop({
-        ...profile,
-        quote_count: quoteCount || 0,
-        subscription_status: subscription.status || 'inactive'
-      });
-      setShowDetailsDialog(true);
+      if (profile) {
+        const workshopDetails: WorkshopDetails = {
+          id: profile.id,
+          nome_oficina: profile.nome_oficina || '',
+          email: profile.email || '',
+          telefone: profile.telefone,
+          cnpj: profile.cnpj,
+          responsavel: profile.responsavel,
+          plano: profile.plano,
+          is_active: profile.is_active || false,
+          created_at: profile.created_at || '',
+          trial_ends_at: profile.trial_ends_at,
+          subscription_status: subscription.status || 'inactive',
+          quote_count: quoteCount || 0,
+          endereco: profile.endereco,
+          cidade: profile.cidade,
+          estado: profile.estado,
+          cep: profile.cep
+        };
+        
+        setSelectedWorkshop(workshopDetails);
+        setShowDetailsDialog(true);
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
