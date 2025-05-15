@@ -1,58 +1,40 @@
 
 /**
- * Format phone number while user types
- * @param value Raw phone number input
- * @returns Formatted phone number string
+ * Utility functions for formatting data
  */
-export const formatPhoneNumber = (value: string): string => {
-  if (!value) return value;
-  
-  // Remove all non-digits
-  const digits = value.replace(/\D/g, '');
-  
-  // Format based on length
-  if (digits.length <= 2) {
-    return `(${digits}`;
-  } else if (digits.length <= 6) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  } else if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  } else {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
-  }
-};
 
 /**
- * Format vehicle plate according to Brazilian format
- * @param value Raw plate input
- * @returns Formatted plate string
- */
-export const formatVehiclePlate = (value: string): string => {
-  if (!value) return value;
-  
-  // Remove any spaces or special characters
-  const cleanValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-  
-  // Apply the correct format based on the plate standard
-  if (cleanValue.length <= 3) {
-    return cleanValue;
-  } else if (cleanValue.length <= 7) {
-    // Old format: AAA1234
-    return cleanValue;
-  } else {
-    // Mercosul format: AAA1A23
-    return cleanValue.slice(0, 8);
-  }
-};
-
-/**
- * Format currency values to Brazilian Real (BRL)
- * @param value Number to format
- * @returns Formatted currency string
+ * Format a currency value to Brazilian Real (BRL)
  */
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   }).format(value);
+};
+
+/**
+ * Format a date to Brazilian format (DD/MM/YYYY)
+ */
+export const formatDate = (date: string | Date): string => {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('pt-BR');
+};
+
+/**
+ * Format a date with time (DD/MM/YYYY HH:MM)
+ */
+export const formatDateTime = (date: string | Date): string => {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+};
+
+export const formatUtils = {
+  formatCurrency,
+  formatDate,
+  formatDateTime
 };

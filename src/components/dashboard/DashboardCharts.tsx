@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -13,7 +12,7 @@ import {
   Cell, 
   Legend 
 } from 'recharts';
-import { formatCurrency } from '@/utils/formatUtils';
+import { formatUtils } from '@/utils/formatUtils';
 import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Lock } from 'lucide-react';
@@ -86,7 +85,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({
       return (
         <div className="bg-white p-2 border border-gray-200 shadow-sm text-sm">
           <p className="font-medium">{`${label}`}</p>
-          <p className="text-oficina">{`${formatCurrency(payload[0].value)}`}</p>
+          <p className="text-oficina">{`${formatUtils.formatCurrency(payload[0].value)}`}</p>
         </div>
       );
     }
@@ -99,7 +98,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({
       return (
         <div className="bg-white p-2 border border-gray-200 shadow-sm text-sm">
           <p className="font-medium">{`${payload[0].name}`}</p>
-          <p className="text-oficina">{`${formatCurrency(payload[0].value)}`}</p>
+          <p className="text-oficina">{`${formatUtils.formatCurrency(payload[0].value)}`}</p>
         </div>
       );
     }

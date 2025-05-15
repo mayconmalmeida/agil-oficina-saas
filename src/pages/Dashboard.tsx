@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -32,7 +31,7 @@ const Dashboard: React.FC = () => {
   }
   
   const handleUpgradePlan = () => {
-    handlePremiumFeature('premium_charts');
+    handlePremiumFeature('reports'); // Using a valid PremiumFeature value
   };
   
   return (
