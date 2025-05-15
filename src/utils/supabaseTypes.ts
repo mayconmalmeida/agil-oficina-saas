@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -59,8 +58,8 @@ export interface Profile {
   is_active?: boolean;
   trial_ends_at?: string | null;
   last_login?: string | null;
-  logo_url?: string;
-  documents?: Document[];
+  logo_url?: string; // Added logo_url field
+  documents?: Document[]; // Added documents field
 }
 
 // Types for Subscription
@@ -105,10 +104,10 @@ export interface Client {
   telefone: string;
   email?: string;
   veiculo: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
+  marca?: string; // Added marca field
+  modelo?: string; // Added modelo field
+  ano?: string; // Added ano field
+  placa?: string; // Added placa field
   created_at: string;
 }
 

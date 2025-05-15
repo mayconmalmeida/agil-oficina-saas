@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 interface ClientListProps {
   onSelectClient: (clientId: string) => void;
   searchQuery?: string;
+  filters?: any; // Added filters prop
 }
 
 // Mock data - replace with actual data from your API
