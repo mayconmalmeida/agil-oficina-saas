@@ -15,9 +15,10 @@ import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
 
 type SubscriptionsTableProps = {
   subscriptions: SubscriptionWithProfile[];
+  isLoading?: boolean;
 };
 
-const SubscriptionsTable = ({ subscriptions }: SubscriptionsTableProps) => {
+const SubscriptionsTable = ({ subscriptions, isLoading = false }: SubscriptionsTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -46,27 +47,37 @@ const SubscriptionsTable = ({ subscriptions }: SubscriptionsTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {subscriptions.map((sub) => (
-          <TableRow key={sub.id}>
-            <TableCell className="font-medium">{sub.nome_oficina}</TableCell>
-            <TableCell>{sub.email}</TableCell>
-            <TableCell>R$ {sub.amount ? (sub.amount / 100).toFixed(2) : '0.00'}</TableCell>
-            <TableCell>{sub.created_at ? format(new Date(sub.created_at), 'dd/MM/yyyy') : 'N/A'}</TableCell>
-            <TableCell>
-              {sub.expires_at ? format(new Date(sub.expires_at), 'dd/MM/yyyy') : 'N/A'}
-            </TableCell>
-            <TableCell>{sub.payment_method || 'N/A'}</TableCell>
-            <TableCell className="text-center">
-              {getStatusBadge(sub.status || 'unknown')}
-            </TableCell>
-          </TableRow>
-        ))}
-        {subscriptions.length === 0 && (
+        {isLoading ? (
           <TableRow>
             <TableCell colSpan={7} className="text-center py-8">
-              Nenhuma assinatura encontrada
+              Carregando assinaturas...
             </TableCell>
           </TableRow>
+        ) : (
+          <>
+            {subscriptions.map((sub) => (
+              <TableRow key={sub.id}>
+                <TableCell className="font-medium">{sub.nome_oficina}</TableCell>
+                <TableCell>{sub.email}</TableCell>
+                <TableCell>R$ {sub.amount ? (sub.amount / 100).toFixed(2) : '0.00'}</TableCell>
+                <TableCell>{sub.created_at ? format(new Date(sub.created_at), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                <TableCell>
+                  {sub.expires_at ? format(new Date(sub.expires_at), 'dd/MM/yyyy') : 'N/A'}
+                </TableCell>
+                <TableCell>{sub.payment_method || 'N/A'}</TableCell>
+                <TableCell className="text-center">
+                  {getStatusBadge(sub.status || 'unknown')}
+                </TableCell>
+              </TableRow>
+            ))}
+            {subscriptions.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  Nenhuma assinatura encontrada
+                </TableCell>
+              </TableRow>
+            )}
+          </>
         )}
       </TableBody>
     </Table>

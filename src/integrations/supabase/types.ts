@@ -132,9 +132,11 @@ export type Database = {
           estado: string | null
           full_name: string | null
           id: string
+          is_active: boolean | null
           nome_oficina: string | null
           plano: string | null
           telefone: string | null
+          trial_ends_at: string | null
         }
         Insert: {
           cep?: string | null
@@ -145,9 +147,11 @@ export type Database = {
           estado?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean | null
           nome_oficina?: string | null
           plano?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
         }
         Update: {
           cep?: string | null
@@ -158,9 +162,11 @@ export type Database = {
           estado?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean | null
           nome_oficina?: string | null
           plano?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
         }
         Relationships: []
       }
@@ -199,6 +205,7 @@ export type Database = {
           amount: number | null
           created_at: string | null
           ends_at: string | null
+          expires_at: string | null
           id: string
           payment_method: string | null
           plan: string | null
@@ -210,6 +217,7 @@ export type Database = {
           amount?: number | null
           created_at?: string | null
           ends_at?: string | null
+          expires_at?: string | null
           id?: string
           payment_method?: string | null
           plan?: string | null
@@ -221,6 +229,7 @@ export type Database = {
           amount?: number | null
           created_at?: string | null
           ends_at?: string | null
+          expires_at?: string | null
           id?: string
           payment_method?: string | null
           plan?: string | null

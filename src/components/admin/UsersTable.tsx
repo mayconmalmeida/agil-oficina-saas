@@ -13,15 +13,16 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import type { User } from '@/pages/AdminUsers';
+import { ProfileWithStats } from '@/utils/supabaseTypes';
 
-type UsersTableProps = {
-  users: User[];
+export type UsersTableProps = {
+  users: ProfileWithStats[];
+  isLoading?: boolean;
   onToggleStatus: (userId: string, currentStatus: boolean) => void;
   onViewQuotes: (userId: string) => void;
 };
 
-const UsersTable = ({ users, onToggleStatus, onViewQuotes }: UsersTableProps) => {
+const UsersTable = ({ users, isLoading = false, onToggleStatus, onViewQuotes }: UsersTableProps) => {
   const getSubscriptionStatusText = (status: string, trialEndsAt: string | null) => {
     if (status === 'active') return 'Assinatura Ativa';
     
@@ -51,39 +52,49 @@ const UsersTable = ({ users, onToggleStatus, onViewQuotes }: UsersTableProps) =>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.map((user) => (
-          <TableRow key={user.id}>
-            <TableCell className="font-medium">{user.nome_oficina || 'Não definido'}</TableCell>
-            <TableCell>{user.email}</TableCell>
-            <TableCell>{format(new Date(user.created_at), 'dd/MM/yyyy')}</TableCell>
-            <TableCell>
-              {getSubscriptionStatusText(user.subscription_status, user.trial_ends_at)}
-            </TableCell>
-            <TableCell className="text-center">{user.quote_count}</TableCell>
-            <TableCell className="text-center">
-              <Switch
-                checked={user.is_active}
-                onCheckedChange={() => onToggleStatus(user.id, user.is_active)}
-              />
-            </TableCell>
-            <TableCell className="text-right">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onViewQuotes(user.id)}
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                Orçamentos
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-        {users.length === 0 && (
+        {isLoading ? (
           <TableRow>
             <TableCell colSpan={7} className="text-center py-8">
-              Nenhum usuário encontrado
+              Carregando usuários...
             </TableCell>
           </TableRow>
+        ) : (
+          <>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.nome_oficina || 'Não definido'}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.created_at ? format(new Date(user.created_at), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                <TableCell>
+                  {getSubscriptionStatusText(user.subscription_status, user.trial_ends_at)}
+                </TableCell>
+                <TableCell className="text-center">{user.quote_count}</TableCell>
+                <TableCell className="text-center">
+                  <Switch
+                    checked={user.is_active}
+                    onCheckedChange={() => onToggleStatus(user.id, user.is_active)}
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onViewQuotes(user.id)}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    Orçamentos
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {users.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  Nenhum usuário encontrado
+                </TableCell>
+              </TableRow>
+            )}
+          </>
         )}
       </TableBody>
     </Table>

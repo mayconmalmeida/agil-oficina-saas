@@ -5,16 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import UsersHeader from "@/components/admin/UsersHeader";
 import UsersTable from "@/components/admin/UsersTable";
-import { Profile } from '@/utils/supabaseTypes';
-
-interface UserWithStats extends Profile {
-  is_active: boolean;
-  quote_count: number;
-  subscription_status: string;
-}
+import { Profile, ProfileWithStats } from '@/utils/supabaseTypes';
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<UserWithStats[]>([]);
+  const [users, setUsers] = useState<ProfileWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -101,44 +95,20 @@ const AdminUsers = () => {
           
           // Criar objeto com estatísticas
           return {
-            id: profile.id,
-            email: profile.email || '',
-            nome_oficina: profile.nome_oficina || '',
-            is_active: Boolean(profile.is_active || false),
-            created_at: profile.created_at || '',
+            ...profile,
             quote_count: quoteCount || 0,
             subscription_status: subscriptionStatus,
-            trial_ends_at: profile.trial_ends_at || '',
-            // Copy other relevant Profile fields
-            full_name: profile.full_name,
-            telefone: profile.telefone,
-            endereco: profile.endereco,
-            cidade: profile.cidade,
-            estado: profile.estado,
-            cep: profile.cep,
-            plano: profile.plano
-          };
+            is_active: profile.is_active !== undefined ? profile.is_active : false
+          } as ProfileWithStats;
         } catch (err) {
           console.error('Erro ao buscar dados adicionais para usuário:', err);
           // Return a basic object if there was an error
           return {
-            id: profile.id,
-            email: profile.email || '',
-            nome_oficina: profile.nome_oficina || '',
-            is_active: false,
-            created_at: profile.created_at || '',
+            ...profile,
             quote_count: 0,
             subscription_status: 'error',
-            trial_ends_at: '',
-            // Copy other relevant Profile fields
-            full_name: profile.full_name,
-            telefone: profile.telefone,
-            endereco: profile.endereco,
-            cidade: profile.cidade,
-            estado: profile.estado,
-            cep: profile.cep,
-            plano: profile.plano
-          };
+            is_active: false
+          } as ProfileWithStats;
         }
       }));
       
@@ -191,6 +161,12 @@ const AdminUsers = () => {
       });
     }
   };
+  
+  const handleViewQuotes = (userId: string) => {
+    // Implementar redirecionamento para visualizar orçamentos
+    // navigate(`/admin/quotes/${userId}`);
+    console.log('Visualizar orçamentos do usuário:', userId);
+  };
 
   const handleBack = () => {
     navigate('/admin/dashboard');
@@ -206,6 +182,7 @@ const AdminUsers = () => {
             users={users}
             isLoading={isLoading}
             onToggleStatus={handleToggleUserStatus}
+            onViewQuotes={handleViewQuotes}
           />
         </div>
       </main>

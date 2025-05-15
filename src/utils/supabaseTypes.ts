@@ -16,16 +16,13 @@ type RPCParamMap = {
   [key: string]: any; // Add indexer to allow for any string key
 };
 
-// Utility type for RPC functions
-type RPCFunctionNames = keyof RPCParamMap;
-
 /**
  * Type-safe wrapper for calling Supabase RPC functions
  * @param fn The RPC function name
  * @param params The parameters to pass to the function
  * @returns The result of the RPC call
  */
-export const safeRpc = <T = any>(fn: RPCFunctionNames, params: RPCParamMap[typeof fn]) => {
+export const safeRpc = <T = any>(fn: string, params: any) => {
   return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
 };
 
@@ -110,3 +107,9 @@ export interface ProfileWithSubscriptions extends Profile {
   subscriptions?: Subscription[];
 }
 
+// ProfileWithStats extends Profile for the admin dashboard
+export interface ProfileWithStats extends Profile {
+  quote_count: number;
+  subscription_status: string;
+  is_active: boolean;
+}

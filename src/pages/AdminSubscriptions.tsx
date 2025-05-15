@@ -50,19 +50,14 @@ const AdminSubscriptions = () => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase
+      // Use a simpler query to avoid relations issues
+      const { data: subsData, error: subsError } = await supabase
         .from('subscriptions')
-        .select(`
-          *,
-          profiles:user_id (
-            email,
-            nome_oficina
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
         
-      if (error) {
-        console.error('Erro ao carregar assinaturas:', error);
+      if (subsError) {
+        console.error('Erro ao carregar assinaturas:', subsError);
         toast({
           variant: "destructive",
           title: "Erro ao carregar dados",
@@ -71,23 +66,35 @@ const AdminSubscriptions = () => {
         setIsLoading(false);
         return;
       }
-      
-      // Map the data to a format that the component expects
-      const formattedData: SubscriptionWithProfile[] = data?.map(item => {
+
+      if (!subsData || subsData.length === 0) {
+        setIsLoading(false);
+        setSubscriptions([]);
+        return;
+      }
+
+      // Fetch profiles separately for each subscription
+      const formattedSubscriptions = await Promise.all(subsData.map(async (sub) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, nome_oficina')
+          .eq('id', sub.user_id)
+          .single();
+          
         return {
-          id: item.id,
-          user_id: item.user_id,
-          status: item.status,
-          created_at: item.created_at,
-          expires_at: item.ends_at || '',
-          payment_method: item.payment_method || '',
-          amount: item.amount,
-          email: item.profiles?.email || '',
-          nome_oficina: item.profiles?.nome_oficina || '',
+          id: sub.id,
+          user_id: sub.user_id,
+          status: sub.status,
+          created_at: sub.created_at,
+          expires_at: sub.expires_at || sub.ends_at, // Use either expires_at or ends_at
+          payment_method: sub.payment_method || '',
+          amount: sub.amount,
+          email: profileData?.email || '',
+          nome_oficina: profileData?.nome_oficina || '',
         };
-      }) || [];
+      }));
       
-      setSubscriptions(formattedData);
+      setSubscriptions(formattedSubscriptions);
     } catch (error) {
       console.error('Erro inesperado ao carregar assinaturas:', error);
       toast({
