@@ -14,6 +14,11 @@ export type DashboardData = {
   workshopStatus: WorkshopStatus;
   daysRemaining: number;
   planType: string;
+  openServices: number;
+  scheduledServices: number;
+  monthlyRevenue: { month: string; value: number }[];
+  topServices: { name: string; value: number }[];
+  topProducts: { name: string; value: number }[];
 };
 
 export const useDashboardData = (userId?: string) => {
@@ -24,7 +29,31 @@ export const useDashboardData = (userId?: string) => {
     recentActivities: [],
     workshopStatus: 'trial',
     daysRemaining: 7,
-    planType: 'basic'
+    planType: 'basic',
+    openServices: 0,
+    scheduledServices: 0,
+    monthlyRevenue: [
+      { month: 'Jan', value: 5000 },
+      { month: 'Fev', value: 7500 },
+      { month: 'Mar', value: 12000 },
+      { month: 'Abr', value: 10000 },
+      { month: 'Mai', value: 9000 },
+      { month: 'Jun', value: 11000 }
+    ],
+    topServices: [
+      { name: 'Troca de Óleo', value: 15000 },
+      { name: 'Revisão Geral', value: 12000 },
+      { name: 'Alinhamento', value: 8000 },
+      { name: 'Balanceamento', value: 6000 },
+      { name: 'Troca de Pastilhas', value: 4500 }
+    ],
+    topProducts: [
+      { name: 'Óleo Motor', value: 8000 },
+      { name: 'Filtro de Ar', value: 3500 },
+      { name: 'Pastilhas de Freio', value: 7000 },
+      { name: 'Filtro de Óleo', value: 2000 },
+      { name: 'Pneus', value: 12000 }
+    ]
   });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -135,6 +164,10 @@ export const useDashboardData = (userId?: string) => {
             }
           }
           
+          // Get sample data for open services and scheduled services
+          const openServices = 5; // This would come from database in a real implementation
+          const scheduledServices = 3; // This would come from database in a real implementation
+          
           setData({
             totalClients: clientsCount || 0,
             totalServices: servicesCount || 0,
@@ -142,7 +175,32 @@ export const useDashboardData = (userId?: string) => {
             recentActivities,
             workshopStatus,
             daysRemaining,
-            planType
+            planType,
+            openServices,
+            scheduledServices,
+            // Mock data for charts - in a real implementation these would come from database queries
+            monthlyRevenue: [
+              { month: 'Jan', value: 5000 },
+              { month: 'Fev', value: 7500 },
+              { month: 'Mar', value: 12000 },
+              { month: 'Abr', value: 10000 },
+              { month: 'Mai', value: 9000 },
+              { month: 'Jun', value: 11000 }
+            ],
+            topServices: [
+              { name: 'Troca de Óleo', value: 15000 },
+              { name: 'Revisão Geral', value: 12000 },
+              { name: 'Alinhamento', value: 8000 },
+              { name: 'Balanceamento', value: 6000 },
+              { name: 'Troca de Pastilhas', value: 4500 }
+            ],
+            topProducts: [
+              { name: 'Óleo Motor', value: 8000 },
+              { name: 'Filtro de Ar', value: 3500 },
+              { name: 'Pastilhas de Freio', value: 7000 },
+              { name: 'Filtro de Óleo', value: 2000 },
+              { name: 'Pneus', value: 12000 }
+            ]
           });
         }
         

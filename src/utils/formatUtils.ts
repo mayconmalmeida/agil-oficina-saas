@@ -44,3 +44,15 @@ export const formatVehiclePlate = (value: string): string => {
     return cleanValue.slice(0, 8);
   }
 };
+
+/**
+ * Format currency values to Brazilian Real (BRL)
+ * @param value Number to format
+ * @returns Formatted currency string
+ */
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};

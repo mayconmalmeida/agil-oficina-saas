@@ -8,12 +8,16 @@ import { Search, Plus, FileText, Users } from 'lucide-react';
 import ClientList from '@/components/clients/ClientList';
 import ClientForm from '@/components/clients/ClientForm';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
+import { useToast } from '@/hooks/use-toast';
 
 const ClientsManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const { toast } = useToast();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +29,7 @@ const ClientsManagementPage: React.FC = () => {
     setActiveTab('novo');
     setSelectedClientId(null);
     setShowDetails(false);
+    setSaveSuccess(false);
   };
   
   const handleClientSelect = (clientId: string) => {
@@ -35,6 +40,34 @@ const ClientsManagementPage: React.FC = () => {
   const handleCloseDetails = () => {
     setShowDetails(false);
     setSelectedClientId(null);
+  };
+  
+  const handleSubmitClient = async (values: any) => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Show success message
+      setSaveSuccess(true);
+      toast({
+        title: "Cliente adicionado",
+        description: "O cliente foi cadastrado com sucesso.",
+      });
+    } catch (error) {
+      console.error("Error adding client:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao adicionar cliente",
+        description: "Ocorreu um erro ao cadastrar o cliente.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSkip = () => {
+    setActiveTab('lista');
   };
   
   return (
@@ -85,7 +118,12 @@ const ClientsManagementPage: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="novo" className="mt-0">
-                    <ClientForm />
+                    <ClientForm 
+                      onSubmit={handleSubmitClient}
+                      onSkip={handleSkip}
+                      isLoading={isLoading}
+                      saveSuccess={saveSuccess}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>
