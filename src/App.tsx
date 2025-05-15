@@ -13,6 +13,7 @@ import AdminSubscriptions from "./pages/AdminSubscriptions";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import UserDashboard from "./pages/UserDashboard";
+import Dashboard from "./pages/Dashboard"; // Add the new Dashboard import
 import ProfileSetupPage from "./pages/ProfileSetupPage";
 import ClientsPage from "./pages/ClientsPage";
 import ServicesPage from "./pages/ServicesPage";
@@ -40,7 +41,8 @@ const App = () => (
           <Route path="/registrar" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
-          <Route path="/dashboard" element={<UserDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} /> {/* Update to use new Dashboard */}
+          <Route path="/dashboard-legacy" element={<UserDashboard />} /> {/* Keep old dashboard as legacy */}
           <Route path="/perfil-oficina" element={<ProfileSetupPage />} />
           <Route path="/clientes" element={<ClientsPage />} />
           <Route path="/produtos-servicos" element={<ServicesPage />} />
