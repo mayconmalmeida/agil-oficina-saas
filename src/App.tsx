@@ -17,6 +17,7 @@ import ServicesPage from './pages/ServicesPage';
 import ProductsPage from './pages/ProductsPage';
 import NewBudgetPage from './pages/NewBudgetPage';
 import BudgetPage from './pages/BudgetPage';
+import BudgetDetailsPage from './pages/BudgetDetailsPage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import CompanyProfilePage from './pages/CompanyProfilePage';
 import WorkshopRegistrationPage from './pages/WorkshopRegistrationPage';
@@ -70,7 +71,8 @@ function App() {
           <Route path="/produtos/novo" element={<ProductsPage />} />
           <Route path="/servicos" element={<ServicesPage />} />
           <Route path="/orcamentos" element={<BudgetPage />} />
-          <Route path="/orcamentos/novo" element={<BudgetPage />} />
+          <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
+          <Route path="/orcamentos/:id" element={<BudgetDetailsPage />} />
           <Route path="/configuracoes" element={<SettingsPage />} />
           <Route path="/configuracoes/oficina" element={<CompanyProfilePage />} />
           <Route path="/perfil/editar" element={<ProfileEditPage />} />
