@@ -11,15 +11,15 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import SupportSettings from '@/components/settings/SupportSettings';
 import { 
   ProfileSection, 
-  profileUpdateSchema 
+  profileUpdateSchema,
+  type ProfileFormValues
 } from '@/components/settings/ProfileSection';
 import { 
   SecuritySection, 
-  passwordChangeSchema 
+  passwordChangeSchema,
+  type PasswordFormValues
 } from '@/components/settings/SecuritySection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
-import { type ProfileFormValues } from '@/components/settings/ProfileSection';
-import { type PasswordFormValues } from '@/components/settings/SecuritySection';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
@@ -29,7 +29,7 @@ const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile, loading: isLoadingProfile } = useUserProfile();
   
-  const passwordForm = useForm({
+  const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordChangeSchema),
     defaultValues: {
       currentPassword: '',
@@ -38,7 +38,7 @@ const SettingsPage: React.FC = () => {
     },
   });
   
-  const profileForm = useForm({
+  const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       nome_oficina: userProfile?.nome_oficina || '',

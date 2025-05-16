@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
-const profileUpdateSchema = z.object({
-  nome_oficina: z.string().min(3, { message: 'O nome da oficina é obrigatório' }).optional(),
+// Update the schema to match the actual form values
+export const profileUpdateSchema = z.object({
+  nome_oficina: z.string().optional(),
   cnpj: z.string().optional(),
   responsavel: z.string().optional(),
   telefone: z.string().optional(),
