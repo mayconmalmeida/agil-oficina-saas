@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
-// Update the schema to match the actual form values
+// Define the schema for profile updates
 export const profileUpdateSchema = z.object({
   nome_oficina: z.string().optional(),
   cnpj: z.string().optional(),
@@ -166,4 +166,4 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ form, onSubmit, isLoadi
   );
 };
 
-export { ProfileSection, profileUpdateSchema };
+export { ProfileSection };
