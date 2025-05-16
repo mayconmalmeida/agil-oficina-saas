@@ -2,7 +2,7 @@
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { budgetSchema, BudgetFormValues } from './budgetSchema';
+import { budgetFormSchema, BudgetFormValues } from './budgetSchema';
 import { Form } from '@/components/ui/form';
 import ClientSearchField from './form-sections/ClientSearchField';
 import VehicleField from './form-sections/VehicleField';
@@ -24,7 +24,7 @@ interface BudgetFormProps {
 
 const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, initialValues }) => {
   const form = useForm<BudgetFormValues>({
-    resolver: zodResolver(budgetSchema),
+    resolver: zodResolver(budgetFormSchema),
     defaultValues: {
       cliente: initialValues?.cliente || '',
       veiculo: initialValues?.veiculo || '',
