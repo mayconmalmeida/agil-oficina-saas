@@ -6,6 +6,16 @@ export const profileSchema = z.object({
   telefone: z.string().min(8, { message: "Telefone inválido" }),
   logo_url: z.string().optional(),
   whatsapp_suporte: z.string().optional(),
+  cnpj: z.string().optional(),
+  responsavel: z.string().optional(),
+  endereco: z.string().optional(),
+  cidade: z.string().optional(),
+  estado: z.string().optional(),
+  cep: z.string().optional(),
+  notify_new_client: z.boolean().optional().default(true),
+  notify_approved_budget: z.boolean().optional().default(true),
+  notify_by_email: z.boolean().optional().default(false),
+  sound_enabled: z.boolean().optional().default(false),
 });
 
 // Export the type for use in components

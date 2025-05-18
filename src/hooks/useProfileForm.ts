@@ -78,6 +78,10 @@ export function useProfileForm({
       cidade: initialValues.cidade || '',
       estado: initialValues.estado || '',
       cep: initialValues.cep || '',
+      notify_new_client: initialValues.notify_new_client ?? true,
+      notify_approved_budget: initialValues.notify_approved_budget ?? true,
+      notify_by_email: initialValues.notify_by_email ?? false,
+      sound_enabled: initialValues.sound_enabled ?? false,
     },
   });
 
@@ -109,6 +113,10 @@ export function useProfileForm({
           cidade: values.cidade,
           estado: values.estado,
           cep: values.cep,
+          notify_new_client: values.notify_new_client,
+          notify_approved_budget: values.notify_approved_budget,
+          notify_by_email: values.notify_by_email,
+          sound_enabled: values.sound_enabled,
         })
         .eq('id', userId);
 
