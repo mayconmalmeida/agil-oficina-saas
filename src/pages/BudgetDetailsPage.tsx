@@ -1,13 +1,17 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Printer, Edit, Check, X } from 'lucide-react';
 import Loading from '@/components/ui/loading';
+
+// Componentes refatorados
+import BudgetHeader from '@/components/budget/details/BudgetHeader';
+import BudgetInfo from '@/components/budget/details/BudgetInfo';
+import BudgetStatusActions from '@/components/budget/details/BudgetStatusActions';
 
 interface Budget {
   id: string;
@@ -63,25 +67,6 @@ const BudgetDetailsPage: React.FC = () => {
     
     fetchBudgetDetails();
   }, [id, toast]);
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  };
-  
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'aprovado': return 'bg-green-100 text-green-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'concluído': return 'bg-blue-100 text-blue-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
   
   const handleBack = () => {
     navigate(-1);
@@ -154,75 +139,27 @@ const BudgetDetailsPage: React.FC = () => {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Detalhes do Orçamento</h1>
-          <p className="text-muted-foreground">
-            Criado em {formatDate(budget.created_at)}
-          </p>
-        </div>
-        <div className="flex items-center mt-4 md:mt-0 gap-2">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-          </Button>
-          <Button variant="outline" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> Imprimir
-          </Button>
-          <Button variant="outline" onClick={handleEdit}>
-            <Edit className="mr-2 h-4 w-4" /> Editar
-          </Button>
-        </div>
-      </div>
+      <BudgetHeader 
+        createdAt={budget.created_at}
+        onBack={handleBack}
+        onPrint={handlePrint}
+        onEdit={handleEdit}
+      />
       
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Orçamento #{budget.id.substring(0, 8)}</CardTitle>
-            <Badge className={getStatusColor(budget.status)}>{budget.status}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium text-lg mb-2">Informações do Cliente</h3>
-              <p><span className="font-medium">Nome:</span> {budget.cliente}</p>
-              <p><span className="font-medium">Veículo:</span> {budget.veiculo}</p>
-            </div>
-            
-            <div>
-              <h3 className="font-medium text-lg mb-2">Informações do Orçamento</h3>
-              <p><span className="font-medium">Data:</span> {formatDate(budget.created_at)}</p>
-              <p><span className="font-medium">Valor Total:</span> {formatCurrency(budget.valor_total)}</p>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <h3 className="font-medium text-lg mb-2">Descrição dos Serviços</h3>
-            <p>{budget.descricao}</p>
-          </div>
-          
-          <Separator />
-          
-          {budget.status === 'pendente' && (
-            <div className="flex justify-end gap-2">
-              <Button 
-                onClick={() => handleStatusUpdate('aprovado')} 
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Check className="mr-2 h-4 w-4" /> Aprovar
-              </Button>
-              <Button 
-                onClick={() => handleStatusUpdate('cancelado')} 
-                variant="destructive"
-              >
-                <X className="mr-2 h-4 w-4" /> Cancelar
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <BudgetInfo
+        id={budget.id}
+        cliente={budget.cliente}
+        veiculo={budget.veiculo}
+        created_at={budget.created_at}
+        valor_total={budget.valor_total}
+        descricao={budget.descricao}
+        status={budget.status}
+      />
+      
+      <BudgetStatusActions 
+        status={budget.status} 
+        onStatusUpdate={handleStatusUpdate} 
+      />
     </div>
   );
 };

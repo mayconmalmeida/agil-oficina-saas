@@ -46,7 +46,7 @@ const Pricing = () => {
             Planos Simples e Acessíveis
           </h2>
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-            Escolha o plano ideal para sua oficina e aproveite 15 dias de teste grátis. Sem compromisso.
+            Escolha o plano ideal para sua oficina e aproveite 7 dias de teste grátis. Sem compromisso.
           </p>
         </div>
 
