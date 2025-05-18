@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -15,7 +16,12 @@ type RPCParamMap = {
     p_marca: string;
     p_modelo: string;
     p_ano: string;
-    p_placa: string
+    p_placa: string;
+    p_endereco: string | null;
+    p_cidade: string | null;
+    p_estado: string | null;
+    p_cep: string | null;
+    p_documento: string | null
   };
   'create_service': { p_user_id: string; p_nome: string; p_tipo: string; p_valor: number; p_descricao: string };
   'create_profile_table': {};
