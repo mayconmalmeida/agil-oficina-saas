@@ -68,7 +68,12 @@ const ClientsPage: React.FC = () => {
         p_marca: values.veiculo.marca,
         p_modelo: values.veiculo.modelo,
         p_ano: values.veiculo.ano,
-        p_placa: values.veiculo.placa
+        p_placa: values.veiculo.placa,
+        p_endereco: null,  // Add missing parameters with default values
+        p_cidade: null,
+        p_estado: null,
+        p_cep: null,
+        p_documento: null
       });
       
       if (error) {
