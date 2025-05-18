@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,25 +12,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { safeRpc } from '@/utils/supabaseTypes';
+import { 
+  validateCPF, 
+  formatCPF, 
+  validateLicensePlate, 
+  formatLicensePlate, 
+  fetchAddressByCEP, 
+  formatCEP,
+  ViaCEPResponse 
+} from '@/utils/validationUtils';
 
+// Schema with enhanced validations
 export const clientFormSchema = z.object({
   nome: z.string().min(1, 'Nome do cliente é obrigatório'),
   tipo: z.enum(['pf', 'pj']).default('pf'),
-  documento: z.string().optional(),
+  documento: z.string()
+    .refine(val => 
+      val === '' || 
+      (val.length >= 11 && validateCPF(val)), 
+      {
+        message: 'CPF inválido. Formato: 000.000.000-00'
+      }
+    ).optional().or(z.literal('')),
   telefone: z.string()
     .min(14, 'Telefone deve ter no mínimo 14 caracteres no formato (XX) XXXXX-XXXX')
     .max(15, 'Telefone deve ter no máximo 15 caracteres')
     .regex(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, 'Formato inválido. Use (XX) XXXXX-XXXX'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
+  cep: z.string()
+    .regex(/^\d{5}-\d{3}$/, 'Formato de CEP inválido. Use XXXXX-XXX')
+    .optional().or(z.literal('')),
   endereco: z.string().optional().or(z.literal('')),
+  numero: z.string().optional().or(z.literal('')),
+  bairro: z.string().optional().or(z.literal('')),
   cidade: z.string().optional().or(z.literal('')),
   estado: z.string().optional().or(z.literal('')),
-  cep: z.string().optional().or(z.literal('')),
   veiculo: z.object({
     marca: z.string().min(1, 'Marca do veículo é obrigatória'),
     modelo: z.string().min(1, 'Modelo do veículo é obrigatório'),
-    ano: z.string().regex(/^\d{4}$/, 'Ano deve ter 4 dígitos'),
-    placa: z.string().min(7, 'Placa deve ter no mínimo 7 caracteres').max(8, 'Placa deve ter no máximo 8 caracteres'),
+    ano: z.string().regex(/^\d{4}$/, 'Ano deve ter exatamente 4 dígitos'),
+    placa: z.string()
+      .refine(val => validateLicensePlate(val), {
+        message: 'Formato de placa inválido. Use ABC-1234 ou ABC1D23'
+      }),
     cor: z.string().optional().or(z.literal('')),
     kilometragem: z.string().optional().or(z.literal(''))
   })
@@ -52,6 +77,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('cliente');
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -61,10 +87,12 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
       documento: initialData.documento || '',
       telefone: initialData.telefone || '',
       email: initialData.email || '',
+      cep: initialData.cep || '',
       endereco: initialData.endereco || '',
+      numero: initialData.numero || '',
+      bairro: initialData.bairro || '',
       cidade: initialData.cidade || '',
       estado: initialData.estado || '',
-      cep: initialData.cep || '',
       veiculo: {
         marca: initialData.veiculo?.marca || '',
         modelo: initialData.veiculo?.modelo || '',
@@ -76,11 +104,16 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
     },
   });
   
-  // Format phone number as user types
+  // Format fields as user types
   const { watch, setValue } = form;
   const phoneValue = watch('telefone');
   const tipoValue = watch('tipo');
+  const documentValue = watch('documento');
+  const cepValue = watch('cep');
+  const placaValue = watch('veiculo.placa');
+  const anoValue = watch('veiculo.ano');
   
+  // Format phone number
   useEffect(() => {
     if (phoneValue) {
       const formattedPhone = formatPhoneNumber(phoneValue);
@@ -89,6 +122,71 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
       }
     }
   }, [phoneValue, setValue]);
+  
+  // Format CPF
+  useEffect(() => {
+    if (documentValue && tipoValue === 'pf') {
+      const formattedCPF = formatCPF(documentValue);
+      if (formattedCPF !== documentValue) {
+        setValue('documento', formattedCPF);
+      }
+    }
+  }, [documentValue, tipoValue, setValue]);
+  
+  // Format CEP
+  useEffect(() => {
+    if (cepValue) {
+      const formattedCEP = formatCEP(cepValue);
+      if (formattedCEP !== cepValue) {
+        setValue('cep', formattedCEP);
+      }
+    }
+  }, [cepValue, setValue]);
+  
+  // Format license plate
+  useEffect(() => {
+    if (placaValue) {
+      const formattedPlaca = formatLicensePlate(placaValue);
+      if (formattedPlaca !== placaValue) {
+        setValue('veiculo.placa', formattedPlaca);
+      }
+    }
+  }, [placaValue, setValue]);
+  
+  // Handle CEP lookup
+  const handleCepLookup = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cep = e.target.value.replace(/\D/g, '');
+    
+    if (cep.length !== 8) return;
+    
+    setIsLoadingAddress(true);
+    
+    try {
+      const addressData = await fetchAddressByCEP(cep);
+      
+      if (addressData) {
+        setValue('endereco', addressData.logradouro);
+        setValue('bairro', addressData.bairro);
+        setValue('cidade', addressData.localidade);
+        setValue('estado', addressData.uf);
+        
+        // Focus the number field after filling address
+        setTimeout(() => {
+          document.getElementById('endereco-numero')?.focus();
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error fetching address:', error);
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  };
+  
+  // Restrict year field to only numbers and 4 digits
+  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setValue('veiculo.ano', value);
+  };
   
   const handleNextTab = () => {
     setActiveTab('veiculo');
@@ -112,7 +210,10 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
         return;
       }
 
-      // Preparar os dados do veículo formatados
+      // Format complete address
+      const enderecoCompleto = values.endereco + (values.numero ? `, ${values.numero}` : '');
+      
+      // Prepare vehicle data
       const veiculoFormatado = `${values.veiculo.marca} ${values.veiculo.modelo} ${values.veiculo.ano}, Placa: ${values.veiculo.placa}`;
       
       // Use the safeRpc function to ensure type safety
@@ -125,7 +226,12 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
         p_marca: values.veiculo.marca,
         p_modelo: values.veiculo.modelo, 
         p_ano: values.veiculo.ano,
-        p_placa: values.veiculo.placa
+        p_placa: values.veiculo.placa,
+        p_endereco: enderecoCompleto,
+        p_cidade: values.cidade || null,
+        p_estado: values.estado || null,
+        p_cep: values.cep || null,
+        p_documento: values.documento || null
       });
       
       if (error) throw error;
@@ -144,13 +250,13 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="overflow-visible">
           <TabsList className="mb-4 w-full">
             <TabsTrigger value="cliente" className="flex-1">Dados do Cliente</TabsTrigger>
             <TabsTrigger value="veiculo" className="flex-1">Dados do Veículo</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="cliente">
+          <TabsContent value="cliente" className="overflow-visible">
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -220,6 +326,17 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                           {...field}
                           disabled={saveSuccess}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          inputMode={tipoValue === 'pf' ? "numeric" : "text"}
+                          onKeyDown={(e) => {
+                            // Allow only digits, backspace, tab, delete, and arrow keys
+                            if (
+                              tipoValue === 'pf' && 
+                              !/^\d$/.test(e.key) && 
+                              !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -241,6 +358,16 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                           {...field}
                           disabled={saveSuccess}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          inputMode="numeric"
+                          onKeyDown={(e) => {
+                            // Allow only digits, backspace, tab, delete, and arrow keys
+                            if (
+                              !/^\d$/.test(e.key) && 
+                              !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -270,20 +397,31 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
               </div>
               
               <div className="border-t pt-4 mt-4">
-                <h3 className="text-md font-medium mb-4">Endereço (opcional)</h3>
+                <h3 className="text-md font-medium mb-4">Endereço</h3>
                 
                 <FormField
                   control={form.control}
-                  name="endereco"
+                  name="cep"
                   render={({ field }) => (
                     <FormItem className="mb-4">
-                      <FormLabel>Endereço completo</FormLabel>
+                      <FormLabel>CEP</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="Rua, número, bairro" 
+                          placeholder="00000-000" 
                           {...field}
-                          disabled={saveSuccess}
+                          disabled={saveSuccess || isLoadingAddress}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          inputMode="numeric"
+                          onBlur={handleCepLookup}
+                          onKeyDown={(e) => {
+                            // Allow only digits, backspace, tab, delete, and arrow keys
+                            if (
+                              !/^\d$/.test(e.key) && 
+                              !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -291,7 +429,70 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                   )}
                 />
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="endereco"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Endereço</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Rua, Avenida..." 
+                              {...field}
+                              disabled={saveSuccess || isLoadingAddress}
+                              className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                              readOnly={isLoadingAddress}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="numero"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número</FormLabel>
+                        <FormControl>
+                          <Input 
+                            id="endereco-numero"
+                            placeholder="123" 
+                            {...field}
+                            disabled={saveSuccess}
+                            className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="bairro"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bairro</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field}
+                            disabled={saveSuccess || isLoadingAddress}
+                            className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                            readOnly={isLoadingAddress}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <FormField
                     control={form.control}
                     name="cidade"
@@ -301,8 +502,9 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                         <FormControl>
                           <Input 
                             {...field}
-                            disabled={saveSuccess}
+                            disabled={saveSuccess || isLoadingAddress}
                             className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                            readOnly={isLoadingAddress}
                           />
                         </FormControl>
                         <FormMessage />
@@ -319,29 +521,9 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                         <FormControl>
                           <Input 
                             {...field}
-                            disabled={saveSuccess}
+                            disabled={saveSuccess || isLoadingAddress}
                             className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="mt-4">
-                  <FormField
-                    control={form.control}
-                    name="cep"
-                    render={({ field }) => (
-                      <FormItem className="max-w-xs">
-                        <FormLabel>CEP</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="00000-000"
-                            {...field}
-                            disabled={saveSuccess}
-                            className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                            readOnly={isLoadingAddress}
                           />
                         </FormControl>
                         <FormMessage />
@@ -363,7 +545,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="veiculo">
+          <TabsContent value="veiculo" className="overflow-visible">
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -419,6 +601,17 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                           maxLength={4}
                           disabled={saveSuccess}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          inputMode="numeric"
+                          onChange={handleYearChange}
+                          onKeyDown={(e) => {
+                            // Allow only digits, backspace, tab, delete, and arrow keys
+                            if (
+                              !/^\d$/.test(e.key) && 
+                              !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -434,7 +627,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                       <FormLabel>Placa</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="ABC1D23"
+                          placeholder="ABC1D23 ou ABC-1234"
                           {...field}
                           maxLength={8}
                           disabled={saveSuccess}
@@ -479,6 +672,16 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                           {...field}
                           disabled={saveSuccess}
                           className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                          inputMode="numeric"
+                          onKeyDown={(e) => {
+                            // Allow only digits, backspace, tab, delete, and arrow keys
+                            if (
+                              !/^\d$/.test(e.key) && 
+                              !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

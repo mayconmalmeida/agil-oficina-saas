@@ -87,7 +87,7 @@ const ClientManagementPage: React.FC = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className={`lg:col-span-${showDetails ? '2' : '3'}`}>
-            <Card>
+            <Card className="overflow-visible"> {/* Added overflow-visible to fix content cutting */}
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
@@ -127,7 +127,7 @@ const ClientManagementPage: React.FC = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="novo" className="mt-0">
+                  <TabsContent value="novo" className="mt-0 overflow-visible"> {/* Added overflow-visible */}
                     <EnhancedClientForm 
                       onSave={handleClientSaved}
                       isLoading={isLoading}

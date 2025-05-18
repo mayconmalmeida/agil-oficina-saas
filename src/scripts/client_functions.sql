@@ -11,7 +11,12 @@ CREATE OR REPLACE FUNCTION create_client(
   p_marca TEXT,
   p_modelo TEXT,
   p_ano TEXT,
-  p_placa TEXT
+  p_placa TEXT,
+  p_endereco TEXT DEFAULT NULL,
+  p_cidade TEXT DEFAULT NULL,
+  p_estado TEXT DEFAULT NULL,
+  p_cep TEXT DEFAULT NULL,
+  p_documento TEXT DEFAULT NULL
 ) RETURNS VOID AS $$
 BEGIN
   -- Create the clients table if it doesn't exist
@@ -27,10 +32,15 @@ BEGIN
       modelo TEXT,
       ano TEXT,
       placa TEXT,
+      endereco TEXT,
+      cidade TEXT,
+      estado TEXT,
+      cep TEXT,
+      documento TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc'', now())
     );
     
-    -- Add RLS policies if they don't exist yet
+    -- Add RLS policies if they don''t exist yet
     DO $$ 
     BEGIN
       IF NOT EXISTS (
@@ -61,6 +71,11 @@ BEGIN
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS modelo TEXT;
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS ano TEXT;
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS placa TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS endereco TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS cidade TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS estado TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS cep TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS documento TEXT;
     ';
   EXCEPTION WHEN OTHERS THEN
     -- Handle errors
@@ -68,7 +83,8 @@ BEGIN
   END;
   
   -- Insert the client
-  INSERT INTO clients (user_id, nome, telefone, email, veiculo, marca, modelo, ano, placa)
-  VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa);
+  INSERT INTO clients (user_id, nome, telefone, email, veiculo, marca, modelo, ano, placa, endereco, cidade, estado, cep, documento)
+  VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa, p_endereco, p_cidade, p_estado, p_cep, p_documento);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
