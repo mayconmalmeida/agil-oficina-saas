@@ -5,9 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import SupportSettings from '@/components/settings/SupportSettings';
+import SupportContact from '@/components/settings/SupportContact';
 import NotificationsSettings from '@/components/settings/NotificationsSettings';
-import { Building, Palette, Bell, Phone } from 'lucide-react';
+import { Building, Palette, Bell, Phone, Upload } from 'lucide-react';
 import { 
   ProfileSection, 
   profileUpdateSchema,
@@ -22,6 +22,7 @@ import AppearanceSection from '@/components/settings/AppearanceSection';
 import { supabase } from '@/lib/supabase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import LogoSettingsSection from '@/components/settings/LogoSettingsSection';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
@@ -32,7 +33,7 @@ const SettingsPage: React.FC = () => {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { userProfile, loading: isLoadingProfile } = useUserProfile();
+  const { userProfile, loading: isLoadingProfile, userId } = useUserProfile();
   
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordChangeSchema),
@@ -210,6 +211,10 @@ const SettingsPage: React.FC = () => {
                   <Building className="w-4 h-4 mr-2" />
                   <span className="hidden md:inline">Segurança</span>
                 </TabsTrigger>
+                <TabsTrigger value="logo" className="flex items-center">
+                  <Upload className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Logo</span>
+                </TabsTrigger>
                 <TabsTrigger value="aparencia" className="flex items-center">
                   <Palette className="w-4 h-4 mr-2" />
                   <span className="hidden md:inline">Aparência</span>
@@ -241,6 +246,13 @@ const SettingsPage: React.FC = () => {
                 />
               </TabsContent>
               
+              <TabsContent value="logo">
+                <LogoSettingsSection 
+                  userId={userId}
+                  initialLogo={userProfile?.logo_url}
+                />
+              </TabsContent>
+              
               <TabsContent value="aparencia">
                 <AppearanceSection 
                   themeSetting={themeSetting} 
@@ -253,11 +265,8 @@ const SettingsPage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="suporte">
-                <SupportSettings 
-                  userId={userProfile?.id}
-                  initialValues={{
-                    whatsapp_suporte: userProfile?.whatsapp_suporte
-                  }}
+                <SupportContact 
+                  supportPhone={userProfile?.whatsapp_suporte || '46991270777'}
                 />
               </TabsContent>
             </Tabs>
