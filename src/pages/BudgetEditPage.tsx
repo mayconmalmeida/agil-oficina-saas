@@ -1,0 +1,176 @@
+
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft } from 'lucide-react';
+import Loading from '@/components/ui/loading';
+import BudgetForm from '@/components/budget/BudgetForm';
+import { BudgetFormValues } from '@/components/budget/budgetSchema';
+
+const BudgetEditPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [budget, setBudget] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const fetchBudgetDetails = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('orcamentos')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error('Erro ao buscar orçamento:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar orçamento",
+            description: "Não foi possível carregar os detalhes do orçamento.",
+          });
+          return;
+        }
+        
+        setBudget(data);
+      } catch (error) {
+        console.error('Erro inesperado:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Ocorreu um erro ao carregar o orçamento.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBudgetDetails();
+  }, [id, toast]);
+  
+  const handleSubmit = async (values: BudgetFormValues) => {
+    if (!id) return;
+    
+    setIsSaving(true);
+    try {
+      // Converter o valor para número antes de salvar
+      const valorTotal = parseFloat(values.valor_total.replace(',', '.'));
+      
+      const { error } = await supabase
+        .from('orcamentos')
+        .update({
+          cliente: values.cliente,
+          veiculo: values.veiculo,
+          descricao: values.descricao,
+          valor_total: valorTotal
+        })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Erro ao atualizar orçamento:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar",
+          description: error.message || "Ocorreu um erro ao atualizar o orçamento.",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Orçamento atualizado",
+        description: "As alterações foram salvas com sucesso.",
+      });
+      
+      // Redirecionar para a página de detalhes
+      navigate(`/orcamentos/${id}`);
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar as alterações.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const handleBack = () => {
+    navigate(-1);
+  };
+  
+  const handleSkip = () => {
+    navigate(`/orcamentos/${id}`);
+  };
+  
+  if (isLoading) {
+    return <Loading fullscreen text="Carregando orçamento..." />;
+  }
+  
+  if (!budget) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Orçamento não encontrado</CardTitle>
+            <CardDescription>Não foi possível encontrar o orçamento solicitado.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Prepara os valores iniciais para o formulário
+  const initialValues = {
+    cliente: budget.cliente,
+    veiculo: budget.veiculo,
+    descricao: budget.descricao,
+    valor_total: budget.valor_total.toString()
+  };
+  
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Editar Orçamento</h1>
+          <p className="text-muted-foreground">Atualize os dados do orçamento</p>
+        </div>
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados do Orçamento</CardTitle>
+          <CardDescription>
+            Modifique as informações conforme necessário
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BudgetForm 
+            onSubmit={handleSubmit}
+            onSkip={handleSkip}
+            isLoading={isSaving}
+            initialValues={initialValues}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default BudgetEditPage;
