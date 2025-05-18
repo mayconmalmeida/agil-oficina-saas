@@ -1,6 +1,8 @@
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 // Updated type definition to include notification fields
 export type UserProfile = {
@@ -29,9 +31,12 @@ export type UserProfile = {
 };
 
 export function useUserProfile() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function fetchUserProfile() {
@@ -44,6 +49,9 @@ export function useUserProfile() {
           setUserProfile(null);
           return;
         }
+        
+        // Set the userId so it can be used by components
+        setUserId(user.id);
         
         const { data, error } = await supabase
           .from('profiles')
@@ -67,5 +75,14 @@ export function useUserProfile() {
     fetchUserProfile();
   }, []);
   
-  return { userProfile, loading, error };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logout realizado com sucesso",
+      description: "Você foi desconectado da sua conta.",
+    });
+    navigate('/');
+  };
+  
+  return { userProfile, loading, error, userId, handleLogout };
 }
