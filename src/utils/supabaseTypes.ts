@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -106,6 +105,7 @@ export interface Service {
   valor: number;
   descricao?: string;
   created_at: string;
+  codigo?: string;
 }
 
 // Types for Document

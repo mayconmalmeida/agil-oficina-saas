@@ -8,6 +8,7 @@ import { X, Edit, Package, Archive } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ProductForm from './ProductForm';
+import { Service } from '@/utils/supabaseTypes';
 
 interface ProductDetailsPanelProps {
   productId: string;
@@ -15,7 +16,7 @@ interface ProductDetailsPanelProps {
 }
 
 const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, onClose }) => {
-  const [product, setProduct] = useState<any | null>(null);
+  const [product, setProduct] = useState<Service | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
@@ -24,6 +25,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
     const fetchProduct = async () => {
       setIsLoading(true);
       try {
+        // Use simpler query format first to avoid potential UUID parsing issues
         const { data, error } = await supabase
           .from('services')
           .select('*')
@@ -31,12 +33,14 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
           .single();
         
         if (error) {
+          console.error('Error fetching product details:', error);
           throw error;
         }
         
+        console.log('Product data fetched successfully:', data);
         setProduct(data);
       } catch (error: any) {
-        console.error('Error fetching product:', error);
+        console.error('Failed to fetch product details:', error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar produto",
@@ -47,7 +51,9 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
       }
     };
     
-    fetchProduct();
+    if (productId) {
+      fetchProduct();
+    }
   }, [productId, toast, isEditing]);
   
   const handleEdit = () => {
