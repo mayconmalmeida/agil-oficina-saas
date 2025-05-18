@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import LogoSettingsSection from '@/components/settings/LogoSettingsSection';
+import SupportSettings from '@/components/settings/support/SupportSettings';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
