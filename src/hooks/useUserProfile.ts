@@ -1,68 +1,71 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/lib/supabase';
 
-export const useUserProfile = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [userProfile, setUserProfile] = useState<any>(null);
+// Updated type definition to include notification fields
+export type UserProfile = {
+  id?: string;
+  nome_oficina?: string;
+  telefone?: string;
+  email?: string;
+  full_name?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  cnpj?: string;
+  responsavel?: string;
+  whatsapp_suporte?: string;
+  logo_url?: string;
+  plano?: string;
+  created_at?: string;
+  is_active?: boolean;
+  trial_ends_at?: string;
+  // Add notification fields
+  notify_new_client?: boolean;
+  notify_approved_budget?: boolean;
+  notify_by_email?: boolean;
+  sound_enabled?: boolean;
+};
+
+export function useUserProfile() {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Acesso não autorizado",
-          description: "Você precisa fazer login para acessar este recurso.",
-        });
-        navigate('/login');
-        return;
-      }
-      
-      setUserId(session.user.id);
-      
-      // Carregar informações do perfil
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (error || !data) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível carregar as informações do perfil.",
-        });
-      } else {
+    async function fetchUserProfile() {
+      try {
+        setLoading(true);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setUserProfile(null);
+          return;
+        }
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          throw error;
+        }
+        
         setUserProfile(data);
+      } catch (err: any) {
+        console.error('Error fetching user profile:', err);
+        setError(err);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    };
+    }
     
-    checkUser();
-  }, [navigate, toast]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Logout realizado com sucesso",
-      description: "Você foi desconectado da sua conta.",
-    });
-    navigate('/');
-  };
-
-  return {
-    userProfile,
-    loading,
-    userId,
-    handleLogout
-  };
-};
+    fetchUserProfile();
+  }, []);
+  
+  return { userProfile, loading, error };
+}

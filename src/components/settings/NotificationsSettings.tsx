@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Loader2, Bell, Mail, Volume2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
 
 // Schema for notifications settings
 const notificationsSchema = z.object({
@@ -57,7 +57,7 @@ const NotificationsSettings = () => {
           notify_approved_budget: values.notify_approved_budget,
           notify_by_email: values.notify_by_email,
           sound_enabled: values.sound_enabled
-        })
+        } as Partial<UserProfile>)
         .eq('id', userProfile.id);
         
       if (error) throw error;

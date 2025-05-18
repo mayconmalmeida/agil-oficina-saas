@@ -39,7 +39,7 @@ const ProfileFormField: React.FC<ProfileFormFieldProps> = ({
                 const formatted = formatValue ? formatValue(value) : value;
                 field.onChange(formatted);
               }}
-              value={field.value || ''}
+              value={typeof field.value === 'boolean' ? (field.value ? 'true' : 'false') : (field.value || '')}
               disabled={disabled || isSuccess}
               className={isSuccess ? "bg-green-50 border-green-200" : ""}
               name={String(field.name)}
