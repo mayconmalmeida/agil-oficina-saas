@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,7 +8,7 @@
 @layer base {
   :root {
     --background: 210 40% 98%; /* #F8FAFC - Azul Neve */
-    --foreground: 222.2 47.4% 18.0%; /* #1E293B - Cinza Escuro */
+    --foreground: 222.2 47.4% 18.0%; /* #1E1E1E - Cinza Escuro */
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 47.4% 18.0%;
@@ -14,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 18.0%;
 
-    --primary: 221 83% 53%; /* #2563EB - Azul Royal */
+    --primary: 206 65% 13%; /* #0A2239 - Azul Petróleo */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 214 93% 60%; /* #3B82F6 - Azul Claro */
@@ -23,7 +25,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 144 100% 76%; /* #5FFF88 - Verde Lima */
     --accent-foreground: 222.2 47.4% 18.0%;
 
     --destructive: 0 84.2% 60.2%; /* #EF4444 - Vermelho */
@@ -31,13 +33,13 @@
 
     --border: 214.3 31.8% 91.4%; /* #E2E8F0 - Cinza Claro */
     --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
+    --ring: 206 65% 13%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary: 206 65% 13%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
@@ -46,17 +48,17 @@
   }
 
   .dark {
-    --background: 222.2 47.4% 18.0%; /* #1E293B - Azul petróleo para fundo escuro */
+    --background: 206 65% 13%; /* #0A2239 - Azul petróleo para fundo escuro */
     --foreground: 210 40% 98%; /* #F8FAFC - Quase branco para texto */
 
-    --card: 222.2 47.4% 18.0%;
+    --card: 206 65% 13%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 47.4% 18.0%;
+    --popover: 206 65% 13%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 214 93% 60%; /* #3B82F6 - Mantendo os botões primários */
-    --primary-foreground: 222.2 47.4% 18.0%;
+    --primary: 144 100% 76%; /* #5FFF88 - Verde Lima */
+    --primary-foreground: 206 65% 13%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -72,11 +74,11 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 144 100% 76%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 144 100% 76%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
@@ -91,12 +93,20 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
 @layer utilities {
   .shadow-blue {
-    box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 14px 0 rgba(10, 34, 57, 0.3);
+  }
+  
+  .shadow-accent {
+    box-shadow: 0 4px 14px 0 rgba(95, 255, 136, 0.3);
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-oficina to-oficina-light bg-clip-text text-transparent;
   }
 }

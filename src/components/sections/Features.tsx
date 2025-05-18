@@ -13,57 +13,57 @@ import {
 
 const features = [
   {
-    icon: <FileText className="h-10 w-10 text-oficina" />,
-    title: "Orçamentos Rápidos",
-    description: "Crie orçamentos profissionais em minutos com uma interface intuitiva e prática."
+    icon: <FileText className="h-8 w-8 text-oficina-accent" />,
+    title: "Orçamentos Profissionais",
+    description: "Crie orçamentos detalhados e personalizados em menos de 2 minutos."
   },
   {
-    icon: <Users className="h-10 w-10 text-oficina" />,
-    title: "Cadastro de Clientes",
-    description: "Mantenha uma base completa de clientes com histórico e preferências."
+    icon: <Users className="h-8 w-8 text-oficina-accent" />,
+    title: "Gestão de Clientes",
+    description: "Cadastre, segmente e acompanhe o histórico completo de cada cliente."
   },
   {
-    icon: <ShoppingCart className="h-10 w-10 text-oficina" />,
+    icon: <ShoppingCart className="h-8 w-8 text-oficina-accent" />,
     title: "Controle de Estoque",
-    description: "Gerencie seu inventário de peças e produtos com alertas de níveis baixos."
+    description: "Monitore seu inventário em tempo real com alertas automáticos."
   },
   {
-    icon: <Car className="h-10 w-10 text-oficina" />,
-    title: "Gestão de Veículos",
-    description: "Cadastre e acompanhe o histórico de cada veículo que passa pela sua oficina."
+    icon: <Car className="h-8 w-8 text-oficina-accent" />,
+    title: "Histórico de Veículos",
+    description: "Registro completo de serviços e peças para cada veículo."
   },
   {
-    icon: <FileDigit className="h-10 w-10 text-oficina" />,
-    title: "XML para Contabilidade",
-    description: "Exporte dados para seu sistema contábil com um clique."
+    icon: <FileDigit className="h-8 w-8 text-oficina-accent" />,
+    title: "Integração Contábil",
+    description: "Emissão de notas fiscais e exportação para sistemas contábeis."
   },
   {
-    icon: <BarChart3 className="h-10 w-10 text-oficina" />,
-    title: "Relatórios Gerenciais",
-    description: "Analise o desempenho da sua oficina com relatórios detalhados."
+    icon: <BarChart3 className="h-8 w-8 text-oficina-accent" />,
+    title: "Relatórios Detalhados",
+    description: "Visualize indicadores de performance para tomar melhores decisões."
   },
   {
-    icon: <Megaphone className="h-10 w-10 text-oficina" />,
-    title: "Campanhas de Marketing",
-    description: "Envie promoções e comunicados diretamente aos seus clientes."
+    icon: <Megaphone className="h-8 w-8 text-oficina-accent" />,
+    title: "Marketing Integrado",
+    description: "Envie lembretes e promoções automaticamente para seus clientes."
   },
   {
-    icon: <Clock className="h-10 w-10 text-oficina" />,
-    title: "Agendamento",
-    description: "Organize sua agenda de serviços para maximizar a produtividade."
+    icon: <Clock className="h-8 w-8 text-oficina-accent" />,
+    title: "Agendamento Online",
+    description: "Calendário integrado para gerenciar sua agenda de serviços."
   }
 ];
 
 export default function Features() {
   return (
-    <section id="funcionalidades" className="py-20 bg-oficina-lightgray">
+    <section id="funcionalidades" className="py-24 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-oficina-dark mb-4">
-            Funcionalidades Completas para sua Oficina
+        <div className="text-center mb-16 max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold font-poppins text-oficina mb-4">
+            Todas as <span className="text-gradient">ferramentas</span> que sua oficina precisa
           </h2>
-          <p className="text-lg text-oficina-gray max-w-2xl mx-auto">
-            O OficinaÁgil reúne tudo o que você precisa para gerenciar sua oficina com praticidade e eficiência.
+          <p className="text-lg text-oficina-gray">
+            O OficinaÁgil reúne tudo o que você precisa para gerenciar sua oficina com eficiência e profissionalismo.
           </p>
         </div>
 
@@ -71,12 +71,12 @@ export default function Features() {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-white rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
+              className="bg-white rounded-lg p-8 shadow-md hover:shadow-xl transition-shadow border border-gray-100 group"
             >
-              <div className="rounded-full bg-blue-50 p-4 inline-flex mb-4">
+              <div className="rounded-xl bg-oficina/5 p-4 inline-flex mb-6 group-hover:bg-oficina/10 transition-colors">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-semibold text-oficina-dark mb-2">
+              <h3 className="text-xl font-semibold text-oficina mb-3">
                 {feature.title}
               </h3>
               <p className="text-oficina-gray">
