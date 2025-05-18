@@ -87,4 +87,3 @@ BEGIN
   VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa, p_endereco, p_cidade, p_estado, p_cep, p_documento);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
