@@ -152,6 +152,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           nome_oficina: string | null
           plano: string | null
           responsavel: string | null
@@ -170,6 +171,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_active?: boolean | null
+          logo_url?: string | null
           nome_oficina?: string | null
           plano?: string | null
           responsavel?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           nome_oficina?: string | null
           plano?: string | null
           responsavel?: string | null

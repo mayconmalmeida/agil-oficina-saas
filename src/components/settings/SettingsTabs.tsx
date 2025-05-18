@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Palette, Bell, Phone, Upload } from 'lucide-react';
+import { Building, Lock, Palette, Bell, Phone, Upload } from 'lucide-react';
 
 interface SettingsTabsProps {
   activeTab: string;
@@ -16,13 +16,13 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-1">
+      <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-6 gap-1">
         <TabsTrigger value="perfil" className="flex items-center">
           <Building className="w-4 h-4 mr-2" />
           <span className="hidden md:inline">Oficina</span>
         </TabsTrigger>
         <TabsTrigger value="seguranca" className="flex items-center">
-          <Building className="w-4 h-4 mr-2" />
+          <Lock className="w-4 h-4 mr-2" />
           <span className="hidden md:inline">Segurança</span>
         </TabsTrigger>
         <TabsTrigger value="logo" className="flex items-center">
