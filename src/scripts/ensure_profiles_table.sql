@@ -1,14 +1,14 @@
 
--- Função para criar a tabela profiles se ela não existir
+-- Function to create the profiles table if it doesn't exist
 CREATE OR REPLACE FUNCTION create_profile_table()
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Verifica se a tabela já existe
+  -- Check if table already exists
   IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profiles') THEN
-    -- Cria a tabela
+    -- Create the table
     CREATE TABLE public.profiles (
       id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
@@ -20,28 +20,36 @@ BEGIN
       cidade TEXT,
       estado TEXT,
       cep TEXT,
-      plano TEXT DEFAULT 'basic'
+      plano TEXT DEFAULT 'basic',
+      cnpj TEXT,
+      responsavel TEXT,
+      whatsapp_suporte TEXT DEFAULT '46991270777',
+      logo_url TEXT,
+      notify_new_client BOOLEAN DEFAULT TRUE,
+      notify_approved_budget BOOLEAN DEFAULT TRUE,
+      notify_by_email BOOLEAN DEFAULT FALSE,
+      sound_enabled BOOLEAN DEFAULT FALSE
     );
 
-    -- Aplica RLS
+    -- Apply RLS
     ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
     
-    -- Cria uma política para permitir que usuários vejam e editem seu próprio perfil
-    CREATE POLICY "Usuários podem ver seu próprio perfil"
+    -- Create policy to allow users to see and edit their own profiles
+    CREATE POLICY "Users can see and edit their own profiles"
       ON public.profiles
       FOR ALL
       USING (auth.uid() = id);
       
-    -- Adiciona comentários
-    COMMENT ON TABLE public.profiles IS 'Perfis dos usuários do sistema';
+    -- Add comments
+    COMMENT ON TABLE public.profiles IS 'User profiles for the system';
   ELSE
-    -- A tabela existe, verificar se tem todas as colunas necessárias
-    -- Nome da oficina
+    -- Table exists, check if it has all necessary columns
+    -- Workshop name
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'nome_oficina') THEN
       ALTER TABLE public.profiles ADD COLUMN nome_oficina TEXT;
     END IF;
     
-    -- Telefone
+    -- Phone
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'telefone') THEN
       ALTER TABLE public.profiles ADD COLUMN telefone TEXT;
     END IF;
@@ -51,35 +59,72 @@ BEGIN
       ALTER TABLE public.profiles ADD COLUMN full_name TEXT;
     END IF;
     
-    -- Endereço
+    -- Address
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'endereco') THEN
       ALTER TABLE public.profiles ADD COLUMN endereco TEXT;
     END IF;
     
-    -- Cidade
+    -- City
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'cidade') THEN
       ALTER TABLE public.profiles ADD COLUMN cidade TEXT;
     END IF;
     
-    -- Estado
+    -- State
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'estado') THEN
       ALTER TABLE public.profiles ADD COLUMN estado TEXT;
     END IF;
     
-    -- CEP
+    -- Postal code
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'cep') THEN
       ALTER TABLE public.profiles ADD COLUMN cep TEXT;
     END IF;
     
-    -- Plano
+    -- Plan
     IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'plano') THEN
       ALTER TABLE public.profiles ADD COLUMN plano TEXT DEFAULT 'basic';
+    END IF;
+    
+    -- CNPJ
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'cnpj') THEN
+      ALTER TABLE public.profiles ADD COLUMN cnpj TEXT;
+    END IF;
+    
+    -- Responsible person
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'responsavel') THEN
+      ALTER TABLE public.profiles ADD COLUMN responsavel TEXT;
+    END IF;
+    
+    -- Support WhatsApp
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'whatsapp_suporte') THEN
+      ALTER TABLE public.profiles ADD COLUMN whatsapp_suporte TEXT DEFAULT '46991270777';
+    END IF;
+    
+    -- Logo URL
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'logo_url') THEN
+      ALTER TABLE public.profiles ADD COLUMN logo_url TEXT;
+    END IF;
+    
+    -- Notification preferences
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'notify_new_client') THEN
+      ALTER TABLE public.profiles ADD COLUMN notify_new_client BOOLEAN DEFAULT TRUE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'notify_approved_budget') THEN
+      ALTER TABLE public.profiles ADD COLUMN notify_approved_budget BOOLEAN DEFAULT TRUE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'notify_by_email') THEN
+      ALTER TABLE public.profiles ADD COLUMN notify_by_email BOOLEAN DEFAULT FALSE;
+    END IF;
+    
+    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'sound_enabled') THEN
+      ALTER TABLE public.profiles ADD COLUMN sound_enabled BOOLEAN DEFAULT FALSE;
     END IF;
   END IF;
 END;
 $$;
 
--- Função para garantir que a tabela profiles existe com todas as colunas necessárias
+-- Function to ensure the profiles table exists with all necessary columns
 CREATE OR REPLACE FUNCTION ensure_profiles_table()
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -88,13 +133,13 @@ AS $$
 DECLARE
   result jsonb;
 BEGIN
-  -- Chama a função para criar/verificar a tabela
+  -- Call the function to create/verify the table
   PERFORM create_profile_table();
   
-  -- Retorna um resultado de sucesso
+  -- Return a success result
   result := jsonb_build_object(
     'success', true,
-    'message', 'Tabela de perfis verificada e atualizada com sucesso'
+    'message', 'Profiles table verified and updated successfully'
   );
   
   RETURN result;

@@ -15,6 +15,16 @@ interface UseProfileFormOptions {
     telefone?: string;
     logo_url?: string;
     whatsapp_suporte?: string;
+    cnpj?: string;
+    responsavel?: string;
+    endereco?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    notify_new_client?: boolean;
+    notify_approved_budget?: boolean;
+    notify_by_email?: boolean;
+    sound_enabled?: boolean;
   };
 }
 
@@ -27,30 +37,30 @@ export function useProfileForm({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
 
-  // Verificar se o bucket existe
+  // Check if bucket exists
   const checkAndCreateBucket = async () => {
     try {
-      // Antes de tentar criar, verifica se já existe
-      console.log("Verificando se o bucket 'logos' existe");
+      // First check if it already exists
+      console.log("Checking if 'logos' bucket exists");
       
-      // Apenas verifica se conseguimos listar os objetos (bucket existe)
+      // Just check if we can list objects (bucket exists)
       const { data, error } = await supabase.storage
         .from('logos')
         .list(userId || '');
       
       if (error) {
-        console.warn("Erro ao verificar bucket:", error.message);
-        // Não podemos criar buckets do lado do cliente
-        // Isso deve ser feito via SQL migrations
+        console.warn("Error checking bucket:", error.message);
+        // We can't create buckets from client side
+        // This should be done via SQL migrations
       } else {
-        console.log("Bucket 'logos' está acessível");
+        console.log("'logos' bucket is accessible");
       }
     } catch (err) {
-      console.error('Erro ao verificar bucket:', err);
+      console.error('Error checking bucket:', err);
     }
   };
 
-  // Verifica bucket logo ao inicializar
+  // Check bucket as soon as initialized
   if (userId) {
     checkAndCreateBucket();
   }
@@ -61,7 +71,13 @@ export function useProfileForm({
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
       logo_url: initialValues.logo_url || '',
-      whatsapp_suporte: initialValues.whatsapp_suporte || '46991270777', // Valor padrão
+      whatsapp_suporte: initialValues.whatsapp_suporte || '46991270777', // Default value
+      cnpj: initialValues.cnpj || '',
+      responsavel: initialValues.responsavel || '',
+      endereco: initialValues.endereco || '',
+      cidade: initialValues.cidade || '',
+      estado: initialValues.estado || '',
+      cep: initialValues.cep || '',
     },
   });
 
@@ -78,7 +94,7 @@ export function useProfileForm({
     setIsLoading(true);
 
     try {
-      console.log('Salvando perfil com valores:', values);
+      console.log('Saving profile with values:', values);
 
       const { error } = await supabase
         .from('profiles')
@@ -87,11 +103,17 @@ export function useProfileForm({
           telefone: values.telefone,
           logo_url: values.logo_url,
           whatsapp_suporte: values.whatsapp_suporte || '46991270777',
+          cnpj: values.cnpj,
+          responsavel: values.responsavel,
+          endereco: values.endereco,
+          cidade: values.cidade,
+          estado: values.estado,
+          cep: values.cep,
         })
         .eq('id', userId);
 
       if (error) {
-        console.error("Erro ao atualizar perfil:", error);
+        console.error("Error updating profile:", error);
         throw error;
       }
 
@@ -106,7 +128,7 @@ export function useProfileForm({
         onSaveSuccess();
       }
     } catch (error: any) {
-      console.error('Erro ao salvar perfil:', error);
+      console.error('Error saving profile:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar perfil",

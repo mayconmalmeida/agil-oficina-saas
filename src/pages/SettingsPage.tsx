@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import SupportSettings from '@/components/settings/SupportSettings';
+import NotificationsSettings from '@/components/settings/NotificationsSettings';
+import { Building, Palette, Bell, Phone } from 'lucide-react';
 import { 
   ProfileSection, 
   profileUpdateSchema,
@@ -20,11 +19,17 @@ import {
   type PasswordFormValues
 } from '@/components/settings/SecuritySection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
+import { supabase } from '@/lib/supabase';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('perfil');
   const [isLoading, setIsLoading] = useState(false);
-  const [themeSetting, setThemeSetting] = useState('light');
+  const [themeSetting, setThemeSetting] = useState(() => {
+    // Get theme from localStorage or default to 'light'
+    return localStorage.getItem('theme') || 'light';
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
   const { userProfile, loading: isLoadingProfile } = useUserProfile();
@@ -67,6 +72,11 @@ const SettingsPage: React.FC = () => {
       });
     }
   }, [userProfile, profileForm]);
+  
+  // Apply theme on initial load and when it changes
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', themeSetting === 'dark');
+  }, [themeSetting]);
   
   const handleChangePassword = async (values: PasswordFormValues) => {
     setIsLoading(true);
@@ -182,20 +192,36 @@ const SettingsPage: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Configurações</h1>
+          <h1 className="text-2xl font-bold dark:text-white">Configurações</h1>
         </div>
         
-        <Card>
+        <Card className="dark:bg-gray-800">
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="perfil">Perfil da Oficina</TabsTrigger>
-                <TabsTrigger value="seguranca">Segurança</TabsTrigger>
-                <TabsTrigger value="aparencia">Aparência</TabsTrigger>
-                <TabsTrigger value="suporte">Suporte</TabsTrigger>
+              <TabsList className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-1">
+                <TabsTrigger value="perfil" className="flex items-center">
+                  <Building className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Oficina</span>
+                </TabsTrigger>
+                <TabsTrigger value="seguranca" className="flex items-center">
+                  <Building className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Segurança</span>
+                </TabsTrigger>
+                <TabsTrigger value="aparencia" className="flex items-center">
+                  <Palette className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Aparência</span>
+                </TabsTrigger>
+                <TabsTrigger value="notificacoes" className="flex items-center">
+                  <Bell className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Notificações</span>
+                </TabsTrigger>
+                <TabsTrigger value="suporte" className="flex items-center">
+                  <Phone className="w-4 h-4 mr-2" />
+                  <span className="hidden md:inline">Suporte</span>
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="perfil">
@@ -222,8 +248,17 @@ const SettingsPage: React.FC = () => {
                 />
               </TabsContent>
               
+              <TabsContent value="notificacoes">
+                <NotificationsSettings />
+              </TabsContent>
+              
               <TabsContent value="suporte">
-                <SupportSettings />
+                <SupportSettings 
+                  userId={userProfile?.id}
+                  initialValues={{
+                    whatsapp_suporte: userProfile?.whatsapp_suporte
+                  }}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
