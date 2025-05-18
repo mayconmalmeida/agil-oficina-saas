@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { X, Edit, Package, Archive } from 'lucide-react';
+import { X, Edit, Package, Wrench } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ProductForm from './ProductForm';
@@ -25,7 +25,6 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
     const fetchProduct = async () => {
       setIsLoading(true);
       try {
-        // Use simpler query format first to avoid potential UUID parsing issues
         const { data, error } = await supabase
           .from('services')
           .select('*')
@@ -77,7 +76,16 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
           </Button>
         </CardHeader>
         <CardContent>
-          <ProductForm productId={productId} />
+          <ProductForm 
+            productId={productId}
+            onSaveSuccess={() => {
+              setIsEditing(false);
+              toast({
+                title: "Produto atualizado",
+                description: "O produto foi atualizado com sucesso."
+              });
+            }}
+          />
         </CardContent>
       </Card>
     );
@@ -137,7 +145,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
             {product.tipo === 'produto' ? (
               <><Package className="h-3 w-3 mr-1" /> Produto</>
             ) : (
-              <>Serviço</>
+              <><Wrench className="h-3 w-3 mr-1" /> Serviço</>
             )}
           </Badge>
           <span className="font-semibold text-lg">{formatCurrency(product.valor)}</span>

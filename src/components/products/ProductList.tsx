@@ -24,6 +24,7 @@ const ProductList: React.FC<ProductListProps> = ({
 }) => {
   const [products, setProducts] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [inventoryCount, setInventoryCount] = useState<Record<string, number>>({});
   const { toast } = useToast();
   
   useEffect(() => {
@@ -75,13 +76,37 @@ const ProductList: React.FC<ProductListProps> = ({
         return product.tipo === 'produto';
       case 'servicos':
         return product.tipo === 'servico';
+      case 'baixo-estoque':
+        // Placeholder for future implementation
+        return false;
+      case 'esgotados':
+        // Placeholder for future implementation
+        return false;
       default:
         return true;
     }
   });
   
   const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+  
+  const handleAdjustInventory = async (productId: string, adjustment: number) => {
+    // Placeholder for inventory adjustment functionality
+    console.log(`Adjusting inventory for ${productId} by ${adjustment}`);
+    
+    setInventoryCount(prev => ({
+      ...prev,
+      [productId]: (prev[productId] || 0) + adjustment
+    }));
+    
+    toast({
+      title: "Estoque atualizado",
+      description: adjustment > 0 ? "Item adicionado ao estoque." : "Item removido do estoque.",
+    });
   };
   
   if (isLoading) {
@@ -129,10 +154,32 @@ const ProductList: React.FC<ProductListProps> = ({
                 </TableCell>
                 <TableCell className="text-right">{formatCurrency(product.valor)}</TableCell>
                 <TableCell className="text-right">
+                  {showInventoryControls && product.tipo === 'produto' && (
+                    <div className="flex items-center justify-end space-x-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleAdjustInventory(product.id, -1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-8 text-center">
+                        {inventoryCount[product.id] || 0}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleAdjustInventory(product.id, 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => onSelectProduct(product.id)}
+                    className={showInventoryControls ? "ml-2" : ""}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
