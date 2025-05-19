@@ -39,3 +39,43 @@ export const formatDocument = (documentNumber: string, type: 'CPF' | 'CNPJ'): st
     return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
   }
 };
+
+/**
+ * Formats a CPF number (Brazilian individual taxpayer registry)
+ * @param cpf The raw CPF number
+ * @returns Formatted CPF
+ */
+export const formatCPF = (cpf: string): string => {
+  return formatDocument(cpf, 'CPF');
+};
+
+/**
+ * Formats a Brazilian postal code (CEP)
+ * @param cep The raw CEP
+ * @returns Formatted CEP (00000-000)
+ */
+export const formatCEP = (cep: string): string => {
+  // Keep only numbers
+  const cleanCep = cep.replace(/\D/g, '');
+  
+  // Apply mask
+  if (cleanCep.length <= 5) return cleanCep;
+  return `${cleanCep.slice(0, 5)}-${cleanCep.slice(5, 8)}`;
+};
+
+/**
+ * Formats a license plate according to its format
+ * @param plate License plate to format
+ * @returns Formatted license plate
+ */
+export const formatLicensePlate = (plate: string): string => {
+  // Remove spaces and convert to uppercase
+  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
+  
+  // If it's the old format (or partial), add hyphen
+  if (/^[A-Z]{3}\d{0,4}$/.test(cleanPlate) && cleanPlate.length > 3) {
+    return `${cleanPlate.slice(0, 3)}-${cleanPlate.slice(3)}`;
+  }
+  
+  return cleanPlate;
+};

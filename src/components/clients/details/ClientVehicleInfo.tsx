@@ -9,34 +9,45 @@ interface ClientVehicleInfoProps {
   modelo?: string;
   ano?: string;
   placa?: string;
-  onCreateBudget: () => void;
+  veiculo?: string;
+  cor?: string;
+  kilometragem?: string;
+  onCreateBudget?: () => void;
 }
 
 const ClientVehicleInfo: React.FC<ClientVehicleInfoProps> = ({ 
-  marca, modelo, ano, placa, onCreateBudget 
+  marca, modelo, ano, placa, veiculo, cor, kilometragem, onCreateBudget 
 }) => {
-  if (!marca && !modelo && !placa) return null;
+  if (!marca && !modelo && !placa && !veiculo) return null;
   
   return (
     <>
       <div>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-medium">Veículo</h3>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onCreateBudget}
-            className="h-7 text-xs"
-          >
-            Orçar
-          </Button>
+          {onCreateBudget && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onCreateBudget}
+              className="h-7 text-xs"
+            >
+              Orçar
+            </Button>
+          )}
         </div>
         
         <div className="flex items-start gap-2 text-sm">
           <Car className="h-4 w-4 text-gray-500 mt-0.5" />
           <div>
-            <p>{marca} {modelo} {ano && `(${ano})`}</p>
+            {veiculo ? (
+              <p>{veiculo}</p>
+            ) : (
+              <p>{marca} {modelo} {ano && `(${ano})`}</p>
+            )}
             {placa && <p className="text-gray-500">Placa: {placa}</p>}
+            {cor && <p className="text-gray-500">Cor: {cor}</p>}
+            {kilometragem && <p className="text-gray-500">Kilometragem: {kilometragem}</p>}
           </div>
         </div>
       </div>

@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { formatCurrency } from '@/utils/formatUtils';
 
 interface ClientBudget {
   id: string;
@@ -14,22 +16,48 @@ interface ClientBudget {
 }
 
 interface ClientBudgetsListProps {
-  budgets: ClientBudget[];
-  onViewBudget: (budgetId: string) => void;
+  clientId: string;
+  onViewBudget?: (budgetId: string) => void;
 }
 
-const ClientBudgetsList: React.FC<ClientBudgetsListProps> = ({ budgets, onViewBudget }) => {
+const ClientBudgetsList: React.FC<ClientBudgetsListProps> = ({ 
+  clientId, 
+  onViewBudget = () => {} 
+}) => {
+  const [budgets, setBudgets] = useState<ClientBudget[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('orcamentos')
+          .select('*')
+          .eq('cliente_id', clientId)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        setBudgets(data || []);
+      } catch (error) {
+        console.error('Error fetching client budgets:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (clientId) {
+      fetchBudgets();
+    }
+  }, [clientId]);
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };
   
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-  
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'aprovado': return 'bg-green-100 text-green-800';
       case 'pendente': return 'bg-yellow-100 text-yellow-800';
       case 'concluído': return 'bg-blue-100 text-blue-800';
@@ -45,7 +73,11 @@ const ClientBudgetsList: React.FC<ClientBudgetsListProps> = ({ budgets, onViewBu
         <TabsTrigger value="notes">Observações</TabsTrigger>
       </TabsList>
       <TabsContent value="budgets" className="mt-4">
-        {budgets.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+          </div>
+        ) : budgets.length > 0 ? (
           <div className="space-y-3">
             {budgets.slice(0, 3).map((budget) => (
               <div key={budget.id} className="border rounded-md p-2">

@@ -10,34 +10,20 @@ import ClientHeader from './details/ClientHeader';
 import ClientContactInfo from './details/ClientContactInfo';
 import ClientVehicleInfo from './details/ClientVehicleInfo';
 import ClientBudgetsList from './details/ClientBudgetsList';
-
-interface Client {
-  id: string;
-  nome: string;
-  telefone: string;
-  email?: string;
-  documento?: string;
-  veiculo: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-}
+import { Client } from '@/utils/supabaseTypes';
 
 interface ClientDetailsPanelProps {
   clientId: string;
   onClose: () => void;
   onEdit?: () => void;
+  onCreateBudget?: (clientId: string) => void;
 }
 
 const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({ 
   clientId, 
   onClose,
-  onEdit 
+  onEdit,
+  onCreateBudget
 }) => {
   const [client, setClient] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +57,12 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
       fetchClientDetails();
     }
   }, [clientId, toast]);
+
+  const handleCreateBudget = () => {
+    if (onCreateBudget && client) {
+      onCreateBudget(client.id);
+    }
+  };
   
   return (
     <Card className="bg-white">
@@ -97,7 +89,11 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
           </div>
         ) : client ? (
           <>
-            <ClientHeader nome={client.nome} documento={client.documento} />
+            <ClientHeader 
+              nome={client.nome} 
+              documento={client.documento} 
+              created_at={client.created_at} 
+            />
             <ClientContactInfo 
               telefone={client.telefone}
               email={client.email}
@@ -112,8 +108,14 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
               modelo={client.modelo}
               ano={client.ano}
               placa={client.placa}
+              cor={client.cor}
+              kilometragem={client.kilometragem}
+              onCreateBudget={handleCreateBudget}
             />
-            <ClientBudgetsList clientId={client.id} />
+            <ClientBudgetsList 
+              clientId={client.id} 
+              onViewBudget={(budgetId) => console.log('View budget:', budgetId)}
+            />
           </>
         ) : (
           <div className="text-center py-8">

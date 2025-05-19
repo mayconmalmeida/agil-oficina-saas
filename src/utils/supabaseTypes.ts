@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Define specific parameter types for each RPC function
@@ -130,6 +129,16 @@ export interface Client {
   ano?: string;
   placa?: string;
   created_at: string;
+  documento?: string;
+  cep?: string;
+  bairro?: string;
+  numero?: string;
+  tipo?: string;
+  cor?: string;
+  kilometragem?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
 }
 
 // Types for Budget (Orçamento)
@@ -142,6 +151,7 @@ export interface Budget {
   valor_total: number;
   status: string;
   created_at: string;
+  cliente_id?: string;
 }
 
 // Type for Agendamento (Scheduling)

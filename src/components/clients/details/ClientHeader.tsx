@@ -4,12 +4,14 @@ import { User } from 'lucide-react';
 
 interface ClientHeaderProps {
   nome: string;
-  created_at: string;
+  created_at?: string;
   logoUrl?: string;
+  documento?: string;
 }
 
-const ClientHeader: React.FC<ClientHeaderProps> = ({ nome, created_at, logoUrl }) => {
-  const formatDate = (dateString: string) => {
+const ClientHeader: React.FC<ClientHeaderProps> = ({ nome, created_at, logoUrl, documento }) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Data desconhecida';
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };
@@ -29,7 +31,8 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ nome, created_at, logoUrl }
       </div>
       <div>
         <h3 className="font-medium">{nome}</h3>
-        <p className="text-sm text-gray-500">Cliente desde {formatDate(created_at)}</p>
+        {documento && <p className="text-xs text-gray-500">CPF/CNPJ: {documento}</p>}
+        {created_at && <p className="text-sm text-gray-500">Cliente desde {formatDate(created_at)}</p>}
       </div>
     </div>
   );
