@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Car, User, Filter } from 'lucide-react';
+import { Search, Plus, Car, User, Filter, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ClientList from '@/components/clients/ClientList';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
@@ -15,6 +15,7 @@ const ClientManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [searchFilters, setSearchFilters] = useState<any>({});
@@ -27,16 +28,34 @@ const ClientManagementPage: React.FC = () => {
     setSelectedClientId(null);
     setShowDetails(false);
     setSaveSuccess(false);
+    setEditMode(false);
   };
   
   const handleClientSelect = (clientId: string) => {
     setSelectedClientId(clientId);
     setShowDetails(true);
+    setEditMode(false);
+  };
+  
+  const handleEditClient = () => {
+    if (selectedClientId) {
+      setEditMode(true);
+      setActiveTab('editar');
+    }
   };
   
   const handleCloseDetails = () => {
     setShowDetails(false);
     setSelectedClientId(null);
+    setEditMode(false);
+  };
+  
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setActiveTab('lista');
+    if (selectedClientId) {
+      setShowDetails(true);
+    }
   };
   
   const handleSearchFilterChange = (filters: any) => {
@@ -50,14 +69,22 @@ const ClientManagementPage: React.FC = () => {
   const handleClientSaved = async () => {
     setSaveSuccess(true);
     toast({
-      title: "Cliente adicionado",
-      description: "O cliente foi cadastrado com sucesso.",
+      title: editMode ? "Cliente atualizado" : "Cliente adicionado",
+      description: editMode 
+        ? "O cliente foi atualizado com sucesso."
+        : "O cliente foi cadastrado com sucesso.",
     });
     
     // Retorna para a lista após um breve delay
     setTimeout(() => {
       setActiveTab('lista');
       setSaveSuccess(false);
+      setEditMode(false);
+      
+      // If we were editing and have a selected client, show details again
+      if (editMode && selectedClientId) {
+        setShowDetails(true);
+      }
     }, 1500);
   };
   
@@ -86,8 +113,8 @@ const ClientManagementPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className={`lg:col-span-${showDetails ? '2' : '3'}`}>
-            <Card className="overflow-visible"> {/* Added overflow-visible to fix content cutting */}
+          <div className={`lg:col-span-${showDetails && !editMode ? '2' : '3'}`}>
+            <Card className="overflow-visible bg-white"> {/* Added bg-white to fix the white background issue */}
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
@@ -100,6 +127,12 @@ const ClientManagementPage: React.FC = () => {
                         <Plus className="h-4 w-4" /> 
                         Novo Cliente
                       </TabsTrigger>
+                      {editMode && (
+                        <TabsTrigger value="editar" className="flex items-center gap-2">
+                          <Edit className="h-4 w-4" /> 
+                          Editar Cliente
+                        </TabsTrigger>
+                      )}
                     </TabsList>
                     
                     {activeTab === 'lista' && (
@@ -134,16 +167,37 @@ const ClientManagementPage: React.FC = () => {
                       saveSuccess={saveSuccess}
                     />
                   </TabsContent>
+                  
+                  <TabsContent value="editar" className="mt-0 overflow-visible"> {/* Added overflow-visible */}
+                    {editMode && selectedClientId && (
+                      <>
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-lg font-medium">Editar Cliente</h2>
+                          <Button variant="ghost" onClick={handleCancelEdit}>
+                            Cancelar
+                          </Button>
+                        </div>
+                        <EnhancedClientForm 
+                          onSave={handleClientSaved}
+                          isLoading={isLoading}
+                          saveSuccess={saveSuccess}
+                          isEditing={true}
+                          clientId={selectedClientId}
+                        />
+                      </>
+                    )}
+                  </TabsContent>
                 </Tabs>
               </CardContent>
             </Card>
           </div>
           
-          {showDetails && (
+          {showDetails && !editMode && (
             <div className="lg:col-span-1">
               <ClientDetailsPanel 
                 clientId={selectedClientId!} 
                 onClose={handleCloseDetails}
+                onEdit={handleEditClient}
               />
             </div>
           )}

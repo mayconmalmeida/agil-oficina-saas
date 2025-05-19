@@ -1,67 +1,74 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { CheckCircle, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 
 interface FormActionsProps {
   isLoading: boolean;
   saveSuccess: boolean;
-  onPrev: () => void;
+  onPrev?: () => void;
   isFirstTab: boolean;
+  isEditing?: boolean;
 }
 
-const FormActions: React.FC<FormActionsProps> = ({ 
-  isLoading, 
-  saveSuccess, 
+const FormActions: React.FC<FormActionsProps> = ({
+  isLoading,
+  saveSuccess,
   onPrev,
-  isFirstTab
+  isFirstTab,
+  isEditing = false
 }) => {
   return (
-    <div className="flex justify-between pt-4">
-      {!isFirstTab && (
+    <div className="flex flex-col space-y-4 pt-4">
+      <Button 
+        type="submit" 
+        className={`w-full transition-colors ${saveSuccess 
+          ? "bg-green-500 hover:bg-green-600" 
+          : "bg-oficina hover:bg-blue-700"}`}
+        disabled={isLoading || saveSuccess}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            {isEditing ? 'Salvando...' : 'Adicionando...'}
+          </>
+        ) : saveSuccess ? (
+          <>
+            <CheckCircle className="mr-2 h-4 w-4" />
+            {isEditing ? 'Cliente atualizado!' : 'Cliente adicionado!'}
+          </>
+        ) : (
+          <>
+            {isEditing ? 'Salvar Alterações' : 'Salvar Cliente'}
+          </>
+        )}
+      </Button>
+      
+      {!isFirstTab && onPrev && (
         <Button 
           type="button" 
-          variant="outline"
-          onClick={onPrev}
-          disabled={saveSuccess}
+          variant="outline" 
+          onClick={onPrev} 
+          className="w-full"
+          disabled={isLoading || saveSuccess}
         >
-          Voltar: Dados do Cliente
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Voltar para Dados Pessoais
         </Button>
       )}
       
-      <div className={isFirstTab ? 'ml-auto' : ''}>
-        {isFirstTab ? (
-          <Button 
-            type="button" 
-            onClick={onPrev}
-            disabled={saveSuccess}
-          >
-            Próximo: Dados do Veículo
-          </Button>
-        ) : (
-          <Button 
-            type="submit" 
-            className={`transition-colors ${saveSuccess 
-              ? "bg-green-500 hover:bg-green-600" 
-              : "bg-oficina hover:bg-blue-700"}`}
-            disabled={isLoading || saveSuccess}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                Adicionando...
-              </>
-            ) : saveSuccess ? (
-              <>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Cliente adicionado!
-              </>
-            ) : (
-              'Adicionar Cliente'
-            )}
-          </Button>
-        )}
-      </div>
+      {isFirstTab && onPrev && (
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onPrev} 
+          className="w-full"
+          disabled={isLoading || saveSuccess}
+        >
+          <ArrowRight className="mr-2 h-4 w-4" />
+          Continuar para Dados do Veículo
+        </Button>
+      )}
     </div>
   );
 };

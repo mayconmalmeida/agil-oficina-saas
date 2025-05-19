@@ -1,0 +1,9 @@
+
+-- Add these new columns to the clients table if they don't exist
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS documento TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS cep TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS bairro TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS numero TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT 'pf';
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS cor TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS kilometragem TEXT;

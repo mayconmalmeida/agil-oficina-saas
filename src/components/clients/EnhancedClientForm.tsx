@@ -16,13 +16,17 @@ interface EnhancedClientFormProps {
   isLoading?: boolean;
   saveSuccess?: boolean;
   initialData?: Partial<ClientFormValues>;
+  isEditing?: boolean;
+  clientId?: string;
 }
 
 const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({ 
   onSave, 
   isLoading: externalIsLoading, 
   saveSuccess: externalSaveSuccess,
-  initialData = {}
+  initialData = {},
+  isEditing = false,
+  clientId
 }) => {
   const {
     form,
@@ -35,7 +39,9 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
     onSubmit
   } = useClientForm({ 
     onSave,
-    initialData
+    initialData,
+    isEditing,
+    clientId
   });
   
   // Use external state if provided, otherwise use internal state
@@ -60,6 +66,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                 saveSuccess={saveSuccess} 
                 onPrev={handleNextTab}
                 isFirstTab={true} 
+                isEditing={isEditing}
               />
             </div>
           </TabsContent>
@@ -72,6 +79,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                 saveSuccess={saveSuccess} 
                 onPrev={handlePrevTab}
                 isFirstTab={false}
+                isEditing={isEditing}
               />
             </div>
           </TabsContent>

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Plus, Search } from 'lucide-react';
+import { Car, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -16,6 +16,16 @@ import {
 } from '@/components/ui/table';
 import Loading from '@/components/ui/loading';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Vehicle {
   id: string;
@@ -30,6 +40,7 @@ const VehiclesPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteVehicleId, setDeleteVehicleId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -85,6 +96,60 @@ const VehiclesPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const handleEditVehicle = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    navigate(`/veiculos/editar/${id}`);
+  };
+  
+  const confirmDeleteVehicle = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    setDeleteVehicleId(id);
+  };
+  
+  const handleDeleteVehicle = async () => {
+    if (!deleteVehicleId) return;
+    
+    try {
+      // We're not actually deleting the client, just clearing vehicle info
+      const { error } = await supabase
+        .from('clients')
+        .update({
+          placa: null,
+          marca: null,
+          modelo: null,
+          ano: null,
+          cor: null,
+          kilometragem: null,
+          veiculo: null
+        })
+        .eq('id', deleteVehicleId);
+      
+      if (error) throw error;
+      
+      // Remove the vehicle from our local state
+      setVehicles(vehicles.filter(vehicle => vehicle.id !== deleteVehicleId));
+      
+      toast({
+        title: "Veículo removido",
+        description: "O veículo foi removido com sucesso.",
+      });
+      
+    } catch (error: any) {
+      console.error('Error removing vehicle:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover veículo",
+        description: error.message || "Não foi possível remover o veículo.",
+      });
+    } finally {
+      setDeleteVehicleId(null);
+    }
+  };
+  
+  const handleCancelDelete = () => {
+    setDeleteVehicleId(null);
   };
   
   // Filter vehicles based on search term
@@ -153,6 +218,7 @@ const VehiclesPage: React.FC = () => {
                   <TableHead>Modelo</TableHead>
                   <TableHead>Ano</TableHead>
                   <TableHead>Cliente</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,6 +233,24 @@ const VehiclesPage: React.FC = () => {
                     <TableCell>{vehicle.modelo}</TableCell>
                     <TableCell>{vehicle.ano}</TableCell>
                     <TableCell>{vehicle.cliente_nome}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={(e) => handleEditVehicle(vehicle.id, e)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={(e) => confirmDeleteVehicle(vehicle.id, e)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -174,6 +258,27 @@ const VehiclesPage: React.FC = () => {
           )}
         </div>
       )}
+      
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteVehicleId} onOpenChange={() => setDeleteVehicleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este veículo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteVehicle}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Remover Veículo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
