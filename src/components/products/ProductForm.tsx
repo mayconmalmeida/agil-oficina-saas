@@ -9,10 +9,11 @@ import ProductFormSubmitButton from '@/components/products/ProductFormSubmitButt
 
 interface ProductFormProps {
   productId?: string;
+  onSaveSuccess?: () => void;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({ productId }) => {
-  const { form, isLoading, productType, controlStock, handleSubmit, isEditing } = useProductForm(productId);
+const ProductForm: React.FC<ProductFormProps> = ({ productId, onSaveSuccess }) => {
+  const { form, isLoading, productType, controlStock, handleSubmit, isEditing } = useProductForm(productId, onSaveSuccess);
   
   return (
     <Form {...form}>

@@ -10,7 +10,7 @@ import { mapServiceToFormValues, defaultProductValues } from '@/utils/formUtils'
 
 export { productSchema, type ProductFormValues } from '@/schemas/productSchema';
 
-export const useProductForm = (productId?: string) => {
+export const useProductForm = (productId?: string, onSaveSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
@@ -71,6 +71,11 @@ export const useProductForm = (productId?: string) => {
       if (!isEditing) {
         // Reset the form for new products
         form.reset(defaultProductValues);
+      }
+      
+      // Call the onSaveSuccess callback if provided
+      if (onSaveSuccess) {
+        onSaveSuccess();
       }
       
     } catch (error: any) {
