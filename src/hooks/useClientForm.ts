@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { safeRpc } from '@/utils/supabaseTypes';
 import { validateCPF, validateLicensePlate, fetchAddressByCEP } from '@/utils/validationUtils';
 import { formatCPF, formatCEP, formatLicensePlate } from '@/utils/formatUtils';
+import { Client } from '@/utils/supabaseTypes';
 
 // Schema with enhanced validations
 export const clientFormSchema = z.object({
@@ -107,26 +108,28 @@ export const useClientForm = ({
           if (error) throw error;
           
           if (data) {
+            const clientData = data as Client;
+            
             // Format data for the form
             form.reset({
-              nome: data.nome || '',
-              tipo: data.tipo || 'pf',
-              documento: data.documento || '',
-              telefone: data.telefone || '',
-              email: data.email || '',
-              cep: data.cep || '',
-              endereco: data.endereco || '',
-              numero: data.numero || '',
-              bairro: data.bairro || '',
-              cidade: data.cidade || '',
-              estado: data.estado || '',
+              nome: clientData.nome || '',
+              tipo: clientData.tipo || 'pf',
+              documento: clientData.documento || '',
+              telefone: clientData.telefone || '',
+              email: clientData.email || '',
+              cep: clientData.cep || '',
+              endereco: clientData.endereco || '',
+              numero: clientData.numero || '',
+              bairro: clientData.bairro || '',
+              cidade: clientData.cidade || '',
+              estado: clientData.estado || '',
               veiculo: {
-                marca: data.marca || '',
-                modelo: data.modelo || '',
-                ano: data.ano || '',
-                placa: data.placa || '',
-                cor: data.cor || '',
-                kilometragem: data.kilometragem || ''
+                marca: clientData.marca || '',
+                modelo: clientData.modelo || '',
+                ano: clientData.ano || '',
+                placa: clientData.placa || '',
+                cor: clientData.cor || '',
+                kilometragem: clientData.kilometragem || ''
               }
             });
           }
@@ -254,7 +257,12 @@ export const useClientForm = ({
             cidade: values.cidade || null,
             estado: values.estado || null,
             cep: values.cep || null,
-            documento: values.documento || null
+            documento: values.documento || null,
+            tipo: values.tipo,
+            cor: values.veiculo.cor || null,
+            kilometragem: values.veiculo.kilometragem || null,
+            bairro: values.bairro || null,
+            numero: values.numero || null
           })
           .eq('id', clientId);
           

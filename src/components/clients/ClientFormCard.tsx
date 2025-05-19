@@ -2,10 +2,10 @@
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import ClientForm, { ClientFormValues } from './ClientForm';
+import ClientForm from './ClientForm';
 
 interface ClientFormCardProps {
-  onSubmit: (values: ClientFormValues) => Promise<void>;
+  onSubmit: (values: any) => Promise<void>;
   onSkip: () => void;
   isLoading: boolean;
   saveSuccess: boolean;

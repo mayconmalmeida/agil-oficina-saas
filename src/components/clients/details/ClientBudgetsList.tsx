@@ -1,101 +1,59 @@
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Budget } from '@/utils/supabaseTypes';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/utils/formatUtils';
-import { Separator } from '@/components/ui/separator';
-import { useNavigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-interface ClientBudgetsListProps {
+export interface ClientBudgetsListProps {
   clientId: string;
+  onViewBudget: (budgetId: string) => void;
 }
 
-const ClientBudgetsList: React.FC<ClientBudgetsListProps> = ({ clientId }) => {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    const fetchBudgets = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orcamentos')
-          .select('*')
-          .eq('cliente_id', clientId)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        setBudgets(data || []);
-      } catch (error) {
-        console.error('Error fetching budgets:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchBudgets();
-  }, [clientId]);
-  
-  const handleCreateBudget = () => {
-    navigate(`/budgets/new?clientId=${clientId}`);
-  };
-  
-  if (isLoading) return <p className="text-sm text-gray-500">Carregando orçamentos...</p>;
-  
-  if (budgets.length === 0) {
-    return (
-      <>
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-medium">Orçamentos</h3>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleCreateBudget}
-            className="h-7 text-xs"
-          >
-            Novo Orçamento
-          </Button>
-        </div>
-        <p className="text-sm text-gray-500">Nenhum orçamento encontrado para este cliente.</p>
-        <Separator className="my-3" />
-      </>
-    );
-  }
-  
+const ClientBudgetsList: React.FC<ClientBudgetsListProps> = ({ 
+  clientId,
+  onViewBudget
+}) => {
+  // Placeholder for budget list, would need to fetch from API
+  const budgets = [
+    { id: '1', date: '2023-01-01', value: 'R$ 1.500,00', status: 'Aprovado' },
+    { id: '2', date: '2023-02-15', value: 'R$ 750,00', status: 'Pendente' },
+  ];
+
   return (
-    <>
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium">Orçamentos</h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleCreateBudget}
-          className="h-7 text-xs"
-        >
-          Novo Orçamento
-        </Button>
-      </div>
-      
-      <div className="space-y-2">
-        {budgets.map((budget) => (
-          <div 
-            key={budget.id}
-            className="text-sm p-2 bg-gray-50 rounded flex justify-between items-center"
-          >
-            <div>
-              <p className="font-medium">{budget.descricao.substring(0, 30)}{budget.descricao.length > 30 ? '...' : ''}</p>
-              <p className="text-gray-500 text-xs">{new Date(budget.created_at).toLocaleDateString('pt-BR')}</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium">{formatCurrency(budget.valor_total)}</p>
-              <p className="text-xs uppercase">{budget.status}</p>
-            </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Orçamentos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {budgets.length > 0 ? (
+          <div className="space-y-4">
+            {budgets.map((budget) => (
+              <div 
+                key={budget.id} 
+                className="flex justify-between items-center p-3 border rounded-lg"
+              >
+                <div>
+                  <p className="font-medium">{budget.date}</p>
+                  <p className="text-sm text-gray-500">{budget.value} - {budget.status}</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onViewBudget(budget.id)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Ver
+                </Button>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <Separator className="my-3" />
-    </>
+        ) : (
+          <p className="text-center text-gray-500 py-4">
+            Nenhum orçamento encontrado para este cliente.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

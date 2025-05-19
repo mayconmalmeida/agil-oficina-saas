@@ -1,136 +1,61 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import Loading from '@/components/ui/loading';
-import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import ClientList from '@/components/clients/ClientList';
 import ClientsPageHeader from '@/components/clients/ClientsPageHeader';
-import ClientFormCard from '@/components/clients/ClientFormCard';
-import { ClientFormValues } from '@/components/clients/ClientForm';
-import { safeRpc } from '@/utils/supabaseTypes';
+import ClientSearchForm from '@/components/clients/ClientSearchForm';
+import { PlusCircle } from 'lucide-react';
 
 const ClientsPage: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
-  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const navigate = useNavigate();
-  const [userId, setUserId] = useState<string | undefined>(undefined);
-  const { updateProgress } = useOnboardingProgress(userId);
   
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          toast({
-            variant: "destructive",
-            title: "Acesso não autorizado",
-            description: "Você precisa fazer login para acessar este recurso.",
-          });
-          navigate('/login');
-          return;
-        }
-        
-        setUserId(session.user.id);
-      } finally {
-        setIsPageLoading(false);
-      }
-    };
-    
-    checkUser();
-  }, [navigate, toast]);
-  
-  const onSubmit = async (values: ClientFormValues) => {
-    if (!userId) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Você precisa estar logado para adicionar clientes.",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Prepare vehicle information as a formatted string for legacy compatibility
-      const veiculoFormatado = `${values.veiculo.marca} ${values.veiculo.modelo} ${values.veiculo.ano}, Placa: ${values.veiculo.placa}`;
-      
-      // Create clients table if not exists using RPC function
-      const { error } = await safeRpc('create_client', {
-        p_user_id: userId,
-        p_nome: values.nome,
-        p_telefone: values.telefone,
-        p_email: values.email || null,
-        p_veiculo: veiculoFormatado,
-        p_marca: values.veiculo.marca,
-        p_modelo: values.veiculo.modelo,
-        p_ano: values.veiculo.ano,
-        p_placa: values.veiculo.placa,
-        p_endereco: null,  // Add missing parameters with default values
-        p_cidade: null,
-        p_estado: null,
-        p_cep: null,
-        p_documento: null
-      });
-      
-      if (error) {
-        console.error('Erro ao adicionar cliente:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao adicionar cliente",
-          description: error.message || "Ocorreu um erro ao adicionar o cliente.",
-        });
-        return;
-      }
-      
-      // Mark clients as added
-      await updateProgress('clients_added', true);
-      
-      // Show success state
-      setSaveSuccess(true);
-      
-      // Navigate after a short delay
-      setTimeout(() => {
-        navigate('/produtos-servicos');
-      }, 1500);
-      
-    } catch (error) {
-      console.error('Erro inesperado:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro inesperado ao adicionar o cliente.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
   };
   
-  const skipStep = async () => {
-    if (userId) {
-      await updateProgress('clients_added', true);
-      navigate('/produtos-servicos');
-    }
+  const handleViewClient = (clientId: string) => {
+    navigate(`/clientes/${clientId}`);
   };
   
-  if (isPageLoading) {
-    return <Loading text="Carregando..." fullscreen />;
-  }
+  const handleEditClient = (clientId: string) => {
+    navigate(`/clientes/editar/${clientId}`);
+  };
+  
+  const handleDeleteClient = (clientId: string) => {
+    // Implement delete functionality, example: show confirmation dialog
+    console.log(`Delete client with ID: ${clientId}`);
+  };
+  
+  const handleAddClient = () => {
+    navigate('/clientes/novo');
+  };
   
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md">
-        <ClientsPageHeader />
-        <ClientFormCard 
-          onSubmit={onSubmit}
-          onSkip={skipStep}
-          isLoading={isLoading}
-          saveSuccess={saveSuccess}
-        />
+    <div className="space-y-6">
+      <ClientsPageHeader />
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        <ClientSearchForm onSearchChange={handleSearchChange} />
+        
+        <div className="flex justify-end">
+          <Button onClick={handleAddClient}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
+      
+      <Card>
+        <ClientList 
+          searchTerm={searchTerm} 
+          onViewClient={handleViewClient}
+          onEditClient={handleEditClient}
+          onDeleteClient={handleDeleteClient}
+        />
+      </Card>
     </div>
   );
 };
