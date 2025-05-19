@@ -35,8 +35,7 @@ const UserDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <WelcomeHeader 
-          name={userProfile?.full_name} 
-          workshopName={userProfile?.nome_oficina}
+          workshopName={userProfile?.nome_oficina || 'Oficina'}
           logoUrl={userProfile?.logo_url}
         />
         

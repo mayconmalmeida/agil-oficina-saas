@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -37,10 +38,9 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Cabeçalho de boas-vindas */}
+        {/* Workshop name and logo */}
         <WelcomeHeader 
-          name={userProfile?.full_name || 'Usuário'}
-          workshopName={userProfile?.nome_oficina || 'sua oficina'}
+          workshopName={userProfile?.nome_oficina || 'Oficina'}
           logoUrl={userProfile?.logo_url || null}
         />
         

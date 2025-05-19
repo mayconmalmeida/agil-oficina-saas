@@ -9,8 +9,7 @@ interface WelcomeHeaderProps {
 }
 
 const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ 
-  name = 'Usuário',
-  workshopName = 'sua oficina',
+  workshopName = 'Oficina',
   logoUrl = null
 }) => {
   const initials = workshopName?.substring(0, 2) || 'OF';
@@ -28,11 +27,8 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
       </Avatar>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Olá, {name}!
+          {workshopName}
         </h1>
-        <p className="text-gray-600">
-          Bem-vindo(a) ao painel da {workshopName}
-        </p>
       </div>
     </div>
   );
