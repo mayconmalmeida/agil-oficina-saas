@@ -1,90 +1,99 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { validateLicensePlate } from '@/utils/validationUtils';
+import { formatLicensePlate } from '@/utils/formatUtils';
+import { Vehicle, Client } from '@/utils/supabaseTypes';
 
-// Define schema with validations
-const vehicleSchema = z.object({
+// Schema with enhanced validations
+export const vehicleFormSchema = z.object({
+  clienteId: z.string().min(1, 'Cliente é obrigatório'),
+  marca: z.string().min(1, 'Marca do veículo é obrigatória'),
+  modelo: z.string().min(1, 'Modelo do veículo é obrigatório'),
+  ano: z.string().regex(/^\d{4}$/, 'Ano deve ter exatamente 4 dígitos'),
   placa: z.string()
     .refine(val => validateLicensePlate(val), {
       message: 'Formato de placa inválido. Use ABC-1234 ou ABC1D23'
     }),
-  marca: z.string().min(1, 'Marca é obrigatória'),
-  modelo: z.string().min(1, 'Modelo é obrigatório'),
-  ano: z.string().regex(/^\d{4}$/, 'Ano deve ter exatamente 4 dígitos'),
-  cor: z.string().optional().or(z.literal('')),
-  kilometragem: z.string().optional().or(z.literal('')),
-  cliente_id: z.string().min(1, 'Cliente é obrigatório')
+  cor: z.string().optional(),
+  kilometragem: z.string().optional()
 });
 
-export type VehicleFormValues = z.infer<typeof vehicleSchema>;
+export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 interface UseVehicleFormProps {
-  onSaved: () => void;
-  vehicleId?: string;
+  onSave: () => void;
+  initialData?: Partial<VehicleFormValues>;
   isEditing?: boolean;
-  clientId?: string;
+  vehicleId?: string;
+  defaultClientId?: string;
 }
 
 export const useVehicleForm = ({
-  onSaved,
-  vehicleId,
+  onSave,
+  initialData = {},
   isEditing = false,
-  clientId
+  vehicleId,
+  defaultClientId
 }: UseVehicleFormProps) => {
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  
-  const showClientSelector = (!isEditing && !clientId);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
   const form = useForm<VehicleFormValues>({
-    resolver: zodResolver(vehicleSchema),
+    resolver: zodResolver(vehicleFormSchema),
     defaultValues: {
-      placa: '',
-      marca: '',
-      modelo: '',
-      ano: '',
-      cor: '',
-      kilometragem: '',
-      cliente_id: clientId || ''
-    }
+      clienteId: defaultClientId || initialData.clienteId || '',
+      marca: initialData.marca || '',
+      modelo: initialData.modelo || '',
+      ano: initialData.ano || '',
+      placa: initialData.placa || '',
+      cor: initialData.cor || '',
+      kilometragem: initialData.kilometragem || ''
+    },
   });
-  
-  // Fetch vehicle data if editing
+
+  // Fetch vehicle data if in edit mode
   useEffect(() => {
     if (isEditing && vehicleId) {
       const fetchVehicle = async () => {
         setIsLoading(true);
         try {
           const { data, error } = await supabase
-            .from('clients')
-            .select('*')
+            .from('vehicles')
+            .select('*, clients(*)')
             .eq('id', vehicleId)
             .single();
             
           if (error) throw error;
           
           if (data) {
+            const vehicleData = data as Vehicle & { clients: Client };
+            
+            // Format data for the form
             form.reset({
-              placa: data.placa || '',
-              marca: data.marca || '',
-              modelo: data.modelo || '',
-              ano: data.ano || '',
-              cor: data.cor || '',
-              kilometragem: data.kilometragem || '',
-              cliente_id: data.id
+              clienteId: vehicleData.cliente_id,
+              marca: vehicleData.marca,
+              modelo: vehicleData.modelo,
+              ano: vehicleData.ano,
+              placa: vehicleData.placa,
+              cor: vehicleData.cor || '',
+              kilometragem: vehicleData.kilometragem || ''
             });
+            
+            setSelectedClient(vehicleData.clients);
           }
         } catch (error: any) {
           console.error('Error fetching vehicle:', error);
           toast({
             variant: "destructive",
             title: "Erro ao carregar veículo",
-            description: error.message || "Não foi possível carregar os dados do veículo."
+            description: "Não foi possível carregar os dados do veículo."
           });
         } finally {
           setIsLoading(false);
@@ -95,73 +104,123 @@ export const useVehicleForm = ({
     }
   }, [isEditing, vehicleId, form, toast]);
   
+  // Fetch client data when clientId changes
+  const clienteId = form.watch('clienteId');
+  
+  useEffect(() => {
+    if (clienteId) {
+      const fetchClient = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('id', clienteId)
+            .single();
+            
+          if (error) throw error;
+          
+          if (data) {
+            setSelectedClient(data as Client);
+          }
+        } catch (error) {
+          console.error('Error fetching client:', error);
+          setSelectedClient(null);
+        }
+      };
+      
+      fetchClient();
+    } else {
+      setSelectedClient(null);
+    }
+  }, [clienteId]);
+  
+  // Format license plate
+  const placa = form.watch('placa');
+  
+  useEffect(() => {
+    if (placa) {
+      const formattedPlate = formatLicensePlate(placa);
+      if (formattedPlate !== placa) {
+        form.setValue('placa', formattedPlate);
+      }
+    }
+  }, [placa, form]);
+  
   const onSubmit = async (values: VehicleFormValues) => {
-    setIsLoading(true);
-    
     try {
-      // Update the client record with vehicle information
-      if (isEditing) {
+      setIsLoading(true);
+      
+      // Verify authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para adicionar veículos."
+        });
+        return;
+      }
+      
+      if (isEditing && vehicleId) {
+        // Update existing vehicle
         const { error } = await supabase
-          .from('clients')
+          .from('vehicles')
           .update({
-            placa: values.placa,
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
+            placa: values.placa,
             cor: values.cor || null,
             kilometragem: values.kilometragem || null,
-            veiculo: `${values.marca} ${values.modelo} ${values.ano}, Placa: ${values.placa}`
+            cliente_id: values.clienteId
           })
           .eq('id', vehicleId);
           
         if (error) throw error;
       } else {
-        // For new vehicles, we update the client record
+        // Create new vehicle
         const { error } = await supabase
-          .from('clients')
-          .update({
-            placa: values.placa,
+          .from('vehicles')
+          .insert({
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
+            placa: values.placa,
             cor: values.cor || null,
             kilometragem: values.kilometragem || null,
-            veiculo: `${values.marca} ${values.modelo} ${values.ano}, Placa: ${values.placa}`
-          })
-          .eq('id', values.cliente_id);
-          
+            cliente_id: values.clienteId,
+            user_id: session.user.id
+          });
+        
         if (error) throw error;
       }
       
+      setSaveSuccess(true);
       toast({
-        title: isEditing ? "Veículo atualizado" : "Veículo cadastrado",
+        title: isEditing ? "Veículo atualizado" : "Veículo adicionado",
         description: isEditing 
           ? "Veículo atualizado com sucesso!"
-          : "Veículo cadastrado com sucesso!",
+          : "Veículo adicionado com sucesso!"
       });
-      
-      // Reset form
-      form.reset();
-      
-      // Call onSaved callback
-      onSaved();
-      
+      onSave();
     } catch (error: any) {
-      console.error('Error saving vehicle:', error.message);
+      console.error('Erro ao salvar veículo:', error);
       toast({
         variant: "destructive",
-        title: isEditing ? "Erro ao atualizar veículo" : "Erro ao cadastrar veículo",
-        description: error.message || "Ocorreu um erro ao tentar salvar o veículo.",
+        title: isEditing ? "Erro ao atualizar veículo" : "Erro ao adicionar veículo",
+        description: error.message || `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'adicionar'} o veículo.`
       });
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return {
     form,
     isLoading,
-    showClientSelector,
+    saveSuccess,
+    selectedClient,
     onSubmit
   };
 };

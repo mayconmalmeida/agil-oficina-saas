@@ -35,6 +35,8 @@ import ClientsManagementPage from './pages/ClientsManagementPage';
 import ClientManagementPage from './pages/ClientManagementPage';
 import VehiclesPage from './pages/VehiclesPage';
 import VehicleRegistrationPage from './pages/VehicleRegistrationPage';
+import ThankYouPage from './pages/ThankYouPage';
+import DashboardLayout from './components/layout/DashboardLayout';
 
 import './App.css';
 
@@ -49,33 +51,36 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
+        
+        {/* Dashboard Layout Routes */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/clientes" element={<ClientManagementPage />} />
+          <Route path="/veiculos" element={<VehiclesPage />} />
+          <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
+          <Route path="/veiculos/novo/:clientId" element={<VehicleRegistrationPage />} />
+          <Route path="/veiculos/:vehicleId" element={<VehicleRegistrationPage />} />
+          <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
+          <Route path="/produtos" element={<ProductsPage />} />
+          <Route path="/servicos" element={<ServicesPage />} />
+          <Route path="/agendamentos" element={<SchedulesPage />} />
+          <Route path="/orcamentos" element={<BudgetPage />} />
+          <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
+          <Route path="/orcamentos/editar/:id" element={<BudgetEditPage />} />
+          <Route path="/orcamentos/:id" element={<BudgetDetailsPage />} />
+          <Route path="/configuracoes" element={<SettingsPage />} />
+        </Route>
+        
+        {/* Routes outside the dashboard layout */}
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/setup" element={<ProfileSetupPage />} />
         <Route path="/adicionar-clientes" element={<ClientsPage />} />
-        <Route path="/produtos-servicos" element={<ServicesPage />} />
-        <Route path="/orcamento" element={<BudgetPage />} />
-        <Route path="/orcamento/novo" element={<NewBudgetPage />} />
-        <Route path="/orcamento/editar/:id" element={<BudgetEditPage />} />
-        <Route path="/orcamento/:id" element={<BudgetDetailsPage />} />
+        <Route path="/agendamento" element={<SchedulingPage />} />
         <Route path="/profile" element={<ProfileEditPage />} />
         <Route path="/company" element={<CompanyProfilePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/workshop-registration" element={<WorkshopRegistrationPage />} />
-        <Route path="/agendamento" element={<SchedulingPage />} />
-        <Route path="/agendamentos" element={<SchedulesPage />} />
-        <Route path="/produtos" element={<ProductsPage />} />
-        
-        {/* Client Management Pages */}
         <Route path="/clientes-gestao" element={<ClientsManagementPage />} />
-        <Route path="/clientes" element={<ClientManagementPage />} />
-        
-        {/* Vehicle Management Pages */}
-        <Route path="/veiculos" element={<VehiclesPage />} />
-        <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
-        <Route path="/veiculos/novo/:clientId" element={<VehicleRegistrationPage />} />
-        <Route path="/veiculos/:vehicleId" element={<VehicleRegistrationPage />} />
-        <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

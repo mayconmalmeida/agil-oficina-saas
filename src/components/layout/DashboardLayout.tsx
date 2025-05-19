@@ -58,7 +58,7 @@ const DashboardLayout: React.FC = () => {
   
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   
-  const isActive = (path: string) => location.pathname.startsWith(path);
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   
   const menuItems = [
     { icon: LayoutGrid, label: "Dashboard", href: "/dashboard" },
@@ -72,10 +72,10 @@ const DashboardLayout: React.FC = () => {
   ];
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Mobile sidebar toggle */}
       <div className="fixed top-4 left-4 z-50 lg:hidden">
-        <Button variant="outline" size="icon" onClick={toggleSidebar}>
+        <Button variant="outline" size="icon" onClick={toggleSidebar} aria-label="Toggle menu">
           {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </Button>
       </div>
@@ -86,14 +86,14 @@ const DashboardLayout: React.FC = () => {
         sidebarOpen ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0" // Always show on large screens
       )}>
-        <div className="p-4">
+        <div className="p-4 h-full flex flex-col">
           <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold text-oficina-dark">
+            <h2 className="text-2xl font-bold">
               Oficina<span className="text-oficina-accent">Ágil</span>
             </h2>
           </div>
           
-          <nav className="space-y-1">
+          <nav className="flex-1 space-y-1 overflow-y-auto">
             {menuItems.map((item) => (
               <SidebarItem
                 key={item.href}
@@ -110,9 +110,9 @@ const DashboardLayout: React.FC = () => {
       {/* Main content */}
       <div className={cn(
         "flex-1 transition-all duration-300 ease-in-out",
-        sidebarOpen ? "lg:ml-64" : "ml-0"
+        "lg:ml-64" // Always offset content on large screens
       )}>
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 min-h-screen">
           <Outlet />
         </div>
       </div>
@@ -122,6 +122,7 @@ const DashboardLayout: React.FC = () => {
         <div 
           className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden" 
           onClick={toggleSidebar}
+          aria-hidden="true"
         />
       )}
       

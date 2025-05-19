@@ -1,191 +1,51 @@
+
 import { supabase } from '@/lib/supabase';
 
-// Define specific parameter types for each RPC function
-type RPCParamMap = {
-  'create_profile': { user_id: string; user_email: string; user_full_name: string };
-  'create_subscription': { user_id: string; plan_type: string; start_date: string; end_date: string };
-  'update_onboarding_step': { step: string };
-  'create_budget': { p_user_id: string; p_cliente: string; p_veiculo: string; p_descricao: string; p_valor_total: number };
-  'create_client': { 
-    p_user_id: string; 
-    p_nome: string; 
-    p_telefone: string; 
-    p_email: string | null; 
-    p_veiculo: string;
-    p_marca: string;
-    p_modelo: string;
-    p_ano: string;
-    p_placa: string;
-    p_endereco: string | null;
-    p_cidade: string | null;
-    p_estado: string | null;
-    p_cep: string | null;
-    p_documento: string | null
-  };
-  'create_service': { p_user_id: string; p_nome: string; p_tipo: string; p_valor: number; p_descricao: string };
-  'create_profile_table': {};
-  'create_profiles_table': {};
-  'create_subscriptions_table': {};
-  'ensure_profiles_table': {};
-  'check_admin_permission': { user_email: string; required_level: string };
-  'create_agendamentos_table': {};
-  'create_agendamento': { 
-    p_user_id: string; 
-    p_data: string; 
-    p_horario: string; 
-    p_cliente_id: string; 
-    p_veiculo_id: string; 
-    p_servico_id: string; 
-    p_observacoes: string; 
-    p_status: string 
-  };
-  'ensure_whatsapp_suporte_column': {}; // Add the new function
-};
-
-// Define valid RPC function names as a union type
-type ValidRpcFunctions = keyof RPCParamMap;
-
-/**
- * Type-safe wrapper for calling Supabase RPC functions
- * @param fn The RPC function name
- * @param params The parameters to pass to the function
- * @returns The result of the RPC call
- */
-export const safeRpc = <T = any, F extends ValidRpcFunctions = ValidRpcFunctions>(
-  fn: F, 
-  params: RPCParamMap[F]
-) => {
-  // We need to tell TypeScript that fn is already one of the valid function names
-  // This avoids the conversion to string which was causing the type error
-  return supabase.rpc(fn, params) as unknown as Promise<{ data: T; error: any }>;
-};
-
-// Types for Profile
-export interface Profile {
-  id: string;
-  email?: string;
-  full_name?: string;
-  created_at?: string;
-  nome_oficina?: string;
-  telefone?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  plano?: string;
-  is_active?: boolean;
-  trial_ends_at?: string | null;
-  last_login?: string | null;
-  logo_url?: string;
-  whatsapp_suporte?: string; // Added whatsapp_suporte field
-  documents?: Document[]; 
-}
-
-// Types for Subscription
-export interface Subscription {
-  id: string;
-  user_id: string;
-  status: string;
-  plan?: string;
-  created_at: string;
-  ends_at?: string;
-  started_at?: string;
-  payment_method?: string;
-  amount: number;
-  expires_at?: string;
-  trial_ends_at?: string;
-}
-
-// Types for Service
-export interface Service {
-  id: string;
-  user_id: string;
-  nome: string;
-  tipo: string;
-  valor: number;
-  descricao?: string;
-  created_at: string;
-  codigo?: string;
-}
-
-// Types for Document
-export interface Document {
-  id: string;
-  name: string;
-  url: string;
-  created_at: string;
-}
-
-// Types for Client
 export interface Client {
   id: string;
-  user_id: string;
+  created_at: string;
   nome: string;
   telefone: string;
-  email?: string;
+  email: string;
   veiculo: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
-  created_at: string;
-  documento?: string;
-  cep?: string;
-  bairro?: string;
-  numero?: string;
-  tipo?: string;
-  cor?: string;
-  kilometragem?: string;
+  marca: string;
+  modelo: string;
+  ano: string;
+  placa: string;
+  user_id: string;
   endereco?: string;
   cidade?: string;
   estado?: string;
+  cep?: string;
+  documento?: string;
+  tipo: 'pf' | 'pj';
+  cor?: string;
+  kilometragem?: string;
+  bairro?: string;
+  numero?: string;
 }
 
-// Types for Budget (Orçamento)
-export interface Budget {
+export interface Vehicle {
   id: string;
-  user_id: string;
-  cliente: string;
-  veiculo: string;
-  descricao: string;
-  valor_total: number;
-  status: string;
   created_at: string;
-  cliente_id?: string;
-}
-
-// Type for Agendamento (Scheduling)
-export interface Agendamento {
-  id: string;
-  user_id: string;
-  data_agendamento: string;
-  horario: string;
+  marca: string;
+  modelo: string;
+  ano: string;
+  placa: string;
+  cor?: string;
+  kilometragem?: string;
   cliente_id: string;
-  veiculo_id: string;
-  servico_id: string;
-  observacoes?: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  user_id: string;
 }
 
-// Types for combined objects
-export interface SubscriptionWithProfile extends Partial<Subscription> {
-  profiles?: {
-    email: string;
-    nome_oficina: string;
-  };
-  email?: string;
-  nome_oficina?: string;
-}
-
-export interface ProfileWithSubscriptions extends Profile {
-  subscriptions?: Subscription[];
-}
-
-// ProfileWithStats extends Profile for the admin dashboard
-export interface ProfileWithStats extends Profile {
-  quote_count: number;
-  subscription_status: string;
-  is_active: boolean;
+export const safeRpc = async <T = any>(
+  procedureName: string, 
+  params: Record<string, any>
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const { data, error } = await supabase.rpc(procedureName, params);
+    return { data, error };
+  } catch (error) {
+    return { data: null, error };
+  }
 }
