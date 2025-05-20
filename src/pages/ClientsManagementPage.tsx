@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -156,7 +157,7 @@ const ClientsManagementPage: React.FC = () => {
               <ClientDetailsPanel 
                 clientId={selectedClientId!} 
                 onClose={handleCloseDetails}
-                onEdit={(clientId: string) => handleEditClient(clientId)}
+                onEdit={() => selectedClientId && handleEditClient(selectedClientId)}
               />
             </div>
           )}
