@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Eye, FileText, Printer, Mail, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface BudgetListProps {
   searchQuery?: string;
@@ -28,6 +30,8 @@ const BudgetList: React.FC<BudgetListProps> = ({
 }) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const fetchBudgets = async () => {
@@ -51,7 +55,7 @@ const BudgetList: React.FC<BudgetListProps> = ({
             data: item.created_at,
             valor: parseFloat(item.valor_total),
             status: item.status,
-            itens: 0 // Default value since we don't have this info
+            itens: item.itens || 0 // Default value if itens is not present
           }));
           
           setBudgets(formattedBudgets);
@@ -162,6 +166,39 @@ const BudgetList: React.FC<BudgetListProps> = ({
     }
   };
   
+  // Handle view budget details
+  const handleViewBudget = (id: string) => {
+    navigate(`/orcamentos/${id}`);
+  };
+  
+  // Handle print budget
+  const handlePrintBudget = (id: string) => {
+    toast({
+      title: "Impressão solicitada",
+      description: `Preparando orçamento ${id} para impressão`,
+    });
+    // Here you would implement the actual print functionality
+  };
+  
+  // Handle email budget
+  const handleEmailBudget = (id: string) => {
+    toast({
+      title: "Email",
+      description: `Preparando para enviar orçamento ${id} por email`,
+    });
+    // Here you would implement the actual email sending functionality
+  };
+  
+  // Handle convert budget to service order
+  const handleConvertBudget = (id: string) => {
+    toast({
+      title: "Conversão",
+      description: `Convertendo orçamento ${id} para ordem de serviço`,
+    });
+    // Here you would implement the actual conversion functionality
+    navigate(`/ordens/novo?orcamento=${id}`);
+  };
+  
   return (
     <div>
       <Table>
@@ -187,17 +224,17 @@ const BudgetList: React.FC<BudgetListProps> = ({
               <TableCell>{getStatusBadge(budget.status)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" title="Ver detalhes">
+                  <Button variant="ghost" size="icon" title="Ver detalhes" onClick={() => handleViewBudget(budget.id)}>
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Imprimir">
+                  <Button variant="ghost" size="icon" title="Imprimir" onClick={() => handlePrintBudget(budget.id)}>
                     <Printer className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Enviar por email">
+                  <Button variant="ghost" size="icon" title="Enviar por email" onClick={() => handleEmailBudget(budget.id)}>
                     <Mail className="h-4 w-4" />
                   </Button>
                   {budget.status === 'aprovado' && (
-                    <Button variant="ghost" size="icon" title="Converter para ordem de serviço">
+                    <Button variant="ghost" size="icon" title="Converter para ordem de serviço" onClick={() => handleConvertBudget(budget.id)}>
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   )}
