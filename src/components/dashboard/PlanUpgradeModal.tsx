@@ -39,7 +39,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
           <div className="border rounded-md p-5 space-y-4">
             <div className="font-medium text-lg">OficinaÁgil Essencial</div>
             <div>
-              <div className="text-2xl font-bold">R$ 39,90<span className="text-sm font-normal">/mês</span></div>
+              <div className="text-2xl font-bold">R$ 89,90<span className="text-sm font-normal">/mês</span></div>
               <div className="text-sm text-muted-foreground">por usuário</div>
             </div>
             
@@ -90,7 +90,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
                 variant="outline" 
                 className="w-full"
               >
-                Anual (10% desconto)
+                Anual (2 meses grátis)
               </Button>
             </div>
           </div>
@@ -102,7 +102,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
             </div>
             <div className="font-medium text-lg">OficinaÁgil Premium</div>
             <div>
-              <div className="text-2xl font-bold">R$ 79,90<span className="text-sm font-normal">/mês</span></div>
+              <div className="text-2xl font-bold">R$ 179,90<span className="text-sm font-normal">/mês</span></div>
               <div className="text-sm text-muted-foreground">por usuário</div>
             </div>
             
@@ -149,7 +149,7 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
                 variant="outline" 
                 className="w-full border-purple-200 text-purple-700 hover:bg-purple-100"
               >
-                Anual (10% desconto)
+                Anual (2 meses grátis)
               </Button>
             </div>
           </div>

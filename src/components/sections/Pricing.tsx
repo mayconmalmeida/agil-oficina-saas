@@ -8,7 +8,8 @@ const tiers = [
     name: 'Essencial',
     id: 'essencial',
     href: '/cadastro-oficina?plano=Essencial',
-    price: 'R$ 69',
+    price: 'R$ 89,90',
+    yearlyPrice: 'R$ 899,00',
     description: 'Ideal para oficinas de pequeno porte.',
     features: [
       'Cadastro de clientes ilimitado',
@@ -23,7 +24,8 @@ const tiers = [
     name: 'Premium',
     id: 'premium',
     href: '/cadastro-oficina?plano=Premium',
-    price: 'R$ 129',
+    price: 'R$ 179,90',
+    yearlyPrice: 'R$ 1.799,00',
     description: 'Recomendado para oficinas em crescimento.',
     features: [
       'Todos os recursos do plano Essencial',
@@ -71,6 +73,9 @@ const Pricing = () => {
                   </span>
                   <span className="ml-1 text-xl font-semibold text-gray-500">/mês</span>
                 </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  ou {tier.yearlyPrice}/ano (2 meses grátis)
+                </p>
                 <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
                 <Link
                   to={tier.href}
