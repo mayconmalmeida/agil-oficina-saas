@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -61,7 +60,7 @@ const BudgetForm: React.FC = () => {
       descricao: '',
       data_validade: '',
       itens: [],
-      valor_total: '',
+      valor_total: '0',
       observacoes: '',
     },
   });
@@ -73,7 +72,7 @@ const BudgetForm: React.FC = () => {
       // Include selected items in the submission
       const formValues = {
         ...values,
-        itens: selectedItems
+        itens: selectedItems || []
       };
       
       console.log('Budget values:', formValues);
@@ -104,11 +103,12 @@ const BudgetForm: React.FC = () => {
       valor_total: product.valor,
     };
     
-    setSelectedItems(prev => [...prev, newItem]);
+    const updatedItems = [...selectedItems, newItem];
+    setSelectedItems(updatedItems);
     setProductSearchOpen(false);
     
     // Update total value
-    updateTotalValue([...selectedItems, newItem]);
+    updateTotalValue(updatedItems);
   };
   
   const handleRemoveItem = (itemId: string) => {
@@ -120,7 +120,12 @@ const BudgetForm: React.FC = () => {
   };
   
   const updateTotalValue = (items: any[]) => {
-    const total = items.reduce((sum, item) => sum + item.valor_total, 0);
+    if (!items || items.length === 0) {
+      form.setValue('valor_total', '0');
+      return;
+    }
+    
+    const total = items.reduce((sum, item) => sum + (item.valor_total || 0), 0);
     form.setValue('valor_total', total.toFixed(2));
   };
   
@@ -264,7 +269,7 @@ const BudgetForm: React.FC = () => {
             </Popover>
           </div>
           
-          {selectedItems.length > 0 ? (
+          {selectedItems && selectedItems.length > 0 ? (
             <div className="border rounded-md overflow-hidden">
               <Table>
                 <TableHeader>

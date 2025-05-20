@@ -1,79 +1,134 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Eye, FileText, Printer, Mail, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 
 interface BudgetListProps {
   searchQuery?: string;
   filter?: string;
 }
 
-// Mock data - replace with actual data from your API
-const mockBudgets = [
-  {
-    id: "1",
-    numero: "ORC-2023-001",
-    cliente: "João Silva",
-    veiculo: "Toyota Corolla 2020",
-    data: "2023-05-12",
-    valor: 850.0,
-    status: "pendente",
-    itens: 3
-  },
-  {
-    id: "2",
-    numero: "ORC-2023-002",
-    cliente: "Maria Oliveira",
-    veiculo: "Honda Civic 2019",
-    data: "2023-05-15",
-    valor: 1250.0,
-    status: "aprovado",
-    itens: 5
-  },
-  {
-    id: "3",
-    numero: "ORC-2023-003",
-    cliente: "Carlos Pereira",
-    veiculo: "Volkswagen Golf 2021",
-    data: "2023-05-20",
-    valor: 540.0,
-    status: "rejeitado",
-    itens: 2
-  },
-  {
-    id: "4",
-    numero: "ORC-2023-004",
-    cliente: "Ana Santos",
-    veiculo: "Fiat Uno 2018",
-    data: "2023-05-22",
-    valor: 380.0,
-    status: "pendente",
-    itens: 2
-  },
-  {
-    id: "5",
-    numero: "ORC-2023-005",
-    cliente: "Paulo Souza",
-    veiculo: "Chevrolet Onix 2022",
-    data: "2023-05-25",
-    valor: 1450.0,
-    status: "convertido",
-    itens: 7
-  },
-];
+interface Budget {
+  id: string;
+  numero?: string;
+  cliente: string;
+  veiculo: string;
+  data: string;
+  valor: number;
+  status: string;
+  itens?: number;
+}
 
 const BudgetList: React.FC<BudgetListProps> = ({ 
   searchQuery = '',
   filter = 'todos'
 }) => {
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchBudgets = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('orcamentos')
+          .select('*');
+        
+        if (error) {
+          console.error('Error fetching budgets:', error);
+          return;
+        }
+        
+        if (data) {
+          // Transform the data to match the Budget interface
+          const formattedBudgets: Budget[] = data.map(item => ({
+            id: item.id,
+            numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3)}`,
+            cliente: item.cliente,
+            veiculo: item.veiculo,
+            data: item.created_at,
+            valor: parseFloat(item.valor_total),
+            status: item.status,
+            itens: 0 // Default value since we don't have this info
+          }));
+          
+          setBudgets(formattedBudgets);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBudgets();
+  }, []);
+  
+  // If no real data yet, use mock data
+  const mockBudgets: Budget[] = [
+    {
+      id: "1",
+      numero: "ORC-2023-001",
+      cliente: "João Silva",
+      veiculo: "Toyota Corolla 2020",
+      data: "2023-05-12",
+      valor: 850.0,
+      status: "pendente",
+      itens: 3
+    },
+    {
+      id: "2",
+      numero: "ORC-2023-002",
+      cliente: "Maria Oliveira",
+      veiculo: "Honda Civic 2019",
+      data: "2023-05-15",
+      valor: 1250.0,
+      status: "aprovado",
+      itens: 5
+    },
+    {
+      id: "3",
+      numero: "ORC-2023-003",
+      cliente: "Carlos Pereira",
+      veiculo: "Volkswagen Golf 2021",
+      data: "2023-05-20",
+      valor: 540.0,
+      status: "rejeitado",
+      itens: 2
+    },
+    {
+      id: "4",
+      numero: "ORC-2023-004",
+      cliente: "Ana Santos",
+      veiculo: "Fiat Uno 2018",
+      data: "2023-05-22",
+      valor: 380.0,
+      status: "pendente",
+      itens: 2
+    },
+    {
+      id: "5",
+      numero: "ORC-2023-005",
+      cliente: "Paulo Souza",
+      veiculo: "Chevrolet Onix 2022",
+      data: "2023-05-25",
+      valor: 1450.0,
+      status: "convertido",
+      itens: 7
+    },
+  ];
+  
+  // If we have real data use it, otherwise use mock data
+  const displayBudgets = budgets.length > 0 ? budgets : mockBudgets;
+  
   // Filter budgets based on search query and filter
-  const filteredBudgets = mockBudgets.filter(budget => {
+  const filteredBudgets = displayBudgets.filter(budget => {
     // First apply search query filter
     const matchesSearch = !searchQuery || 
       budget.cliente.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      budget.numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (budget.numero?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
       budget.veiculo.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (!matchesSearch) return false;
@@ -124,7 +179,7 @@ const BudgetList: React.FC<BudgetListProps> = ({
         <TableBody>
           {filteredBudgets.map((budget) => (
             <TableRow key={budget.id}>
-              <TableCell className="font-medium">{budget.numero}</TableCell>
+              <TableCell className="font-medium">{budget.numero || `-`}</TableCell>
               <TableCell>{budget.cliente}</TableCell>
               <TableCell className="hidden md:table-cell">{budget.veiculo}</TableCell>
               <TableCell className="hidden md:table-cell">{formatDate(budget.data)}</TableCell>
