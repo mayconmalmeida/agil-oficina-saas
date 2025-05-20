@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useVehicleForm } from '@/hooks/useVehicleForm';
 import { Car, Loader2 } from 'lucide-react';
 import {
@@ -16,14 +16,14 @@ import VehicleDetailsFields from './form-sections/VehicleDetailsFields';
 import ClientSelector from './form-sections/ClientSelector';
 
 interface VehicleFormProps {
-  onSaved: () => void;
+  onSave: () => void;
   vehicleId?: string;
   isEditing?: boolean;
   clientId?: string;
 }
 
 const VehicleForm: React.FC<VehicleFormProps> = ({ 
-  onSaved,
+  onSave,
   vehicleId,
   isEditing = false,
   clientId
@@ -32,16 +32,13 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
     form,
     isLoading,
     onSubmit,
+    showClientSelector
   } = useVehicleForm({
-    onSave: onSaved,
+    onSave,
     vehicleId,
     isEditing,
     defaultClientId: clientId
   });
-  
-  // Determine if we should show client selector
-  // Only show if not editing or no clientId provided
-  const showClientSelector = !isEditing || !clientId;
   
   return (
     <Form {...form}>

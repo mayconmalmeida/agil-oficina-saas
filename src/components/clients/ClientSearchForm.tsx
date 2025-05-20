@@ -5,15 +5,21 @@ import { Search } from 'lucide-react';
 
 export interface ClientSearchFormProps {
   onSearchChange: (value: string) => void;
+  onFilterChange?: (filters: any) => void;
 }
 
-const ClientSearchForm: React.FC<ClientSearchFormProps> = ({ onSearchChange }) => {
+const ClientSearchForm: React.FC<ClientSearchFormProps> = ({ onSearchChange, onFilterChange }) => {
   const [searchValue, setSearchValue] = useState<string>('');
   
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchValue(value);
     onSearchChange(value);
+    
+    // Also call onFilterChange if provided
+    if (onFilterChange) {
+      onFilterChange({ search: value });
+    }
   };
   
   return (

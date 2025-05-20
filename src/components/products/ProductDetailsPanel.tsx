@@ -165,12 +165,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
               <span className="text-muted-foreground">Criado em:</span>
               <p>{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
             </div>
-            {product.codigo && (
-              <div>
-                <span className="text-muted-foreground">Código:</span>
-                <p>{product.codigo}</p>
-              </div>
-            )}
+            {/* Remove reference to codigo property */}
           </div>
         </div>
       </CardContent>

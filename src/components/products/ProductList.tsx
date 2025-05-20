@@ -64,7 +64,7 @@ const ProductList: React.FC<ProductListProps> = ({
     // First apply search query filter
     const matchesSearch = !searchQuery || 
       product.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.codigo?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
+      (product.descricao?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
     
     if (!matchesSearch) return false;
     

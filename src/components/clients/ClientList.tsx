@@ -11,13 +11,19 @@ export interface ClientListProps {
   onViewClient: (clientId: string) => void;
   onEditClient: (clientId: string) => void;
   onDeleteClient: (clientId: string) => void;
+  searchQuery?: string;
+  filters?: any;
+  onSelectClient?: (clientId: string) => void;
 }
 
 const ClientList: React.FC<ClientListProps> = ({
   searchTerm,
   onViewClient,
   onEditClient,
-  onDeleteClient
+  onDeleteClient,
+  searchQuery,
+  filters,
+  onSelectClient
 }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -29,8 +35,9 @@ const ClientList: React.FC<ClientListProps> = ({
       try {
         let query = supabase.from('clients').select('*');
         
-        if (searchTerm) {
-          query = query.or(`nome.ilike.%${searchTerm}%,telefone.ilike.%${searchTerm}%,veiculo.ilike.%${searchTerm}%`);
+        if (searchTerm || searchQuery) {
+          const searchValue = searchTerm || searchQuery || '';
+          query = query.or(`nome.ilike.%${searchValue}%,telefone.ilike.%${searchValue}%,veiculo.ilike.%${searchValue}%`);
         }
         
         const { data, error } = await query.order('nome');
@@ -52,7 +59,15 @@ const ClientList: React.FC<ClientListProps> = ({
     };
     
     fetchClients();
-  }, [searchTerm]);
+  }, [searchTerm, searchQuery, filters]);
+
+  const handleClientClick = (clientId: string) => {
+    if (onSelectClient) {
+      onSelectClient(clientId);
+    } else {
+      onViewClient(clientId);
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center p-4">Carregando clientes...</div>;
@@ -63,8 +78,8 @@ const ClientList: React.FC<ClientListProps> = ({
       <div className="text-center p-8 border rounded-lg">
         <h3 className="text-lg font-medium">Nenhum cliente encontrado</h3>
         <p className="text-gray-500 mt-2">
-          {searchTerm 
-            ? `Nenhum resultado para "${searchTerm}"`
+          {(searchTerm || searchQuery)
+            ? `Nenhum resultado para "${searchTerm || searchQuery}"`
             : 'Cadastre um cliente para começar'
           }
         </p>
@@ -93,7 +108,7 @@ const ClientList: React.FC<ClientListProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onViewClient(client.id)}
+                  onClick={() => handleClientClick(client.id)}
                 >
                   <Eye className="h-4 w-4" />
                 </Button>

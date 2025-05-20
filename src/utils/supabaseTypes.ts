@@ -46,6 +46,7 @@ export interface Service {
   descricao?: string;
   user_id: string;
   created_at: string;
+  codigo?: string; // Add this property
 }
 
 export interface Profile {
@@ -86,8 +87,9 @@ export interface SubscriptionWithProfile extends Subscription {
   email: string;
 }
 
+// Fix the safeRpc function to use any for procedureName parameter
 export const safeRpc = async <T = any>(
-  procedureName: string, 
+  procedureName: any, 
   params: Record<string, any>
 ): Promise<{ data: T | null; error: any }> => {
   try {
@@ -97,3 +99,28 @@ export const safeRpc = async <T = any>(
     return { data: null, error };
   }
 }
+
+// Add utility functions that were referenced in other files
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+export const formatPhone = (value: string): string => {
+  if (!value) return '';
+  
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  if (digits.length <= 2) {
+    return digits;
+  } else if (digits.length <= 6) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  } else {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  }
+};
+
+export const formatPhoneNumber = formatPhone;

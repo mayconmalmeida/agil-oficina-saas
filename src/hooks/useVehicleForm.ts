@@ -74,18 +74,25 @@ export const useVehicleForm = ({
           if (vehicleError) throw vehicleError;
           
           if (vehicleData) {
-            // Format data for the form
-            form.reset({
-              clienteId: vehicleData.id, // Using the client id
-              marca: vehicleData.marca || '',
-              modelo: vehicleData.modelo || '',
-              ano: vehicleData.ano || '',
-              placa: vehicleData.placa || '',
+            // Ensure we have all the required fields for the form
+            const clientData = {
+              ...vehicleData,
               cor: vehicleData.cor || '',
               kilometragem: vehicleData.kilometragem || ''
+            };
+            
+            // Format data for the form
+            form.reset({
+              clienteId: clientData.id, // Using the client id
+              marca: clientData.marca || '',
+              modelo: clientData.modelo || '',
+              ano: clientData.ano || '',
+              placa: clientData.placa || '',
+              cor: clientData.cor || '',
+              kilometragem: clientData.kilometragem || ''
             });
             
-            setSelectedClient(vehicleData as Client);
+            setSelectedClient(clientData as Client);
           }
         } catch (error: any) {
           console.error('Error fetching vehicle:', error);
@@ -119,7 +126,15 @@ export const useVehicleForm = ({
           if (error) throw error;
           
           if (data) {
-            setSelectedClient(data as Client);
+            // Ensure we have the required fields
+            const clientWithDefaults = {
+              ...data,
+              cor: data.cor || '',
+              kilometragem: data.kilometragem || '',
+              tipo: data.tipo || 'pf'
+            };
+            
+            setSelectedClient(clientWithDefaults as Client);
           }
         } catch (error) {
           console.error('Error fetching client:', error);
@@ -213,11 +228,15 @@ export const useVehicleForm = ({
     }
   };
   
+  // Add computed property for whether to show client selector
+  const showClientSelector = !isEditing || !defaultClientId;
+  
   return {
     form,
     isLoading,
     saveSuccess,
     selectedClient,
-    onSubmit
+    onSubmit,
+    showClientSelector
   };
 };
