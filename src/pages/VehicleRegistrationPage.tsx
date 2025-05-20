@@ -44,7 +44,7 @@ const VehicleRegistrationPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <VehicleForm 
-            onSaved={handleSaved}
+            onSave={handleSaved}
             vehicleId={vehicleId}
             isEditing={isEditing}
             clientId={clientId}

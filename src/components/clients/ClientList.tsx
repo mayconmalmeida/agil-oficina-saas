@@ -47,7 +47,9 @@ const ClientList: React.FC<ClientListProps> = ({
         // Ensure all clients have the required 'tipo' property
         const clientsWithTipo = (data || []).map(client => ({
           ...client,
-          tipo: client.tipo || 'pf' // Default to 'pf' if tipo is missing
+          tipo: client.tipo || 'pf', // Default to 'pf' if tipo is missing
+          cor: client.cor || '',
+          kilometragem: client.kilometragem || ''
         })) as Client[];
         
         setClients(clientsWithTipo);

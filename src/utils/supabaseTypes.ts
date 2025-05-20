@@ -46,7 +46,7 @@ export interface Service {
   descricao?: string;
   user_id: string;
   created_at: string;
-  codigo?: string; // Add this property
+  codigo?: string;
 }
 
 export interface Profile {
@@ -87,12 +87,12 @@ export interface SubscriptionWithProfile extends Subscription {
   email: string;
 }
 
-// Fix the safeRpc function to use any for procedureName parameter
 export const safeRpc = async <T = any>(
-  procedureName: any, 
+  procedureName: string, 
   params: Record<string, any>
 ): Promise<{ data: T | null; error: any }> => {
   try {
+    // @ts-ignore - Using a string parameter for procedureName
     const { data, error } = await supabase.rpc(procedureName, params);
     return { data, error };
   } catch (error) {

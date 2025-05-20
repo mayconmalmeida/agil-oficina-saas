@@ -74,7 +74,7 @@ const AdminSubscriptions = () => {
       }
 
       // Fetch profiles separately for each subscription
-      const formattedSubscriptions = await Promise.all(subsData.map(async (sub) => {
+      const formattedSubscriptions: SubscriptionWithProfile[] = await Promise.all(subsData.map(async (sub) => {
         const { data: profileData } = await supabase
           .from('profiles')
           .select('email, nome_oficina')
@@ -84,9 +84,12 @@ const AdminSubscriptions = () => {
         return {
           id: sub.id,
           user_id: sub.user_id,
+          plan: sub.plan || '',
           status: sub.status,
+          started_at: sub.started_at || '',
           created_at: sub.created_at,
-          expires_at: sub.expires_at || sub.ends_at, // Use either expires_at or ends_at
+          ends_at: sub.ends_at || undefined,
+          expires_at: sub.expires_at || undefined,
           payment_method: sub.payment_method || '',
           amount: sub.amount,
           email: profileData?.email || '',

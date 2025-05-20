@@ -19,6 +19,7 @@ const ClientManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [searchFilters, setSearchFilters] = useState<any>({});
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,11 +38,21 @@ const ClientManagementPage: React.FC = () => {
     setEditMode(false);
   };
   
-  const handleEditClient = () => {
-    if (selectedClientId) {
-      setEditMode(true);
-      setActiveTab('editar');
-    }
+  const handleEditClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setEditMode(true);
+    setActiveTab('editar');
+  };
+  
+  const handleViewClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setShowDetails(true);
+  };
+  
+  const handleDeleteClient = (clientId: string) => {
+    // Handle client deletion logic
+    console.log('Delete client:', clientId);
+    // Add confirmation modal or direct deletion logic
   };
   
   const handleCloseDetails = () => {
@@ -60,6 +71,10 @@ const ClientManagementPage: React.FC = () => {
   
   const handleSearchFilterChange = (filters: any) => {
     setSearchFilters(filters);
+  };
+  
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
   };
   
   const handleToggleAdvancedSearch = () => {
@@ -149,14 +164,21 @@ const ClientManagementPage: React.FC = () => {
                   
                   {activeTab === 'lista' && showAdvancedSearch && (
                     <div className="mb-6 border rounded-md p-4 bg-gray-50">
-                      <ClientSearchForm onFilterChange={handleSearchFilterChange} />
+                      <ClientSearchForm 
+                        onSearchChange={handleSearchChange} 
+                        onFilterChange={handleSearchFilterChange} 
+                      />
                     </div>
                   )}
                   
                   <TabsContent value="lista" className="mt-0">
                     <ClientList 
-                      onSelectClient={handleClientSelect} 
+                      searchTerm={searchTerm}
+                      onViewClient={handleViewClient}
+                      onEditClient={handleEditClient}
+                      onDeleteClient={handleDeleteClient}
                       filters={searchFilters}
+                      onSelectClient={handleClientSelect}
                     />
                   </TabsContent>
                   

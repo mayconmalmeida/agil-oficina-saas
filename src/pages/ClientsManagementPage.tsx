@@ -31,6 +31,21 @@ const ClientsManagementPage: React.FC = () => {
     setShowDetails(false);
     setSaveSuccess(false);
   };
+
+  const handleViewClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setShowDetails(true);
+  };
+  
+  const handleEditClient = (clientId: string) => {
+    // Navigate to edit page or change state
+    console.log("Edit client:", clientId);
+  };
+  
+  const handleDeleteClient = (clientId: string) => {
+    // Handle deletion logic
+    console.log("Delete client:", clientId);
+  };
   
   const handleClientSelect = (clientId: string) => {
     setSelectedClientId(clientId);
@@ -114,7 +129,14 @@ const ClientsManagementPage: React.FC = () => {
                   </div>
                   
                   <TabsContent value="lista" className="mt-0">
-                    <ClientList onSelectClient={handleClientSelect} searchQuery={searchQuery} />
+                    <ClientList 
+                      searchTerm={searchQuery}
+                      onViewClient={handleViewClient}
+                      onEditClient={handleEditClient}
+                      onDeleteClient={handleDeleteClient}
+                      searchQuery={searchQuery}
+                      onSelectClient={handleClientSelect}
+                    />
                   </TabsContent>
                   
                   <TabsContent value="novo" className="mt-0">

@@ -1,84 +1,118 @@
 
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { VehicleFormValues } from '@/hooks/useVehicleForm';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Client } from '@/utils/supabaseTypes';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { VehicleFormValues } from '@/hooks/useVehicleForm';
 
 interface ClientSelectorProps {
   form: UseFormReturn<VehicleFormValues>;
 }
 
-interface Client {
-  id: string;
-  nome: string;
-}
-
 const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = useState(true);
-  const { toast } = useToast();
-  
-  // Fetch clients for dropdown
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     const fetchClients = async () => {
+      setIsLoading(true);
+      
       try {
         const { data, error } = await supabase
           .from('clients')
-          .select('id, nome')
+          .select('*')
           .order('nome');
           
         if (error) throw error;
         
-        setClients(data || []);
-      } catch (error: any) {
-        console.error('Error fetching clients:', error.message);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar clientes",
-          description: "Não foi possível carregar a lista de clientes.",
-        });
+        // Ensure all client records have the needed properties
+        const formattedClients = (data || []).map(client => ({
+          ...client,
+          tipo: client.tipo || 'pf',
+          cor: client.cor || '',
+          kilometragem: client.kilometragem || ''
+        })) as Client[];
+        
+        setClients(formattedClients);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
       } finally {
-        setLoadingClients(false);
+        setIsLoading(false);
       }
     };
     
     fetchClients();
-  }, [toast]);
-  
-  if (loadingClients) {
-    return (
-      <div className="flex items-center space-x-2">
-        <Loader2 className="h-4 w-4 animate-spin text-oficina" />
-        <span>Carregando clientes...</span>
-      </div>
-    );
-  }
+  }, []);
 
+  const selectedClientId = form.watch('clienteId');
+  const selectedClient = clients.find(client => client.id === selectedClientId);
+  
   return (
     <FormField
       control={form.control}
       name="clienteId"
       render={({ field }) => (
-        <FormItem>
+        <FormItem className="flex flex-col">
           <FormLabel>Cliente</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um cliente" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={client.id}>
-                  {client.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <FormControl>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between",
+                    !field.value && "text-muted-foreground"
+                  )}
+                >
+                  {isLoading ? (
+                    "Carregando clientes..."
+                  ) : field.value ? (
+                    selectedClient?.nome || "Selecione um cliente"
+                  ) : (
+                    "Selecione um cliente"
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </FormControl>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0">
+              <Command>
+                <CommandInput placeholder="Buscar cliente..." />
+                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                <CommandGroup>
+                  {clients.map((client) => (
+                    <CommandItem
+                      key={client.id}
+                      value={client.id}
+                      onSelect={() => {
+                        form.setValue('clienteId', client.id);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          client.id === field.value
+                            ? "opacity-100"
+                            : "opacity-0"
+                        )}
+                      />
+                      {client.nome} - {client.telefone}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <FormMessage />
         </FormItem>
       )}
