@@ -129,12 +129,12 @@ export const useVehicleForm = ({
           
           if (data) {
             // Ensure we have the required fields
-            const clientWithDefaults = {
+            const clientWithDefaults: Client = {
               ...data,
               cor: data.cor || '',
               kilometragem: data.kilometragem || '',
               tipo: data.tipo || 'pf'
-            } as Client;
+            };
             
             setSelectedClient(clientWithDefaults);
           }

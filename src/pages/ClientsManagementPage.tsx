@@ -157,6 +157,7 @@ const ClientsManagementPage: React.FC = () => {
               <ClientDetailsPanel 
                 clientId={selectedClientId!} 
                 onClose={handleCloseDetails}
+                onEdit={handleEditClient}
               />
             </div>
           )}

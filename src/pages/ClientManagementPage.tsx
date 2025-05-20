@@ -81,7 +81,7 @@ const ClientManagementPage: React.FC = () => {
     setShowAdvancedSearch(!showAdvancedSearch);
   };
   
-  const handleClientSaved = async () => {
+  const handleClientSaved = () => {
     setSaveSuccess(true);
     toast({
       title: editMode ? "Cliente atualizado" : "Cliente adicionado",
@@ -166,7 +166,7 @@ const ClientManagementPage: React.FC = () => {
                     <div className="mb-6 border rounded-md p-4 bg-gray-50">
                       <ClientSearchForm 
                         onSearchChange={handleSearchChange} 
-                        onFilterChange={handleSearchFilterChange} 
+                        onFilterChange={handleSearchFilterChange}
                       />
                     </div>
                   )}
@@ -219,7 +219,7 @@ const ClientManagementPage: React.FC = () => {
               <ClientDetailsPanel 
                 clientId={selectedClientId!} 
                 onClose={handleCloseDetails}
-                onEdit={handleEditClient}
+                onEdit={() => selectedClientId && handleEditClient(selectedClientId)}
               />
             </div>
           )}

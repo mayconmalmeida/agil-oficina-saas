@@ -1,5 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
+import { Database } from '@/integrations/supabase/types';
 
 export interface Client {
   id: string;
@@ -87,18 +88,19 @@ export interface SubscriptionWithProfile extends Subscription {
   email: string;
 }
 
+// Typed safer version of safeRpc function
 export const safeRpc = async <T = any>(
   procedureName: string, 
   params: Record<string, any>
 ): Promise<{ data: T | null; error: any }> => {
   try {
-    // @ts-ignore - Using a string parameter for procedureName
-    const { data, error } = await supabase.rpc(procedureName, params);
+    // The type casting is needed because TS doesn't know about dynamic procedure names
+    const { data, error } = await (supabase.rpc as any)(procedureName, params);
     return { data, error };
   } catch (error) {
     return { data: null, error };
   }
-}
+};
 
 // Add utility functions that were referenced in other files
 export const formatCurrency = (value: number): string => {
