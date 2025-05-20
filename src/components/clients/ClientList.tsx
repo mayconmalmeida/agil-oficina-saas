@@ -44,13 +44,15 @@ const ClientList: React.FC<ClientListProps> = ({
         
         if (error) throw error;
         
-        // Ensure all clients have the required properties
-        const clientsWithDefaults = (data || []).map(client => ({
-          ...client,
-          tipo: client.tipo || 'pf', // Default to 'pf' if tipo is missing
-          cor: client.cor || '',
-          kilometragem: client.kilometragem || ''
-        })) as Client[];
+        // Ensure all clients have the required properties with type assertion
+        const clientsWithDefaults = (data || []).map(client => {
+          return {
+            ...client,
+            tipo: (client as any).tipo || 'pf', // Default to 'pf' if tipo is missing
+            cor: (client as any).cor || '',
+            kilometragem: (client as any).kilometragem || ''
+          } as Client;
+        });
         
         setClients(clientsWithDefaults);
       } catch (error: any) {

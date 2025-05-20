@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -78,10 +77,10 @@ export const useVehicleForm = ({
             // Create complete client data with default values for missing fields
             const clientData: Client = {
               ...vehicleData,
-              cor: vehicleData.cor || '',
-              kilometragem: vehicleData.kilometragem || '',
-              tipo: vehicleData.tipo || 'pf'
-            } as Client;
+              cor: (vehicleData as any).cor || '',
+              kilometragem: (vehicleData as any).kilometragem || '',
+              tipo: (vehicleData as any).tipo || 'pf'
+            };
             
             // Format data for the form
             form.reset({
@@ -131,9 +130,9 @@ export const useVehicleForm = ({
             // Ensure we have the required fields
             const clientWithDefaults: Client = {
               ...data,
-              cor: data.cor || '',
-              kilometragem: data.kilometragem || '',
-              tipo: data.tipo || 'pf'
+              cor: (data as any).cor || '',
+              kilometragem: (data as any).kilometragem || '',
+              tipo: (data as any).tipo || 'pf'
             };
             
             setSelectedClient(clientWithDefaults);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/lib/supabase';
@@ -32,13 +31,15 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
           
         if (error) throw error;
         
-        // Ensure all client records have the needed properties
-        const formattedClients = (data || []).map(client => ({
-          ...client,
-          tipo: client.tipo || 'pf',
-          cor: client.cor || '',
-          kilometragem: client.kilometragem || ''
-        })) as Client[];
+        // Ensure all client records have the needed properties with type assertion
+        const formattedClients = (data || []).map(client => {
+          return {
+            ...client,
+            tipo: (client as any).tipo || 'pf',
+            cor: (client as any).cor || '',
+            kilometragem: (client as any).kilometragem || ''
+          } as Client;
+        });
         
         setClients(formattedClients);
       } catch (error) {
@@ -76,7 +77,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
                   {isLoading ? (
                     "Carregando clientes..."
                   ) : field.value ? (
-                    selectedClient?.nome || "Selecione um cliente"
+                    clients.find(client => client.id === field.value)?.nome || "Selecione um cliente"
                   ) : (
                     "Selecione um cliente"
                   )}
