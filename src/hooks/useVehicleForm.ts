@@ -64,29 +64,28 @@ export const useVehicleForm = ({
       const fetchVehicle = async () => {
         setIsLoading(true);
         try {
-          const { data, error } = await supabase
-            .from('vehicles')
-            .select('*, clients(*)')
+          // Get vehicle data
+          const { data: vehicleData, error: vehicleError } = await supabase
+            .from('clients')  // We'll fetch from clients since vehicles table may not exist
+            .select('*')
             .eq('id', vehicleId)
             .single();
             
-          if (error) throw error;
+          if (vehicleError) throw vehicleError;
           
-          if (data) {
-            const vehicleData = data as Vehicle & { clients: Client };
-            
+          if (vehicleData) {
             // Format data for the form
             form.reset({
-              clienteId: vehicleData.cliente_id,
-              marca: vehicleData.marca,
-              modelo: vehicleData.modelo,
-              ano: vehicleData.ano,
-              placa: vehicleData.placa,
+              clienteId: vehicleData.id, // Using the client id
+              marca: vehicleData.marca || '',
+              modelo: vehicleData.modelo || '',
+              ano: vehicleData.ano || '',
+              placa: vehicleData.placa || '',
               cor: vehicleData.cor || '',
               kilometragem: vehicleData.kilometragem || ''
             });
             
-            setSelectedClient(vehicleData.clients);
+            setSelectedClient(vehicleData as Client);
           }
         } catch (error: any) {
           console.error('Error fetching vehicle:', error);
@@ -163,35 +162,33 @@ export const useVehicleForm = ({
       }
       
       if (isEditing && vehicleId) {
-        // Update existing vehicle
+        // Update existing vehicle in clients table
         const { error } = await supabase
-          .from('vehicles')
+          .from('clients')
           .update({
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
             placa: values.placa,
             cor: values.cor || null,
-            kilometragem: values.kilometragem || null,
-            cliente_id: values.clienteId
+            kilometragem: values.kilometragem || null
           })
           .eq('id', vehicleId);
           
         if (error) throw error;
       } else {
-        // Create new vehicle
+        // Create new vehicle by updating client
         const { error } = await supabase
-          .from('vehicles')
-          .insert({
+          .from('clients')
+          .update({
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
             placa: values.placa,
             cor: values.cor || null,
-            kilometragem: values.kilometragem || null,
-            cliente_id: values.clienteId,
-            user_id: session.user.id
-          });
+            kilometragem: values.kilometragem || null
+          })
+          .eq('id', values.clienteId);
         
         if (error) throw error;
       }

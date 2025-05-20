@@ -31,14 +31,17 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
   const {
     form,
     isLoading,
-    showClientSelector,
     onSubmit,
   } = useVehicleForm({
-    onSaved,
+    onSave: onSaved,
     vehicleId,
     isEditing,
-    clientId
+    defaultClientId: clientId
   });
+  
+  // Determine if we should show client selector
+  // Only show if not editing or no clientId provided
+  const showClientSelector = !isEditing || !clientId;
   
   return (
     <Form {...form}>

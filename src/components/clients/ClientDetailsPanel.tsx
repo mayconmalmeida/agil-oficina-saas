@@ -40,7 +40,14 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
           .single();
           
         if (error) throw error;
-        setClient(data);
+        
+        // Ensure tipo property is set to default 'pf' if missing
+        const clientData = {
+          ...(data as any),
+          tipo: (data as any).tipo || 'pf'
+        };
+        
+        setClient(clientData as Client);
       } catch (error: any) {
         console.error('Error fetching client details:', error);
         toast({

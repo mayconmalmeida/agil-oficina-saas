@@ -37,7 +37,13 @@ const ClientList: React.FC<ClientListProps> = ({
         
         if (error) throw error;
         
-        setClients(data || []);
+        // Ensure all clients have the required 'tipo' property
+        const clientsWithTipo = (data || []).map(client => ({
+          ...client,
+          tipo: client.tipo || 'pf' // Default to 'pf' if tipo is missing
+        })) as Client[];
+        
+        setClients(clientsWithTipo);
       } catch (error: any) {
         console.error('Error fetching clients:', error.message);
       } finally {

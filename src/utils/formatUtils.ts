@@ -81,3 +81,14 @@ export const formatPhone = (value: string): string => {
     return `(${limitedDigits.substring(0, 2)}) ${limitedDigits.substring(2, 7)}-${limitedDigits.substring(7)}`;
   }
 };
+
+// Format phone number - alias for formatPhone to maintain compatibility
+export const formatPhoneNumber = formatPhone;
+
+// Format currency to R$ format
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+};

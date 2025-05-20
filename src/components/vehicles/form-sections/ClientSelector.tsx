@@ -61,7 +61,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
   return (
     <FormField
       control={form.control}
-      name="cliente_id"
+      name="clienteId"
       render={({ field }) => (
         <FormItem>
           <FormLabel>Cliente</FormLabel>

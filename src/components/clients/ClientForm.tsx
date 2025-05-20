@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
         
         <ClientContactFields 
           form={form} 
-          saveSuccess={saveSuccess} 
         />
         
         <div className="border-t pt-3 mt-2">
