@@ -1,8 +1,9 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEnsureDatabaseSchema } from './hooks/useEnsureDatabaseSchema';
 import { Toaster } from './components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from './components/theme-provider';
 
 // Pages
 import Index from './pages/Index';
@@ -66,8 +67,9 @@ function App() {
             <Route path="/veiculos/:vehicleId" element={<VehicleRegistrationPage />} />
             <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
-            <Route path="/servicos" element={<ServicesPage />} />
+            <Route path="/servicos" element={<ServicesListPage />} />
             <Route path="/agendamentos" element={<SchedulesPage />} />
+            <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
             <Route path="/orcamentos" element={<BudgetPage />} />
             <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
             <Route path="/orcamentos/editar/:id" element={<BudgetEditPage />} />
@@ -93,11 +95,7 @@ function App() {
           <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
           
           {/* Service routes */}
-          <Route path="/servicos" element={<ServicesListPage />} />
           <Route path="/servicos/novo" element={<ServicesPage />} />
-          
-          {/* Appointment routes */}
-          <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
           
           {/* 404 Route */}
           <Route path="*" element={<NotFound />} />

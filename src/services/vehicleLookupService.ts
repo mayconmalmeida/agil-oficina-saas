@@ -19,13 +19,18 @@ export const lookupVehiclePlate = async (plate: string): Promise<VehicleInfo | n
       .eq('placa', plate)
       .maybeSingle();
     
+    if (error) {
+      console.error("Error querying database:", error);
+      return null;
+    }
+    
     if (data) {
       return {
-        marca: data.marca,
-        modelo: data.modelo,
-        ano: data.ano,
+        marca: data.marca || undefined,
+        modelo: data.modelo || undefined,
+        ano: data.ano || undefined,
         cor: data.cor || undefined,
-        placa: data.placa,
+        placa: data.placa || plate,
       };
     }
     
@@ -56,7 +61,7 @@ export const useVehicleLookup = () => {
       if (vehicleInfo) {
         toast({
           title: "Veículo encontrado",
-          description: `${vehicleInfo.marca} ${vehicleInfo.modelo} ${vehicleInfo.ano || ''}`,
+          description: `${vehicleInfo.marca || ''} ${vehicleInfo.modelo || ''} ${vehicleInfo.ano || ''}`.trim() || 'Dados básicos encontrados',
         });
         return vehicleInfo;
       } else {

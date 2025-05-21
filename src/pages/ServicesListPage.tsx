@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,6 +26,17 @@ interface Service {
   valor: number;
   descricao?: string;
   is_active?: boolean;
+  created_at: string;
+}
+
+interface ServiceResponse {
+  id: string;
+  nome: string;
+  tipo: string;
+  valor: number;
+  descricao?: string | null;
+  is_active?: boolean | null;
+  user_id?: string | null;
   created_at: string;
 }
 
@@ -63,7 +73,19 @@ const ServicesListPage: React.FC = () => {
       }
       
       if (data) {
-        setServices(data);
+        // Map the response data to our Service interface with type checking
+        const mappedServices: Service[] = data.map((item: ServiceResponse) => ({
+          id: item.id,
+          nome: item.nome,
+          // Ensure tipo is either 'produto' or 'servico'
+          tipo: item.tipo === 'servico' ? 'servico' : 'produto',
+          valor: item.valor,
+          descricao: item.descricao || undefined,
+          is_active: item.is_active !== undefined ? item.is_active : true,
+          created_at: item.created_at
+        }));
+        
+        setServices(mappedServices);
       }
     } catch (error) {
       console.error('Unexpected error:', error);

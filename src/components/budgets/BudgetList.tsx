@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,19 @@ interface Budget {
   itens?: number;
 }
 
+// Database response interface
+interface BudgetResponse {
+  id: string;
+  cliente: string;
+  veiculo: string;
+  created_at: string;
+  valor_total: number;
+  status: string | null;
+  descricao: string;
+  user_id: string | null;
+  itens_count?: number;
+}
+
 const BudgetList: React.FC<BudgetListProps> = ({ 
   searchQuery = '',
   filter = 'todos'
@@ -47,15 +59,15 @@ const BudgetList: React.FC<BudgetListProps> = ({
         
         if (data) {
           // Transform the data to match the Budget interface
-          const formattedBudgets: Budget[] = data.map(item => ({
+          const formattedBudgets: Budget[] = (data as BudgetResponse[]).map(item => ({
             id: item.id,
             numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3)}`,
             cliente: item.cliente,
             veiculo: item.veiculo,
             data: item.created_at,
-            valor: parseFloat(item.valor_total),
-            status: item.status,
-            itens: item.itens || 0 // Default value if itens is not present
+            valor: parseFloat(item.valor_total.toString()),
+            status: item.status || 'pendente',
+            itens: item.itens_count || 0 
           }));
           
           setBudgets(formattedBudgets);
