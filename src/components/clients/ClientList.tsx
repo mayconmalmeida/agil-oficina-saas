@@ -1,20 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Phone, Mail, Eye, Edit, XCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
+import { Client } from '@/utils/supabaseTypes';
+import { ClientListHeader } from './ClientList/ClientListHeader';
+import { ClientListRow } from './ClientList/ClientListRow';
+import { InactivateDialog } from './ClientList/InactivateDialog';
+import { EmptyState } from './ClientList/EmptyState';
+import { LoadingState } from './ClientList/LoadingState';
 
 interface ClientListProps {
   searchTerm?: string;
@@ -23,20 +19,6 @@ interface ClientListProps {
   onViewClient?: (clientId: string) => void;
   onEditClient?: (clientId: string) => void;
   onDeleteClient?: (clientId: string) => void;
-}
-
-interface Client {
-  id: string;
-  nome: string;
-  telefone: string;
-  email: string;
-  veiculo: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
-  is_active?: boolean;
-  cor?: string;
 }
 
 const ClientList: React.FC<ClientListProps> = ({
@@ -77,32 +59,6 @@ const ClientList: React.FC<ClientListProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-  
-  const handleRowClick = (clientId: string) => {
-    if (onSelectClient) {
-      onSelectClient(clientId);
-    }
-  };
-  
-  const handleView = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    if (onViewClient) {
-      onViewClient(clientId);
-    }
-  };
-  
-  const handleEdit = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    if (onEditClient) {
-      onEditClient(clientId);
-    }
-  };
-  
-  const handleInactivateDialog = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    setSelectedClientId(clientId);
-    setIsInactivateDialogOpen(true);
   };
   
   const handleToggleActive = async () => {
@@ -175,6 +131,32 @@ const ClientList: React.FC<ClientListProps> = ({
     return true;
   });
   
+  const handleInactivateDialog = (e: React.MouseEvent, clientId: string) => {
+    e.stopPropagation();
+    setSelectedClientId(clientId);
+    setIsInactivateDialogOpen(true);
+  };
+  
+  const handleRowClick = (clientId: string) => {
+    if (onSelectClient) {
+      onSelectClient(clientId);
+    }
+  };
+  
+  const handleView = (e: React.MouseEvent, clientId: string) => {
+    e.stopPropagation();
+    if (onViewClient) {
+      onViewClient(clientId);
+    }
+  };
+  
+  const handleEdit = (e: React.MouseEvent, clientId: string) => {
+    e.stopPropagation();
+    if (onEditClient) {
+      onEditClient(clientId);
+    }
+  };
+
   return (
     <div>
       <div className="rounded-md border overflow-hidden">
@@ -191,108 +173,31 @@ const ClientList: React.FC<ClientListProps> = ({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Carregando clientes...
-                </TableCell>
-              </TableRow>
+              <LoadingState />
             ) : filteredClients.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Nenhum cliente encontrado.
-                </TableCell>
-              </TableRow>
+              <EmptyState />
             ) : (
               filteredClients.map((client) => (
-                <TableRow 
-                  key={client.id} 
-                  className="cursor-pointer hover:bg-gray-50"
-                  onClick={() => handleRowClick(client.id)}
-                >
-                  <TableCell className="font-medium">{client.nome}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center text-xs">
-                        <Phone className="h-3 w-3 mr-1 text-gray-500" />
-                        <span>{client.telefone || '-'}</span>
-                      </div>
-                      {client.email && (
-                        <div className="flex items-center text-xs">
-                          <Mail className="h-3 w-3 mr-1 text-gray-500" />
-                          <span>{client.email}</span>
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {client.marca ? `${client.marca} ${client.modelo || ''}` : client.veiculo || '-'}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{client.placa || '-'}</TableCell>
-                  <TableCell>
-                    {client.is_active === false ? (
-                      <Badge variant="outline" className="bg-gray-100 text-gray-800">Inativo</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-green-100 text-green-800">Ativo</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={(e) => handleView(e, client.id)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={(e) => handleEdit(e, client.id)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={(e) => handleInactivateDialog(e, client.id)}
-                      >
-                        {client.is_active === false ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <ClientListRow
+                  key={client.id}
+                  client={client}
+                  onRowClick={handleRowClick}
+                  onView={handleView}
+                  onEdit={handleEdit}
+                  onToggleStatus={handleInactivateDialog}
+                />
               ))
             )}
           </TableBody>
         </Table>
       </div>
       
-      <AlertDialog 
-        open={isInactivateDialogOpen} 
-        onOpenChange={setIsInactivateDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {clients.find(c => c.id === selectedClientId)?.is_active === false
-                ? "Ativar Cliente"
-                : "Inativar Cliente"
-              }
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {clients.find(c => c.id === selectedClientId)?.is_active === false
-                ? "Tem certeza que deseja ativar este cliente? Ele voltará a aparecer em todas as listagens."
-                : "Tem certeza que deseja inativar este cliente? Ele não será mais exibido em listagens ativas."
-              }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleToggleActive}>
-              {clients.find(c => c.id === selectedClientId)?.is_active === false
-                ? "Ativar"
-                : "Inativar"
-              }
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <InactivateDialog
+        isOpen={isInactivateDialogOpen}
+        setIsOpen={setIsInactivateDialogOpen}
+        onConfirm={handleToggleActive}
+        client={clients.find(c => c.id === selectedClientId)}
+      />
     </div>
   );
 };

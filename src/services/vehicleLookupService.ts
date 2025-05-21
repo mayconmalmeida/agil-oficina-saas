@@ -1,43 +1,20 @@
-import { supabase } from '@/lib/supabase';
 
-interface VehicleInfo {
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  cor?: string;
-  placa: string;
-}
+import { supabase } from '@/lib/supabase';
+import { VehicleInfo } from './types';
+import { fetchVehicleFromDatabase } from './vehicleLookupService/databaseFetcher';
+import { queryExternalApi } from './vehicleLookupService/externalApiFetcher';
 
 export const lookupVehiclePlate = async (plate: string): Promise<VehicleInfo | null> => {
   try {
     // First check if we already have this plate in our database
-    const { data, error } = await supabase
-      .from('clients')
-      .select('marca, modelo, ano, placa, cor')
-      .eq('placa', plate)
-      .maybeSingle();
+    const vehicleInfo = await fetchVehicleFromDatabase(plate);
     
-    if (error) {
-      console.error("Error querying database:", error);
-      return null;
+    if (vehicleInfo) {
+      return vehicleInfo;
     }
     
-    if (data) {
-      return {
-        marca: data.marca || undefined,
-        modelo: data.modelo || undefined,
-        ano: data.ano || undefined,
-        cor: data.cor || undefined,
-        placa: data.placa || plate,
-      };
-    }
-    
-    // If not found in our database, we could implement an external API call
-    // Note: This is just a placeholder and would need to be implemented
-    // with an actual API integration with buscaplacas.com.br
-    console.log(`Vehicle with plate ${plate} not found in database. External lookup would be needed.`);
-    
-    return null;
+    // If not found in our database, attempt to query external API
+    return await queryExternalApi(plate);
   } catch (error) {
     console.error("Error looking up vehicle plate:", error);
     return null;

@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatPhone } from '@/utils/supabaseTypes';
+import { formatPhone } from '@/utils/formatUtils';
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome do cliente é obrigatório'),

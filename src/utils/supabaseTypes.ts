@@ -45,6 +45,39 @@ export interface Service {
   user_id?: string;
 }
 
+export interface Profile {
+  id: string;
+  created_at?: string;
+  full_name?: string;
+  email?: string;
+  trial_ends_at?: string;
+  nome_oficina?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  plano?: string;
+  is_active?: boolean;
+  logo_url?: string;
+  cnpj?: string;
+  responsavel?: string;
+  whatsapp_suporte?: string;
+}
+
+export interface SubscriptionWithProfile extends Profile {
+  subscription?: {
+    id: string;
+    status: string;
+    plan: string;
+    started_at?: string;
+    ends_at?: string;
+  };
+}
+
+// Format helpers moved to formatUtils.ts
+export { formatPhone } from '@/utils/formatUtils';
+
 export async function safeRpc(functionName: string, params: any) {
   try {
     const { data, error } = await window.supabase.rpc(functionName, params);
