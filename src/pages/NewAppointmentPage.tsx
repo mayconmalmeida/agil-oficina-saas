@@ -1,45 +1,24 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const NewAppointmentPage: React.FC = () => {
-  const navigate = useNavigate();
-  
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Novo Agendamento</h1>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/agendamentos')}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Button>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Novo Agendamento</h1>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Formulário de Agendamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Componente de agendamento em desenvolvimento. Esta página será implementada em breve.
+            </p>
+          </CardContent>
+        </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Agendar Novo Atendimento</CardTitle>
-          <CardDescription>
-            Preencha os dados para agendar um atendimento
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Formulário de agendamento em desenvolvimento.</p>
-            <Button 
-              onClick={() => navigate('/agendamentos')}
-              className="mt-4"
-            >
-              Voltar para Agendamentos
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

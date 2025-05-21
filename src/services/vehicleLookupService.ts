@@ -1,6 +1,4 @@
-
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 
 interface VehicleInfo {
   marca?: string;
@@ -46,38 +44,16 @@ export const lookupVehiclePlate = async (plate: string): Promise<VehicleInfo | n
   }
 };
 
-// Hook for vehicle lookup with toast notifications
 export const useVehicleLookup = () => {
-  const { toast } = useToast();
-  
   const lookupPlate = async (plate: string): Promise<VehicleInfo | null> => {
     if (!plate || plate.length < 7) {
       return null;
     }
     
     try {
-      const vehicleInfo = await lookupVehiclePlate(plate);
-      
-      if (vehicleInfo) {
-        toast({
-          title: "Veículo encontrado",
-          description: `${vehicleInfo.marca || ''} ${vehicleInfo.modelo || ''} ${vehicleInfo.ano || ''}`.trim() || 'Dados básicos encontrados',
-        });
-        return vehicleInfo;
-      } else {
-        toast({
-          title: "Veículo não encontrado",
-          description: "Não encontramos informações para esta placa",
-          variant: "destructive",
-        });
-        return null;
-      }
+      return await lookupVehiclePlate(plate);
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao buscar informações do veículo",
-        variant: "destructive",
-      });
+      console.error("Error in vehicle lookup:", error);
       return null;
     }
   };
