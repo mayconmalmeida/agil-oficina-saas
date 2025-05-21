@@ -65,9 +65,9 @@ const BudgetList: React.FC<BudgetListProps> = ({
             cliente: item.cliente,
             veiculo: item.veiculo,
             data: item.created_at,
-            valor: parseFloat(item.valor_total.toString()),
+            valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
             status: item.status || 'pendente',
-            itens: item.itens_count || 0 
+            itens: 0 // Default value since itens_count is not in the response
           }));
           
           setBudgets(formattedBudgets);
