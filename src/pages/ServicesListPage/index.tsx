@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Service } from '@/utils/supabaseTypes';
+import { Service, mapToServiceType } from '@/utils/supabaseTypes';
 import ServiceList from './ServiceList';
 import { 
   Dialog, 
@@ -17,17 +18,6 @@ import {
   DialogHeader, 
   DialogTitle
 } from '@/components/ui/dialog';
-
-interface ServiceResponse {
-  id: string;
-  nome: string;
-  tipo: string;
-  valor: number;
-  descricao?: string | null;
-  is_active?: boolean | null;
-  user_id?: string | null;
-  created_at: string;
-}
 
 const ServicesListPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
@@ -62,7 +52,7 @@ const ServicesListPage: React.FC = () => {
       }
       
       if (data) {
-        // Map the response data to our Service interface with type checking
+        // Use the mapping utility function
         setServices(mapToServiceType(data));
       }
     } catch (error) {
@@ -118,20 +108,6 @@ const ServicesListPage: React.FC = () => {
         description: "Ocorreu um erro ao alterar o status do serviço.",
       });
     }
-  };
-  
-  // Inside any component or function that uses Service[]
-  const mapToServiceType = (data: any[]): Service[] => {
-    return data.map(item => ({
-      id: item.id,
-      nome: item.nome,
-      tipo: item.tipo as "produto" | "servico",
-      valor: item.valor,
-      descricao: item.descricao || "",
-      is_active: item.is_active,
-      created_at: item.created_at,
-      user_id: item.user_id || ""
-    }));
   };
   
   return (

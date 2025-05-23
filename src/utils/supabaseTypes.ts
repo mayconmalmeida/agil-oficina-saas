@@ -90,4 +90,18 @@ export const safeRpc = async (functionName: string, params: Record<string, any> 
   }
 };
 
+// Utility function to map database response to Service type
+export const mapToServiceType = (data: any[]): Service[] => {
+  return data.map(item => ({
+    id: item.id,
+    nome: item.nome,
+    tipo: item.tipo as "produto" | "servico",
+    valor: item.valor,
+    descricao: item.descricao || "",
+    is_active: item.is_active,
+    created_at: item.created_at,
+    user_id: item.user_id || ""
+  }));
+};
+
 // Add any other needed types here
