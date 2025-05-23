@@ -79,8 +79,25 @@ export interface Vehicle {
   kilometragem?: string;
 }
 
-// Add the safeRpc utility function that was missing
-export const safeRpc = async (functionName: string, params: Record<string, any> = {}) => {
+// Define available RPC function names from Supabase
+type RpcFunctionNames = 
+  | 'check_admin_permission'
+  | 'create_agendamento'
+  | 'create_agendamentos_table'
+  | 'create_budget'
+  | 'create_client'
+  | 'create_profile'
+  | 'create_profile_table'
+  | 'create_profiles_table'
+  | 'create_service'
+  | 'create_subscription'
+  | 'create_subscriptions_table'
+  | 'ensure_profiles_table'
+  | 'ensure_whatsapp_suporte_column'
+  | 'update_onboarding_step';
+
+// Add the safeRpc utility function with proper typing
+export const safeRpc = async (functionName: RpcFunctionNames, params: Record<string, any> = {}) => {
   try {
     const { data, error } = await supabase.rpc(functionName, params);
     return { data, error };
@@ -95,10 +112,10 @@ export const mapToServiceType = (data: any[]): Service[] => {
   return data.map(item => ({
     id: item.id,
     nome: item.nome,
-    tipo: item.tipo as "produto" | "servico",
+    tipo: (item.tipo === 'servico' ? 'servico' : 'produto') as "produto" | "servico",
     valor: item.valor,
     descricao: item.descricao || "",
-    is_active: item.is_active,
+    is_active: item.is_active !== undefined ? item.is_active : true,
     created_at: item.created_at,
     user_id: item.user_id || ""
   }));

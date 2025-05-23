@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Eye, Plus, Minus, RotateCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Service } from '@/utils/supabaseTypes';
+import { Service, mapToServiceType } from '@/utils/supabaseTypes';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProductListProps {
@@ -42,7 +41,8 @@ const ProductList: React.FC<ProductListProps> = ({
         }
         
         console.log('Products fetched:', data);
-        setProducts(data || []);
+        // Use the mapping utility to ensure proper type conversion
+        setProducts(mapToServiceType(data || []));
       } catch (error: any) {
         console.error('Error fetching products:', error);
         toast({
