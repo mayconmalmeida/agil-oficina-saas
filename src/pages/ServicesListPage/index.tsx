@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,18 +63,7 @@ const ServicesListPage: React.FC = () => {
       
       if (data) {
         // Map the response data to our Service interface with type checking
-        const mappedServices: Service[] = data.map((item: ServiceResponse) => ({
-          id: item.id,
-          nome: item.nome,
-          // Ensure tipo is either 'produto' or 'servico'
-          tipo: item.tipo === 'servico' ? 'servico' : 'produto',
-          valor: item.valor,
-          descricao: item.descricao || undefined,
-          is_active: item.is_active !== undefined ? item.is_active : true,
-          created_at: item.created_at
-        }));
-        
-        setServices(mappedServices);
+        setServices(mapToServiceType(data));
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -130,6 +118,20 @@ const ServicesListPage: React.FC = () => {
         description: "Ocorreu um erro ao alterar o status do serviço.",
       });
     }
+  };
+  
+  // Inside any component or function that uses Service[]
+  const mapToServiceType = (data: any[]): Service[] => {
+    return data.map(item => ({
+      id: item.id,
+      nome: item.nome,
+      tipo: item.tipo as "produto" | "servico",
+      valor: item.valor,
+      descricao: item.descricao || "",
+      is_active: item.is_active,
+      created_at: item.created_at,
+      user_id: item.user_id || ""
+    }));
   };
   
   return (

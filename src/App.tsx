@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import LoginPage from '@/pages/LoginPage';
@@ -9,32 +9,40 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ClientsManagementPage from '@/pages/ClientsManagementPage';
 import ServicesListPage from '@/pages/ServicesListPage';
 import NewAppointmentPage from '@/pages/NewAppointmentPage';
+import DashboardPage from '@/pages/DashboardPage';
+import NewServicePage from '@/pages/NewServicePage';
+import EditServicePage from '@/pages/EditServicePage';
+import BudgetListPage from '@/pages/BudgetListPage';
+import EditBudgetPage from '@/pages/EditBudgetPage';
+import AppointmentsPage from '@/pages/AppointmentsPage';
 
 // Create a client
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider defaultTheme="light">
-        <QueryClientProvider client={queryClient}>
-          <Toaster />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<div>Dashboard Page</div>} />
-            <Route path="/clientes" element={<ClientsManagementPage />} />
-            <Route path="/servicos" element={<ServicesListPage />} />
-            <Route path="/servicos/novo" element={<div>New Service Page</div>} />
-            <Route path="/servicos/editar/:id" element={<div>Edit Service Page</div>} />
-            <Route path="/orcamentos" element={<div>Budget List Page</div>} />
-            <Route path="/orcamentos/novo" element={<div>New Budget Page</div>} />
-            <Route path="/orcamentos/editar/:id" element={<div>Edit Budget Page</div>} />
-            <Route path="/agendamentos" element={<div>Appointments Page</div>} />
-            <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
-          </Routes>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider defaultTheme="light">
+          <QueryClientProvider client={queryClient}>
+            <Toaster />
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/clientes" element={<ClientsManagementPage />} />
+              <Route path="/servicos" element={<ServicesListPage />} />
+              <Route path="/servicos/novo" element={<NewServicePage />} />
+              <Route path="/servicos/editar/:id" element={<EditServicePage />} />
+              <Route path="/orcamentos" element={<BudgetListPage />} />
+              <Route path="/orcamentos/novo" element={<div>New Budget Page</div>} />
+              <Route path="/orcamentos/editar/:id" element={<EditBudgetPage />} />
+              <Route path="/agendamentos" element={<AppointmentsPage />} />
+              <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
+            </Routes>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
