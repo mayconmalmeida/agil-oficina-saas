@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Outlet } from 'react-router-dom';
 import { 
   LayoutGrid, 
   Users, 
@@ -24,10 +25,6 @@ interface SidebarItemProps {
   isActive: boolean;
 }
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, href, isActive }) => {
   return (
     <Link to={href}>
@@ -45,7 +42,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, href, isAc
   );
 };
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC = () => {
   // Use localStorage to remember sidebar state between page refreshes
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen');
@@ -64,7 +61,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   
   const menuItems = [
-    { icon: LayoutGrid, label: "Dashboard", href: "/" },
+    { icon: LayoutGrid, label: "Dashboard", href: "/dashboard" },
     { icon: Users, label: "Clientes", href: "/clientes" },
     { icon: Car, label: "Veículos", href: "/veiculos" },
     { icon: Package, label: "Produtos", href: "/produtos" },
@@ -116,7 +113,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         "lg:ml-64" // Always offset content on large screens
       )}>
         <div className="p-4 sm:p-6 lg:p-8 min-h-screen">
-          {children}
+          <Outlet />
         </div>
       </div>
       

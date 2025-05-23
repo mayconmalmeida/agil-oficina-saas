@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { X, Edit, Package, Wrench } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ProductForm from './ProductForm';
-import { Service, mapToServiceType } from '@/utils/supabaseTypes';
+import { Service } from '@/utils/supabaseTypes';
 
 interface ProductDetailsPanelProps {
   productId: string;
@@ -36,9 +37,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
         }
         
         console.log('Product data fetched successfully:', data);
-        // Use the mapping utility to ensure proper type conversion
-        const mappedProducts = mapToServiceType([data]);
-        setProduct(mappedProducts[0]);
+        setProduct(data);
       } catch (error: any) {
         console.error('Failed to fetch product details:', error);
         toast({
@@ -166,6 +165,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
               <span className="text-muted-foreground">Criado em:</span>
               <p>{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
             </div>
+            {/* Remove reference to codigo property */}
           </div>
         </div>
       </CardContent>

@@ -1,13 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { ClientFormValues } from '../EnhancedClientForm';
 import { formatLicensePlate } from '@/utils/validationUtils';
-import { useVehicleLookup } from '@/services/vehicleLookupService';
 
 interface VehicleInfoSectionProps {
   form: UseFormReturn<ClientFormValues>;
@@ -17,8 +14,6 @@ interface VehicleInfoSectionProps {
 const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSuccess }) => {
   const { watch, setValue } = form;
   const placaValue = watch('veiculo.placa');
-  const [isLookingUp, setIsLookingUp] = useState(false);
-  const { lookupPlate } = useVehicleLookup();
   
   // Format license plate
   React.useEffect(() => {
@@ -30,46 +25,10 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSucce
     }
   }, [placaValue, setValue]);
   
-  // Auto-lookup when a full plate is entered
-  useEffect(() => {
-    // Check if we have a properly formatted plate
-    if (placaValue && (placaValue.length === 7 || placaValue.length === 8)) {
-      const lookupVehicle = async () => {
-        setIsLookingUp(true);
-        try {
-          const vehicle = await lookupPlate(placaValue);
-          if (vehicle) {
-            // Populate form with vehicle data
-            if (vehicle.marca) setValue('veiculo.marca', vehicle.marca);
-            if (vehicle.modelo) setValue('veiculo.modelo', vehicle.modelo);
-            if (vehicle.ano) setValue('veiculo.ano', vehicle.ano);
-            if (vehicle.cor) setValue('veiculo.cor', vehicle.cor);
-          }
-        } finally {
-          setIsLookingUp(false);
-        }
-      };
-      
-      lookupVehicle();
-    }
-  }, [placaValue, lookupPlate, setValue]);
-  
   // Restrict year field to only numbers and 4 digits
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 4);
     setValue('veiculo.ano', value);
-  };
-  
-  // Manual lookup function
-  const handleManualLookup = async () => {
-    if (placaValue) {
-      setIsLookingUp(true);
-      try {
-        await lookupPlate(placaValue);
-      } finally {
-        setIsLookingUp(false);
-      }
-    }
   };
 
   return (
@@ -152,26 +111,15 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSucce
           render={({ field }) => (
             <FormItem>
               <FormLabel>Placa</FormLabel>
-              <div className="flex space-x-2">
-                <FormControl>
-                  <Input 
-                    placeholder="ABC1D23 ou ABC-1234"
-                    {...field}
-                    maxLength={8}
-                    disabled={saveSuccess}
-                    className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                  />
-                </FormControl>
-                <Button 
-                  type="button"
-                  size="icon" 
-                  variant="outline" 
-                  onClick={handleManualLookup}
-                  disabled={isLookingUp || !placaValue || saveSuccess}
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
+              <FormControl>
+                <Input 
+                  placeholder="ABC1D23 ou ABC-1234"
+                  {...field}
+                  maxLength={8}
+                  disabled={saveSuccess}
+                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

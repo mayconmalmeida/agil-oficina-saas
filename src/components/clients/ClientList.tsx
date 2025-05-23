@@ -1,204 +1,141 @@
 
-import React, { useState, useEffect } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, Eye, Edit, XCircle, CheckCircle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/utils/supabaseTypes';
-import { ClientListHeader } from './ClientList/ClientListHeader';
-import { ClientListRow } from './ClientList/ClientListRow';
-import { InactivateDialog } from './ClientList/InactivateDialog';
-import { EmptyState } from './ClientList/EmptyState';
-import { LoadingState } from './ClientList/LoadingState';
 
-interface ClientListProps {
-  searchTerm?: string;
+export interface ClientListProps {
+  searchTerm: string;
+  onViewClient: (clientId: string) => void;
+  onEditClient: (clientId: string) => void;
+  onDeleteClient: (clientId: string) => void;
+  searchQuery?: string;
   filters?: any;
   onSelectClient?: (clientId: string) => void;
-  onViewClient?: (clientId: string) => void;
-  onEditClient?: (clientId: string) => void;
-  onDeleteClient?: (clientId: string) => void;
 }
 
 const ClientList: React.FC<ClientListProps> = ({
-  searchTerm = '',
-  filters = {},
-  onSelectClient,
+  searchTerm,
   onViewClient,
   onEditClient,
   onDeleteClient,
+  searchQuery,
+  filters,
+  onSelectClient
 }) => {
   const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [isInactivateDialogOpen, setIsInactivateDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
+  const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
-    fetchClients();
-  }, [filters]);
-  
-  const fetchClients = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*');
+    const fetchClients = async () => {
+      setLoading(true);
       
-      if (error) {
-        console.error("Error fetching clients:", error);
-        return;
-      }
-      
-      if (data) {
-        setClients(data as Client[]);
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleToggleActive = async () => {
-    if (!selectedClientId) return;
-    
-    const clientToUpdate = clients.find(c => c.id === selectedClientId);
-    if (!clientToUpdate) return;
-    
-    const newActiveStatus = !clientToUpdate.is_active;
-    
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: newActiveStatus })
-        .eq('id', selectedClientId);
-      
-      if (error) {
-        console.error("Error updating client status:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: `Não foi possível ${newActiveStatus ? 'ativar' : 'inativar'} o cliente.`,
+      try {
+        let query = supabase.from('clients').select('*');
+        
+        if (searchTerm || searchQuery) {
+          const searchValue = searchTerm || searchQuery || '';
+          query = query.or(`nome.ilike.%${searchValue}%,telefone.ilike.%${searchValue}%,veiculo.ilike.%${searchValue}%`);
+        }
+        
+        const { data, error } = await query.order('nome');
+        
+        if (error) throw error;
+        
+        // Ensure all clients have the required properties with type assertion
+        const clientsWithDefaults = (data || []).map(client => {
+          return {
+            ...client,
+            tipo: (client as any).tipo || 'pf', // Default to 'pf' if tipo is missing
+            cor: (client as any).cor || '',
+            kilometragem: (client as any).kilometragem || ''
+          } as Client;
         });
-        return;
+        
+        setClients(clientsWithDefaults);
+      } catch (error: any) {
+        console.error('Error fetching clients:', error.message);
+      } finally {
+        setLoading(false);
       }
-      
-      toast({
-        title: newActiveStatus ? "Cliente ativado" : "Cliente inativado",
-        description: `Cliente ${newActiveStatus ? 'ativado' : 'inativado'} com sucesso.`,
-      });
-      
-      // Update client in local state
-      setClients(prev => 
-        prev.map(client => 
-          client.id === selectedClientId 
-            ? { ...client, is_active: newActiveStatus } 
-            : client
-        )
-      );
-      
-      // Close dialog
-      setIsInactivateDialogOpen(false);
-      
-      // If client was inactivated and it was selected, notify parent
-      if (!newActiveStatus && onDeleteClient) {
-        onDeleteClient(selectedClientId);
-      }
-      
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar o status do cliente.",
-      });
-    }
-  };
-  
-  // Filter clients based on search term and filters
-  const filteredClients = clients.filter(client => {
-    // Apply search filter
-    if (searchTerm && !client.nome.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !client.email?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !client.telefone?.includes(searchTerm) &&
-        !client.veiculo?.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
+    };
     
-    // Apply additional filters
-    return true;
-  });
-  
-  const handleInactivateDialog = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    setSelectedClientId(clientId);
-    setIsInactivateDialogOpen(true);
-  };
-  
-  const handleRowClick = (clientId: string) => {
+    fetchClients();
+  }, [searchTerm, searchQuery, filters]);
+
+  const handleClientClick = (clientId: string) => {
     if (onSelectClient) {
       onSelectClient(clientId);
-    }
-  };
-  
-  const handleView = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    if (onViewClient) {
+    } else {
       onViewClient(clientId);
     }
   };
-  
-  const handleEdit = (e: React.MouseEvent, clientId: string) => {
-    e.stopPropagation();
-    if (onEditClient) {
-      onEditClient(clientId);
-    }
-  };
+
+  if (loading) {
+    return <div className="flex justify-center p-4">Carregando clientes...</div>;
+  }
+
+  if (clients.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-lg">
+        <h3 className="text-lg font-medium">Nenhum cliente encontrado</h3>
+        <p className="text-gray-500 mt-2">
+          {(searchTerm || searchQuery)
+            ? `Nenhum resultado para "${searchTerm || searchQuery}"`
+            : 'Cadastre um cliente para começar'
+          }
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="rounded-md border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Contato</TableHead>
-              <TableHead className="hidden lg:table-cell">Veículo</TableHead>
-              <TableHead className="hidden md:table-cell">Placa</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <LoadingState />
-            ) : filteredClients.length === 0 ? (
-              <EmptyState />
-            ) : (
-              filteredClients.map((client) => (
-                <ClientListRow
-                  key={client.id}
-                  client={client}
-                  onRowClick={handleRowClick}
-                  onView={handleView}
-                  onEdit={handleEdit}
-                  onToggleStatus={handleInactivateDialog}
-                />
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
-      <InactivateDialog
-        isOpen={isInactivateDialogOpen}
-        setIsOpen={setIsInactivateDialogOpen}
-        onConfirm={handleToggleActive}
-        client={clients.find(c => c.id === selectedClientId)}
-      />
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nome</TableHead>
+          <TableHead>Telefone</TableHead>
+          <TableHead>Veículo</TableHead>
+          <TableHead className="text-right">Ações</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {clients.map((client) => (
+          <TableRow key={client.id}>
+            <TableCell className="font-medium">{client.nome}</TableCell>
+            <TableCell>{client.telefone}</TableCell>
+            <TableCell>{client.veiculo}</TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleClientClick(client.id)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onEditClient(client.id)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeleteClient(client.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 };
 

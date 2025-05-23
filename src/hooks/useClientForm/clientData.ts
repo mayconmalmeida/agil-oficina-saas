@@ -31,10 +31,7 @@ export const useClientData = (
       if (error) throw error;
       
       if (data) {
-        const clientData: Client = {
-          ...data,
-          tipo: (data as any).tipo || 'pf'
-        };
+        const clientData = data as Client;
         
         // Format data for the form
         form.reset({

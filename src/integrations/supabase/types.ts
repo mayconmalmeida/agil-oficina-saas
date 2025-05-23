@@ -36,11 +36,9 @@ export type Database = {
       clients: {
         Row: {
           ano: string | null
-          cor: string | null
           created_at: string | null
           email: string | null
           id: string
-          is_active: boolean | null
           marca: string | null
           modelo: string | null
           nome: string
@@ -51,11 +49,9 @@ export type Database = {
         }
         Insert: {
           ano?: string | null
-          cor?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
-          is_active?: boolean | null
           marca?: string | null
           modelo?: string | null
           nome: string
@@ -66,11 +62,9 @@ export type Database = {
         }
         Update: {
           ano?: string | null
-          cor?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
-          is_active?: boolean | null
           marca?: string | null
           modelo?: string | null
           nome?: string
@@ -211,7 +205,6 @@ export type Database = {
           created_at: string | null
           descricao: string | null
           id: string
-          is_active: boolean | null
           nome: string
           tipo: string
           user_id: string | null
@@ -221,7 +214,6 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           id?: string
-          is_active?: boolean | null
           nome: string
           tipo: string
           user_id?: string | null
@@ -231,7 +223,6 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           id?: string
-          is_active?: boolean | null
           nome?: string
           tipo?: string
           user_id?: string | null

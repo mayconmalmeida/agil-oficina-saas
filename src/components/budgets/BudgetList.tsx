@@ -1,11 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Eye, FileText, Printer, Mail, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface BudgetListProps {
   searchQuery?: string;
@@ -23,27 +22,12 @@ interface Budget {
   itens?: number;
 }
 
-// Database response interface
-interface BudgetResponse {
-  id: string;
-  cliente: string;
-  veiculo: string;
-  created_at: string;
-  valor_total: number;
-  status: string | null;
-  descricao: string;
-  user_id: string | null;
-  itens_count?: number;
-}
-
 const BudgetList: React.FC<BudgetListProps> = ({ 
   searchQuery = '',
   filter = 'todos'
 }) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  const navigate = useNavigate();
   
   useEffect(() => {
     const fetchBudgets = async () => {
@@ -59,15 +43,15 @@ const BudgetList: React.FC<BudgetListProps> = ({
         
         if (data) {
           // Transform the data to match the Budget interface
-          const formattedBudgets: Budget[] = (data as BudgetResponse[]).map(item => ({
+          const formattedBudgets: Budget[] = data.map(item => ({
             id: item.id,
             numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3)}`,
             cliente: item.cliente,
             veiculo: item.veiculo,
             data: item.created_at,
-            valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
-            status: item.status || 'pendente',
-            itens: 0 // Default value since itens_count is not in the response
+            valor: parseFloat(item.valor_total),
+            status: item.status,
+            itens: 0 // Default value since we don't have this info
           }));
           
           setBudgets(formattedBudgets);
@@ -178,39 +162,6 @@ const BudgetList: React.FC<BudgetListProps> = ({
     }
   };
   
-  // Handle view budget details
-  const handleViewBudget = (id: string) => {
-    navigate(`/orcamentos/${id}`);
-  };
-  
-  // Handle print budget
-  const handlePrintBudget = (id: string) => {
-    toast({
-      title: "Impressão solicitada",
-      description: `Preparando orçamento ${id} para impressão`,
-    });
-    // Here you would implement the actual print functionality
-  };
-  
-  // Handle email budget
-  const handleEmailBudget = (id: string) => {
-    toast({
-      title: "Email",
-      description: `Preparando para enviar orçamento ${id} por email`,
-    });
-    // Here you would implement the actual email sending functionality
-  };
-  
-  // Handle convert budget to service order
-  const handleConvertBudget = (id: string) => {
-    toast({
-      title: "Conversão",
-      description: `Convertendo orçamento ${id} para ordem de serviço`,
-    });
-    // Here you would implement the actual conversion functionality
-    navigate(`/ordens/novo?orcamento=${id}`);
-  };
-  
   return (
     <div>
       <Table>
@@ -236,17 +187,17 @@ const BudgetList: React.FC<BudgetListProps> = ({
               <TableCell>{getStatusBadge(budget.status)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" title="Ver detalhes" onClick={() => handleViewBudget(budget.id)}>
+                  <Button variant="ghost" size="icon" title="Ver detalhes">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Imprimir" onClick={() => handlePrintBudget(budget.id)}>
+                  <Button variant="ghost" size="icon" title="Imprimir">
                     <Printer className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Enviar por email" onClick={() => handleEmailBudget(budget.id)}>
+                  <Button variant="ghost" size="icon" title="Enviar por email">
                     <Mail className="h-4 w-4" />
                   </Button>
                   {budget.status === 'aprovado' && (
-                    <Button variant="ghost" size="icon" title="Converter para ordem de serviço" onClick={() => handleConvertBudget(budget.id)}>
+                    <Button variant="ghost" size="icon" title="Converter para ordem de serviço">
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   )}

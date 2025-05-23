@@ -1,124 +1,128 @@
 
-// Define all Supabase types and interfaces here
 import { supabase } from '@/lib/supabase';
+import { Database } from '@/integrations/supabase/types';
 
-export interface SubscriptionWithProfile {
+export interface Client {
   id: string;
-  nome_oficina?: string;
-  email?: string;
-  amount?: number;
-  created_at?: string;
-  expires_at?: string;
-  payment_method?: string;
-  status?: string;
+  created_at: string;
+  nome: string;
+  telefone: string;
+  email: string;
+  veiculo: string;
+  marca: string;
+  modelo: string;
+  ano: string;
+  placa: string;
+  user_id: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  documento?: string;
+  tipo: 'pf' | 'pj';
+  cor?: string;
+  kilometragem?: string;
+  bairro?: string;
+  numero?: string;
+}
+
+export interface Vehicle {
+  id: string;
+  created_at: string;
+  marca: string;
+  modelo: string;
+  ano: string;
+  placa: string;
+  cor?: string;
+  kilometragem?: string;
+  cliente_id: string;
+  user_id: string;
 }
 
 export interface Service {
   id: string;
   nome: string;
-  descricao?: string;
+  tipo: string;
   valor: number;
-  tipo: "produto" | "servico"; // Using a union type to restrict tipo values
-  is_active: boolean;
-  created_at: string;
+  descricao?: string;
   user_id: string;
-}
-
-export interface Client {
-  id: string;
-  nome: string;
-  telefone: string;
-  email?: string;
-  veiculo: string;
-  placa?: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  cor?: string;
-  is_active: boolean;
   created_at: string;
-  user_id: string;
-  // Add missing properties that are being used in the codebase
-  tipo?: 'pf' | 'pj';
-  documento?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  bairro?: string;
-  numero?: string;
-  kilometragem?: string;
+  codigo?: string;
 }
 
 export interface Profile {
   id: string;
-  email?: string;
+  created_at?: string;
   full_name?: string;
+  email?: string;
   nome_oficina?: string;
-  responsavel?: string;
   telefone?: string;
-  cnpj?: string;
   endereco?: string;
   cidade?: string;
   estado?: string;
   cep?: string;
+  plano?: string;
+  cnpj?: string;
+  responsavel?: string;
   logo_url?: string;
   is_active?: boolean;
-  plano?: string;
   trial_ends_at?: string;
-  created_at?: string;
   whatsapp_suporte?: string;
 }
 
-export interface Vehicle {
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa: string;
-  cor?: string;
-  kilometragem?: string;
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan: string;
+  status: string;
+  started_at: string;
+  ends_at?: string;
+  expires_at?: string;
+  amount?: number;
+  payment_method?: string;
+  created_at: string;
 }
 
-// Define available RPC function names from Supabase
-type RpcFunctionNames = 
-  | 'check_admin_permission'
-  | 'create_agendamento'
-  | 'create_agendamentos_table'
-  | 'create_budget'
-  | 'create_client'
-  | 'create_profile'
-  | 'create_profile_table'
-  | 'create_profiles_table'
-  | 'create_service'
-  | 'create_subscription'
-  | 'create_subscriptions_table'
-  | 'ensure_profiles_table'
-  | 'ensure_whatsapp_suporte_column'
-  | 'update_onboarding_step';
+export interface SubscriptionWithProfile extends Subscription {
+  nome_oficina: string;
+  email: string;
+}
 
-// Add the safeRpc utility function with proper typing
-export const safeRpc = async (functionName: RpcFunctionNames, params: Record<string, any> = {}) => {
+// Typed safer version of safeRpc function
+export const safeRpc = async <T = any>(
+  procedureName: string, 
+  params: Record<string, any>
+): Promise<{ data: T | null; error: any }> => {
   try {
-    const { data, error } = await supabase.rpc(functionName, params);
+    // The type casting is needed because TS doesn't know about dynamic procedure names
+    const { data, error } = await (supabase.rpc as any)(procedureName, params);
     return { data, error };
-  } catch (err) {
-    console.error(`Error calling RPC function ${functionName}:`, err);
-    return { data: null, error: err as Error };
+  } catch (error) {
+    return { data: null, error };
   }
 };
 
-// Utility function to map database response to Service type
-export const mapToServiceType = (data: any[]): Service[] => {
-  return data.map(item => ({
-    id: item.id,
-    nome: item.nome,
-    tipo: (item.tipo === 'servico' ? 'servico' : 'produto') as "produto" | "servico",
-    valor: item.valor,
-    descricao: item.descricao || "",
-    is_active: item.is_active !== undefined ? item.is_active : true,
-    created_at: item.created_at,
-    user_id: item.user_id || ""
-  }));
+// Add utility functions that were referenced in other files
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
 };
 
-// Add any other needed types here
+export const formatPhone = (value: string): string => {
+  if (!value) return '';
+  
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  if (digits.length <= 2) {
+    return digits;
+  } else if (digits.length <= 6) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  } else {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  }
+};
+
+export const formatPhoneNumber = formatPhone;
