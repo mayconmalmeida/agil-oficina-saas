@@ -1,12 +1,25 @@
+// Define all Supabase types and interfaces here
 
-export interface Vehicle {
+export interface SubscriptionWithProfile {
   id: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
-  cor?: string;
-  kilometragem?: string;
+  nome_oficina?: string;
+  email?: string;
+  amount?: number;
+  created_at?: string;
+  expires_at?: string;
+  payment_method?: string;
+  status?: string;
+}
+
+export interface Service {
+  id: string;
+  nome: string;
+  descricao?: string;
+  valor: number;
+  tipo: "produto" | "servico"; // Using a union type to restrict tipo values
+  is_active: boolean;
+  created_at: string;
+  user_id: string;
 }
 
 export interface Client {
@@ -14,76 +27,15 @@ export interface Client {
   nome: string;
   telefone: string;
   email?: string;
-  veiculo?: string;
+  veiculo: string;
+  placa?: string;
   marca?: string;
   modelo?: string;
   ano?: string;
-  placa?: string;
-  is_active?: boolean;
   cor?: string;
-  kilometragem?: string;
-  tipo?: 'pf' | 'pj';
-  documento?: string;
-  cep?: string;
-  endereco?: string;
-  numero?: string;
-  bairro?: string;
-  cidade?: string;
-  estado?: string;
-  created_at?: string;
-  user_id?: string;
+  is_active: boolean;
+  created_at: string;
+  user_id: string;
 }
 
-export interface Service {
-  id: string;
-  nome: string;
-  tipo: 'produto' | 'servico';
-  valor: number;
-  descricao?: string;
-  is_active?: boolean;
-  created_at?: string;
-  user_id?: string;
-}
-
-export interface Profile {
-  id: string;
-  created_at?: string;
-  full_name?: string;
-  email?: string;
-  trial_ends_at?: string;
-  nome_oficina?: string;
-  telefone?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  plano?: string;
-  is_active?: boolean;
-  logo_url?: string;
-  cnpj?: string;
-  responsavel?: string;
-  whatsapp_suporte?: string;
-}
-
-export interface SubscriptionWithProfile extends Profile {
-  subscription?: {
-    id: string;
-    status: string;
-    plan: string;
-    started_at?: string;
-    ends_at?: string;
-  };
-}
-
-// Format helpers moved to formatUtils.ts
-export { formatPhone } from '@/utils/formatUtils';
-
-export async function safeRpc(functionName: string, params: any) {
-  try {
-    const { data, error } = await window.supabase.rpc(functionName, params);
-    return { data, error };
-  } catch (error: any) {
-    console.error(`Error calling RPC function ${functionName}:`, error);
-    return { data: null, error };
-  }
-}
+// Add any other needed types here
