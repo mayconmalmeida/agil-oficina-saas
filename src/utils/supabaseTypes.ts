@@ -88,10 +88,10 @@ export interface SubscriptionWithProfile extends Subscription {
   email: string;
 }
 
-// Typed safer version of safeRpc function
+// Simpler version of safeRpc that bypasses strict typing
 export const safeRpc = async <T = any>(
   procedureName: string, 
-  params: Record<string, any>
+  params: any = {}
 ): Promise<{ data: T | null; error: any }> => {
   try {
     // The type casting is needed because TS doesn't know about dynamic procedure names
