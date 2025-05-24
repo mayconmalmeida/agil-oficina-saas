@@ -5,7 +5,6 @@ import { UseFormReturn } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { ClientFormValues } from './validation';
 import { safeRpc } from '@/utils/supabaseTypes';
-import { Client } from '@/utils/supabaseTypes';
 
 export const useClientData = (
   form: UseFormReturn<ClientFormValues>,
@@ -31,19 +30,19 @@ export const useClientData = (
       if (error) throw error;
       
       if (data) {
-        // Format data for the form with proper type handling
-        const clientData: Client = {
+        // Handle missing properties with defaults using type assertion
+        const clientData = {
           ...data,
-          tipo: data.tipo as 'pf' | 'pj' || 'pf',
-          endereco: data.endereco || '',
-          cidade: data.cidade || '',
-          estado: data.estado || '',
-          cep: data.cep || '',
-          documento: data.documento || '',
-          cor: data.cor || '',
-          kilometragem: data.kilometragem || '',
-          bairro: data.bairro || '',
-          numero: data.numero || ''
+          tipo: (data as any).tipo || 'pf',
+          endereco: (data as any).endereco || '',
+          cidade: (data as any).cidade || '',
+          estado: (data as any).estado || '',
+          cep: (data as any).cep || '',
+          documento: (data as any).documento || '',
+          cor: (data as any).cor || '',
+          kilometragem: (data as any).kilometragem || '',
+          bairro: (data as any).bairro || '',
+          numero: (data as any).numero || ''
         };
         
         // Format data for the form

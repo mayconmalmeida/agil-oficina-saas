@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { safeRpc } from '@/utils/supabaseTypes';
 import { validateCPF, validateLicensePlate, fetchAddressByCEP } from '@/utils/validationUtils';
 import { formatCPF, formatCEP, formatLicensePlate } from '@/utils/formatUtils';
-import { Client } from '@/utils/supabaseTypes';
 
 // Schema with enhanced validations
 export const clientFormSchema = z.object({
@@ -108,25 +106,25 @@ export const useClientForm = ({
           if (error) throw error;
           
           if (data) {
-            // Format data for the form with proper type handling
-            const clientData: Client = {
+            // Handle missing properties with defaults
+            const clientData = {
               ...data,
-              tipo: data.tipo as 'pf' | 'pj' || 'pf',
-              endereco: data.endereco || '',
-              cidade: data.cidade || '',
-              estado: data.estado || '',
-              cep: data.cep || '',
-              documento: data.documento || '',
-              cor: data.cor || '',
-              kilometragem: data.kilometragem || '',
-              bairro: data.bairro || '',
-              numero: data.numero || ''
+              tipo: (data as any).tipo || 'pf',
+              endereco: (data as any).endereco || '',
+              cidade: (data as any).cidade || '',
+              estado: (data as any).estado || '',
+              cep: (data as any).cep || '',
+              documento: (data as any).documento || '',
+              cor: (data as any).cor || '',
+              kilometragem: (data as any).kilometragem || '',
+              bairro: (data as any).bairro || '',
+              numero: (data as any).numero || ''
             };
             
             // Format data for the form
             form.reset({
               nome: clientData.nome || '',
-              tipo: clientData.tipo || 'pf',
+              tipo: clientData.tipo as 'pf' | 'pj' || 'pf',
               documento: clientData.documento || '',
               telefone: clientData.telefone || '',
               email: clientData.email || '',
@@ -297,7 +295,12 @@ export const useClientForm = ({
           p_cidade: values.cidade || null,
           p_estado: values.estado || null,
           p_cep: values.cep || null,
-          p_documento: values.documento || null
+          p_documento: values.documento || null,
+          p_cor: values.veiculo.cor || null,
+          p_kilometragem: values.veiculo.kilometragem || null,
+          p_bairro: values.bairro || null,
+          p_numero: values.numero || null,
+          p_tipo: values.tipo
         });
         
         if (error) throw error;

@@ -16,7 +16,12 @@ CREATE OR REPLACE FUNCTION create_client(
   p_cidade TEXT DEFAULT NULL,
   p_estado TEXT DEFAULT NULL,
   p_cep TEXT DEFAULT NULL,
-  p_documento TEXT DEFAULT NULL
+  p_documento TEXT DEFAULT NULL,
+  p_cor TEXT DEFAULT NULL,
+  p_kilometragem TEXT DEFAULT NULL,
+  p_bairro TEXT DEFAULT NULL,
+  p_numero TEXT DEFAULT NULL,
+  p_tipo TEXT DEFAULT 'pf'
 ) RETURNS VOID AS $$
 BEGIN
   -- Create the clients table if it doesn't exist
@@ -37,6 +42,12 @@ BEGIN
       estado TEXT,
       cep TEXT,
       documento TEXT,
+      cor TEXT,
+      kilometragem TEXT,
+      bairro TEXT,
+      numero TEXT,
+      tipo TEXT DEFAULT ''pf'',
+      is_active BOOLEAN DEFAULT true,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone(''utc'', now())
     );
     
@@ -76,6 +87,12 @@ BEGIN
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS estado TEXT;
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS cep TEXT;
       ALTER TABLE clients ADD COLUMN IF NOT EXISTS documento TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS cor TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS kilometragem TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS bairro TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS numero TEXT;
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT ''pf'';
+      ALTER TABLE clients ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
     ';
   EXCEPTION WHEN OTHERS THEN
     -- Handle errors
@@ -83,7 +100,13 @@ BEGIN
   END;
   
   -- Insert the client
-  INSERT INTO clients (user_id, nome, telefone, email, veiculo, marca, modelo, ano, placa, endereco, cidade, estado, cep, documento)
-  VALUES (p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa, p_endereco, p_cidade, p_estado, p_cep, p_documento);
+  INSERT INTO clients (
+    user_id, nome, telefone, email, veiculo, marca, modelo, ano, placa, 
+    endereco, cidade, estado, cep, documento, cor, kilometragem, bairro, numero, tipo
+  )
+  VALUES (
+    p_user_id, p_nome, p_telefone, p_email, p_veiculo, p_marca, p_modelo, p_ano, p_placa, 
+    p_endereco, p_cidade, p_estado, p_cep, p_documento, p_cor, p_kilometragem, p_bairro, p_numero, p_tipo
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
