@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,13 +52,37 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     return client.veiculo || '';
   };
 
-  const handlePopoverOpenChange = (open: boolean) => {
-    // Only open if there's a search term with at least 2 characters
-    if (open && (!searchTerm || searchTerm.length < 2)) {
-      return;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    form.setValue('cliente', value);
+    setSearchTerm(value);
+    
+    if (value === '' && selectedClient) {
+      clearSelection();
+      form.setValue('veiculo', '');
     }
-    setClientSearchOpen(open);
+    
+    // Open popover if there's input with at least 2 characters
+    if (value.length >= 2) {
+      setClientSearchOpen(true);
+    } else {
+      setClientSearchOpen(false);
+    }
   };
+
+  const handleClearField = () => {
+    form.setValue('cliente', '');
+    form.setValue('veiculo', '');
+    clearSelection();
+    setClientSearchOpen(false);
+  };
+
+  // Close popover when clicking outside or when no search term
+  useEffect(() => {
+    if (searchTerm.length < 2) {
+      setClientSearchOpen(false);
+    }
+  }, [searchTerm]);
 
   return (
     <FormField
@@ -67,45 +91,37 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>Cliente</FormLabel>
-          <Popover open={clientSearchOpen} onOpenChange={handlePopoverOpenChange}>
+          <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
             <PopoverTrigger asChild>
               <FormControl>
                 <div className="relative">
                   <Input 
                     {...field} 
-                    placeholder="Buscar cliente..." 
-                    className="pr-10"
-                    onChange={(e) => {
-                      field.onChange(e);
-                      setSearchTerm(e.target.value);
-                      if (e.target.value === '' && selectedClient) {
-                        clearSelection();
-                        form.setValue('veiculo', '');
+                    placeholder="Digite o nome do cliente..." 
+                    className="pr-20"
+                    onChange={handleInputChange}
+                    onFocus={() => {
+                      if (field.value && field.value.length >= 2) {
+                        setClientSearchOpen(true);
                       }
-                      // Open popover only if there's input with at least 2 characters
-                      setClientSearchOpen(e.target.value.length >= 2);
                     }}
                   />
                   {field.value && (
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => {
-                        field.onChange('');
-                        clearSelection();
-                        form.setValue('veiculo', '');
-                      }}
-                      className="absolute right-10 top-2 h-5 w-5 p-0"
+                      onClick={handleClearField}
+                      className="absolute right-10 top-0 h-full w-8 p-0 hover:bg-transparent"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-4 w-4 text-gray-400" />
                     </Button>
                   )}
-                  <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 </div>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="p-0" align="start" side="bottom" sideOffset={5}>
-              <Command>
+            <PopoverContent className="p-0 w-full" align="start" side="bottom" sideOffset={5}>
+              <Command shouldFilter={false}>
                 <CommandInput 
                   placeholder="Digite o nome do cliente..." 
                   value={searchTerm}
@@ -120,14 +136,15 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                     {clients.map((client) => (
                       <CommandItem
                         key={client.id}
-                        value={client.id} // Use ID as the value for unique identification
+                        value={client.nome}
                         onSelect={() => handleSelectClient(client)}
-                        className="cursor-pointer"
+                        className="cursor-pointer hover:bg-gray-50"
                       >
-                        <div>
+                        <div className="w-full">
                           <div className="font-medium">{client.nome}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatVehicleInfo(client) || client.telefone}
+                          <div className="text-xs text-muted-foreground flex justify-between">
+                            <span>{client.telefone}</span>
+                            <span>{formatVehicleInfo(client)}</span>
                           </div>
                         </div>
                       </CommandItem>
