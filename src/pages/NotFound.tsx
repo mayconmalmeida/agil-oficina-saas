@@ -18,7 +18,7 @@ const NotFound = () => {
     // Show a toast notification to help users
     toast({
       title: "Página não encontrada",
-      description: `A rota ${location.pathname} não existe. Você foi redirecionado para a página 404.`,
+      description: `A rota ${location.pathname} não existe. Verifique o endereço ou use os botões abaixo para navegar.`,
       variant: "destructive",
     });
   }, [location.pathname, toast]);
@@ -49,6 +49,18 @@ const NotFound = () => {
             <ArrowLeft size={18} />
             Voltar
           </Button>
+        </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Rotas disponíveis:</strong>
+          </p>
+          <div className="mt-2 text-xs text-blue-600 grid grid-cols-2 gap-1">
+            <Link to="/" className="hover:underline">• Início</Link>
+            <Link to="/login" className="hover:underline">• Login</Link>
+            <Link to="/workshop-registration" className="hover:underline">• Cadastro</Link>
+            <Link to="/dashboard" className="hover:underline">• Dashboard</Link>
+          </div>
         </div>
       </div>
     </div>

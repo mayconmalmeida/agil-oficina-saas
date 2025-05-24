@@ -24,12 +24,12 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <a href="#funcionalidades" className="text-oficina-gray hover:text-oficina-dark transition-colors">Funcionalidades</a>
-          <a href="#planos" className="text-oficina-gray hover:text-oficina-dark transition-colors">Planos</a>
+          <a href="#precos" className="text-oficina-gray hover:text-oficina-dark transition-colors">Planos</a>
           <a href="#faq" className="text-oficina-gray hover:text-oficina-dark transition-colors">FAQ</a>
           <a href="#contato" className="text-oficina-gray hover:text-oficina-dark transition-colors">Contato</a>
           <div className="flex space-x-3">
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue">
-              <Link to="/registrar">Teste Grátis</Link>
+              <Link to="/workshop-registration">Teste Grátis</Link>
             </Button>
             <Button 
               variant="outline" 
@@ -71,7 +71,7 @@ export default function Navbar() {
               Funcionalidades
             </a>
             <a
-              href="#planos"
+              href="#precos"
               className="text-oficina-gray hover:text-oficina-dark transition-colors py-2"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -92,7 +92,7 @@ export default function Navbar() {
               Contato
             </a>
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors w-full">
-              <Link to="/registrar">Teste Grátis</Link>
+              <Link to="/workshop-registration">Teste Grátis</Link>
             </Button>
             <Button 
               variant="outline" 

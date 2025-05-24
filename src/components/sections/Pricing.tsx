@@ -7,7 +7,7 @@ const tiers = [
   {
     name: 'Essencial',
     id: 'essencial',
-    href: '/cadastro-oficina?plano=Essencial',
+    href: '/workshop-registration?plano=Essencial',
     price: 'R$ 89,90',
     yearlyPrice: 'R$ 899,00',
     description: 'Ideal para oficinas de pequeno porte.',
@@ -23,7 +23,7 @@ const tiers = [
   {
     name: 'Premium',
     id: 'premium',
-    href: '/cadastro-oficina?plano=Premium',
+    href: '/workshop-registration?plano=Premium',
     price: 'R$ 179,90',
     yearlyPrice: 'R$ 1.799,00',
     description: 'Recomendado para oficinas em crescimento.',

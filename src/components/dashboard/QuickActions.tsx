@@ -31,37 +31,37 @@ const QuickActions = () => {
       title: "Novo Orçamento",
       icon: FileText,
       href: "/orcamentos/novo",
-      color: "bg-amber-100 hover:bg-amber-200 text-amber-700"
+      color: "bg-blue-500 hover:bg-blue-600 text-white"
     },
     {
-      title: "Novo Agendamento",
+      title: "Agendamentos",
       icon: CalendarClock,
-      href: "/agendamentos/novo",
-      color: "bg-purple-100 hover:bg-purple-200 text-purple-700"
+      href: "/agendamentos",
+      color: "bg-purple-500 hover:bg-purple-600 text-white"
     },
     {
-      title: "Novo Cliente",
+      title: "Clientes",
       icon: Users,
-      href: "/clientes/novo",
-      color: "bg-blue-100 hover:bg-blue-200 text-blue-700"
+      href: "/clientes",
+      color: "bg-green-500 hover:bg-green-600 text-white"
     },
     {
-      title: "Novo Produto",
+      title: "Produtos",
       icon: Package,
-      href: "/produtos/novo",
-      color: "bg-green-100 hover:bg-green-200 text-green-700"
+      href: "/produtos",
+      color: "bg-orange-500 hover:bg-orange-600 text-white"
     },
     {
-      title: "Novo Veículo",
+      title: "Veículos",
       icon: Car,
-      href: "/veiculos/novo",
-      color: "bg-orange-100 hover:bg-orange-200 text-orange-700"
+      href: "/veiculos",
+      color: "bg-red-500 hover:bg-red-600 text-white"
     },
     {
       title: "Configurações",
       icon: Settings,
       href: "/configuracoes",
-      color: "bg-gray-100 hover:bg-gray-200 text-gray-700"
+      color: "bg-gray-500 hover:bg-gray-600 text-white"
     }
   ];
   
@@ -72,16 +72,16 @@ const QuickActions = () => {
   return (
     <section className="mb-8">
       <h2 className="text-lg font-medium mb-4">Acesso Rápido</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {quickActions.map((action) => (
           <Button 
             key={action.title}
-            variant="outline"
-            className={`flex flex-col items-center justify-center gap-2 h-24 ${action.color} border-0 w-full`}
+            variant="default"
+            className={`flex flex-col items-center justify-center gap-2 h-20 ${action.color} border-0 w-full shadow-lg transition-all duration-200 hover:scale-105`}
             onClick={() => handleQuickAction(action)}
           >
-            <action.icon className="h-6 w-6" />
-            <span className="text-sm text-center">{action.title}</span>
+            <action.icon className="h-5 w-5" />
+            <span className="text-xs text-center font-medium">{action.title}</span>
           </Button>
         ))}
       </div>

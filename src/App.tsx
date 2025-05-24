@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEnsureDatabaseSchema } from './hooks/useEnsureDatabaseSchema';
@@ -47,9 +46,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Main routes */}
         <Route path="/" element={<Index />} />
+        <Route path="/home" element={<Index />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/registrar" element={<RegisterPage />} />
+        <Route path="/cadastro-oficina" element={<WorkshopRegistrationPage />} />
+        <Route path="/workshop-registration" element={<WorkshopRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />
         
@@ -79,7 +83,6 @@ function App() {
         <Route path="/agendamento" element={<SchedulingPage />} />
         <Route path="/profile" element={<ProfileEditPage />} />
         <Route path="/company" element={<CompanyProfilePage />} />
-        <Route path="/workshop-registration" element={<WorkshopRegistrationPage />} />
         <Route path="/clientes-gestao" element={<ClientsManagementPage />} />
         
         {/* Admin Routes */}
@@ -89,6 +92,7 @@ function App() {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
         
+        {/* 404 - Keep this as the last route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
