@@ -108,7 +108,20 @@ export const useClientForm = ({
           if (error) throw error;
           
           if (data) {
-            const clientData = data as Client;
+            // Format data for the form with proper type handling
+            const clientData: Client = {
+              ...data,
+              tipo: data.tipo as 'pf' | 'pj' || 'pf',
+              endereco: data.endereco || '',
+              cidade: data.cidade || '',
+              estado: data.estado || '',
+              cep: data.cep || '',
+              documento: data.documento || '',
+              cor: data.cor || '',
+              kilometragem: data.kilometragem || '',
+              bairro: data.bairro || '',
+              numero: data.numero || ''
+            };
             
             // Format data for the form
             form.reset({

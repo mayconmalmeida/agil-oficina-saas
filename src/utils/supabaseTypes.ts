@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/integrations/supabase/types';
 
@@ -19,11 +18,12 @@ export interface Client {
   estado?: string;
   cep?: string;
   documento?: string;
-  tipo: 'pf' | 'pj';
+  tipo?: 'pf' | 'pj';
   cor?: string;
   kilometragem?: string;
   bairro?: string;
   numero?: string;
+  is_active?: boolean;
 }
 
 export interface Vehicle {

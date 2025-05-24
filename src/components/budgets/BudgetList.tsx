@@ -49,7 +49,7 @@ const BudgetList: React.FC<BudgetListProps> = ({
             cliente: item.cliente,
             veiculo: item.veiculo,
             data: item.created_at,
-            valor: parseFloat(item.valor_total),
+            valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
             status: item.status,
             itens: 0 // Default value since we don't have this info
           }));
