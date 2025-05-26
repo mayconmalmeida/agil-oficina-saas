@@ -36,46 +36,73 @@ export type Database = {
       clients: {
         Row: {
           ano: string | null
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
           cor: string | null
           created_at: string | null
+          documento: string | null
           email: string | null
+          endereco: string | null
+          estado: string | null
           id: string
           is_active: boolean | null
+          kilometragem: string | null
           marca: string | null
           modelo: string | null
           nome: string
+          numero: string | null
           placa: string | null
           telefone: string
+          tipo: string | null
           user_id: string | null
           veiculo: string
         }
         Insert: {
           ano?: string | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cor?: string | null
           created_at?: string | null
+          documento?: string | null
           email?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
           is_active?: boolean | null
+          kilometragem?: string | null
           marca?: string | null
           modelo?: string | null
           nome: string
+          numero?: string | null
           placa?: string | null
           telefone: string
+          tipo?: string | null
           user_id?: string | null
           veiculo: string
         }
         Update: {
           ano?: string | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cor?: string | null
           created_at?: string | null
+          documento?: string | null
           email?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
           is_active?: boolean | null
+          kilometragem?: string | null
           marca?: string | null
           modelo?: string | null
           nome?: string
+          numero?: string | null
           placa?: string | null
           telefone?: string
+          tipo?: string | null
           user_id?: string | null
           veiculo?: string
         }

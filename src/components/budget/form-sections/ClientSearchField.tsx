@@ -31,50 +31,74 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
 
   // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
-    selectClient(client);
-    form.setValue('cliente', client.nome);
-    
-    // Format vehicle information
-    const vehicleInfo = formatVehicleInfo(client);
-    form.setValue('veiculo', vehicleInfo);
-    
-    setClientSearchOpen(false);
+    if (!client || !client.nome) {
+      console.error('Invalid client selected:', client);
+      return;
+    }
+
+    try {
+      selectClient(client);
+      form.setValue('cliente', client.nome);
+      
+      // Format vehicle information with proper null checks
+      const vehicleInfo = formatVehicleInfo(client);
+      form.setValue('veiculo', vehicleInfo);
+      
+      setClientSearchOpen(false);
+    } catch (error) {
+      console.error('Error selecting client:', error);
+    }
   };
   
-  // Format vehicle information
+  // Format vehicle information with better error handling
   const formatVehicleInfo = (client: Client) => {
-    if (client.marca && client.modelo) {
-      let vehicleInfo = `${client.marca} ${client.modelo}`;
-      if (client.ano) vehicleInfo += ` (${client.ano})`;
-      if (client.placa) vehicleInfo += ` - Placa: ${client.placa}`;
-      return vehicleInfo;
+    if (!client) return '';
+    
+    try {
+      if (client.marca && client.modelo) {
+        let vehicleInfo = `${client.marca} ${client.modelo}`;
+        if (client.ano) vehicleInfo += ` (${client.ano})`;
+        if (client.placa) vehicleInfo += ` - Placa: ${client.placa}`;
+        return vehicleInfo;
+      }
+      return client.veiculo || '';
+    } catch (error) {
+      console.error('Error formatting vehicle info:', error);
+      return client.veiculo || '';
     }
-    return client.veiculo || '';
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    form.setValue('cliente', value);
-    setSearchTerm(value);
-    
-    if (value === '' && selectedClient) {
-      clearSelection();
-      form.setValue('veiculo', '');
-    }
-    
-    // Open popover if there's input with at least 2 characters
-    if (value.length >= 2) {
-      setClientSearchOpen(true);
-    } else {
-      setClientSearchOpen(false);
+    try {
+      const value = e.target.value || '';
+      form.setValue('cliente', value);
+      setSearchTerm(value);
+      
+      if (value === '' && selectedClient) {
+        clearSelection();
+        form.setValue('veiculo', '');
+      }
+      
+      // Open popover if there's input with at least 2 characters
+      if (value.length >= 2) {
+        setClientSearchOpen(true);
+      } else {
+        setClientSearchOpen(false);
+      }
+    } catch (error) {
+      console.error('Error handling input change:', error);
     }
   };
 
   const handleClearField = () => {
-    form.setValue('cliente', '');
-    form.setValue('veiculo', '');
-    clearSelection();
-    setClientSearchOpen(false);
+    try {
+      form.setValue('cliente', '');
+      form.setValue('veiculo', '');
+      clearSelection();
+      setClientSearchOpen(false);
+    } catch (error) {
+      console.error('Error clearing field:', error);
+    }
   };
 
   // Close popover when clicking outside or when no search term
@@ -144,22 +168,26 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                 </CommandEmpty>
                 <CommandGroup>
                   <ScrollArea className="h-48">
-                    {clients.map((client) => (
-                      <CommandItem
-                        key={client.id}
-                        value={client.nome}
-                        onSelect={() => handleSelectClient(client)}
-                        className="cursor-pointer hover:bg-gray-50"
-                      >
-                        <div className="w-full">
-                          <div className="font-medium">{client.nome}</div>
-                          <div className="text-xs text-muted-foreground flex justify-between">
-                            <span>{client.telefone}</span>
-                            <span>{formatVehicleInfo(client)}</span>
+                    {Array.isArray(clients) && clients.map((client) => {
+                      if (!client || !client.id) return null;
+                      
+                      return (
+                        <CommandItem
+                          key={client.id}
+                          value={client.nome || ''}
+                          onSelect={() => handleSelectClient(client)}
+                          className="cursor-pointer hover:bg-gray-50"
+                        >
+                          <div className="w-full">
+                            <div className="font-medium">{client.nome || 'Nome não informado'}</div>
+                            <div className="text-xs text-muted-foreground flex justify-between">
+                              <span>{client.telefone || 'Telefone não informado'}</span>
+                              <span>{formatVehicleInfo(client)}</span>
+                            </div>
                           </div>
-                        </div>
-                      </CommandItem>
-                    ))}
+                        </CommandItem>
+                      );
+                    })}
                   </ScrollArea>
                 </CommandGroup>
               </Command>

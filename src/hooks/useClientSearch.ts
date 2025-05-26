@@ -67,33 +67,38 @@ export function useClientSearch() {
 
         console.log('Search results found:', data?.length || 0, 'clients');
         
-        // Format clients data ensuring all required fields are present with proper type handling
-        const formattedClients = (data || []).map(client => {
-          // Use type assertion to safely access potentially missing properties
-          const clientData = client as any;
-          
-          return {
-            id: client.id,
-            nome: client.nome || '',
-            telefone: client.telefone || '',
-            veiculo: client.veiculo || '',
-            marca: client.marca || '',
-            modelo: client.modelo || '',
-            ano: client.ano || '',
-            placa: client.placa || '',
-            email: client.email || '',
-            tipo: (clientData.tipo || 'pf') as 'pf' | 'pj',
-            endereco: clientData.endereco || '',
-            cidade: clientData.cidade || '',
-            estado: clientData.estado || '',
-            cep: clientData.cep || '',
-            documento: clientData.documento || '',
-            cor: clientData.cor || '',
-            kilometragem: clientData.kilometragem || '',
-            bairro: clientData.bairro || '',
-            numero: clientData.numero || ''
-          } as Client;
-        });
+        // Format clients data with proper null checks and error handling
+        const formattedClients = (data || [])
+          .filter(client => client && typeof client === 'object') // Filter out any null/undefined entries
+          .map(client => {
+            try {
+              return {
+                id: client.id || '',
+                nome: client.nome || '',
+                telefone: client.telefone || '',
+                veiculo: client.veiculo || '',
+                marca: client.marca || '',
+                modelo: client.modelo || '',
+                ano: client.ano || '',
+                placa: client.placa || '',
+                email: client.email || '',
+                tipo: (client.tipo || 'pf') as 'pf' | 'pj',
+                endereco: client.endereco || '',
+                cidade: client.cidade || '',
+                estado: client.estado || '',
+                cep: client.cep || '',
+                documento: client.documento || '',
+                cor: client.cor || '',
+                kilometragem: client.kilometragem || '',
+                bairro: client.bairro || '',
+                numero: client.numero || ''
+              } as Client;
+            } catch (error) {
+              console.error('Error formatting client data:', error, client);
+              return null;
+            }
+          })
+          .filter((client): client is Client => client !== null); // Remove any failed formatting attempts
         
         setClients(formattedClients);
       } catch (error) {
@@ -116,9 +121,14 @@ export function useClientSearch() {
   }, [searchTerm, debouncedSearch]);
 
   const selectClient = useCallback((client: Client) => {
+    if (!client || !client.id) {
+      console.error('Invalid client selected:', client);
+      return;
+    }
+    
     console.log('Selected client:', client);
     setSelectedClient(client);
-    setSearchTerm(client.nome);
+    setSearchTerm(client.nome || '');
   }, []);
 
   const clearSelection = useCallback(() => {
