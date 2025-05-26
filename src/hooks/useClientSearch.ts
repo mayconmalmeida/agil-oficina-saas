@@ -43,9 +43,9 @@ export function useClientSearch() {
 
       setIsLoading(true);
       try {
-        console.log('Searching for term:', term);
+        console.log('Searching for clients with term:', term);
         
-        // Busca clientes por nome, telefone, placa ou veículo
+        // Search clients by name, phone, plate, vehicle, brand, or model
         const { data, error } = await supabase
           .from('clients')
           .select('*')
@@ -55,16 +55,17 @@ export function useClientSearch() {
           .limit(20);
 
         if (error) {
-          console.error('Erro ao buscar clientes:', error);
+          console.error('Error searching clients:', error);
           toast({
             variant: "destructive",
             title: "Erro na busca",
             description: "Não foi possível buscar os clientes.",
           });
+          setClients([]);
           return;
         }
 
-        console.log('Search results:', data);
+        console.log('Search results found:', data?.length || 0, 'clients');
         
         // Format clients data ensuring all required fields are present
         const formattedClients = (data || []).map(client => ({
@@ -77,26 +78,27 @@ export function useClientSearch() {
           ano: client.ano || '',
           placa: client.placa || '',
           email: client.email || '',
-          tipo: (client as any).tipo || 'pf',
-          endereco: (client as any).endereco || '',
-          cidade: (client as any).cidade || '',
-          estado: (client as any).estado || '',
-          cep: (client as any).cep || '',
-          documento: (client as any).documento || '',
+          tipo: client.tipo || 'pf',
+          endereco: client.endereco || '',
+          cidade: client.cidade || '',
+          estado: client.estado || '',
+          cep: client.cep || '',
+          documento: client.documento || '',
           cor: client.cor || '',
-          kilometragem: (client as any).kilometragem || '',
-          bairro: (client as any).bairro || '',
-          numero: (client as any).numero || ''
-        }));
+          kilometragem: client.kilometragem || '',
+          bairro: client.bairro || '',
+          numero: client.numero || ''
+        })) as Client[];
         
         setClients(formattedClients);
       } catch (error) {
-        console.error('Erro inesperado:', error);
+        console.error('Unexpected error during client search:', error);
         toast({
           variant: "destructive",
           title: "Erro na busca",
           description: "Ocorreu um erro inesperado ao buscar clientes.",
         });
+        setClients([]);
       } finally {
         setIsLoading(false);
       }

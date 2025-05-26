@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,7 +18,7 @@ interface ClientSearchFieldProps {
 const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
 
-  // Integração com a busca de clientes
+  // Integration with client search
   const { 
     searchTerm, 
     setSearchTerm,
@@ -29,7 +29,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     clearSelection
   } = useClientSearch();
 
-  // Quando um cliente for selecionado, atualize o formulário
+  // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
     selectClient(client);
     form.setValue('cliente', client.nome);
@@ -41,7 +41,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     setClientSearchOpen(false);
   };
   
-  // Formatar informações do veículo
+  // Format vehicle information
   const formatVehicleInfo = (client: Client) => {
     if (client.marca && client.modelo) {
       let vehicleInfo = `${client.marca} ${client.modelo}`;
@@ -116,7 +116,11 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                       <X className="h-4 w-4 text-gray-400" />
                     </Button>
                   )}
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  {isLoadingClients ? (
+                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  )}
                 </div>
               </FormControl>
             </PopoverTrigger>
@@ -129,7 +133,14 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                   className="h-9"
                 />
                 <CommandEmpty>
-                  {isLoadingClients ? 'Carregando...' : 'Nenhum cliente encontrado'}
+                  {isLoadingClients ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Carregando...
+                    </div>
+                  ) : (
+                    'Nenhum cliente encontrado'
+                  )}
                 </CommandEmpty>
                 <CommandGroup>
                   <ScrollArea className="h-48">

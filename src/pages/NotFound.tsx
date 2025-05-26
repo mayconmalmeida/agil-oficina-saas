@@ -18,7 +18,7 @@ const NotFound = () => {
     // Show a toast notification to help users
     toast({
       title: "Página não encontrada",
-      description: `A rota ${location.pathname} não existe. Verifique o endereço ou use os botões abaixo para navegar.`,
+      description: `A rota ${location.pathname} não existe. Redirecionando você para uma página válida.`,
       variant: "destructive",
     });
   }, [location.pathname, toast]);
@@ -30,7 +30,7 @@ const NotFound = () => {
         <p className="text-xl text-gray-600 mb-6">Página não encontrada</p>
         <p className="text-gray-500 mb-8">
           A página que você está procurando não existe ou foi movida.
-          Por favor, verifique o endereço ou retorne para a página inicial.
+          Use os botões abaixo para navegar para uma página válida.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button variant="default" className="flex items-center gap-2" asChild>
@@ -53,13 +53,17 @@ const NotFound = () => {
         
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-blue-800">
-            <strong>Rotas disponíveis:</strong>
+            <strong>Principais rotas disponíveis:</strong>
           </p>
           <div className="mt-2 text-xs text-blue-600 grid grid-cols-2 gap-1">
             <Link to="/" className="hover:underline">• Início</Link>
             <Link to="/login" className="hover:underline">• Login</Link>
-            <Link to="/workshop-registration" className="hover:underline">• Cadastro</Link>
+            <Link to="/registrar" className="hover:underline">• Cadastro</Link>
             <Link to="/dashboard" className="hover:underline">• Dashboard</Link>
+            <Link to="/clientes" className="hover:underline">• Clientes</Link>
+            <Link to="/orcamentos" className="hover:underline">• Orçamentos</Link>
+            <Link to="/servicos" className="hover:underline">• Serviços</Link>
+            <Link to="/agendamentos" className="hover:underline">• Agendamentos</Link>
           </div>
         </div>
       </div>
