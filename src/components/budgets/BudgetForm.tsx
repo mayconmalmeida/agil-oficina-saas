@@ -103,7 +103,7 @@ const BudgetForm: React.FC = () => {
       valor_total: product.valor,
     };
     
-    const updatedItems = [...selectedItems, newItem];
+    const updatedItems = [...(selectedItems || []), newItem];
     setSelectedItems(updatedItems);
     setProductSearchOpen(false);
     
@@ -112,7 +112,7 @@ const BudgetForm: React.FC = () => {
   };
   
   const handleRemoveItem = (itemId: string) => {
-    const updatedItems = selectedItems.filter(item => item.id !== itemId);
+    const updatedItems = (selectedItems || []).filter(item => item.id !== itemId);
     setSelectedItems(updatedItems);
     
     // Update total value
@@ -120,19 +120,27 @@ const BudgetForm: React.FC = () => {
   };
   
   const updateTotalValue = (items: any[]) => {
-    if (!items || items.length === 0) {
+    // Ensure items is always an array
+    const safeItems = Array.isArray(items) ? items : [];
+    
+    if (safeItems.length === 0) {
       form.setValue('valor_total', '0');
       return;
     }
     
-    const total = items.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const total = safeItems.reduce((sum, item) => {
+      const itemTotal = item?.valor_total || 0;
+      return sum + itemTotal;
+    }, 0);
+    
     form.setValue('valor_total', total.toFixed(2));
   };
   
   const handleQuantityChange = (itemId: string, newValue: number) => {
     if (newValue < 1) return;
     
-    const updatedItems = selectedItems.map(item => {
+    const safeItems = Array.isArray(selectedItems) ? selectedItems : [];
+    const updatedItems = safeItems.map(item => {
       if (item.id === itemId) {
         const valor_total = item.valor_unitario * newValue;
         return { ...item, quantidade: newValue, valor_total };
@@ -269,7 +277,7 @@ const BudgetForm: React.FC = () => {
             </Popover>
           </div>
           
-          {selectedItems && selectedItems.length > 0 ? (
+          {Array.isArray(selectedItems) && selectedItems.length > 0 ? (
             <div className="border rounded-md overflow-hidden">
               <Table>
                 <TableHeader>
