@@ -1,81 +1,152 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, User, Car, Wrench } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import SchedulingForm from '@/components/scheduling/SchedulingForm';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { safeRpc } from '@/utils/supabaseTypes';
+import Loading from '@/components/ui/loading';
 
 const NewAppointmentPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      setLoadingData(true);
+      
+      // Fetch clients
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('is_active', true)
+        .order('nome');
+
+      if (clientsError) {
+        console.error('Error fetching clients:', clientsError);
+      } else {
+        setClients(clientsData || []);
+      }
+
+      // Fetch services
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .order('nome');
+
+      if (servicesError) {
+        console.error('Error fetching services:', servicesError);
+      } else {
+        setServices(servicesData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar clientes e serviços.",
+      });
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleSubmit = async (data: any) => {
+    setIsLoading(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Você precisa estar logado para criar agendamentos.",
+        });
+        navigate('/login');
+        return;
+      }
+
+      const { error } = await safeRpc('create_agendamento', {
+        p_user_id: session.user.id,
+        p_data: data.data.toISOString().split('T')[0],
+        p_horario: data.horario,
+        p_cliente_id: data.cliente_id,
+        p_veiculo_id: data.veiculo_id,
+        p_servico_id: data.servico_id,
+        p_observacoes: data.observacoes || '',
+        p_status: 'agendado'
+      });
+
+      if (error) {
+        console.error('Error creating appointment:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar agendamento",
+          description: "Não foi possível criar o agendamento.",
+        });
+        return;
+      }
+
+      toast({
+        title: "Agendamento criado!",
+        description: "O agendamento foi criado com sucesso.",
+      });
+
+      navigate('/agendamentos');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro inesperado.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loadingData) {
+    return <Loading text="Carregando dados..." fullscreen />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Novo Agendamento</h1>
-          <p className="text-gray-600 mt-2">Agende um novo serviço para seu cliente</p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <User className="h-4 w-4 text-blue-600" />
-              <CardTitle className="text-sm font-medium ml-2">1. Cliente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Selecione ou cadastre um cliente
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <Car className="h-4 w-4 text-green-600" />
-              <CardTitle className="text-sm font-medium ml-2">2. Veículo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Escolha o veículo do cliente
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-              <Wrench className="h-4 w-4 text-orange-600" />
-              <CardTitle className="text-sm font-medium ml-2">3. Serviço</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Defina os serviços a serem realizados
-              </p>
-            </CardContent>
-          </Card>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Novo Agendamento</h1>
+            <p className="text-gray-600 mt-2">Agende um novo serviço para seu cliente</p>
+          </div>
+          <Button variant="outline" onClick={() => navigate('/agendamentos')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar
+          </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="mr-2 h-5 w-5" />
-              Formulário de Agendamento
-            </CardTitle>
-            <CardDescription>
-              Esta funcionalidade está em desenvolvimento
-            </CardDescription>
+            <CardTitle>Dados do Agendamento</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed">
-              <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Funcionalidade em Desenvolvimento
-              </h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                O sistema de agendamentos está sendo desenvolvido. Em breve você poderá:
-              </p>
-              <ul className="mt-4 text-sm text-gray-600 space-y-1">
-                <li>• Agendar serviços para clientes</li>
-                <li>• Definir horários disponíveis</li>
-                <li>• Gerenciar agenda da oficina</li>
-                <li>• Enviar notificações automáticas</li>
-              </ul>
-            </div>
+          <CardContent>
+            <SchedulingForm
+              onSubmit={handleSubmit}
+              isLoading={isLoading}
+              clients={clients}
+              services={services}
+            />
           </CardContent>
         </Card>
       </div>

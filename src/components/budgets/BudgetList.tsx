@@ -4,10 +4,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Eye, FileText, Printer, Mail, ArrowRight, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/formatUtils';
+import { generateBudgetPDF } from '@/utils/pdfUtils';
+import { sendBudgetByEmail, validateEmail } from '@/utils/emailUtils';
+import ConvertToServiceOrderDialog from './ConvertToServiceOrderDialog';
+import Loading from '@/components/ui/loading';
 
 interface BudgetListProps {
   searchQuery?: string;
@@ -23,6 +30,9 @@ interface Budget {
   valor: number;
   status: string;
   itens?: number;
+  created_at: string;
+  valor_total: number;
+  descricao: string;
 }
 
 const BudgetList: React.FC<BudgetListProps> = ({ 
@@ -31,6 +41,11 @@ const BudgetList: React.FC<BudgetListProps> = ({
 }) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [emailDialog, setEmailDialog] = useState({ open: false, budget: null as Budget | null });
+  const [convertDialog, setConvertDialog] = useState({ open: false, budget: null as Budget | null });
+  const [emailAddress, setEmailAddress] = useState('');
+  const [isEmailSending, setIsEmailSending] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -48,14 +63,17 @@ const BudgetList: React.FC<BudgetListProps> = ({
       
       if (error) {
         console.error('Error fetching budgets:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar orçamentos",
+          description: "Não foi possível carregar os orçamentos.",
+        });
         return;
       }
       
       console.log('Orçamentos encontrados:', data?.length || 0);
-      console.log('Dados dos orçamentos:', data);
       
       if (data && data.length > 0) {
-        // Transform the data to match the Budget interface
         const formattedBudgets: Budget[] = data.map(item => ({
           id: item.id,
           numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3).toUpperCase()}`,
@@ -64,48 +82,27 @@ const BudgetList: React.FC<BudgetListProps> = ({
           data: item.created_at,
           valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
           status: item.status || 'pendente',
-          itens: 0 // Default value since we don't have this info
+          itens: 0,
+          created_at: item.created_at,
+          valor_total: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
+          descricao: item.descricao
         }));
         
         setBudgets(formattedBudgets);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro inesperado ao carregar os orçamentos.",
+      });
     } finally {
       setLoading(false);
     }
   };
   
-  // If no real data yet, use mock data for demonstration
-  const mockBudgets: Budget[] = [
-    {
-      id: "mock-1",
-      numero: "ORC-2024-001",
-      cliente: "João Silva",
-      veiculo: "Toyota Corolla 2020",
-      data: "2024-01-15",
-      valor: 850.0,
-      status: "pendente",
-      itens: 3
-    },
-    {
-      id: "mock-2",
-      numero: "ORC-2024-002",
-      cliente: "Maria Oliveira", 
-      veiculo: "Honda Civic 2019",
-      data: "2024-01-20",
-      valor: 1250.0,
-      status: "aprovado",
-      itens: 5
-    }
-  ];
-  
-  // Use real data if available, otherwise show mock data
-  const displayBudgets = budgets.length > 0 ? budgets : mockBudgets;
-  
-  // Filter budgets based on search query and filter
-  const filteredBudgets = displayBudgets.filter(budget => {
-    // First apply search query filter
+  const filteredBudgets = budgets.filter(budget => {
     const matchesSearch = !searchQuery || 
       budget.cliente.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (budget.numero?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
@@ -113,9 +110,8 @@ const BudgetList: React.FC<BudgetListProps> = ({
     
     if (!matchesSearch) return false;
     
-    // Then apply status filter
     if (filter === 'todos') return true;
-    return budget.status === filter.slice(0, -1); // Remove 's' from plural filter name
+    return budget.status === filter.slice(0, -1);
   });
   
   const formatDate = (dateString: string) => {
@@ -139,132 +135,243 @@ const BudgetList: React.FC<BudgetListProps> = ({
   };
 
   const handleViewBudget = (budgetId: string) => {
-    console.log('Visualizando orçamento:', budgetId);
     navigate(`/orcamentos/${budgetId}`);
   };
 
   const handleEditBudget = (budgetId: string) => {
-    console.log('Editando orçamento:', budgetId);
     navigate(`/orcamentos/editar/${budgetId}`);
   };
 
-  const handlePrintBudget = (budgetId: string) => {
-    console.log('Imprimindo orçamento:', budgetId);
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A impressão de orçamentos estará disponível em breve.",
-    });
+  const handlePrintBudget = (budget: Budget) => {
+    try {
+      generateBudgetPDF(budget);
+      toast({
+        title: "PDF gerado com sucesso",
+        description: "O orçamento foi enviado para impressão.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o PDF do orçamento.",
+      });
+    }
   };
 
-  const handleEmailBudget = (budgetId: string) => {
-    console.log('Enviando orçamento por email:', budgetId);
-    toast({
-      title: "Funcionalidade em desenvolvimento", 
-      description: "O envio por email estará disponível em breve.",
-    });
+  const handleEmailBudget = (budget: Budget) => {
+    setEmailDialog({ open: true, budget });
+    setEmailAddress('');
   };
 
-  const handleConvertToServiceOrder = (budgetId: string) => {
-    console.log('Convertendo orçamento para OS:', budgetId);
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A conversão para ordem de serviço estará disponível em breve.",
-    });
+  const handleSendEmail = async () => {
+    if (!emailDialog.budget || !emailAddress) return;
+    
+    if (!validateEmail(emailAddress)) {
+      toast({
+        variant: "destructive",
+        title: "Email inválido",
+        description: "Por favor, digite um endereço de email válido.",
+      });
+      return;
+    }
+
+    setIsEmailSending(true);
+    
+    try {
+      await sendBudgetByEmail({
+        budgetId: emailDialog.budget.id,
+        clientEmail: emailAddress,
+        budgetData: emailDialog.budget
+      });
+
+      toast({
+        title: "Email enviado com sucesso",
+        description: `O orçamento foi enviado para ${emailAddress}`,
+      });
+      
+      setEmailDialog({ open: false, budget: null });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar email",
+        description: "Não foi possível enviar o orçamento por email.",
+      });
+    } finally {
+      setIsEmailSending(false);
+    }
+  };
+
+  const handleConvertToServiceOrder = (budget: Budget) => {
+    setConvertDialog({ open: true, budget });
+  };
+
+  const handleConfirmConversion = async (data: { startDate: Date; notes: string }) => {
+    if (!convertDialog.budget) return;
+
+    setIsConverting(true);
+    
+    try {
+      // Update budget status to 'convertido'
+      const { error } = await supabase
+        .from('orcamentos')
+        .update({ status: 'convertido' })
+        .eq('id', convertDialog.budget.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Orçamento convertido",
+        description: "O orçamento foi convertido para ordem de serviço com sucesso.",
+      });
+      
+      setConvertDialog({ open: false, budget: null });
+      fetchBudgets(); // Refresh the list
+    } catch (error) {
+      console.error('Error converting budget:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na conversão",
+        description: "Não foi possível converter o orçamento para ordem de serviço.",
+      });
+    } finally {
+      setIsConverting(false);
+    }
   };
   
   if (loading) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Carregando orçamentos...</p>
-      </div>
-    );
+    return <Loading text="Carregando orçamentos..." />;
   }
   
   return (
-    <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Número</TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead className="hidden md:table-cell">Veículo</TableHead>
-            <TableHead className="hidden md:table-cell">Data</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredBudgets.map((budget) => (
-            <TableRow key={budget.id}>
-              <TableCell className="font-medium">{budget.numero || `-`}</TableCell>
-              <TableCell>{budget.cliente}</TableCell>
-              <TableCell className="hidden md:table-cell">{budget.veiculo}</TableCell>
-              <TableCell className="hidden md:table-cell">{formatDate(budget.data)}</TableCell>
-              <TableCell className="text-right">{formatCurrency(budget.valor)}</TableCell>
-              <TableCell>{getStatusBadge(budget.status)}</TableCell>
-              <TableCell>
-                <div className="flex justify-end gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    title="Ver detalhes"
-                    onClick={() => handleViewBudget(budget.id)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    title="Editar"
-                    onClick={() => handleEditBudget(budget.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    title="Imprimir"
-                    onClick={() => handlePrintBudget(budget.id)}
-                  >
-                    <Printer className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    title="Enviar por email"
-                    onClick={() => handleEmailBudget(budget.id)}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                  {budget.status === 'aprovado' && (
+    <>
+      <div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Número</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead className="hidden md:table-cell">Veículo</TableHead>
+              <TableHead className="hidden md:table-cell">Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredBudgets.map((budget) => (
+              <TableRow key={budget.id}>
+                <TableCell className="font-medium">{budget.numero || `-`}</TableCell>
+                <TableCell>{budget.cliente}</TableCell>
+                <TableCell className="hidden md:table-cell">{budget.veiculo}</TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(budget.data)}</TableCell>
+                <TableCell className="text-right">{formatCurrency(budget.valor)}</TableCell>
+                <TableCell>{getStatusBadge(budget.status)}</TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      title="Converter para ordem de serviço"
-                      onClick={() => handleConvertToServiceOrder(budget.id)}
+                      title="Ver detalhes"
+                      onClick={() => handleViewBudget(budget.id)}
                     >
-                      <ArrowRight className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-          
-          {filteredBudgets.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                {searchQuery || filter !== 'todos' 
-                  ? 'Nenhum orçamento encontrado com os filtros aplicados.' 
-                  : 'Nenhum orçamento cadastrado ainda. Clique em "Novo Orçamento" para começar.'
-                }
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Editar"
+                      onClick={() => handleEditBudget(budget.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Imprimir"
+                      onClick={() => handlePrintBudget(budget)}
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Enviar por email"
+                      onClick={() => handleEmailBudget(budget)}
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                    {budget.status === 'aprovado' && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Converter para ordem de serviço"
+                        onClick={() => handleConvertToServiceOrder(budget)}
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            
+            {filteredBudgets.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  {searchQuery || filter !== 'todos' 
+                    ? 'Nenhum orçamento encontrado com os filtros aplicados.' 
+                    : 'Nenhum orçamento cadastrado ainda. Clique em "Novo Orçamento" para começar.'
+                  }
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialog.open} onOpenChange={(open) => !open && setEmailDialog({ open: false, budget: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar Orçamento por Email</DialogTitle>
+            <DialogDescription>
+              Digite o endereço de email para enviar o orçamento
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Endereço de Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="cliente@email.com"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialog({ open: false, budget: null })}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSendEmail} disabled={isEmailSending || !emailAddress}>
+              {isEmailSending ? 'Enviando...' : 'Enviar Email'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert to Service Order Dialog */}
+      <ConvertToServiceOrderDialog
+        isOpen={convertDialog.open}
+        onClose={() => setConvertDialog({ open: false, budget: null })}
+        onConfirm={handleConfirmConversion}
+        budgetData={convertDialog.budget}
+        isLoading={isConverting}
+      />
+    </>
   );
 };
 

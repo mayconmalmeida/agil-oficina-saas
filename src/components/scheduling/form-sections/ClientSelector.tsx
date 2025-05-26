@@ -1,198 +1,105 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SchedulingFormValues } from '../SchedulingForm';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { X, Search } from 'lucide-react';
-import { useClientSearch, Client } from '@/hooks/useClientSearch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { User } from 'lucide-react';
 
 interface ClientSelectorProps {
-  clients: {
-    id: string;
-    nome: string;
-    veiculo: string;
-    telefone: string; // Add telefone property to match Client interface
-    placa?: string;
-    marca?: string;
-    modelo?: string;
-    ano?: string;
-  }[];
+  clients: any[];
 }
 
 const ClientSelector: React.FC<ClientSelectorProps> = ({ clients }) => {
-  const { control, setValue, watch, resetField } = useFormContext<SchedulingFormValues>();
-  const [showSearch, setShowSearch] = useState(false);
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    clients: searchResults, 
-    isLoading, 
-    selectedClient, 
-    selectClient, 
-    clearSelection 
-  } = useClientSearch();
+  const { control, watch, setValue } = useFormContext();
+  const [selectedClientVehicles, setSelectedClientVehicles] = useState<any[]>([]);
   
   const selectedClientId = watch('cliente_id');
-  const selectedVehicleId = watch('veiculo_id');
-  
-  // Reset vehicle when client changes
-  useEffect(() => {
-    if (selectedClientId && selectedClientId !== selectedClient?.id) {
-      resetField('veiculo_id');
-    }
-  }, [selectedClientId, selectedClient, resetField]);
 
-  // Formatar o texto do veículo para exibição
-  const formatVehicleText = (client: any) => {
-    if (client.marca && client.modelo) {
-      let text = `${client.marca} ${client.modelo}`;
-      if (client.ano) text += ` (${client.ano})`;
-      if (client.placa) text += ` - Placa: ${client.placa}`;
-      return text;
+  const handleClientChange = (clientId: string) => {
+    setValue('cliente_id', clientId);
+    setValue('veiculo_id', ''); // Reset vehicle selection
+    
+    // Find client vehicles (assuming vehicle data is in the client object)
+    const selectedClient = clients.find(client => client.id === clientId);
+    if (selectedClient) {
+      // For now, create a mock vehicle entry based on client data
+      const vehicles = [{
+        id: `${clientId}-vehicle`,
+        nome: `${selectedClient.marca || ''} ${selectedClient.modelo || ''} ${selectedClient.ano || ''}`.trim() || selectedClient.veiculo,
+        placa: selectedClient.placa || ''
+      }];
+      setSelectedClientVehicles(vehicles);
+    } else {
+      setSelectedClientVehicles([]);
     }
-    return client.veiculo || 'Veículo não especificado';
   };
-  
-  // Handle client selection from search results
-  const handleClientSelect = (client: Client) => {
-    selectClient(client);
-    setValue('cliente_id', client.id);
-    setShowSearch(false);
-  };
-  
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {showSearch ? (
-        <div className="md:col-span-2">
-          <FormLabel>Buscar Cliente</FormLabel>
-          <div className="relative">
-            <div className="flex space-x-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Buscar por nome, telefone ou placa..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button variant="outline" onClick={() => {
-                clearSelection();
-                setShowSearch(false);
-              }}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {searchTerm.length >= 2 && (
-              <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg overflow-hidden max-h-60 overflow-y-auto">
-                {isLoading ? (
-                  <div className="p-4 text-center text-sm text-gray-500">Carregando...</div>
-                ) : searchResults.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-gray-500">Nenhum cliente encontrado</div>
-                ) : (
-                  <ul className="divide-y divide-gray-200">
-                    {searchResults.map((client) => (
-                      <li 
-                        key={client.id}
-                        className="p-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleClientSelect(client)}
-                      >
-                        <div className="font-medium">{client.nome}</div>
-                        <div className="text-sm text-gray-600">{formatVehicleText(client)}</div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <>
-          <FormField
-            control={control}
-            name="cliente_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cliente</FormLabel>
-                <div className="flex space-x-2">
-                  <div className="flex-1">
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const client = clients.find(c => c.id === value);
-                        if (client) {
-                          selectClient(client);
-                        }
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um cliente" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowSearch(true)}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <User className="mr-2 h-5 w-5" />
+          1. Selecionar Cliente e Veículo
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <FormField
+          control={control}
+          name="cliente_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cliente</FormLabel>
+              <Select 
+                onValueChange={handleClientChange} 
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.nome} - {client.telefone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
+        {selectedClientId && (
           <FormField
             control={control}
             name="veiculo_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Veículo</FormLabel>
-                <Select
-                  disabled={!selectedClientId}
-                  onValueChange={field.onChange}
-                  value={field.value || ''}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um veículo" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {selectedClientId && 
-                      clients
-                        .filter(c => c.id === selectedClientId)
-                        .map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {formatVehicleText(client)}
-                          </SelectItem>
-                        ))}
+                    {selectedClientVehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.nome} {vehicle.placa && `- ${vehicle.placa}`}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
