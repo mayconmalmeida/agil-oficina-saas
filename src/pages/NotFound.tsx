@@ -15,7 +15,6 @@ const NotFound = () => {
       location.pathname
     );
     
-    // Show a toast notification to help users
     toast({
       title: "Página não encontrada",
       description: `A rota ${location.pathname} não existe. Redirecionando você para uma página válida.`,
@@ -60,10 +59,6 @@ const NotFound = () => {
             <Link to="/login" className="hover:underline">• Login</Link>
             <Link to="/registrar" className="hover:underline">• Cadastro</Link>
             <Link to="/dashboard" className="hover:underline">• Dashboard</Link>
-            <Link to="/clientes" className="hover:underline">• Clientes</Link>
-            <Link to="/orcamentos" className="hover:underline">• Orçamentos</Link>
-            <Link to="/servicos" className="hover:underline">• Serviços</Link>
-            <Link to="/agendamentos" className="hover:underline">• Agendamentos</Link>
           </div>
         </div>
       </div>

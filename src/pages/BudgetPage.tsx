@@ -6,17 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Search, Plus, FileText, Printer, Mail } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import BudgetList from '@/components/budgets/BudgetList';
-import BudgetForm from '@/components/budgets/BudgetForm';
+import BudgetForm from '@/components/budget/BudgetForm';
 import { Input } from '@/components/ui/input';
+import { useBudgetForm } from '@/hooks/useBudgetForm';
 
 const BudgetPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('todos');
+  const { isLoading, handleSubmit, skipStep } = useBudgetForm();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality
     console.log("Searching for:", searchQuery);
   };
   
@@ -85,7 +86,11 @@ const BudgetPage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="novo" className="mt-0">
-                <BudgetForm />
+                <BudgetForm 
+                  onSubmit={handleSubmit}
+                  onSkip={skipStep}
+                  isLoading={isLoading}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>
