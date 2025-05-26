@@ -33,6 +33,8 @@ export function useClientSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  console.log('useClientSearch - searchTerm:', searchTerm, 'clients count:', clients.length);
+
   // Debounce search function
   const debouncedSearch = useCallback(
     debounce(async (term: string) => {
@@ -42,9 +44,9 @@ export function useClientSearch() {
       }
 
       setIsLoading(true);
+      console.log('Iniciando busca por clientes com termo:', term);
+      
       try {
-        console.log('Searching for clients with term:', term);
-        
         // Search clients by name, phone, plate, vehicle, brand, or model
         const { data, error } = await supabase
           .from('clients')
@@ -65,11 +67,12 @@ export function useClientSearch() {
           return;
         }
 
-        console.log('Search results found:', data?.length || 0, 'clients');
+        console.log('Resultados da busca encontrados:', data?.length || 0, 'clientes');
+        console.log('Dados dos clientes:', data);
         
-        // Format clients data with proper null checks and error handling
+        // Format clients data with proper null checks
         const formattedClients = (data || [])
-          .filter(client => client && typeof client === 'object') // Filter out any null/undefined entries
+          .filter(client => client && typeof client === 'object')
           .map(client => {
             try {
               return {
@@ -98,8 +101,9 @@ export function useClientSearch() {
               return null;
             }
           })
-          .filter((client): client is Client => client !== null); // Remove any failed formatting attempts
+          .filter((client): client is Client => client !== null);
         
+        console.log('Clientes formatados:', formattedClients);
         setClients(formattedClients);
       } catch (error) {
         console.error('Unexpected error during client search:', error);
@@ -117,6 +121,7 @@ export function useClientSearch() {
   );
 
   useEffect(() => {
+    console.log('useEffect triggered with searchTerm:', searchTerm);
     debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
 
@@ -126,12 +131,13 @@ export function useClientSearch() {
       return;
     }
     
-    console.log('Selected client:', client);
+    console.log('Cliente selecionado:', client);
     setSelectedClient(client);
     setSearchTerm(client.nome || '');
   }, []);
 
   const clearSelection = useCallback(() => {
+    console.log('Limpando seleção de cliente');
     setSelectedClient(null);
     setSearchTerm('');
     setClients([]);

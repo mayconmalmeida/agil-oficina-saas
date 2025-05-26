@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEnsureDatabaseSchema } from './hooks/useEnsureDatabaseSchema';
@@ -13,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import ClientsPage from './pages/ClientsPage';
 import ServicesPage from './pages/ServicesPage';
+import ServicesListPage from './pages/ServicesListPage';
 import BudgetPage from './pages/BudgetPage';
 import NewBudgetPage from './pages/NewBudgetPage';
 import BudgetEditPage from './pages/BudgetEditPage';
@@ -29,6 +31,7 @@ import NotFound from './pages/NotFound';
 import WorkshopRegistrationPage from './pages/WorkshopRegistrationPage';
 import SchedulingPage from './pages/SchedulingPage';
 import SchedulesPage from './pages/SchedulesPage';
+import NewAppointmentPage from './pages/NewAppointmentPage';
 import ProductsPage from './pages/ProductsPage';
 import ClientsManagementPage from './pages/ClientsManagementPage';
 import ClientManagementPage from './pages/ClientManagementPage';
@@ -68,7 +71,9 @@ function App() {
           <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
           <Route path="/produtos" element={<ProductsPage />} />
           <Route path="/servicos" element={<ServicesPage />} />
+          <Route path="/servicos/lista" element={<ServicesListPage />} />
           <Route path="/agendamentos" element={<SchedulesPage />} />
+          <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
           <Route path="/orcamentos" element={<BudgetPage />} />
           <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
           <Route path="/orcamentos/editar/:id" element={<BudgetEditPage />} />

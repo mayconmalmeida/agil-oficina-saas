@@ -2,9 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye, FileText, Printer, Mail, ArrowRight } from 'lucide-react';
+import { Eye, FileText, Printer, Mail, ArrowRight, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/formatUtils';
 
 interface BudgetListProps {
   searchQuery?: string;
@@ -28,99 +31,76 @@ const BudgetList: React.FC<BudgetListProps> = ({
 }) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
-    const fetchBudgets = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orcamentos')
-          .select('*');
-        
-        if (error) {
-          console.error('Error fetching budgets:', error);
-          return;
-        }
-        
-        if (data) {
-          // Transform the data to match the Budget interface
-          const formattedBudgets: Budget[] = data.map(item => ({
-            id: item.id,
-            numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3)}`,
-            cliente: item.cliente,
-            veiculo: item.veiculo,
-            data: item.created_at,
-            valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
-            status: item.status,
-            itens: 0 // Default value since we don't have this info
-          }));
-          
-          setBudgets(formattedBudgets);
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchBudgets();
   }, []);
   
-  // If no real data yet, use mock data
+  const fetchBudgets = async () => {
+    try {
+      console.log('Buscando orçamentos...');
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching budgets:', error);
+        return;
+      }
+      
+      console.log('Orçamentos encontrados:', data?.length || 0);
+      console.log('Dados dos orçamentos:', data);
+      
+      if (data && data.length > 0) {
+        // Transform the data to match the Budget interface
+        const formattedBudgets: Budget[] = data.map(item => ({
+          id: item.id,
+          numero: `ORC-${new Date(item.created_at).getFullYear()}-${item.id.substring(0, 3).toUpperCase()}`,
+          cliente: item.cliente,
+          veiculo: item.veiculo,
+          data: item.created_at,
+          valor: typeof item.valor_total === 'string' ? parseFloat(item.valor_total) : item.valor_total,
+          status: item.status || 'pendente',
+          itens: 0 // Default value since we don't have this info
+        }));
+        
+        setBudgets(formattedBudgets);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // If no real data yet, use mock data for demonstration
   const mockBudgets: Budget[] = [
     {
-      id: "1",
-      numero: "ORC-2023-001",
+      id: "mock-1",
+      numero: "ORC-2024-001",
       cliente: "João Silva",
       veiculo: "Toyota Corolla 2020",
-      data: "2023-05-12",
+      data: "2024-01-15",
       valor: 850.0,
       status: "pendente",
       itens: 3
     },
     {
-      id: "2",
-      numero: "ORC-2023-002",
-      cliente: "Maria Oliveira",
+      id: "mock-2",
+      numero: "ORC-2024-002",
+      cliente: "Maria Oliveira", 
       veiculo: "Honda Civic 2019",
-      data: "2023-05-15",
+      data: "2024-01-20",
       valor: 1250.0,
       status: "aprovado",
       itens: 5
-    },
-    {
-      id: "3",
-      numero: "ORC-2023-003",
-      cliente: "Carlos Pereira",
-      veiculo: "Volkswagen Golf 2021",
-      data: "2023-05-20",
-      valor: 540.0,
-      status: "rejeitado",
-      itens: 2
-    },
-    {
-      id: "4",
-      numero: "ORC-2023-004",
-      cliente: "Ana Santos",
-      veiculo: "Fiat Uno 2018",
-      data: "2023-05-22",
-      valor: 380.0,
-      status: "pendente",
-      itens: 2
-    },
-    {
-      id: "5",
-      numero: "ORC-2023-005",
-      cliente: "Paulo Souza",
-      veiculo: "Chevrolet Onix 2022",
-      data: "2023-05-25",
-      valor: 1450.0,
-      status: "convertido",
-      itens: 7
-    },
+    }
   ];
   
-  // If we have real data use it, otherwise use mock data
+  // Use real data if available, otherwise show mock data
   const displayBudgets = budgets.length > 0 ? budgets : mockBudgets;
   
   // Filter budgets based on search query and filter
@@ -137,10 +117,6 @@ const BudgetList: React.FC<BudgetListProps> = ({
     if (filter === 'todos') return true;
     return budget.status === filter.slice(0, -1); // Remove 's' from plural filter name
   });
-  
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -161,6 +137,48 @@ const BudgetList: React.FC<BudgetListProps> = ({
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const handleViewBudget = (budgetId: string) => {
+    console.log('Visualizando orçamento:', budgetId);
+    navigate(`/orcamentos/${budgetId}`);
+  };
+
+  const handleEditBudget = (budgetId: string) => {
+    console.log('Editando orçamento:', budgetId);
+    navigate(`/orcamentos/editar/${budgetId}`);
+  };
+
+  const handlePrintBudget = (budgetId: string) => {
+    console.log('Imprimindo orçamento:', budgetId);
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A impressão de orçamentos estará disponível em breve.",
+    });
+  };
+
+  const handleEmailBudget = (budgetId: string) => {
+    console.log('Enviando orçamento por email:', budgetId);
+    toast({
+      title: "Funcionalidade em desenvolvimento", 
+      description: "O envio por email estará disponível em breve.",
+    });
+  };
+
+  const handleConvertToServiceOrder = (budgetId: string) => {
+    console.log('Convertendo orçamento para OS:', budgetId);
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A conversão para ordem de serviço estará disponível em breve.",
+    });
+  };
+  
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Carregando orçamentos...</p>
+      </div>
+    );
+  }
   
   return (
     <div>
@@ -187,17 +205,45 @@ const BudgetList: React.FC<BudgetListProps> = ({
               <TableCell>{getStatusBadge(budget.status)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" title="Ver detalhes">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    title="Ver detalhes"
+                    onClick={() => handleViewBudget(budget.id)}
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Imprimir">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    title="Editar"
+                    onClick={() => handleEditBudget(budget.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    title="Imprimir"
+                    onClick={() => handlePrintBudget(budget.id)}
+                  >
                     <Printer className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" title="Enviar por email">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    title="Enviar por email"
+                    onClick={() => handleEmailBudget(budget.id)}
+                  >
                     <Mail className="h-4 w-4" />
                   </Button>
                   {budget.status === 'aprovado' && (
-                    <Button variant="ghost" size="icon" title="Converter para ordem de serviço">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Converter para ordem de serviço"
+                      onClick={() => handleConvertToServiceOrder(budget.id)}
+                    >
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   )}
@@ -209,7 +255,10 @@ const BudgetList: React.FC<BudgetListProps> = ({
           {filteredBudgets.length === 0 && (
             <TableRow>
               <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                Nenhum orçamento encontrado.
+                {searchQuery || filter !== 'todos' 
+                  ? 'Nenhum orçamento encontrado com os filtros aplicados.' 
+                  : 'Nenhum orçamento cadastrado ainda. Clique em "Novo Orçamento" para começar.'
+                }
               </TableCell>
             </TableRow>
           )}
