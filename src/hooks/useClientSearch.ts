@@ -67,28 +67,33 @@ export function useClientSearch() {
 
         console.log('Search results found:', data?.length || 0, 'clients');
         
-        // Format clients data ensuring all required fields are present
-        const formattedClients = (data || []).map(client => ({
-          id: client.id,
-          nome: client.nome || '',
-          telefone: client.telefone || '',
-          veiculo: client.veiculo || '',
-          marca: client.marca || '',
-          modelo: client.modelo || '',
-          ano: client.ano || '',
-          placa: client.placa || '',
-          email: client.email || '',
-          tipo: client.tipo || 'pf',
-          endereco: client.endereco || '',
-          cidade: client.cidade || '',
-          estado: client.estado || '',
-          cep: client.cep || '',
-          documento: client.documento || '',
-          cor: client.cor || '',
-          kilometragem: client.kilometragem || '',
-          bairro: client.bairro || '',
-          numero: client.numero || ''
-        })) as Client[];
+        // Format clients data ensuring all required fields are present with proper type handling
+        const formattedClients = (data || []).map(client => {
+          // Use type assertion to safely access potentially missing properties
+          const clientData = client as any;
+          
+          return {
+            id: client.id,
+            nome: client.nome || '',
+            telefone: client.telefone || '',
+            veiculo: client.veiculo || '',
+            marca: client.marca || '',
+            modelo: client.modelo || '',
+            ano: client.ano || '',
+            placa: client.placa || '',
+            email: client.email || '',
+            tipo: (clientData.tipo || 'pf') as 'pf' | 'pj',
+            endereco: clientData.endereco || '',
+            cidade: clientData.cidade || '',
+            estado: clientData.estado || '',
+            cep: clientData.cep || '',
+            documento: clientData.documento || '',
+            cor: clientData.cor || '',
+            kilometragem: clientData.kilometragem || '',
+            bairro: clientData.bairro || '',
+            numero: clientData.numero || ''
+          } as Client;
+        });
         
         setClients(formattedClients);
       } catch (error) {
