@@ -15,6 +15,21 @@ export interface UserSubscription {
   updated_at: string;
 }
 
+// Type definitions for RPC responses
+interface GetUserSubscriptionResponse {
+  success: boolean;
+  error?: string;
+  has_subscription: boolean;
+  subscription?: UserSubscription;
+}
+
+interface StartFreeTrialResponse {
+  success: boolean;
+  error?: string;
+  plan_type?: string;
+  trial_ends_at?: string;
+}
+
 export interface SubscriptionStatus {
   hasSubscription: boolean;
   subscription: UserSubscription | null;
@@ -171,11 +186,14 @@ export const useSubscription = () => {
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao buscar assinatura');
+      // Type assertion for the RPC response
+      const response = data as GetUserSubscriptionResponse;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao buscar assinatura');
       }
 
-      if (!data.has_subscription) {
+      if (!response.has_subscription) {
         setSubscriptionStatus({
           hasSubscription: false,
           subscription: null,
@@ -190,7 +208,7 @@ export const useSubscription = () => {
         return;
       }
 
-      const subscription = data.subscription as UserSubscription;
+      const subscription = response.subscription as UserSubscription;
       const now = new Date();
       const daysRemaining = calculateDaysRemaining(subscription);
       
@@ -242,8 +260,11 @@ export const useSubscription = () => {
         throw error;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao iniciar teste gratuito');
+      // Type assertion for the RPC response
+      const response = data as StartFreeTrialResponse;
+
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao iniciar teste gratuito');
       }
 
       toast({
