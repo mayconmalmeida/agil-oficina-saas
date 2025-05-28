@@ -1,9 +1,11 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from '@/hooks/useSubscription';
-import { AlertTriangle, Crown, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { AlertTriangle, Crown, CheckCircle, LogOut } from 'lucide-react';
 import Loading from '@/components/ui/loading';
 
 interface SubscriptionGuardProps {
@@ -18,6 +20,13 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   fallback 
 }) => {
   const { subscriptionStatus, loading } = useSubscription();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   if (loading) {
     return <Loading fullscreen text="Verificando assinatura..." />;
@@ -60,6 +69,14 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
                   Premium Anual - R$ 1.799,00/ano (2 meses grátis)
                 </Button>
               </div>
+              <Button 
+                variant="ghost"
+                className="w-full text-gray-600 hover:text-gray-800"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -216,10 +233,19 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
             </div>
           </div>
 
-          <div className="text-center text-sm text-gray-500">
-            <p>
+          <div className="text-center space-y-4">
+            <p className="text-sm text-gray-500">
               Dúvidas? Entre em contato conosco pelo e-mail: suporte@oficinaagil.com
             </p>
+            
+            <Button 
+              variant="ghost"
+              className="text-gray-600 hover:text-gray-800"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
           </div>
         </CardContent>
       </Card>
