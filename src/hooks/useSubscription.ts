@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -186,8 +185,8 @@ export const useSubscription = () => {
         throw error;
       }
 
-      // Type assertion for the RPC response
-      const response = data as GetUserSubscriptionResponse;
+      // Type assertion for the RPC response (two-step conversion)
+      const response = data as unknown as GetUserSubscriptionResponse;
 
       if (!response.success) {
         throw new Error(response.error || 'Erro ao buscar assinatura');
@@ -260,8 +259,8 @@ export const useSubscription = () => {
         throw error;
       }
 
-      // Type assertion for the RPC response
-      const response = data as StartFreeTrialResponse;
+      // Type assertion for the RPC response (two-step conversion)
+      const response = data as unknown as StartFreeTrialResponse;
 
       if (!response.success) {
         throw new Error(response.error || 'Erro ao iniciar teste gratuito');
