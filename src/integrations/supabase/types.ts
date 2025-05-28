@@ -189,6 +189,7 @@ export type Database = {
           nome_oficina: string | null
           plano: string | null
           responsavel: string | null
+          role: string | null
           telefone: string | null
           trial_ends_at: string | null
           whatsapp_suporte: string | null
@@ -208,6 +209,7 @@ export type Database = {
           nome_oficina?: string | null
           plano?: string | null
           responsavel?: string | null
+          role?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
           whatsapp_suporte?: string | null
@@ -227,6 +229,7 @@ export type Database = {
           nome_oficina?: string | null
           plano?: string | null
           responsavel?: string | null
+          role?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
           whatsapp_suporte?: string | null
