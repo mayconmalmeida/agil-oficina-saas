@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEnsureDatabaseSchema } from './hooks/useEnsureDatabaseSchema';
@@ -41,6 +40,12 @@ import ThankYouPage from './pages/ThankYouPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 import './App.css';
+import AdminGuard from './components/admin/AdminGuard';
+import AdminLayout from './components/admin/AdminLayout';
+import UsersSubscriptionsPage from './pages/admin/UsersSubscriptionsPage';
+import SaaSReportsPage from './pages/admin/SaaSReportsPage';
+import CampaignsPage from './pages/admin/CampaignsPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
 
 function App() {
   // Ensure the database schema is created
@@ -59,6 +64,19 @@ function App() {
         <Route path="/workshop-registration" element={<WorkshopRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        
+        {/* Admin Routes - Protected */}
+        <Route path="/admin" element={
+          <AdminGuard>
+            <AdminLayout />
+          </AdminGuard>
+        }>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users-subscriptions" element={<UsersSubscriptionsPage />} />
+          <Route path="reports-saas" element={<SaaSReportsPage />} />
+          <Route path="campaigns" element={<CampaignsPage />} />
+        </Route>
         
         {/* Dashboard Layout Routes */}
         <Route element={<DashboardLayout />}>
