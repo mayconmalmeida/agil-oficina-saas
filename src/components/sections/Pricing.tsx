@@ -1,13 +1,16 @@
 
 import React from 'react';
 import { Check } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 const tiers = [
   {
     name: 'Essencial',
     id: 'essencial',
-    href: '/workshop-registration?plano=Essencial',
     price: 'R$ 89,90',
     yearlyPrice: 'R$ 899,00',
     description: 'Ideal para oficinas de pequeno porte.',
@@ -19,11 +22,14 @@ const tiers = [
       'Suporte via e-mail',
     ],
     most_popular: false,
+    caktoLinks: {
+      monthly: 'https://pay.cakto.com.br/essencial-mensal',
+      yearly: 'https://pay.cakto.com.br/essencial-anual'
+    }
   },
   {
     name: 'Premium',
     id: 'premium',
-    href: '/workshop-registration?plano=Premium',
     price: 'R$ 179,90',
     yearlyPrice: 'R$ 1.799,00',
     description: 'Recomendado para oficinas em crescimento.',
@@ -36,10 +42,49 @@ const tiers = [
       'Backup automático',
     ],
     most_popular: true,
+    caktoLinks: {
+      monthly: 'https://pay.cakto.com.br/premium-mensal',
+      yearly: 'https://pay.cakto.com.br/premium-anual'
+    }
   },
 ];
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { startFreeTrial, subscriptionStatus } = useSubscription();
+
+  const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
+    // Verificar se usuário está logado
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      // Redirecionar para registro/login com parâmetro do plano
+      navigate(`/register?plan=${planType}`);
+      return;
+    }
+
+    // Se já tem assinatura ativa, redirecionar para dashboard
+    if (subscriptionStatus.canAccessFeatures) {
+      toast({
+        title: "Você já tem acesso!",
+        description: "Você já possui uma assinatura ativa ou teste em andamento."
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    // Iniciar teste gratuito
+    const result = await startFreeTrial(planType);
+    if (result.success) {
+      navigate('/dashboard');
+    }
+  };
+
+  const handlePaidPlan = (caktoUrl: string) => {
+    window.open(caktoUrl, '_blank');
+  };
+
   return (
     <div id="precos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -77,16 +122,38 @@ const Pricing = () => {
                   ou {tier.yearlyPrice}/ano (2 meses grátis)
                 </p>
                 <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
-                <Link
-                  to={tier.href}
-                  className={`mt-6 block w-full py-3 px-6 text-center font-medium rounded-md ${
+                
+                {/* Botão de teste gratuito */}
+                <Button
+                  onClick={() => handleFreeTrial(tier.id as 'essencial' | 'premium')}
+                  className={`mt-6 w-full py-3 px-6 text-center font-medium rounded-md ${
                     tier.most_popular
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                   }`}
                 >
-                  {tier.most_popular ? 'Começar agora' : 'Iniciar teste grátis'}
-                </Link>
+                  Iniciar teste grátis (7 dias)
+                </Button>
+                
+                {/* Botões de assinatura paga */}
+                <div className="mt-3 space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handlePaidPlan(tier.caktoLinks.monthly)}
+                  >
+                    Assinar Mensal - {tier.price}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handlePaidPlan(tier.caktoLinks.yearly)}
+                  >
+                    Assinar Anual - {tier.yearlyPrice}
+                  </Button>
+                </div>
               </div>
               <div className="px-6 pt-6 pb-8">
                 <h4 className="text-sm font-semibold text-gray-900 tracking-wide uppercase">

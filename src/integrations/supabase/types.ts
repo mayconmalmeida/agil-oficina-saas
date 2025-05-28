@@ -305,6 +305,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          ends_at: string | null
+          id: string
+          plan_type: string
+          starts_at: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          plan_type: string
+          starts_at?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          plan_type?: string
+          starts_at?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -406,9 +442,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_user_subscription: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      start_free_trial: {
+        Args: { selected_plan_type: string }
+        Returns: Json
+      }
       update_onboarding_step: {
         Args: { step: string }
         Returns: undefined
+      }
+      update_subscription_after_payment: {
+        Args: { p_user_id: string; p_plan_type: string }
+        Returns: Json
       }
     }
     Enums: {

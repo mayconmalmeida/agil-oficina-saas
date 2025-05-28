@@ -1,133 +1,242 @@
-
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import React from 'react';
+import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
-  LayoutGrid, 
+  Home, 
   Users, 
   Car, 
   Package, 
   Wrench, 
-  CalendarDays, 
+  Calendar, 
   FileText, 
   Settings,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link, useLocation } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useSubscription } from '@/hooks/useSubscription';
+import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-interface SidebarItemProps {
-  icon: React.ElementType;
-  label: string;
-  href: string;
-  isActive: boolean;
-}
-
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, href, isActive }) => {
-  return (
-    <Link to={href}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full justify-start gap-3 mb-1",
-          isActive && "bg-accent text-accent-foreground"
-        )}
-      >
-        <Icon size={20} />
-        <span>{label}</span>
-      </Button>
-    </Link>
-  );
-};
-
-const DashboardLayout: React.FC = () => {
-  // Use localStorage to remember sidebar state between page refreshes
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('sidebarOpen');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  
+const DashboardLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  
-  // Save sidebar state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
-  }, [sidebarOpen]);
-  
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
-  
-  const menuItems = [
-    { icon: LayoutGrid, label: "Dashboard", href: "/dashboard" },
-    { icon: Users, label: "Clientes", href: "/clientes" },
-    { icon: Car, label: "Veículos", href: "/veiculos" },
-    { icon: Package, label: "Produtos", href: "/produtos" },
-    { icon: Wrench, label: "Serviços", href: "/servicos" },
-    { icon: CalendarDays, label: "Agendamentos", href: "/agendamentos" },
-    { icon: FileText, label: "Orçamentos", href: "/orcamentos" },
-    { icon: Settings, label: "Configurações", href: "/configuracoes" }
+  const navigate = useNavigate();
+  const { userProfile, handleLogout } = useUserProfile();
+  const { subscriptionStatus } = useSubscription();
+
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Clientes', href: '/clientes', icon: Users },
+    { name: 'Veículos', href: '/veiculos', icon: Car },
+    { name: 'Produtos', href: '/produtos', icon: Package },
+    { name: 'Serviços', href: '/servicos', icon: Wrench },
+    { name: 'Agendamentos', href: '/agendamentos', icon: Calendar, premium: true },
+    { name: 'Orçamentos', href: '/orcamentos', icon: FileText },
+    { name: 'Configurações', href: '/configuracoes', icon: Settings },
   ];
 
+  const isActive = (path: string) => location.pathname === path;
+
+  const handleNavigation = (href: string, isPremium?: boolean) => {
+    // Se é premium e usuário não tem plano premium, bloquear
+    if (isPremium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive) {
+      return;
+    }
+    navigate(href);
+    setSidebarOpen(false);
+  };
+
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Mobile sidebar toggle */}
-      <div className="fixed top-4 left-4 z-50 lg:hidden">
-        <Button variant="outline" size="icon" onClick={toggleSidebar} aria-label="Toggle menu">
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-        </Button>
-      </div>
-      
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 transform bg-background border-r transition-all duration-300 ease-in-out",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:translate-x-0" // Always show on large screens
-      )}>
-        <div className="p-4 h-full flex flex-col">
-          <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold">
-              Oficina<span className="text-oficina-accent">Ágil</span>
-            </h2>
+    <SubscriptionGuard>
+      <div className="flex h-screen bg-gray-100">
+        {/* Sidebar para desktop */}
+        <div className="hidden md:flex md:w-64 md:flex-col">
+          <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto border-r border-gray-200">
+            <div className="flex items-center flex-shrink-0 px-4">
+              <Link to="/" className="text-xl font-bold text-oficina-dark">
+                Oficina<span className="text-oficina-accent">Ágil</span>
+              </Link>
+            </div>
+            
+            {/* Status da assinatura */}
+            <div className="mt-4 px-4">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">
+                        {subscriptionStatus.planDetails?.name || 'Sem plano'}
+                      </div>
+                      {subscriptionStatus.isTrialActive && (
+                        <div className="text-xs text-blue-600">
+                          {subscriptionStatus.daysRemaining} dias restantes
+                        </div>
+                      )}
+                    </div>
+                    {subscriptionStatus.isPremium && (
+                      <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <nav className="mt-5 flex-1 px-2 pb-4 space-y-1">
+              {navigation.map((item) => {
+                const isItemActive = isActive(item.href);
+                const isPremiumLocked = item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
+                
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleNavigation(item.href, item.premium)}
+                    disabled={isPremiumLocked}
+                    className={`${
+                      isItemActive
+                        ? 'bg-blue-100 text-blue-900'
+                        : isPremiumLocked
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+                  >
+                    <item.icon
+                      className={`${
+                        isItemActive ? 'text-blue-500' : isPremiumLocked ? 'text-gray-300' : 'text-gray-400'
+                      } mr-3 flex-shrink-0 h-5 w-5`}
+                    />
+                    {item.name}
+                    {item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive && (
+                      <Badge variant="outline" className="ml-auto text-xs">
+                        Premium
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            
+            {/* Informações do usuário e logout */}
+            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+              <div className="flex-shrink-0 w-full group block">
+                <div className="flex items-center">
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                      {userProfile?.nome_oficina || 'Oficina'}
+                    </p>
+                    <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                      {userProfile?.email}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="ml-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar para mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 flex z-40 md:hidden">
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+              <div className="absolute top-0 right-0 -mr-12 pt-2">
+                <button
+                  className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <X className="h-6 w-6 text-white" />
+                </button>
+              </div>
+              <div className="pt-5 pb-4">
+                <div className="flex items-center flex-shrink-0 px-4">
+                  <Link to="/" className="text-xl font-bold text-oficina-dark">
+                    Oficina<span className="text-oficina-accent">Ágil</span>
+                  </Link>
+                </div>
+                <nav className="mt-5 px-2 space-y-1">
+                  {navigation.map((item) => {
+                    const isItemActive = isActive(item.href);
+                    const isPremiumLocked = item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
+                    
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={() => handleNavigation(item.href, item.premium)}
+                        disabled={isPremiumLocked}
+                        className={`${
+                          isItemActive
+                            ? 'bg-blue-100 text-blue-900'
+                            : isPremiumLocked
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
+                      >
+                        <item.icon
+                          className={`${
+                            isItemActive ? 'text-blue-500' : isPremiumLocked ? 'text-gray-300' : 'text-gray-400'
+                          } mr-3 flex-shrink-0 h-5 w-5`}
+                        />
+                        {item.name}
+                        {item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive && (
+                          <Badge variant="outline" className="ml-auto text-xs">
+                            Premium
+                          </Badge>
+                        )}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+              <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+                <Link to="/profile" className="flex-shrink-0 w-full group block">
+                  <div className="flex items-center">
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                        {userProfile?.nome_oficina || 'Oficina'}
+                      </p>
+                      <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
+                        {userProfile?.email}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo principal */}
+        <div className="flex flex-col w-0 flex-1 overflow-hidden">
+          {/* Header mobile */}
+          <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
+            <button
+              className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
           
-          <nav className="flex-1 space-y-1 overflow-y-auto">
-            {menuItems.map((item) => (
-              <SidebarItem
-                key={item.href}
-                icon={item.icon}
-                label={item.label}
-                href={item.href}
-                isActive={isActive(item.href)}
-              />
-            ))}
-          </nav>
+          {/* Área de conteúdo */}
+          <main className="flex-1 relative overflow-y-auto focus:outline-none">
+            <Outlet />
+          </main>
         </div>
       </div>
-      
-      {/* Main content */}
-      <div className={cn(
-        "flex-1 transition-all duration-300 ease-in-out",
-        "lg:ml-64" // Always offset content on large screens
-      )}>
-        <div className="p-4 sm:p-6 lg:p-8 min-h-screen">
-          <Outlet />
-        </div>
-      </div>
-      
-      {/* Background overlay for mobile */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden" 
-          onClick={toggleSidebar}
-          aria-hidden="true"
-        />
-      )}
-      
-      <Toaster />
-    </div>
+    </SubscriptionGuard>
   );
 };
 

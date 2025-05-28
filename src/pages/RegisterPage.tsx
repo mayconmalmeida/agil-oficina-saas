@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { CheckCircle2, AlertTriangle, WifiOff } from "lucide-react";
+import { CheckCircle2, AlertTriangle, WifiOff, Crown } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useSubscription } from '@/hooks/useSubscription';
 
 // Define the form schema
 const registerFormSchema = z.object({
@@ -31,6 +32,9 @@ const RegisterPage = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get('plan') as 'essencial' | 'premium' | null;
+  const { startFreeTrial } = useSubscription();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -101,14 +105,41 @@ const RegisterPage = () => {
         return;
       }
 
-      // Sucesso
-      toast({
-        title: "Registro bem-sucedido",
-        description: "Verifique seu email para confirmar o registro.",
-      });
-      
-      // Redirect to login page
-      navigate('/login');
+      // Se o registro foi bem-sucedido e há um usuário
+      if (data.user) {
+        toast({
+          title: "Registro bem-sucedido!",
+          description: selectedPlan 
+            ? `Conta criada! Iniciando seu teste gratuito do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'}...`
+            : "Conta criada com sucesso!"
+        });
+
+        // Se há um plano selecionado, aguardar um momento para o usuário estar autenticado
+        // e então iniciar o teste gratuito
+        if (selectedPlan) {
+          setTimeout(async () => {
+            try {
+              const result = await startFreeTrial(selectedPlan);
+              if (result.success) {
+                toast({
+                  title: "Teste gratuito ativado!",
+                  description: `Seu teste de 7 dias do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'} foi iniciado.`
+                });
+                navigate('/dashboard');
+              } else {
+                // Se falhar ao iniciar o trial, redirecionar para login
+                navigate('/login');
+              }
+            } catch (error) {
+              console.error("Erro ao iniciar teste:", error);
+              navigate('/login');
+            }
+          }, 2000);
+        } else {
+          // Redirect to login page se não há plano selecionado
+          navigate('/login');
+        }
+      }
     } catch (error) {
       console.error("Erro inesperado:", error);
       toast({
@@ -132,13 +163,29 @@ const RegisterPage = () => {
         
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Criar conta</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              {selectedPlan ? 'Criar conta e iniciar teste' : 'Criar conta'}
+            </CardTitle>
             <CardDescription className="text-center">
-              Digite suas informações para criar uma conta
+              {selectedPlan 
+                ? `Crie sua conta para começar o teste gratuito do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'}`
+                : 'Digite suas informações para criar uma conta'
+              }
             </CardDescription>
           </CardHeader>
           
           <CardContent>
+            {selectedPlan && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Crown className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-700">
+                  <strong>Plano selecionado: {selectedPlan === 'premium' ? 'Premium' : 'Essencial'}</strong>
+                  <br />
+                  Você terá 7 dias de teste gratuito com acesso completo aos recursos.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {connectionStatus === 'checking' && (
               <Alert className="mb-4 bg-blue-50 border-blue-200">
                 <div className="animate-pulse flex items-center">
@@ -234,7 +281,7 @@ const RegisterPage = () => {
                   className="w-full bg-oficina hover:bg-blue-700"
                   disabled={isLoading || connectionStatus !== 'connected'}
                 >
-                  {isLoading ? "Registrando..." : "Registrar"}
+                  {isLoading ? "Registrando..." : selectedPlan ? "Criar conta e iniciar teste" : "Registrar"}
                 </Button>
               </form>
             </Form>
