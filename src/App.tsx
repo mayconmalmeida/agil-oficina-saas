@@ -1,7 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEnsureDatabaseSchema } from './hooks/useEnsureDatabaseSchema';
+import { useAuth } from './hooks/useAuth';
 import { Toaster } from './components/ui/toaster';
+import Loading from './components/ui/loading';
 
 // Pages
 import Index from './pages/Index';
@@ -38,6 +41,7 @@ import VehiclesPage from './pages/VehiclesPage';
 import VehicleRegistrationPage from './pages/VehicleRegistrationPage';
 import ThankYouPage from './pages/ThankYouPage';
 import DashboardLayout from './components/layout/DashboardLayout';
+import SubscriptionGuard from './components/subscription/SubscriptionGuard';
 
 import './App.css';
 import AdminGuard from './components/admin/AdminGuard';
@@ -50,6 +54,13 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 function App() {
   // Ensure the database schema is created
   useEnsureDatabaseSchema();
+  
+  const { isLoadingAuth } = useAuth();
+
+  // Mostrar carregamento global enquanto os dados de autenticação estão sendo carregados
+  if (isLoadingAuth) {
+    return <Loading fullscreen text="Carregando aplicação..." />;
+  }
 
   return (
     <BrowserRouter>
@@ -78,8 +89,12 @@ function App() {
           <Route path="campaigns" element={<CampaignsPage />} />
         </Route>
         
-        {/* Dashboard Layout Routes */}
-        <Route element={<DashboardLayout />}>
+        {/* Dashboard Layout Routes - Protected by SubscriptionGuard */}
+        <Route element={
+          <SubscriptionGuard>
+            <DashboardLayout />
+          </SubscriptionGuard>
+        }>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/clientes" element={<ClientManagementPage />} />
           <Route path="/veiculos" element={<VehiclesPage />} />
@@ -87,11 +102,11 @@ function App() {
           <Route path="/veiculos/novo/:clientId" element={<VehicleRegistrationPage />} />
           <Route path="/veiculos/:vehicleId" element={<VehicleRegistrationPage />} />
           <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
-          <Route path="/produtos" element={<ProductsPage />} />
+          <Route path="/produtos" element={<SubscriptionGuard requiredPlan="premium"><ProductsPage /></SubscriptionGuard>} />
           <Route path="/servicos" element={<ServicesPage />} />
           <Route path="/servicos/lista" element={<ServicesListPage />} />
-          <Route path="/agendamentos" element={<SchedulesPage />} />
-          <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
+          <Route path="/agendamentos" element={<SubscriptionGuard requiredPlan="premium"><SchedulesPage /></SubscriptionGuard>} />
+          <Route path="/agendamentos/novo" element={<SubscriptionGuard requiredPlan="premium"><NewAppointmentPage /></SubscriptionGuard>} />
           <Route path="/orcamentos" element={<BudgetPage />} />
           <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
           <Route path="/orcamentos/editar/:id" element={<BudgetEditPage />} />
@@ -99,14 +114,42 @@ function App() {
           <Route path="/configuracoes" element={<SettingsPage />} />
         </Route>
         
-        {/* Routes outside the dashboard layout */}
-        <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route path="/setup" element={<ProfileSetupPage />} />
-        <Route path="/adicionar-clientes" element={<ClientsPage />} />
-        <Route path="/agendamento" element={<SchedulingPage />} />
-        <Route path="/profile" element={<ProfileEditPage />} />
-        <Route path="/company" element={<CompanyProfilePage />} />
-        <Route path="/clientes-gestao" element={<ClientsManagementPage />} />
+        {/* Routes outside the dashboard layout - Protected by SubscriptionGuard */}
+        <Route path="/user-dashboard" element={
+          <SubscriptionGuard>
+            <UserDashboard />
+          </SubscriptionGuard>
+        } />
+        <Route path="/setup" element={
+          <SubscriptionGuard>
+            <ProfileSetupPage />
+          </SubscriptionGuard>
+        } />
+        <Route path="/adicionar-clientes" element={
+          <SubscriptionGuard>
+            <ClientsPage />
+          </SubscriptionGuard>
+        } />
+        <Route path="/agendamento" element={
+          <SubscriptionGuard requiredPlan="premium">
+            <SchedulingPage />
+          </SubscriptionGuard>
+        } />
+        <Route path="/profile" element={
+          <SubscriptionGuard>
+            <ProfileEditPage />
+          </SubscriptionGuard>
+        } />
+        <Route path="/company" element={
+          <SubscriptionGuard>
+            <CompanyProfilePage />
+          </SubscriptionGuard>
+        } />
+        <Route path="/clientes-gestao" element={
+          <SubscriptionGuard>
+            <ClientsManagementPage />
+          </SubscriptionGuard>
+        } />
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

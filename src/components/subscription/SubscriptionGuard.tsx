@@ -3,7 +3,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertTriangle, Crown, CheckCircle, LogOut } from 'lucide-react';
 import Loading from '@/components/ui/loading';
@@ -19,8 +18,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   requiredPlan,
   fallback 
 }) => {
-  const { subscriptionStatus, loading } = useSubscription();
-  const { signOut } = useAuth();
+  const { user, isLoadingAuth, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -28,19 +26,32 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     navigate('/login');
   };
 
-  if (loading) {
+  if (isLoadingAuth) {
     return <Loading fullscreen text="Verificando assinatura..." />;
   }
 
+  // Se o usuário não está logado, redirecionar para login
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
+  // Se o usuário é admin, permitir acesso
+  if (user.isAdmin) {
+    return <>{children}</>;
+  }
+
   // Se o usuário tem acesso geral às funcionalidades
-  if (subscriptionStatus.canAccessFeatures) {
+  if (user.canAccessFeatures) {
     // Se não há requisito específico de plano, permitir acesso
     if (!requiredPlan) {
       return <>{children}</>;
     }
     
     // Se há requisito específico, verificar se o usuário tem o plano adequado
-    if (requiredPlan === 'premium' && !subscriptionStatus.isPremium) {
+    const isPremium = user.subscription?.plan_type?.includes('premium');
+    
+    if (requiredPlan === 'premium' && !isPremium) {
       return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
           <Card className="w-full max-w-md">
@@ -97,12 +108,12 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
         <CardHeader className="text-center">
           <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <CardTitle className="text-2xl text-gray-900">
-            {subscriptionStatus.hasSubscription ? 'Assinatura Expirada' : 'Acesso Restrito'}
+            {user.subscription ? 'Assinatura Expirada' : 'Acesso Restrito'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
-            {subscriptionStatus.hasSubscription ? (
+            {user.subscription ? (
               <p className="text-gray-600 mb-6">
                 Seu período de teste expirou. Para continuar usando o OficinaÁgil, 
                 escolha um dos nossos planos abaixo:

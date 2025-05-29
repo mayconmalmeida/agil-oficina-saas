@@ -9,10 +9,10 @@ interface AdminGuardProps {
 }
 
 const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
-  const { loading, isAdmin, user } = useAuth();
+  const { isLoadingAuth, isAdmin, user } = useAuth();
 
-  if (loading) {
-    return <Loading fullscreen text="Verificando permissões..." />;
+  if (isLoadingAuth) {
+    return <Loading fullscreen text="Verificando permissões de administrador..." />;
   }
 
   if (!user) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface UserSubscription {
   id: string;
@@ -48,6 +49,7 @@ export interface SubscriptionStatus {
 }
 
 export const useSubscription = () => {
+  const { user, isLoadingAuth } = useAuth();
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
     hasSubscription: false,
     subscription: null,
@@ -175,24 +177,45 @@ export const useSubscription = () => {
 
   // Função para buscar status da assinatura
   const fetchSubscriptionStatus = async () => {
+    // Se ainda está carregando auth ou não há usuário, não buscar
+    if (isLoadingAuth || !user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase.rpc('get_user_subscription');
+      // Se o usuário já tem os dados de assinatura do auth, usar eles
+      if (user.subscription) {
+        const subscription = user.subscription as any;
+        const daysRemaining = calculateDaysRemaining(subscription);
+        
+        const isTrialActive = subscription.status === 'trialing' && 
+          subscription.trial_ends_at && 
+          new Date(subscription.trial_ends_at) > new Date();
+        
+        const isPaidActive = subscription.status === 'active' && 
+          (!subscription.ends_at || new Date(subscription.ends_at) > new Date());
+        
+        const canAccessFeatures = user.canAccessFeatures || false;
+        const isPremium = subscription.plan_type?.includes('premium') || false;
+        const isEssencial = subscription.plan_type?.includes('essencial') || false;
+        const planDetails = getPlanDetails(subscription.plan_type || '');
 
-      if (error) {
-        throw error;
-      }
-
-      // Type assertion for the RPC response (two-step conversion)
-      const response = data as unknown as GetUserSubscriptionResponse;
-
-      if (!response.success) {
-        throw new Error(response.error || 'Erro ao buscar assinatura');
-      }
-
-      if (!response.has_subscription) {
+        setSubscriptionStatus({
+          hasSubscription: true,
+          subscription,
+          isTrialActive,
+          isPaidActive,
+          canAccessFeatures,
+          isPremium,
+          isEssencial,
+          daysRemaining,
+          planDetails
+        });
+      } else {
         setSubscriptionStatus({
           hasSubscription: false,
           subscription: null,
@@ -204,45 +227,11 @@ export const useSubscription = () => {
           daysRemaining: 0,
           planDetails: null
         });
-        return;
       }
-
-      const subscription = response.subscription as UserSubscription;
-      const now = new Date();
-      const daysRemaining = calculateDaysRemaining(subscription);
-      
-      const isTrialActive = subscription.status === 'trialing' && 
-        subscription.trial_ends_at && 
-        new Date(subscription.trial_ends_at) > now;
-      
-      const isPaidActive = subscription.status === 'active' && 
-        (!subscription.ends_at || new Date(subscription.ends_at) > now);
-      
-      const canAccessFeatures = isTrialActive || isPaidActive;
-      const isPremium = subscription.plan_type.includes('premium');
-      const isEssencial = subscription.plan_type.includes('essencial');
-      const planDetails = getPlanDetails(subscription.plan_type);
-
-      setSubscriptionStatus({
-        hasSubscription: true,
-        subscription,
-        isTrialActive,
-        isPaidActive,
-        canAccessFeatures,
-        isPremium,
-        isEssencial,
-        daysRemaining,
-        planDetails
-      });
 
     } catch (err: any) {
       console.error('Erro ao buscar status da assinatura:', err);
       setError(err.message);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível verificar o status da assinatura."
-      });
     } finally {
       setLoading(false);
     }
@@ -271,8 +260,8 @@ export const useSubscription = () => {
         description: `Seu teste do plano ${planType === 'premium' ? 'Premium' : 'Essencial'} foi ativado por 7 dias.`
       });
 
-      // Atualizar status da assinatura
-      await fetchSubscriptionStatus();
+      // Recarregar a página para atualizar o estado de autenticação
+      window.location.reload();
 
       return { success: true };
     } catch (err: any) {
@@ -288,7 +277,7 @@ export const useSubscription = () => {
 
   useEffect(() => {
     fetchSubscriptionStatus();
-  }, []);
+  }, [user, isLoadingAuth]);
 
   return {
     subscriptionStatus,
