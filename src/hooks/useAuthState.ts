@@ -16,8 +16,9 @@ export const useAuthState = () => {
     try {
       const userData = await fetchUserProfile(authUser.id);
       
-      const canAccessFeatures = calculateCanAccessFeatures(userData.subscription);
+      // Priorizar role de admin - admin sempre tem acesso total
       const isAdmin = userData.role === 'admin' || userData.role === 'superadmin';
+      const canAccessFeatures = isAdmin ? true : calculateCanAccessFeatures(userData.subscription);
       
       const userWithData: AuthUser = {
         ...authUser,

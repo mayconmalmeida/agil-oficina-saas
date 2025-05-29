@@ -19,6 +19,11 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfileData>
 
     const userRole = profileData?.role || 'user';
 
+    // Se o usuário é admin, não precisa buscar assinatura - tem acesso total
+    if (userRole === 'admin' || userRole === 'superadmin') {
+      return { role: userRole, subscription: null };
+    }
+
     // Buscar assinatura mais recente do usuário usando a RPC function
     const { data: subscriptionRawData, error: subscriptionError } = await supabase.rpc('get_user_subscription');
     

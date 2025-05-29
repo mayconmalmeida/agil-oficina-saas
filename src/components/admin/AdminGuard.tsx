@@ -9,7 +9,7 @@ interface AdminGuardProps {
 }
 
 const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
-  const { isLoadingAuth, isAdmin, user } = useAuth();
+  const { isLoadingAuth, user } = useAuth();
 
   if (isLoadingAuth) {
     return <Loading fullscreen text="Verificando permissões de administrador..." />;
@@ -19,6 +19,9 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Verificar se é admin baseado no role, não na propriedade isAdmin
+  const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+  
   if (!isAdmin) {
     return <Navigate to="/unauthorized" replace />;
   }

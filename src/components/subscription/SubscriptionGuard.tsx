@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccessControl } from '@/hooks/useAccessControl';
 import Loading from '@/components/ui/loading';
 import PremiumUpgradeCard from './PremiumUpgradeCard';
 import SubscriptionExpiredCard from './SubscriptionExpiredCard';
@@ -18,58 +18,56 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   fallback 
 }) => {
   const { user, isLoadingAuth, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { shouldShowContent, isAdmin, hasGeneralAccess } = useAccessControl({
+    user,
+    isLoadingAuth,
+    requiredPlan
+  });
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/login');
+    window.location.replace('/login');
   };
 
   // Aguarda o carregamento da autenticação
   if (isLoadingAuth) {
-    return <Loading fullscreen text="Verificando assinatura..." />;
+    return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
-  // Se o usuário não está logado, redirecionar para login (sem usar navigate em loop)
+  // Se não há usuário autenticado, useAccessControl já cuida do redirecionamento
   if (!user) {
-    // Usar replace para evitar loops de navegação
-    window.location.replace('/login');
-    return null;
+    return <Loading fullscreen text="Redirecionando..." />;
   }
 
-  // Se o usuário é admin, permitir acesso
-  if (user.isAdmin) {
+  // Se é admin, sempre permitir acesso
+  if (isAdmin) {
     return <>{children}</>;
   }
 
-  // Se o usuário tem acesso geral às funcionalidades
-  if (user.canAccessFeatures) {
-    // Se não há requisito específico de plano, permitir acesso
-    if (!requiredPlan) {
-      return <>{children}</>;
+  // Se não tem acesso geral às funcionalidades
+  if (!hasGeneralAccess) {
+    if (fallback) {
+      return <>{fallback}</>;
     }
-    
-    // Se há requisito específico, verificar se o usuário tem o plano adequado
-    const isPremium = user.subscription?.plan_type?.includes('premium');
+    return (
+      <SubscriptionExpiredCard 
+        hasSubscription={!!user.subscription} 
+        onLogout={handleLogout} 
+      />
+    );
+  }
+
+  // Se tem acesso geral mas precisa de plano específico
+  if (requiredPlan) {
+    const isPremium = user.subscription?.plan_type?.includes('premium') || false;
     
     if (requiredPlan === 'premium' && !isPremium) {
       return <PremiumUpgradeCard onLogout={handleLogout} />;
     }
-    
-    return <>{children}</>;
   }
 
-  // Se não tem acesso, mostrar tela de bloqueio
-  if (fallback) {
-    return <>{fallback}</>;
-  }
-
-  return (
-    <SubscriptionExpiredCard 
-      hasSubscription={!!user.subscription} 
-      onLogout={handleLogout} 
-    />
-  );
+  // Usuário tem acesso permitido
+  return <>{children}</>;
 };
 
 export default SubscriptionGuard;
