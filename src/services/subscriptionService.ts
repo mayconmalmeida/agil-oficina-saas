@@ -12,7 +12,7 @@ export const startFreeTrial = async (planType: 'essencial' | 'premium') => {
       throw error;
     }
 
-    const response = data as SubscriptionRPCResponse;
+    const response = data as unknown as SubscriptionRPCResponse;
 
     if (!response.success) {
       throw new Error(response.error || 'Erro ao iniciar teste gratuito');
@@ -33,7 +33,7 @@ export const getUserSubscription = async (): Promise<SubscriptionRPCResponse> =>
       throw error;
     }
 
-    return data as SubscriptionRPCResponse;
+    return data as unknown as SubscriptionRPCResponse;
   } catch (err: any) {
     console.error('Erro ao buscar assinatura:', err);
     return {
