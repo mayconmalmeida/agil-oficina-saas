@@ -3,16 +3,13 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { SubscriptionRPCResponse, UserSubscription } from '@/types/subscription';
 
 export interface AuthUser extends User {
   role?: string;
   isAdmin?: boolean;
   canAccessFeatures?: boolean;
-  subscription?: {
-    status: string;
-    trial_ends_at?: string;
-    ends_at?: string;
-  };
+  subscription?: UserSubscription;
 }
 
 export interface AuthContextValue {
@@ -50,11 +47,14 @@ export const useAuth = (): AuthContextValue => {
       const userRole = profileData?.role || 'user';
 
       // Buscar assinatura do usuário
-      const { data: subscriptionData } = await supabase.rpc('get_user_subscription');
+      const { data: subscriptionRawData } = await supabase.rpc('get_user_subscription');
       
       let subscription = null;
-      if (subscriptionData?.success && subscriptionData?.has_subscription) {
-        subscription = subscriptionData.subscription;
+      if (subscriptionRawData) {
+        const subscriptionData = subscriptionRawData as SubscriptionRPCResponse;
+        if (subscriptionData.success && subscriptionData.has_subscription) {
+          subscription = subscriptionData.subscription;
+        }
       }
 
       return { role: userRole, subscription };
@@ -64,7 +64,7 @@ export const useAuth = (): AuthContextValue => {
     }
   };
 
-  const calculateCanAccessFeatures = (subscription: any): boolean => {
+  const calculateCanAccessFeatures = (subscription: UserSubscription | null): boolean => {
     if (!subscription) return false;
     
     const now = new Date();
