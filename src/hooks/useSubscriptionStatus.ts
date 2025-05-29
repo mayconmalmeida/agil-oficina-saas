@@ -21,14 +21,30 @@ export const useSubscriptionStatus = () => {
   const [error, setError] = useState<string | null>(null);
 
   const calculateSubscriptionStatus = () => {
-    if (isLoadingAuth || !user) {
-      setLoading(false);
+    // Aguarda o carregamento da autenticação
+    if (isLoadingAuth) {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
+      if (!user) {
+        setSubscriptionStatus({
+          hasSubscription: false,
+          subscription: null,
+          isTrialActive: false,
+          isPaidActive: false,
+          canAccessFeatures: false,
+          isPremium: false,
+          isEssencial: false,
+          daysRemaining: 0,
+          planDetails: null
+        });
+        setLoading(false);
+        return;
+      }
 
       if (user.subscription) {
         const subscription = user.subscription;
@@ -70,7 +86,6 @@ export const useSubscriptionStatus = () => {
           planDetails: null
         });
       }
-
     } catch (err: any) {
       console.error('Erro ao calcular status da assinatura:', err);
       setError(err.message);

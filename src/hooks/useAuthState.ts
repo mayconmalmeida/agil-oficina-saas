@@ -13,9 +13,7 @@ export const useAuthState = () => {
   const [role, setRole] = useState<string | null>(null);
 
   const updateUserWithData = async (authUser: User) => {
-    setIsLoadingAuth(true);
-    
-    setTimeout(async () => {
+    try {
       const userData = await fetchUserProfile(authUser.id);
       
       const canAccessFeatures = calculateCanAccessFeatures(userData.subscription);
@@ -31,9 +29,21 @@ export const useAuthState = () => {
       
       setUser(userWithData);
       setRole(userData.role);
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error);
+      // Em caso de erro, define usuário sem dados extras
+      setUser({
+        ...authUser,
+        role: 'user',
+        isAdmin: false,
+        canAccessFeatures: false,
+        subscription: null
+      });
+      setRole('user');
+    } finally {
       setIsLoadingAuth(false);
       setLoading(false);
-    }, 100);
+    }
   };
 
   useEffect(() => {
@@ -61,7 +71,12 @@ export const useAuthState = () => {
     // Verificar sessão existente
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao obter sessão:', error);
+          throw error;
+        }
         
         if (!mounted) return;
         
@@ -69,10 +84,12 @@ export const useAuthState = () => {
         
         if (session?.user) {
           await updateUserWithData(session.user);
+        } else {
+          setIsLoadingAuth(false);
+          setLoading(false);
         }
       } catch (error) {
         console.error('Erro ao inicializar autenticação:', error);
-      } finally {
         if (mounted) {
           setIsLoadingAuth(false);
           setLoading(false);

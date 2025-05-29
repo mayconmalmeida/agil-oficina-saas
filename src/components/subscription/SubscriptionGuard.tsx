@@ -25,13 +25,15 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     navigate('/login');
   };
 
+  // Aguarda o carregamento da autenticação
   if (isLoadingAuth) {
     return <Loading fullscreen text="Verificando assinatura..." />;
   }
 
-  // Se o usuário não está logado, redirecionar para login
+  // Se o usuário não está logado, redirecionar para login (sem usar navigate em loop)
   if (!user) {
-    navigate('/login');
+    // Usar replace para evitar loops de navegação
+    window.location.replace('/login');
     return null;
   }
 

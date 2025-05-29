@@ -5,22 +5,27 @@ import { UserProfileData } from '@/types/auth';
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfileData> => {
   try {
-    // Buscar perfil do usuário
+    // Buscar perfil do usuário usando maybeSingle() para evitar erro se não existir
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (profileError && profileError.code !== 'PGRST116') {
+    if (profileError) {
       console.error('Erro ao buscar perfil do usuário:', profileError);
       return { role: 'user', subscription: null };
     }
 
     const userRole = profileData?.role || 'user';
 
-    // Buscar assinatura do usuário
-    const { data: subscriptionRawData } = await supabase.rpc('get_user_subscription');
+    // Buscar assinatura mais recente do usuário usando a RPC function
+    const { data: subscriptionRawData, error: subscriptionError } = await supabase.rpc('get_user_subscription');
+    
+    if (subscriptionError) {
+      console.error('Erro ao buscar assinatura:', subscriptionError);
+      return { role: userRole, subscription: null };
+    }
     
     let subscription = null;
     if (subscriptionRawData) {
