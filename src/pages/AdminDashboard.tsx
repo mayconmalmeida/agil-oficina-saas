@@ -25,7 +25,7 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Verificar se o usuário é um administrador
+  // Verificar se o usuário é um administrador através da role na tabela profiles
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -35,13 +35,14 @@ const AdminDashboard = () => {
         return;
       }
 
-      const { data: adminData } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', session.user.email)
-        .single();
+      // Verificar role na tabela profiles ao invés da tabela admins
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .maybeSingle();
 
-      if (!adminData) {
+      if (!profileData || (profileData.role !== 'admin' && profileData.role !== 'superadmin')) {
         await supabase.auth.signOut();
         navigate('/admin/login');
         toast({
@@ -70,18 +71,18 @@ const AdminDashboard = () => {
         .from('orcamentos')
         .select('*', { count: 'exact', head: true });
 
-      // Obter usuários ativos (que logaram nos últimos 30 dias)
+      // Obter usuários ativos (estimativa baseada em perfis criados recentemente)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
       const { count: activeUsersCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .gt('last_login', thirtyDaysAgo.toISOString());
+        .gte('created_at', thirtyDaysAgo.toISOString());
 
       // Obter assinaturas ativas
       const { count: activeSubscriptionsCount } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
 

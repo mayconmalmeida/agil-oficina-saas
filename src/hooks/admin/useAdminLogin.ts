@@ -43,20 +43,12 @@ export const useAdminLogin = () => {
       if (error) {
         console.error("Erro de autenticação:", error);
         
-        // Mensagens de erro mais específicas
         if (error.message.includes('Invalid login credentials')) {
           setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
           toast({
             variant: "destructive",
             title: "Credenciais inválidas",
-            description: "Verifique seu email e senha. Se este é o usuário predefinido, tente criá-lo primeiro clicando no botão 'Criar Admin'.",
-          });
-        } else if (error.message.includes('Failed to fetch')) {
-          setErrorMessage('Falha na conexão com o servidor. Verifique sua conexão de internet.');
-          toast({
-            variant: "destructive",
-            title: "Erro de conexão",
-            description: "Falha na conexão com o servidor. Verifique sua conexão de internet.",
+            description: "Verifique seu email e senha.",
           });
         } else {
           setErrorMessage(error.message || 'Erro desconhecido durante o login');
@@ -82,39 +74,33 @@ export const useAdminLogin = () => {
         return;
       }
 
-      console.log("Login bem-sucedido, verificando se é admin");
+      console.log("Login bem-sucedido, verificando se é admin através da tabela profiles");
       
-      // Verifica se o usuário é um administrador diretamente na tabela de admins
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('email, is_superadmin')
-        .eq('email', values.email)
+      // Verificar se o usuário é um administrador através da role na tabela profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
         .maybeSingle();
 
-      if (adminError) {
-        console.error("Erro ao verificar admin:", adminError);
-        
-        // Mensagem específica de erro de verificação de admin
-        if (adminError.message?.includes('does not exist')) {
-          setErrorMessage('A tabela de administradores não existe no banco de dados.');
-        } else {
-          setErrorMessage('Erro ao verificar permissões de administrador: ' + adminError.message);
-        }
+      if (profileError) {
+        console.error("Erro ao verificar role do usuário:", profileError);
+        setErrorMessage('Erro ao verificar permissões: ' + profileError.message);
         
         await supabase.auth.signOut();
         
         toast({
           variant: "destructive",
           title: "Erro ao verificar permissões",
-          description: "Ocorreu um erro ao verificar suas permissões de administrador.",
+          description: "Ocorreu um erro ao verificar suas permissões.",
         });
         
         setIsLoading(false);
         return;
       }
 
-      if (!adminData) {
-        console.error("Usuário não é administrador");
+      if (!profileData || (profileData.role !== 'admin' && profileData.role !== 'superadmin')) {
+        console.error("Usuário não é administrador, role:", profileData?.role);
         await supabase.auth.signOut();
         
         toast({
@@ -133,7 +119,6 @@ export const useAdminLogin = () => {
         description: "Bem-vindo ao painel de administração.",
       });
 
-      // Garantir que o redirecionamento aconteça
       console.log("Redirecionando para dashboard admin");
       setIsLoading(false);
       navigate("/admin/dashboard");

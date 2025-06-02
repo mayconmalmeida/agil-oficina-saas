@@ -1,14 +1,11 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useAdminLogin } from './admin/useAdminLogin';
-import { useAdminRegistration } from './admin/useAdminRegistration';
-import { verifyConnection } from './admin/connectionUtils';
-import { checkAdminStatus } from './admin/adminAuthUtils';
+import { useLogin } from './useLogin';
+import { testSupabaseConnection } from '@/lib/supabase';
 import type { FormValues } from './admin/types';
 import { UseFormReturn } from 'react-hook-form';
 
-// Usando "export type" para evitar o erro TS1205
 export type { FormValues } from './admin/types';
 
 export const useAdminAuth = () => {
@@ -16,27 +13,21 @@ export const useAdminAuth = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Import subfunctionalities from smaller hooks
-  const { isLoading, handleLogin } = useAdminLogin();
-  const { isRegistering, registerAdmin } = useAdminRegistration();
+  // Usar o hook de login regular ao invés de lógica separada
+  const { isLoading, handleLogin } = useLogin();
   
   const checkConnection = async () => {
     try {
-      const result = await verifyConnection();
+      const connected = await testSupabaseConnection();
       
-      if (result.success) {
+      if (connected) {
         setConnectionStatus('connected');
-        
-        // Check admin status if session exists
-        if (result.session) {
-          const isAdmin = await checkAdminStatus(result.session);
-          return isAdmin;
-        }
+        setErrorMessage(null);
       } else {
         setConnectionStatus('error');
-        setErrorMessage(result.error);
+        setErrorMessage('Não foi possível conectar ao servidor');
       }
-      return false;
+      return connected;
     } catch (error) {
       console.error("Erro na verificação da conexão:", error);
       setConnectionStatus('error');
@@ -45,11 +36,21 @@ export const useAdminAuth = () => {
     }
   };
 
+  // Função de registro desativada - admins são criados via role na tabela profiles
+  const registerAdmin = async (form: UseFormReturn<FormValues>) => {
+    toast({
+      variant: "destructive",
+      title: "Acesso negado",
+      description: "O cadastro de administradores deve ser feito através da atribuição de role na tabela profiles.",
+    });
+    return;
+  };
+
   return {
     isLoading,
     connectionStatus,
     errorMessage,
-    isRegistering,
+    isRegistering: false,
     checkConnection,
     handleLogin,
     registerAdmin

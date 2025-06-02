@@ -5,6 +5,8 @@ import { UserProfileData } from '@/types/auth';
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfileData> => {
   try {
+    console.log('Buscando perfil do usuário:', userId);
+    
     // Buscar perfil do usuário usando maybeSingle() para evitar erro se não existir
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
@@ -18,30 +20,36 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfileData>
     }
 
     const userRole = profileData?.role || 'user';
+    console.log('Role do usuário encontrada:', userRole);
 
     // Se o usuário é admin, não precisa buscar assinatura - tem acesso total
     if (userRole === 'admin' || userRole === 'superadmin') {
-      console.log('Usuário identificado como admin/superadmin, pulando verificação de assinatura');
+      console.log('Usuário identificado como admin, pulando verificação de assinatura');
       return { role: userRole, subscription: null };
     }
 
     // Buscar assinatura apenas para usuários normais
-    const { data: subscriptionRawData, error: subscriptionError } = await supabase.rpc('get_user_subscription');
-    
-    if (subscriptionError) {
-      console.error('Erro ao buscar assinatura:', subscriptionError);
+    try {
+      const { data: subscriptionRawData, error: subscriptionError } = await supabase.rpc('get_user_subscription');
+      
+      if (subscriptionError) {
+        console.error('Erro ao buscar assinatura:', subscriptionError);
+        return { role: userRole, subscription: null };
+      }
+      
+      let subscription = null;
+      if (subscriptionRawData) {
+        const subscriptionData = subscriptionRawData as unknown as SubscriptionRPCResponse;
+        if (subscriptionData.success && subscriptionData.has_subscription) {
+          subscription = subscriptionData.subscription;
+        }
+      }
+
+      return { role: userRole, subscription };
+    } catch (error) {
+      console.error('Erro ao buscar assinatura do usuário:', error);
       return { role: userRole, subscription: null };
     }
-    
-    let subscription = null;
-    if (subscriptionRawData) {
-      const subscriptionData = subscriptionRawData as unknown as SubscriptionRPCResponse;
-      if (subscriptionData.success && subscriptionData.has_subscription) {
-        subscription = subscriptionData.subscription;
-      }
-    }
-
-    return { role: userRole, subscription };
   } catch (error) {
     console.error('Erro ao buscar dados do usuário:', error);
     return { role: 'user', subscription: null };

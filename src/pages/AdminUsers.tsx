@@ -61,13 +61,14 @@ const AdminUsers = () => {
       return;
     }
 
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('email', session.user.email)
-      .single();
+    // Verificar role na tabela profiles ao invés da tabela admins
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .maybeSingle();
 
-    if (!adminData) {
+    if (!profileData || (profileData.role !== 'admin' && profileData.role !== 'superadmin')) {
       await supabase.auth.signOut();
       navigate('/admin/login');
       toast({

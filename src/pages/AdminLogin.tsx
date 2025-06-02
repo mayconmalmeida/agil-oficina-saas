@@ -11,14 +11,11 @@ import { useForm } from "react-hook-form";
 import type { FormValues } from "@/hooks/admin/types";
 import { useAdminLogin } from "@/hooks/admin/useAdminLogin";
 import { testSupabaseConnection } from "@/lib/supabase";
-import { createPredefinedAdmin } from "@/utils/adminSetup";
-import { UserPlus, Loader2, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const AdminLogin = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
-  const [createAdminError, setCreateAdminError] = useState<string | null>(null);
   const { isLoading, handleLogin } = useAdminLogin();
   const navigate = useNavigate();
   
@@ -77,31 +74,6 @@ const AdminLogin = () => {
     await handleLogin(values);
   };
 
-  // Função para criar o usuário admin predefinido
-  const handleCreateAdmin = async () => {
-    if (connectionStatus === 'error') {
-      setErrorMessage("Não é possível criar um admin sem uma conexão com o servidor. Por favor, conecte o Supabase primeiro.");
-      return;
-    }
-    
-    setIsCreatingAdmin(true);
-    setCreateAdminError(null);
-    
-    try {
-      const result = await createPredefinedAdmin();
-      
-      // Preencher o formulário com as credenciais predefinidas
-      form.setValue('email', 'mayconintermediacao@gmail.com');
-      form.setValue('password', 'Oficina@123');
-      
-    } catch (error: any) {
-      console.error("Erro ao criar admin:", error);
-      setCreateAdminError(error.message || "Erro ao criar admin");
-    } finally {
-      setIsCreatingAdmin(false);
-    }
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8">
@@ -116,47 +88,19 @@ const AdminLogin = () => {
             <AuthConnectionStatus status={connectionStatus} />
             <ErrorDisplay message={errorMessage} />
             
-            <div className="mb-6">
-              <Button 
-                onClick={handleCreateAdmin}
-                disabled={isCreatingAdmin || connectionStatus !== 'connected'}
-                variant="outline"
-                className="w-full bg-green-50 border-green-300 hover:bg-green-100"
-              >
-                {isCreatingAdmin ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Configurando admin...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4 text-green-600" />
-                    Criar Admin (mayconintermediacao@gmail.com)
-                  </>
-                )}
-              </Button>
-              
-              {createAdminError && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600 flex items-center">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  {createAdminError}
-                </div>
-              )}
-              
-              {connectionStatus === 'connected' && !createAdminError && (
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Primeiro clique aqui para criar o usuário admin predefinido
-                </p>
-              )}
-            </div>
-            
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t"></span>
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center mb-2">
+                <AlertTriangle className="h-4 w-4 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-blue-800">Informação Importante</span>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">OU FAÇA LOGIN</span>
-              </div>
+              <p className="text-xs text-blue-700">
+                Administradores são gerenciados através da role na tabela 'profiles'. 
+                Para criar um admin, execute no SQL Editor: 
+                <br />
+                <code className="bg-blue-100 px-1 rounded text-xs">
+                  UPDATE profiles SET role = 'admin' WHERE email = 'seu@email.com'
+                </code>
+              </p>
             </div>
             
             <LoginForm 
