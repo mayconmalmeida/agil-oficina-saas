@@ -46,6 +46,30 @@ export const useSubscriptionStatus = () => {
         return;
       }
 
+      // Admin não precisa de validação de assinatura
+      if (user.role === 'admin' || user.role === 'superadmin') {
+        console.log('Admin detectado no useSubscriptionStatus, retornando acesso total');
+        setSubscriptionStatus({
+          hasSubscription: true,
+          subscription: null,
+          isTrialActive: false,
+          isPaidActive: true, // Admin tem acesso como se fosse pago
+          canAccessFeatures: true,
+          isPremium: true, // Admin tem acesso premium
+          isEssencial: true,
+          daysRemaining: 999, // Valor simbólico para admin
+          planDetails: {
+            name: 'Administrador',
+            type: 'premium',
+            billing: 'anual',
+            price: 'Acesso Total',
+            features: ['Acesso administrativo completo']
+          }
+        });
+        setLoading(false);
+        return;
+      }
+
       if (user.subscription) {
         const subscription = user.subscription;
         const daysRemaining = calculateDaysRemaining(subscription);

@@ -58,7 +58,7 @@ export const useLogin = () => {
         return;
       }
 
-      console.log("Login bem-sucedido, verificando tipo de usuário");
+      console.log("Login bem-sucedido, aguardando carregamento dos dados do usuário");
       
       // Lidar com o cliente Supabase dummy ou desconexão
       if (!data || !data.user) {
@@ -103,47 +103,12 @@ export const useLogin = () => {
         description: "Bem-vindo de volta ao OficinaÁgil.",
       });
 
-      // Verificar se é admin
-      try {
-        console.log("Verificando se o usuário é administrador:", data.user.email);
-        const { data: adminData, error: adminError } = await supabase
-          .from('admins')
-          .select('*')
-          .eq('email', values.email)
-          .single();
+      // Aguardar que o useAuthState processe os dados do usuário
+      // O redirecionamento será feito pelo useAccessControl baseado na role
+      console.log("Login concluído, aguardando processamento dos dados do usuário...");
+      setUserId(data.user.id);
+      setIsLoading(false);
 
-        if (adminError) {
-          console.log("Usuário não é admin ou ocorreu erro na verificação:", adminError.message);
-        }
-
-        if (adminData) {
-          console.log("Usuário é admin, redirecionando para dashboard admin");
-          setIsLoading(false);
-          navigate("/admin/dashboard");
-          return;
-        }
-        
-        // Para usuários normais
-        const userId = data.user?.id;
-        if (userId) {
-          console.log("Usuário normal autenticado com ID:", userId);
-          setUserId(userId);
-          
-          // Redirecionar para o dashboard em vez da página de perfil
-          console.log("Redirecionando para dashboard");
-          setIsLoading(false);
-          navigate('/dashboard');
-        }
-      } catch (adminCheckError) {
-        console.error("Erro ao verificar tipo de usuário:", adminCheckError);
-        // Se falhar a verificação, tentamos redirecionar para dashboard
-        if (data.user?.id) {
-          setUserId(data.user.id);
-          console.log("Redirecionando para dashboard após erro");
-          setIsLoading(false);
-          navigate('/dashboard');
-        }
-      }
     } catch (error) {
       console.error("Erro inesperado:", error);
       toast({

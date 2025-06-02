@@ -14,11 +14,19 @@ export const useAuthState = () => {
 
   const updateUserWithData = async (authUser: User) => {
     try {
+      console.log('Buscando dados do perfil para usuário:', authUser.id);
       const userData = await fetchUserProfile(authUser.id);
       
       // Priorizar role de admin - admin sempre tem acesso total
       const isAdmin = userData.role === 'admin' || userData.role === 'superadmin';
       const canAccessFeatures = isAdmin ? true : calculateCanAccessFeatures(userData.subscription);
+      
+      console.log('Dados do usuário carregados:', {
+        role: userData.role,
+        isAdmin,
+        canAccessFeatures,
+        hasSubscription: !!userData.subscription
+      });
       
       const userWithData: AuthUser = {
         ...authUser,

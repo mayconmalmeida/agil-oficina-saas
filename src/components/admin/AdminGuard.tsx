@@ -19,13 +19,15 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Verificar se é admin baseado no role, não na propriedade isAdmin
+  // Verificar se é admin baseado no role da tabela profiles
   const isAdmin = user.role === 'admin' || user.role === 'superadmin';
   
   if (!isAdmin) {
+    console.log('Usuário não é admin, role:', user.role);
     return <Navigate to="/unauthorized" replace />;
   }
 
+  console.log('AdminGuard: Acesso permitido para admin com role:', user.role);
   return <>{children}</>;
 };
 
