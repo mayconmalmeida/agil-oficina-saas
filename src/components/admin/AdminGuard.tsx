@@ -19,10 +19,10 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
 
   if (!user) {
     console.log('AdminGuard: Usuário não autenticado, redirecionando para login');
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
-  // Verificar se é admin baseado APENAS na role da tabela profiles
+  // Verificar se é admin baseado na role da tabela profiles
   const isAdmin = user.role === 'admin' || user.role === 'superadmin';
   
   if (!isAdmin) {

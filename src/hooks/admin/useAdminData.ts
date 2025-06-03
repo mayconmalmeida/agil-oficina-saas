@@ -45,6 +45,45 @@ export interface AdminStats {
   newUsersThisMonth: number;
 }
 
+// Função auxiliar para retry de requisições
+const retryRequest = async <T>(
+  requestFn: () => Promise<{ data: T; error: any }>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<{ data: T; error: any }> => {
+  let lastError;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await requestFn();
+      
+      // Se não há erro, retorna o resultado
+      if (!result.error) {
+        return result;
+      }
+      
+      // Se o erro não é temporário (503), não tenta novamente
+      if (result.error.message && !result.error.message.includes('503')) {
+        return result;
+      }
+      
+      lastError = result.error;
+      
+      // Aguarda antes de tentar novamente (exponential backoff)
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+      }
+    } catch (error) {
+      lastError = error;
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+      }
+    }
+  }
+  
+  return { data: null as T, error: lastError };
+};
+
 export const useAdminData = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
@@ -63,52 +102,92 @@ export const useAdminData = () => {
   const fetchUsers = async () => {
     try {
       setIsLoadingUsers(true);
+      console.log('Iniciando busca de usuários...');
       
-      // Buscar todos os perfis de usuários
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Buscar todos os perfis de usuários com retry
+      const { data: profiles, error: profilesError } = await retryRequest(() =>
+        supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
       if (profilesError) {
+        console.error('Erro ao buscar perfis:', profilesError);
         throw profilesError;
       }
+
+      console.log(`Encontrados ${profiles?.length || 0} perfis`);
 
       // Para cada usuário, buscar sua assinatura mais recente
       const usersWithSubscriptions = await Promise.all(
         (profiles || []).map(async (profile) => {
-          const { data: subscription } = await supabase
-            .from('user_subscriptions')
-            .select('*')
-            .eq('user_id', profile.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+          try {
+            const { data: subscription, error: subscriptionError } = await retryRequest(() =>
+              supabase
+                .from('user_subscriptions')
+                .select('*')
+                .eq('user_id', profile.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            );
 
-          return {
-            id: profile.id,
-            email: profile.email || '',
-            nome_oficina: profile.nome_oficina,
-            telefone: profile.telefone,
-            cnpj: profile.cnpj,
-            responsavel: profile.responsavel,
-            role: profile.role || 'user',
-            is_active: profile.is_active ?? true,
-            created_at: profile.created_at || '',
-            trial_ends_at: profile.trial_ends_at,
-            subscription: subscription || null,
-          };
+            if (subscriptionError && !subscriptionError.message?.includes('No rows found')) {
+              console.warn(`Erro ao buscar assinatura para usuário ${profile.id}:`, subscriptionError);
+            }
+
+            return {
+              id: profile.id,
+              email: profile.email || '',
+              nome_oficina: profile.nome_oficina,
+              telefone: profile.telefone,
+              cnpj: profile.cnpj,
+              responsavel: profile.responsavel,
+              role: profile.role || 'user',
+              is_active: profile.is_active ?? true,
+              created_at: profile.created_at || '',
+              trial_ends_at: profile.trial_ends_at,
+              subscription: subscription || null,
+            };
+          } catch (error) {
+            console.warn(`Erro ao processar usuário ${profile.id}:`, error);
+            return {
+              id: profile.id,
+              email: profile.email || '',
+              nome_oficina: profile.nome_oficina,
+              telefone: profile.telefone,
+              cnpj: profile.cnpj,
+              responsavel: profile.responsavel,
+              role: profile.role || 'user',
+              is_active: profile.is_active ?? true,
+              created_at: profile.created_at || '',
+              trial_ends_at: profile.trial_ends_at,
+              subscription: null,
+            };
+          }
         })
       );
 
       setUsers(usersWithSubscriptions);
+      console.log('Usuários carregados com sucesso');
     } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar usuários",
-        description: error.message,
-      });
+      
+      // Tratamento específico para erros 503
+      if (error.message?.includes('503')) {
+        toast({
+          variant: "destructive",
+          title: "Servidor temporariamente indisponível",
+          description: "O Supabase está sobrecarregado. Tentando novamente em alguns segundos...",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar usuários",
+          description: error.message || "Erro desconhecido",
+        });
+      }
     } finally {
       setIsLoadingUsers(false);
     }
@@ -117,49 +196,87 @@ export const useAdminData = () => {
   const fetchSubscriptions = async () => {
     try {
       setIsLoadingSubscriptions(true);
+      console.log('Iniciando busca de assinaturas...');
       
-      // Buscar todas as assinaturas
-      const { data: subscriptionsData, error: subscriptionsError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Buscar todas as assinaturas com retry
+      const { data: subscriptionsData, error: subscriptionsError } = await retryRequest(() =>
+        supabase
+          .from('user_subscriptions')
+          .select('*')
+          .order('created_at', { ascending: false })
+      );
 
       if (subscriptionsError) {
+        console.error('Erro ao buscar assinaturas:', subscriptionsError);
         throw subscriptionsError;
       }
+
+      console.log(`Encontradas ${subscriptionsData?.length || 0} assinaturas`);
 
       // Para cada assinatura, buscar o email do usuário
       const subscriptionsWithUserInfo = await Promise.all(
         (subscriptionsData || []).map(async (subscription) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, nome_oficina')
-            .eq('id', subscription.user_id)
-            .maybeSingle();
+          try {
+            const { data: profile, error: profileError } = await retryRequest(() =>
+              supabase
+                .from('profiles')
+                .select('email, nome_oficina')
+                .eq('id', subscription.user_id)
+                .maybeSingle()
+            );
 
-          return {
-            id: subscription.id,
-            user_id: subscription.user_id,
-            plan_type: subscription.plan_type,
-            status: subscription.status,
-            starts_at: subscription.starts_at,
-            ends_at: subscription.ends_at,
-            trial_ends_at: subscription.trial_ends_at,
-            created_at: subscription.created_at,
-            user_email: profile?.email || '',
-            nome_oficina: profile?.nome_oficina || '',
-          };
+            if (profileError && !profileError.message?.includes('No rows found')) {
+              console.warn(`Erro ao buscar perfil para assinatura ${subscription.id}:`, profileError);
+            }
+
+            return {
+              id: subscription.id,
+              user_id: subscription.user_id,
+              plan_type: subscription.plan_type,
+              status: subscription.status,
+              starts_at: subscription.starts_at,
+              ends_at: subscription.ends_at,
+              trial_ends_at: subscription.trial_ends_at,
+              created_at: subscription.created_at,
+              user_email: profile?.email || 'Email não encontrado',
+              nome_oficina: profile?.nome_oficina || 'Nome não encontrado',
+            };
+          } catch (error) {
+            console.warn(`Erro ao processar assinatura ${subscription.id}:`, error);
+            return {
+              id: subscription.id,
+              user_id: subscription.user_id,
+              plan_type: subscription.plan_type,
+              status: subscription.status,
+              starts_at: subscription.starts_at,
+              ends_at: subscription.ends_at,
+              trial_ends_at: subscription.trial_ends_at,
+              created_at: subscription.created_at,
+              user_email: 'Email não encontrado',
+              nome_oficina: 'Nome não encontrado',
+            };
+          }
         })
       );
 
       setSubscriptions(subscriptionsWithUserInfo);
+      console.log('Assinaturas carregadas com sucesso');
     } catch (error: any) {
       console.error('Erro ao carregar assinaturas:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar assinaturas",
-        description: error.message,
-      });
+      
+      if (error.message?.includes('503')) {
+        toast({
+          variant: "destructive",
+          title: "Servidor temporariamente indisponível",
+          description: "O Supabase está sobrecarregado. Tentando novamente em alguns segundos...",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar assinaturas",
+          description: error.message || "Erro desconhecido",
+        });
+      }
     } finally {
       setIsLoadingSubscriptions(false);
     }
@@ -168,52 +285,90 @@ export const useAdminData = () => {
   const fetchStats = async () => {
     try {
       setIsLoadingStats(true);
+      console.log('Iniciando busca de estatísticas...');
       
-      // Buscar estatísticas em paralelo
+      // Data do início do mês atual
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      
+      // Buscar estatísticas em paralelo com retry
       const [
-        { count: totalUsers },
-        { count: activeSubscriptions },
-        { count: trialingUsers },
-        { count: newUsersThisMonth }
+        { data: totalUsersData, error: totalUsersError },
+        { data: activeSubscriptionsData, error: activeSubscriptionsError },
+        { data: trialingUsersData, error: trialingUsersError },
+        { data: newUsersData, error: newUsersError }
       ] = await Promise.all([
         // Total de usuários
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true }),
+        retryRequest(() =>
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+        ),
         
         // Assinaturas ativas
-        supabase
-          .from('user_subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active'),
+        retryRequest(() =>
+          supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active')
+        ),
         
         // Usuários em período de teste
-        supabase
-          .from('user_subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'trialing'),
+        retryRequest(() =>
+          supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'trialing')
+        ),
         
         // Novos usuários este mês
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+        retryRequest(() =>
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', startOfMonth)
+        )
       ]);
 
-      setStats({
-        totalUsers: totalUsers || 0,
-        activeSubscriptions: activeSubscriptions || 0,
-        trialingUsers: trialingUsers || 0,
+      // Verificar erros individuais
+      if (totalUsersError) {
+        console.warn('Erro ao buscar total de usuários:', totalUsersError);
+      }
+      if (activeSubscriptionsError) {
+        console.warn('Erro ao buscar assinaturas ativas:', activeSubscriptionsError);
+      }
+      if (trialingUsersError) {
+        console.warn('Erro ao buscar usuários em teste:', trialingUsersError);
+      }
+      if (newUsersError) {
+        console.warn('Erro ao buscar novos usuários:', newUsersError);
+      }
+
+      const newStats = {
+        totalUsers: totalUsersData?.length ?? 0,
+        activeSubscriptions: activeSubscriptionsData?.length ?? 0,
+        trialingUsers: trialingUsersData?.length ?? 0,
         totalRevenue: 0, // Pode ser calculado baseado nas assinaturas ativas
-        newUsersThisMonth: newUsersThisMonth || 0,
-      });
+        newUsersThisMonth: newUsersData?.length ?? 0,
+      };
+
+      setStats(newStats);
+      console.log('Estatísticas carregadas:', newStats);
     } catch (error: any) {
       console.error('Erro ao carregar estatísticas:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar estatísticas",
-        description: error.message,
-      });
+      
+      if (error.message?.includes('503')) {
+        toast({
+          variant: "destructive",
+          title: "Servidor temporariamente indisponível",
+          description: "O Supabase está sobrecarregado. As estatísticas serão carregadas quando o servidor estiver disponível.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar estatísticas",
+          description: error.message || "Erro desconhecido",
+        });
+      }
     } finally {
       setIsLoadingStats(false);
     }
