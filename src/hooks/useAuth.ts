@@ -1,8 +1,8 @@
 
-import { useToast } from '@/hooks/use-toast';
 import { AuthContextValue } from '@/types/auth';
 import { useAuthState } from './useAuthState';
 import { signOutUser } from '@/services/authService';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAuth = (): AuthContextValue => {
   const { user, session, loading, isLoadingAuth, role } = useAuthState();
