@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
@@ -11,10 +11,22 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  
+  // Ref para evitar múltiplas chamadas simultâneas
+  const isUpdatingRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   const updateUserWithData = async (authUser: User) => {
+    // Evitar atualizações simultâneas ou duplicadas
+    if (isUpdatingRef.current || lastUserIdRef.current === authUser.id) {
+      console.log('Evitando atualização duplicada para usuário:', authUser.id);
+      return;
+    }
+
     try {
       console.log('Buscando dados do perfil para usuário:', authUser.id);
+      isUpdatingRef.current = true;
+      lastUserIdRef.current = authUser.id;
       setIsLoadingAuth(true);
       
       const userData = await fetchUserProfile(authUser.id);
@@ -58,6 +70,7 @@ export const useAuthState = () => {
       console.log('Finalizando carregamento de autenticação');
       setIsLoadingAuth(false);
       setLoading(false);
+      isUpdatingRef.current = false;
     }
   };
 
@@ -70,16 +83,23 @@ export const useAuthState = () => {
         if (!mounted) return;
 
         console.log('Auth state change:', event, session?.user?.email);
+        
+        // Sempre atualizar a sessão
         setSession(session);
         
         if (session?.user) {
-          await updateUserWithData(session.user);
+          // Só processar se for um novo usuário ou se não há processamento em andamento
+          if (!isUpdatingRef.current) {
+            await updateUserWithData(session.user);
+          }
         } else {
           console.log('Usuário deslogado, limpando estado');
           setUser(null);
           setRole(null);
           setIsLoadingAuth(false);
           setLoading(false);
+          isUpdatingRef.current = false;
+          lastUserIdRef.current = null;
         }
       }
     );
@@ -99,10 +119,10 @@ export const useAuthState = () => {
         
         setSession(session);
         
-        if (session?.user) {
+        if (session?.user && !isUpdatingRef.current) {
           console.log('Sessão existente encontrada, carregando dados do usuário');
           await updateUserWithData(session.user);
-        } else {
+        } else if (!session?.user) {
           console.log('Nenhuma sessão encontrada');
           setIsLoadingAuth(false);
           setLoading(false);
@@ -121,6 +141,8 @@ export const useAuthState = () => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      isUpdatingRef.current = false;
+      lastUserIdRef.current = null;
     };
   }, []);
 

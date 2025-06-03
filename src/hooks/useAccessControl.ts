@@ -46,7 +46,16 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
           location.pathname !== '/login') {
         console.log('Admin em rota de usuário, redirecionando para admin dashboard');
         navigate('/admin/dashboard', { replace: true });
+        return;
       }
+      
+      // Se admin está na raiz (/), redirecionar para admin dashboard
+      if (location.pathname === '/') {
+        console.log('Admin na raiz, redirecionando para admin dashboard');
+        navigate('/admin/dashboard', { replace: true });
+        return;
+      }
+      
       return;
     }
 
