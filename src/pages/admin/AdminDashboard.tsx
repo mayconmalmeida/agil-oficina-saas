@@ -83,8 +83,7 @@ const AdminDashboard: React.FC = () => {
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
               <p className={`text-xs flex items-center mt-1 ${
-                metric.changeType === 'positive' ? 'text-green-600' : 
-                metric.changeType === 'negative' ? 'text-red-600' : 'text-gray-500'
+                metric.changeType === 'positive' ? 'text-green-600' : 'text-gray-500'
               }`}>
                 <span>{metric.change}</span>
               </p>

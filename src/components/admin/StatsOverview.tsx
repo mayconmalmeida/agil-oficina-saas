@@ -2,16 +2,10 @@
 import React from 'react';
 import StatsCard from './StatsCard';
 import { Users, FileText, CheckCircle, AlertCircle } from "lucide-react";
-
-type UserStats = {
-  totalUsers: number;
-  totalQuotes: number;
-  activeUsers: number;
-  activeSubscriptions: number;
-};
+import { AdminStats } from '@/hooks/admin/useAdminData';
 
 type StatsOverviewProps = {
-  stats: UserStats;
+  stats: AdminStats;
 };
 
 const StatsOverview = ({ stats }: StatsOverviewProps) => {
@@ -26,22 +20,22 @@ const StatsOverview = ({ stats }: StatsOverviewProps) => {
           icon={Users}
         />
         <StatsCard
-          title="Orçamentos"
-          value={stats.totalQuotes}
-          description="Total de orçamentos gerados"
-          icon={FileText}
-        />
-        <StatsCard
-          title="Usuários Ativos"
-          value={stats.activeUsers}
-          description="Ativos nos últimos 30 dias"
-          icon={CheckCircle}
-        />
-        <StatsCard
           title="Assinaturas Ativas"
           value={stats.activeSubscriptions}
           description="Assinaturas pagas ativas"
+          icon={CheckCircle}
+        />
+        <StatsCard
+          title="Usuários em Teste"
+          value={stats.trialingUsers}
+          description="Usuários em período de teste"
           icon={AlertCircle}
+        />
+        <StatsCard
+          title="Novos Usuários (Mês)"
+          value={stats.newUsersThisMonth}
+          description="Cadastros neste mês"
+          icon={FileText}
         />
       </div>
     </section>
