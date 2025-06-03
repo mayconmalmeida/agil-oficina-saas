@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -11,40 +12,15 @@ import UserDetailsDialog from '@/components/admin/users/UserDetailsDialog';
 import EditUserDialog from '@/components/admin/users/EditUserDialog';
 import ChangePlanDialog from '@/components/admin/users/ChangePlanDialog';
 import RenewSubscriptionDialog from '@/components/admin/users/RenewSubscriptionDialog';
-import { useWorkshops } from '@/hooks/admin/useWorkshops';
+import { useAdminData } from '@/hooks/admin/useAdminData';
 
 const AdminUsers = () => {
   const { 
-    workshops,
-    isLoading,
-    selectedWorkshop,
-    showDetailsDialog, 
-    setShowDetailsDialog,
-    showEditDialog, 
-    setShowEditDialog,
-    showRenewDialog, 
-    setShowRenewDialog,
-    showPlanDialog, 
-    setShowPlanDialog,
-    currentPlan, 
-    setCurrentPlan,
-    newExpireDate, 
-    setNewExpireDate,
-    editFormData, 
-    setEditFormData,
-    isProcessing,
-    loadWorkshops,
-    handleViewDetails,
-    handleEditWorkshop,
-    handleChangePlan,
-    handleRenewSubscription,
-    handleToggleStatus,
-    handleSaveEdit,
-    handleSavePlanChange,
-    handleRenewSubmit,
-    generatePDFInvoice,
-    handleViewBudgets
-  } = useWorkshops();
+    users,
+    isLoadingUsers,
+    fetchUsers,
+    refetch
+  } = useAdminData();
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -79,16 +55,98 @@ const AdminUsers = () => {
       return;
     }
 
-    await loadWorkshops();
+    await fetchUsers();
   };
 
   const handleRefreshData = () => {
-    loadWorkshops();
+    fetchUsers();
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/admin/login');
+  };
+
+  // Converter AdminUser para Workshop format
+  const workshopsData = users.map(user => ({
+    id: user.id,
+    nome_oficina: user.nome_oficina || 'Não definido',
+    email: user.email,
+    telefone: user.telefone,
+    cnpj: user.cnpj,
+    responsavel: user.responsavel,
+    plano: user.subscription?.plan_type || 'essencial',
+    is_active: user.is_active,
+    created_at: user.created_at,
+    trial_ends_at: user.trial_ends_at,
+    subscription_status: user.subscription?.status || 'inactive',
+    quote_count: 0 // TODO: Implement quote count if needed
+  }));
+
+  const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: currentStatus ? "Usuário desativado" : "Usuário ativado",
+        description: `O usuário foi ${currentStatus ? 'desativado' : 'ativado'} com sucesso.`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar status",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleViewBudgets = (userId: string) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A visualização de orçamentos será implementada em breve.",
+    });
+  };
+
+  const handleViewDetails = (userId: string) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A visualização de detalhes será implementada em breve.",
+    });
+  };
+
+  const handleEditUser = (user: any) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A edição de usuários será implementada em breve.",
+    });
+  };
+
+  const handleChangePlan = (user: any) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A alteração de planos será implementada em breve.",
+    });
+  };
+
+  const handleRenewSubscription = (user: any) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A renovação de assinaturas será implementada em breve.",
+    });
+  };
+
+  const generatePDFInvoice = (user: any) => {
+    toast({
+      title: "Função em desenvolvimento",
+      description: "A geração de faturas em PDF será implementada em breve.",
+    });
   };
 
   return (
@@ -112,12 +170,12 @@ const AdminUsers = () => {
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg font-medium text-gray-900">Oficinas cadastradas</h3>
             <UsersTable 
-              users={workshops}
-              isLoading={isLoading}
+              users={workshopsData}
+              isLoading={isLoadingUsers}
               onToggleStatus={handleToggleStatus}
               onViewQuotes={handleViewBudgets}
               onViewDetails={handleViewDetails}
-              onEditUser={handleEditWorkshop}
+              onEditUser={handleEditUser}
               onChangePlan={handleChangePlan}
               onRenewSubscription={handleRenewSubscription}
               onGeneratePDF={generatePDFInvoice}
@@ -125,48 +183,6 @@ const AdminUsers = () => {
           </div>
         </div>
       </main>
-
-      {/* User Details Dialog */}
-      <UserDetailsDialog 
-        showDialog={showDetailsDialog}
-        setShowDialog={setShowDetailsDialog}
-        selectedWorkshop={selectedWorkshop}
-        onEdit={handleEditWorkshop}
-        onChangePlan={handleChangePlan}
-        onRenewSubscription={handleRenewSubscription}
-        onToggleStatus={handleToggleStatus}
-        onGeneratePDF={generatePDFInvoice}
-      />
-
-      {/* Edit User Dialog */}
-      <EditUserDialog 
-        showDialog={showEditDialog}
-        setShowDialog={setShowEditDialog}
-        formData={editFormData}
-        setFormData={setEditFormData}
-        onSave={handleSaveEdit}
-        isProcessing={isProcessing}
-      />
-
-      {/* Change Plan Dialog */}
-      <ChangePlanDialog 
-        showDialog={showPlanDialog}
-        setShowDialog={setShowPlanDialog}
-        currentPlan={currentPlan}
-        setCurrentPlan={setCurrentPlan}
-        onSave={handleSavePlanChange}
-        isProcessing={isProcessing}
-      />
-
-      {/* Renew Subscription Dialog */}
-      <RenewSubscriptionDialog 
-        showDialog={showRenewDialog}
-        setShowDialog={setShowRenewDialog}
-        newExpireDate={newExpireDate}
-        setNewExpireDate={setNewExpireDate}
-        onRenew={handleRenewSubmit}
-        isProcessing={isProcessing}
-      />
     </div>
   );
 };

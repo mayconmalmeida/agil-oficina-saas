@@ -1,11 +1,58 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Download } from 'lucide-react';
+import { Search, Filter, Download, RefreshCw } from 'lucide-react';
+import { useAdminData } from '@/hooks/admin/useAdminData';
+import { Badge } from '@/components/ui/badge';
 
 const UsersSubscriptionsPage: React.FC = () => {
+  const { users, isLoadingUsers, fetchUsers } = useAdminData();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const filteredUsers = users.filter(user => 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.nome_oficina?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusBadge = (subscription: any) => {
+    if (!subscription) {
+      return <Badge variant="secondary">Sem Assinatura</Badge>;
+    }
+    
+    switch (subscription.status) {
+      case 'active':
+        return <Badge className="bg-green-500">Ativo</Badge>;
+      case 'trialing':
+        return <Badge className="bg-blue-500">Em Teste</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-amber-500">Cancelado</Badge>;
+      case 'expired':
+        return <Badge className="bg-red-500">Expirado</Badge>;
+      default:
+        return <Badge variant="secondary">Inativo</Badge>;
+    }
+  };
+
+  const getPlanBadge = (subscription: any) => {
+    if (!subscription) {
+      return <Badge variant="outline">Nenhum</Badge>;
+    }
+    
+    const planType = subscription.plan_type || 'essencial';
+    return (
+      <Badge variant={planType.includes('premium') ? 'default' : 'secondary'}>
+        {planType.includes('premium') ? 'Premium' : 'Essencial'}
+      </Badge>
+    );
+  };
+
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -30,10 +77,16 @@ const UsersSubscriptionsPage: React.FC = () => {
                 <Input
                   placeholder="Buscar por nome, email ou ID..."
                   className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={fetchUsers} disabled={isLoadingUsers}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingUsers ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
               <Button variant="outline">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
@@ -47,64 +100,67 @@ const UsersSubscriptionsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabela placeholder */}
+      {/* Tabela de usuários */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Usuários</CardTitle>
+          <CardTitle>Lista de Usuários ({filteredUsers.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg">
-            <div className="grid grid-cols-5 gap-4 p-4 bg-gray-50 border-b font-medium text-sm">
-              <div>Usuário</div>
-              <div>Email</div>
-              <div>Plano</div>
-              <div>Status</div>
-              <div>Ações</div>
+          {isLoadingUsers ? (
+            <div className="text-center py-8">
+              <p>Carregando usuários...</p>
             </div>
-            
-            {/* Linhas placeholder */}
-            {[1, 2, 3, 4, 5].map((index) => (
-              <div key={index} className="grid grid-cols-5 gap-4 p-4 border-b last:border-b-0">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-sm font-medium text-blue-600">U{index}</span>
-                  </div>
-                  <span className="font-medium">Usuário {index}</span>
-                </div>
-                <div className="text-gray-600">usuario{index}@email.com</div>
-                <div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    index % 2 === 0 
-                      ? 'bg-yellow-100 text-yellow-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {index % 2 === 0 ? 'Premium' : 'Essencial'}
-                  </span>
-                </div>
-                <div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    index % 3 === 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {index % 3 === 0 ? 'Ativo' : 'Expirado'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    Ver
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Editar
-                  </Button>
-                </div>
+          ) : (
+            <div className="border rounded-lg">
+              <div className="grid grid-cols-6 gap-4 p-4 bg-gray-50 border-b font-medium text-sm">
+                <div>Usuário</div>
+                <div>Email</div>
+                <div>Plano</div>
+                <div>Status</div>
+                <div>Data de Cadastro</div>
+                <div>Ações</div>
               </div>
-            ))}
-          </div>
-          
-          <div className="mt-4 text-center text-gray-500">
-            <p>Funcionalidade em desenvolvimento - Em breve você poderá gerenciar usuários e assinaturas aqui.</p>
-          </div>
+              
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <div key={user.id} className="grid grid-cols-6 gap-4 p-4 border-b last:border-b-0">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <span className="text-sm font-medium text-blue-600">
+                          {(user.nome_oficina || user.email).charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{user.nome_oficina || 'Não definido'}</span>
+                    </div>
+                    <div className="text-gray-600">{user.email}</div>
+                    <div>
+                      {getPlanBadge(user.subscription)}
+                    </div>
+                    <div>
+                      {getStatusBadge(user.subscription)}
+                    </div>
+                    <div className="text-gray-600">
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        Ver
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">
+                    {searchTerm ? 'Nenhum usuário encontrado com os critérios de busca.' : 'Nenhum usuário encontrado.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

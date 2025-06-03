@@ -1,40 +1,60 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CreditCard, TrendingUp, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdminData } from '@/hooks/admin/useAdminData';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { stats, isLoadingStats, fetchStats } = useAdminData();
 
-  // Dados placeholder para as métricas
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  if (isLoadingStats) {
+    return (
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Carregando dashboard...
+          </h1>
+        </div>
+      </div>
+    );
+  }
+
+  // Cálculo da receita mensal estimada (baseado nas assinaturas ativas)
+  const estimatedMonthlyRevenue = stats.activeSubscriptions * 49.90; // Valor estimado por assinatura
+
   const metrics = [
     {
       title: 'Total de Usuários',
-      value: '1,234',
+      value: stats.totalUsers.toString(),
       icon: Users,
-      change: '+12%',
+      change: `+${stats.newUsersThisMonth}`,
       changeType: 'positive' as const
     },
     {
       title: 'Assinaturas Ativas',
-      value: '856',
+      value: stats.activeSubscriptions.toString(),
       icon: CreditCard,
-      change: '+8%',
-      changeType: 'positive' as const
+      change: `${stats.trialingUsers} em teste`,
+      changeType: 'neutral' as const
     },
     {
-      title: 'Receita Mensal',
-      value: 'R$ 45.680',
+      title: 'Receita Mensal Estimada',
+      value: `R$ ${estimatedMonthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: DollarSign,
-      change: '+15%',
+      change: 'Baseado em assinaturas ativas',
       changeType: 'positive' as const
     },
     {
-      title: 'Taxa de Crescimento',
-      value: '18.2%',
+      title: 'Novos Usuários (Este Mês)',
+      value: stats.newUsersThisMonth.toString(),
       icon: TrendingUp,
-      change: '+3%',
+      change: 'Desde o início do mês',
       changeType: 'positive' as const
     }
   ];
@@ -62,9 +82,11 @@ const AdminDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
-              <p className="text-xs text-green-600 flex items-center mt-1">
+              <p className={`text-xs flex items-center mt-1 ${
+                metric.changeType === 'positive' ? 'text-green-600' : 
+                metric.changeType === 'negative' ? 'text-red-600' : 'text-gray-500'
+              }`}>
                 <span>{metric.change}</span>
-                <span className="text-gray-500 ml-1">vs. mês anterior</span>
               </p>
             </CardContent>
           </Card>
@@ -95,21 +117,30 @@ const AdminDashboard: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Atividade Recente</CardTitle>
+            <CardTitle>Resumo do Sistema</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Novo usuário registrado</span>
-                <span className="text-xs text-gray-500">há 5 min</span>
+                <span className="text-sm">Usuários com Assinatura Ativa</span>
+                <span className="text-xs text-gray-500">{stats.activeSubscriptions}</span>
               </div>
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Assinatura renovada</span>
-                <span className="text-xs text-gray-500">há 15 min</span>
+                <span className="text-sm">Usuários em Período de Teste</span>
+                <span className="text-xs text-gray-500">{stats.trialingUsers}</span>
               </div>
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Pagamento processado</span>
-                <span className="text-xs text-gray-500">há 1h</span>
+                <span className="text-sm">Total de Usuários Registrados</span>
+                <span className="text-xs text-gray-500">{stats.totalUsers}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                <span className="text-sm">Taxa de Conversão</span>
+                <span className="text-xs text-gray-500">
+                  {stats.totalUsers > 0 ? 
+                    ((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1) + '%' : 
+                    '0%'
+                  }
+                </span>
               </div>
             </div>
           </CardContent>

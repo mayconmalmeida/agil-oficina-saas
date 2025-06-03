@@ -1,27 +1,15 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import DashboardHeader from "@/components/admin/DashboardHeader";
 import StatsOverview from "@/components/admin/StatsOverview";
 import SectionLink from "@/components/admin/SectionLink";
-
-type UserStats = {
-  totalUsers: number;
-  totalQuotes: number;
-  activeUsers: number;
-  activeSubscriptions: number;
-};
+import { useAdminData } from '@/hooks/admin/useAdminData';
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState<UserStats>({
-    totalUsers: 0,
-    totalQuotes: 0,
-    activeUsers: 0,
-    activeSubscriptions: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const { stats, isLoadingStats, fetchStats } = useAdminData();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -57,60 +45,14 @@ const AdminDashboard = () => {
     };
 
     checkAdminStatus();
-  }, [navigate, toast]);
-
-  const fetchStats = async () => {
-    try {
-      // Obter número total de usuários
-      const { count: userCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-      // Obter número total de orçamentos
-      const { count: quoteCount } = await supabase
-        .from('orcamentos')
-        .select('*', { count: 'exact', head: true });
-
-      // Obter usuários ativos (estimativa baseada em perfis criados recentemente)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const { count: activeUsersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', thirtyDaysAgo.toISOString());
-
-      // Obter assinaturas ativas
-      const { count: activeSubscriptionsCount } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-      setStats({
-        totalUsers: userCount || 0,
-        totalQuotes: quoteCount || 0,
-        activeUsers: activeUsersCount || 0,
-        activeSubscriptions: activeSubscriptionsCount || 0,
-      });
-
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar dados",
-        description: "Não foi possível carregar as estatísticas do sistema.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [navigate, toast, fetchStats]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/admin/login');
   };
 
-  if (isLoading) {
+  if (isLoadingStats) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Carregando painel administrativo...</p>
