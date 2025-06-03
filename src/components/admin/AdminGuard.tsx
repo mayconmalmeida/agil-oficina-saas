@@ -11,11 +11,14 @@ interface AdminGuardProps {
 const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   const { isLoadingAuth, user } = useAuth();
 
+  // CRÍTICO: Aguardar carregamento completo antes de tomar decisões
   if (isLoadingAuth) {
+    console.log('AdminGuard: Aguardando carregamento de autenticação');
     return <Loading fullscreen text="Verificando permissões de administrador..." />;
   }
 
   if (!user) {
+    console.log('AdminGuard: Usuário não autenticado, redirecionando para login');
     return <Navigate to="/login" replace />;
   }
 
@@ -23,7 +26,7 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   const isAdmin = user.role === 'admin' || user.role === 'superadmin';
   
   if (!isAdmin) {
-    console.log('Usuário não é admin, role:', user.role);
+    console.log('AdminGuard: Usuário não é admin, role:', user.role);
     return <Navigate to="/unauthorized" replace />;
   }
 

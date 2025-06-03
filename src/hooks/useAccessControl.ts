@@ -14,36 +14,38 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
   const location = useLocation();
 
   useEffect(() => {
-    // Não fazer nada se ainda está carregando
+    // CRÍTICO: Não fazer nada se ainda está carregando
     if (isLoadingAuth) {
       console.log('Aguardando carregamento da autenticação...');
       return;
     }
 
+    console.log('Processando controle de acesso:', {
+      user: user?.email,
+      role: user?.role,
+      location: location.pathname,
+      isLoadingAuth
+    });
+
     // Se não há usuário autenticado
     if (!user) {
       console.log('Usuário não autenticado, redirecionando para login');
       if (location.pathname !== '/login' && !location.pathname.startsWith('/admin')) {
-        window.location.replace('/login');
+        navigate('/login', { replace: true });
       }
       return;
     }
-
-    console.log('Verificando controle de acesso para usuário:', {
-      email: user.email,
-      role: user.role,
-      isAdmin: user.isAdmin,
-      location: location.pathname
-    });
 
     // PRIORIDADE MÁXIMA: Admin sempre tem acesso total
     if (user.role === 'admin' || user.role === 'superadmin') {
       console.log('Usuário é admin, bypass total de verificação de assinatura');
       
       // Se admin está em rota de usuário normal, redirecionar para admin dashboard
-      if (!location.pathname.startsWith('/admin') && location.pathname !== '/') {
+      if (!location.pathname.startsWith('/admin') && 
+          location.pathname !== '/' && 
+          location.pathname !== '/login') {
         console.log('Admin em rota de usuário, redirecionando para admin dashboard');
-        window.location.replace('/admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
       }
       return;
     }
@@ -62,8 +64,7 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
       const restrictedPaths = ['/dashboard', '/clientes', '/servicos', '/orcamentos', '/agendamentos', '/produtos'];
       if (restrictedPaths.some(path => location.pathname.startsWith(path))) {
         console.log('Usuário sem acesso tentando acessar área restrita, bloqueando');
-        // Usar replace direto para evitar loops
-        window.location.replace('/login');
+        navigate('/login', { replace: true });
       }
       return;
     }

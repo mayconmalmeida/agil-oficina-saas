@@ -57,10 +57,13 @@ function App() {
   
   const { isLoadingAuth } = useAuth();
 
-  // Mostrar carregamento global enquanto os dados de autenticação estão sendo carregados
+  // CRÍTICO: Mostrar carregamento global APENAS enquanto isLoadingAuth é true
   if (isLoadingAuth) {
+    console.log('Aplicação em estado de carregamento de autenticação');
     return <Loading fullscreen text="Carregando aplicação..." />;
   }
+
+  console.log('Aplicação pronta, renderizando rotas');
 
   return (
     <BrowserRouter>
