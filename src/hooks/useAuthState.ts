@@ -42,12 +42,25 @@ export const useAuthState = () => {
         hasSubscription: !!userData.subscription
       });
       
+      // Ensure subscription has all required properties for UserSubscription type
+      const formattedSubscription = userData.subscription ? {
+        id: userData.subscription.id,
+        user_id: authUser.id,
+        plan_type: userData.subscription.plan_type,
+        status: userData.subscription.status,
+        starts_at: userData.subscription.starts_at,
+        ends_at: userData.subscription.ends_at || null,
+        trial_ends_at: userData.subscription.trial_ends_at || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } : null;
+      
       const userWithData: AuthUser = {
         ...authUser,
         role: userData.role,
         isAdmin,
         canAccessFeatures,
-        subscription: userData.subscription
+        subscription: formattedSubscription
       };
       
       setUser(userWithData);

@@ -18,6 +18,13 @@ export interface UserProfile {
   } | null;
 }
 
+export const signOutUser = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    throw error;
+  }
+};
+
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
   try {
     console.log('Buscando perfil do usuário:', userId);

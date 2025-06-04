@@ -47,10 +47,10 @@ export interface AdminStats {
 
 // Função auxiliar para retry de requisições
 const retryRequest = async <T>(
-  requestFn: () => Promise<{ data: T; error: any }>,
+  requestFn: () => Promise<{ data: T | null; error: any }>,
   maxRetries: number = 3,
   delay: number = 1000
-): Promise<{ data: T; error: any }> => {
+): Promise<{ data: T | null; error: any }> => {
   let lastError;
   
   for (let i = 0; i < maxRetries; i++) {
@@ -81,7 +81,7 @@ const retryRequest = async <T>(
     }
   }
   
-  return { data: null as T, error: lastError };
+  return { data: null, error: lastError };
 };
 
 export const useAdminData = () => {
@@ -343,12 +343,13 @@ export const useAdminData = () => {
         console.warn('Erro ao buscar novos usuários:', newUsersError);
       }
 
+      // Para queries com count, acessamos a propriedade count
       const newStats = {
-        totalUsers: totalUsersData?.length ?? 0,
-        activeSubscriptions: activeSubscriptionsData?.length ?? 0,
-        trialingUsers: trialingUsersData?.length ?? 0,
+        totalUsers: (totalUsersData as any)?.count ?? 0,
+        activeSubscriptions: (activeSubscriptionsData as any)?.count ?? 0,
+        trialingUsers: (trialingUsersData as any)?.count ?? 0,
         totalRevenue: 0, // Pode ser calculado baseado nas assinaturas ativas
-        newUsersThisMonth: newUsersData?.length ?? 0,
+        newUsersThisMonth: (newUsersData as any)?.count ?? 0,
       };
 
       setStats(newStats);
