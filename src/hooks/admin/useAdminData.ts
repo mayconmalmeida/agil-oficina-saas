@@ -105,12 +105,13 @@ export const useAdminData = () => {
       console.log('Iniciando busca de usuários...');
       
       // Buscar todos os perfis de usuários com retry
-      const { data: profiles, error: profilesError } = await retryRequest(() =>
-        supabase
+      const { data: profiles, error: profilesError } = await retryRequest(async () => {
+        const result = await supabase
           .from('profiles')
           .select('*')
-          .order('created_at', { ascending: false })
-      );
+          .order('created_at', { ascending: false });
+        return result;
+      });
 
       if (profilesError) {
         console.error('Erro ao buscar perfis:', profilesError);
@@ -123,15 +124,16 @@ export const useAdminData = () => {
       const usersWithSubscriptions = await Promise.all(
         ((profiles as any[]) || []).map(async (profile: any) => {
           try {
-            const { data: subscription, error: subscriptionError } = await retryRequest(() =>
-              supabase
+            const { data: subscription, error: subscriptionError } = await retryRequest(async () => {
+              const result = await supabase
                 .from('user_subscriptions')
                 .select('*')
                 .eq('user_id', profile.id)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .maybeSingle()
-            );
+                .maybeSingle();
+              return result;
+            });
 
             if (subscriptionError && !subscriptionError.message?.includes('No rows found')) {
               console.warn(`Erro ao buscar assinatura para usuário ${profile.id}:`, subscriptionError);
@@ -148,7 +150,14 @@ export const useAdminData = () => {
               is_active: profile.is_active ?? true,
               created_at: profile.created_at || '',
               trial_ends_at: profile.trial_ends_at,
-              subscription: subscription || null,
+              subscription: subscription ? {
+                id: subscription.id,
+                plan_type: subscription.plan_type,
+                status: subscription.status,
+                starts_at: subscription.starts_at,
+                ends_at: subscription.ends_at,
+                trial_ends_at: subscription.trial_ends_at,
+              } : null,
             };
           } catch (error) {
             console.warn(`Erro ao processar usuário ${profile.id}:`, error);
@@ -199,12 +208,13 @@ export const useAdminData = () => {
       console.log('Iniciando busca de assinaturas...');
       
       // Buscar todas as assinaturas com retry
-      const { data: subscriptionsData, error: subscriptionsError } = await retryRequest(() =>
-        supabase
+      const { data: subscriptionsData, error: subscriptionsError } = await retryRequest(async () => {
+        const result = await supabase
           .from('user_subscriptions')
           .select('*')
-          .order('created_at', { ascending: false })
-      );
+          .order('created_at', { ascending: false });
+        return result;
+      });
 
       if (subscriptionsError) {
         console.error('Erro ao buscar assinaturas:', subscriptionsError);
@@ -217,13 +227,14 @@ export const useAdminData = () => {
       const subscriptionsWithUserInfo = await Promise.all(
         ((subscriptionsData as any[]) || []).map(async (subscription: any) => {
           try {
-            const { data: profile, error: profileError } = await retryRequest(() =>
-              supabase
+            const { data: profile, error: profileError } = await retryRequest(async () => {
+              const result = await supabase
                 .from('profiles')
                 .select('email, nome_oficina')
                 .eq('id', subscription.user_id)
-                .maybeSingle()
-            );
+                .maybeSingle();
+              return result;
+            });
 
             if (profileError && !profileError.message?.includes('No rows found')) {
               console.warn(`Erro ao buscar perfil para assinatura ${subscription.id}:`, profileError);
@@ -298,35 +309,39 @@ export const useAdminData = () => {
         { data: newUsersResult, error: newUsersError }
       ] = await Promise.all([
         // Total de usuários
-        retryRequest(() =>
-          supabase
+        retryRequest(async () => {
+          const result = await supabase
             .from('profiles')
-            .select('*', { count: 'exact', head: true })
-        ),
+            .select('*', { count: 'exact', head: true });
+          return result;
+        }),
         
         // Assinaturas ativas
-        retryRequest(() =>
-          supabase
+        retryRequest(async () => {
+          const result = await supabase
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'active')
-        ),
+            .eq('status', 'active');
+          return result;
+        }),
         
         // Usuários em período de teste
-        retryRequest(() =>
-          supabase
+        retryRequest(async () => {
+          const result = await supabase
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'trialing')
-        ),
+            .eq('status', 'trialing');
+          return result;
+        }),
         
         // Novos usuários este mês
-        retryRequest(() =>
-          supabase
+        retryRequest(async () => {
+          const result = await supabase
             .from('profiles')
             .select('*', { count: 'exact', head: true })
-            .gte('created_at', startOfMonth)
-        )
+            .gte('created_at', startOfMonth);
+          return result;
+        })
       ]);
 
       // Verificar erros individuais
