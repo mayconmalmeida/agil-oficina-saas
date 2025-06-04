@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -46,8 +45,8 @@ export const useAuthState = () => {
       const formattedSubscription = userData.subscription ? {
         id: userData.subscription.id,
         user_id: authUser.id,
-        plan_type: userData.subscription.plan_type,
-        status: userData.subscription.status,
+        plan_type: userData.subscription.plan_type as "essencial_mensal" | "essencial_anual" | "premium_mensal" | "premium_anual" | "free_trial_essencial" | "free_trial_premium",
+        status: userData.subscription.status as "active" | "trialing" | "cancelled" | "expired",
         starts_at: userData.subscription.starts_at,
         ends_at: userData.subscription.ends_at || null,
         trial_ends_at: userData.subscription.trial_ends_at || null,

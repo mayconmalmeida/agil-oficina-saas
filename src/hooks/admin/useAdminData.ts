@@ -47,7 +47,7 @@ export interface AdminStats {
 
 // Função auxiliar para retry de requisições
 const retryRequest = async <T>(
-  requestFn: () => Promise<{ data: T | null; error: any }>,
+  requestFn: () => Promise<any>,
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<{ data: T | null; error: any }> => {
@@ -121,7 +121,7 @@ export const useAdminData = () => {
 
       // Para cada usuário, buscar sua assinatura mais recente
       const usersWithSubscriptions = await Promise.all(
-        (profiles || []).map(async (profile) => {
+        (profiles || []).map(async (profile: any) => {
           try {
             const { data: subscription, error: subscriptionError } = await retryRequest(() =>
               supabase
@@ -215,7 +215,7 @@ export const useAdminData = () => {
 
       // Para cada assinatura, buscar o email do usuário
       const subscriptionsWithUserInfo = await Promise.all(
-        (subscriptionsData || []).map(async (subscription) => {
+        (subscriptionsData || []).map(async (subscription: any) => {
           try {
             const { data: profile, error: profileError } = await retryRequest(() =>
               supabase
@@ -292,10 +292,10 @@ export const useAdminData = () => {
       
       // Buscar estatísticas em paralelo com retry
       const [
-        { data: totalUsersData, error: totalUsersError },
-        { data: activeSubscriptionsData, error: activeSubscriptionsError },
-        { data: trialingUsersData, error: trialingUsersError },
-        { data: newUsersData, error: newUsersError }
+        { data: totalUsersResult, error: totalUsersError },
+        { data: activeSubscriptionsResult, error: activeSubscriptionsError },
+        { data: trialingUsersResult, error: trialingUsersError },
+        { data: newUsersResult, error: newUsersError }
       ] = await Promise.all([
         // Total de usuários
         retryRequest(() =>
@@ -345,11 +345,11 @@ export const useAdminData = () => {
 
       // Para queries com count, acessamos a propriedade count
       const newStats = {
-        totalUsers: (totalUsersData as any)?.count ?? 0,
-        activeSubscriptions: (activeSubscriptionsData as any)?.count ?? 0,
-        trialingUsers: (trialingUsersData as any)?.count ?? 0,
+        totalUsers: (totalUsersResult as any)?.count ?? 0,
+        activeSubscriptions: (activeSubscriptionsResult as any)?.count ?? 0,
+        trialingUsers: (trialingUsersResult as any)?.count ?? 0,
         totalRevenue: 0, // Pode ser calculado baseado nas assinaturas ativas
-        newUsersThisMonth: (newUsersData as any)?.count ?? 0,
+        newUsersThisMonth: (newUsersResult as any)?.count ?? 0,
       };
 
       setStats(newStats);
