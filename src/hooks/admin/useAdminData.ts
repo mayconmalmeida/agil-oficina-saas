@@ -47,7 +47,7 @@ export interface AdminStats {
 
 // Função auxiliar para retry de requisições
 const retryRequest = async <T>(
-  requestFn: () => Promise<any>,
+  requestFn: () => Promise<{ data: T | null; error: any }>,
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<{ data: T | null; error: any }> => {
@@ -117,11 +117,11 @@ export const useAdminData = () => {
         throw profilesError;
       }
 
-      console.log(`Encontrados ${profiles?.length || 0} perfis`);
+      console.log(`Encontrados ${(profiles as any[])?.length || 0} perfis`);
 
       // Para cada usuário, buscar sua assinatura mais recente
       const usersWithSubscriptions = await Promise.all(
-        (profiles || []).map(async (profile: any) => {
+        ((profiles as any[]) || []).map(async (profile: any) => {
           try {
             const { data: subscription, error: subscriptionError } = await retryRequest(() =>
               supabase
@@ -211,11 +211,11 @@ export const useAdminData = () => {
         throw subscriptionsError;
       }
 
-      console.log(`Encontradas ${subscriptionsData?.length || 0} assinaturas`);
+      console.log(`Encontradas ${(subscriptionsData as any[])?.length || 0} assinaturas`);
 
       // Para cada assinatura, buscar o email do usuário
       const subscriptionsWithUserInfo = await Promise.all(
-        (subscriptionsData || []).map(async (subscription: any) => {
+        ((subscriptionsData as any[]) || []).map(async (subscription: any) => {
           try {
             const { data: profile, error: profileError } = await retryRequest(() =>
               supabase
@@ -238,8 +238,8 @@ export const useAdminData = () => {
               ends_at: subscription.ends_at,
               trial_ends_at: subscription.trial_ends_at,
               created_at: subscription.created_at,
-              user_email: profile?.email || 'Email não encontrado',
-              nome_oficina: profile?.nome_oficina || 'Nome não encontrado',
+              user_email: (profile as any)?.email || 'Email não encontrado',
+              nome_oficina: (profile as any)?.nome_oficina || 'Nome não encontrado',
             };
           } catch (error) {
             console.warn(`Erro ao processar assinatura ${subscription.id}:`, error);
