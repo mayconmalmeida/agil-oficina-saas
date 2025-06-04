@@ -10,8 +10,13 @@ const AdminDashboard: React.FC = () => {
   const { stats, isLoadingStats, fetchStats } = useAdminData();
 
   useEffect(() => {
+    console.log('AdminDashboard: Montando componente...');
     fetchStats();
   }, [fetchStats]);
+
+  useEffect(() => {
+    console.log('AdminDashboard: Stats atualizadas:', stats);
+  }, [stats]);
 
   if (isLoadingStats) {
     return (
@@ -26,7 +31,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   // Cálculo da receita mensal estimada (baseado nas assinaturas ativas)
-  const estimatedMonthlyRevenue = stats.activeSubscriptions * 49.90; // Valor estimado por assinatura
+  const estimatedMonthlyRevenue = stats.activeSubscriptions * 49.90;
 
   const metrics = [
     {
@@ -34,28 +39,32 @@ const AdminDashboard: React.FC = () => {
       value: stats.totalUsers.toString(),
       icon: Users,
       change: `+${stats.newUsersThisMonth}`,
-      changeType: 'positive' as const
+      changeType: 'positive' as const,
+      description: `${stats.totalUsers} usuários registrados no sistema`
     },
     {
       title: 'Assinaturas Ativas',
       value: stats.activeSubscriptions.toString(),
       icon: CreditCard,
       change: `${stats.trialingUsers} em teste`,
-      changeType: 'neutral' as const
+      changeType: 'neutral' as const,
+      description: `${stats.activeSubscriptions} assinaturas pagas ativas`
     },
     {
       title: 'Receita Mensal Estimada',
       value: `R$ ${estimatedMonthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: DollarSign,
       change: 'Baseado em assinaturas ativas',
-      changeType: 'positive' as const
+      changeType: 'positive' as const,
+      description: `Estimativa: R$ 49,90 × ${stats.activeSubscriptions} assinaturas`
     },
     {
       title: 'Novos Usuários (Este Mês)',
       value: stats.newUsersThisMonth.toString(),
       icon: TrendingUp,
       change: 'Desde o início do mês',
-      changeType: 'positive' as const
+      changeType: 'positive' as const,
+      description: `${stats.newUsersThisMonth} novos registros este mês`
     }
   ];
 
@@ -68,6 +77,14 @@ const AdminDashboard: React.FC = () => {
         <p className="text-gray-600 mt-2">
           Gerencie usuários, assinaturas e monitore o desempenho da plataforma.
         </p>
+      </div>
+
+      {/* Debug info */}
+      <div className="mb-4 p-4 bg-gray-100 rounded-lg">
+        <h3 className="font-medium text-gray-700 mb-2">Debug - Estatísticas Carregadas:</h3>
+        <pre className="text-xs text-gray-600">
+          {JSON.stringify(stats, null, 2)}
+        </pre>
       </div>
 
       {/* Métricas principais */}
@@ -86,6 +103,9 @@ const AdminDashboard: React.FC = () => {
                 metric.changeType === 'positive' ? 'text-green-600' : 'text-gray-500'
               }`}>
                 <span>{metric.change}</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {metric.description}
               </p>
             </CardContent>
           </Card>
