@@ -40,7 +40,7 @@ const AuthConnectionStatus: React.FC<ConnectionStatusProps> = ({ status, errorDe
         <AlertDescription>
           <strong>❌ Erro de CORS detectado</strong><br />
           O servidor Supabase está bloqueando requisições de origem cruzada.<br />
-          <strong>Solução:</strong> Vá até as configurações do Supabase (Project Settings > API > CORS) 
+          <strong>Solução:</strong> Vá até as configurações do Supabase (Project Settings {'->'} API {'->'} CORS) 
           e adicione o domínio atual às origens permitidas.<br />
           <div className="mt-2 text-xs bg-red-100 p-2 rounded">
             <strong>Detalhes:</strong> {errorDetails}
@@ -56,7 +56,7 @@ const AuthConnectionStatus: React.FC<ConnectionStatusProps> = ({ status, errorDe
         <Clock className="h-4 w-4" />
         <AlertDescription>
           <strong>⏱️ Timeout de conexão</strong><br />
-          O servidor Supabase não respondeu em tempo hábil (>5s).<br />
+          O servidor Supabase não respondeu em tempo hábil ({'>'}5s).<br />
           Isso pode indicar sobrecarga ou problemas de infraestrutura.<br />
           <strong>Sugestão:</strong> Verifique o status em <a href="https://status.supabase.com/" target="_blank" className="underline">status.supabase.com</a>
         </AlertDescription>
