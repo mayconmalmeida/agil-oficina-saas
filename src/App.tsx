@@ -106,8 +106,9 @@ function App() {
           <Route path="/veiculos/:vehicleId" element={<VehicleRegistrationPage />} />
           <Route path="/veiculos/editar/:vehicleId" element={<VehicleRegistrationPage />} />
           <Route path="/produtos" element={<SubscriptionGuard requiredPlan="premium"><ProductsPage /></SubscriptionGuard>} />
-          <Route path="/servicos" element={<ServicesPage />} />
-          <Route path="/servicos/lista" element={<ServicesListPage />} />
+          <Route path="/servicos" element={<ServicesListPage />} />
+          <Route path="/servicos/novo" element={<ServicesPage />} />
+          <Route path="/servicos/editar/:id" element={<ServicesPage />} />
           <Route path="/agendamentos" element={<SubscriptionGuard requiredPlan="premium"><SchedulesPage /></SubscriptionGuard>} />
           <Route path="/agendamentos/novo" element={<SubscriptionGuard requiredPlan="premium"><NewAppointmentPage /></SubscriptionGuard>} />
           <Route path="/orcamentos" element={<BudgetPage />} />

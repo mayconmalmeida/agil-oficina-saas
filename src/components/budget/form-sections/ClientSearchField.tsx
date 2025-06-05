@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { UseFormReturn } from 'react-hook-form';
 import { BudgetFormValues } from '../budgetSchema';
@@ -156,40 +156,42 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                   onValueChange={setSearchTerm}
                   className="h-9"
                 />
-                <CommandEmpty>
-                  {isLoadingClients ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Carregando...
-                    </div>
-                  ) : (
-                    'Nenhum cliente encontrado'
-                  )}
-                </CommandEmpty>
-                <CommandGroup>
-                  <ScrollArea className="h-48">
-                    {Array.isArray(clients) && clients.map((client) => {
-                      if (!client || !client.id) return null;
-                      
-                      return (
-                        <CommandItem
-                          key={client.id}
-                          value={client.nome || ''}
-                          onSelect={() => handleSelectClient(client)}
-                          className="cursor-pointer hover:bg-gray-50"
-                        >
-                          <div className="w-full">
-                            <div className="font-medium">{client.nome || 'Nome não informado'}</div>
-                            <div className="text-xs text-muted-foreground flex justify-between">
-                              <span>{client.telefone || 'Telefone não informado'}</span>
-                              <span>{formatVehicleInfo(client)}</span>
+                <CommandList>
+                  <CommandEmpty>
+                    {isLoadingClients ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Carregando...
+                      </div>
+                    ) : (
+                      'Nenhum cliente encontrado'
+                    )}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    <ScrollArea className="h-48">
+                      {Array.isArray(clients) && clients.map((client) => {
+                        if (!client || !client.id) return null;
+                        
+                        return (
+                          <CommandItem
+                            key={client.id}
+                            value={client.nome || ''}
+                            onSelect={() => handleSelectClient(client)}
+                            className="cursor-pointer hover:bg-gray-50"
+                          >
+                            <div className="w-full">
+                              <div className="font-medium">{client.nome || 'Nome não informado'}</div>
+                              <div className="text-xs text-muted-foreground flex justify-between">
+                                <span>{client.telefone || 'Telefone não informado'}</span>
+                                <span>{formatVehicleInfo(client)}</span>
+                              </div>
                             </div>
-                          </div>
-                        </CommandItem>
-                      );
-                    })}
-                  </ScrollArea>
-                </CommandGroup>
+                          </CommandItem>
+                        );
+                      })}
+                    </ScrollArea>
+                  </CommandGroup>
+                </CommandList>
               </Command>
             </PopoverContent>
           </Popover>

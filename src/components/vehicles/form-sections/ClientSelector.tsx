@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { supabase } from '@/lib/supabase';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Client } from '@/utils/supabaseTypes';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -27,6 +28,7 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
         const { data, error } = await supabase
           .from('clients')
           .select('*')
+          .eq('is_active', true)
           .order('nome');
           
         if (error) throw error;
@@ -41,9 +43,11 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
           } as Client;
         });
         
+        console.log('Clientes carregados:', formattedClients.length);
         setClients(formattedClients);
       } catch (error) {
         console.error('Error fetching clients:', error);
+        setClients([]); // Garantir que sempre seja um array
       } finally {
         setIsLoading(false);
       }
@@ -85,32 +89,36 @@ const ClientSelector: React.FC<ClientSelectorProps> = ({ form }) => {
                 </Button>
               </FormControl>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0">
+            <PopoverContent className="w-full p-0" align="start">
               <Command>
                 <CommandInput placeholder="Buscar cliente..." />
-                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                <CommandGroup>
-                  {clients.map((client) => (
-                    <CommandItem
-                      key={client.id}
-                      value={client.id}
-                      onSelect={() => {
-                        form.setValue('clienteId', client.id);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          client.id === field.value
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {client.nome} - {client.telefone}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+                <CommandList>
+                  <CommandEmpty>
+                    {isLoading ? "Carregando..." : "Nenhum cliente encontrado."}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {Array.isArray(clients) && clients.map((client) => (
+                      <CommandItem
+                        key={client.id}
+                        value={client.id}
+                        onSelect={() => {
+                          form.setValue('clienteId', client.id);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            client.id === field.value
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                        {client.nome} - {client.telefone}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
               </Command>
             </PopoverContent>
           </Popover>
