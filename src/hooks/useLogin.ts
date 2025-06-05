@@ -103,8 +103,8 @@ export const useLogin = () => {
         description: "Bem-vindo de volta ao OficinaÁgil.",
       });
 
-      // Aguardar que o useAuthState processe os dados do usuário
-      // O redirecionamento será feito pelo useAccessControl baseado na role
+      // CRÍTICO: O redirecionamento será feito pelo useAuthState e useAccessControl
+      // baseado na role do usuário carregada
       console.log("Login concluído, aguardando processamento dos dados do usuário...");
       setUserId(data.user.id);
       setIsLoading(false);

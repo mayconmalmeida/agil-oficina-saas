@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -30,9 +31,9 @@ export const useAuthState = () => {
       
       const userData = await fetchUserProfile(authUser.id);
       
-      // Priorizar role de admin - admin sempre tem acesso total
+      // MUDANÇA CRÍTICA: Calcular canAccessFeatures levando em conta a role
       const isAdmin = userData.role === 'admin' || userData.role === 'superadmin';
-      const canAccessFeatures = isAdmin ? true : calculateCanAccessFeatures(userData.subscription);
+      const canAccessFeatures = calculateCanAccessFeatures(userData.subscription, userData.role);
       
       console.log('Dados do usuário carregados:', {
         role: userData.role,
@@ -68,15 +69,16 @@ export const useAuthState = () => {
       console.log('Estado do usuário atualizado completamente');
     } catch (error) {
       console.error('Erro ao atualizar dados do usuário:', error);
-      // Em caso de erro, define usuário sem dados extras
+      // Em caso de erro, define usuário sem dados extras mas com acesso básico se for user
+      const role = 'user'; // Assumir user por padrão em caso de erro
       setUser({
         ...authUser,
-        role: 'user',
+        role,
         isAdmin: false,
-        canAccessFeatures: false,
+        canAccessFeatures: true, // CRÍTICO: Dar acesso básico em caso de erro
         subscription: null
       });
-      setRole('user');
+      setRole(role);
     } finally {
       // CRÍTICO: Sempre definir isLoadingAuth como false após o processamento
       console.log('Finalizando carregamento de autenticação');

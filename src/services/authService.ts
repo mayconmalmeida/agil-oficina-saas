@@ -103,7 +103,21 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
   }
 };
 
-export const calculateCanAccessFeatures = (subscription: any): boolean => {
+export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
+  // CRÍTICO: Admins sempre têm acesso total
+  if (role === 'admin' || role === 'superadmin') {
+    console.log('Admin detectado, acesso total liberado');
+    return true;
+  }
+  
+  // NOVO: Usuários normais autenticados têm acesso básico ao dashboard
+  // Isso resolve o problema do bloqueio de usuários comuns
+  if (role === 'user') {
+    console.log('Usuário comum detectado, liberando acesso básico ao dashboard');
+    return true; // Permite acesso básico ao dashboard para usuários autenticados
+  }
+  
+  // Para outros casos, verificar assinatura
   if (!subscription) return false;
   
   const now = new Date();

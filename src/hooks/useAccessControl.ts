@@ -60,16 +60,18 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
     }
 
     // LÓGICA PARA USUÁRIOS NORMAIS
-    const hasGeneralAccess = user.canAccessFeatures || false;
+    // CRÍTICO: Usuários autenticados têm acesso básico ao dashboard
+    const hasGeneralAccess = user.canAccessFeatures || user.role === 'user';
     
     console.log('Verificando acesso para usuário normal:', {
       hasGeneralAccess,
       subscription: user.subscription,
-      requiredPlan
+      requiredPlan,
+      role: user.role
     });
 
-    // Se não tem acesso geral
-    if (!hasGeneralAccess) {
+    // MUDANÇA IMPORTANTE: Não bloquear usuários autenticados do dashboard básico
+    if (!hasGeneralAccess && user.role !== 'user') {
       const restrictedPaths = ['/dashboard', '/clientes', '/servicos', '/orcamentos', '/agendamentos', '/produtos'];
       if (restrictedPaths.some(path => location.pathname.startsWith(path))) {
         console.log('Usuário sem acesso tentando acessar área restrita, bloqueando');
@@ -92,8 +94,8 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
   }, [user, isLoadingAuth, location.pathname, navigate, requiredPlan]);
 
   return {
-    shouldShowContent: !isLoadingAuth && user && (user.isAdmin || user.canAccessFeatures),
+    shouldShowContent: !isLoadingAuth && user && (user.isAdmin || user.canAccessFeatures || user.role === 'user'),
     isAdmin: user?.isAdmin || false,
-    hasGeneralAccess: user?.canAccessFeatures || false
+    hasGeneralAccess: user?.canAccessFeatures || user?.role === 'user' || false
   };
 };
