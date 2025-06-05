@@ -1,9 +1,11 @@
 
-// Função auxiliar para retry de requisições
+import { isTemporaryError, waitWithBackoff } from './connectionUtils';
+
+// Função auxiliar para retry de requisições com melhor tratamento de erros
 export const retryRequest = async <T>(
   requestFn: () => Promise<{ data: T | null; error: any; count?: number | null }>,
   maxRetries: number = 3,
-  delay: number = 1000
+  baseDelay: number = 1000
 ): Promise<{ data: T | null; error: any; count?: number | null }> => {
   let lastError;
   
@@ -14,36 +16,47 @@ export const retryRequest = async <T>(
       
       // Se não há erro, retorna o resultado
       if (!result.error) {
-        console.log(`Sucesso na tentativa ${i + 1}:`, result);
+        console.log(`✅ Sucesso na tentativa ${i + 1}:`, {
+          hasData: !!result.data,
+          count: result.count
+        });
         return result;
       }
       
-      // Se o erro não é temporário (503), não tenta novamente
-      if (result.error.message && !result.error.message.includes('503')) {
-        console.log(`Erro não temporário na tentativa ${i + 1}:`, result.error);
+      // Verificar se o erro é temporário
+      if (!isTemporaryError(result.error)) {
+        console.log(`❌ Erro permanente na tentativa ${i + 1}:`, {
+          message: result.error.message,
+          code: result.error.code || result.error.status
+        });
         return result;
       }
       
       lastError = result.error;
-      console.log(`Erro temporário na tentativa ${i + 1}:`, lastError);
+      console.log(`⚠️ Erro temporário na tentativa ${i + 1}:`, {
+        message: lastError.message,
+        code: lastError.code || lastError.status
+      });
       
-      // Aguarda antes de tentar novamente (exponential backoff)
+      // Aguarda antes de tentar novamente se não for a última tentativa
       if (i < maxRetries - 1) {
-        const waitTime = delay * Math.pow(2, i);
-        console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await waitWithBackoff(i, baseDelay);
       }
     } catch (error) {
-      console.log(`Exceção na tentativa ${i + 1}:`, error);
+      console.log(`💥 Exceção na tentativa ${i + 1}:`, error);
       lastError = error;
-      if (i < maxRetries - 1) {
-        const waitTime = delay * Math.pow(2, i);
-        console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+      if (i < maxRetries - 1 && isTemporaryError(error)) {
+        await waitWithBackoff(i, baseDelay);
+      } else {
+        break;
       }
     }
   }
   
-  console.log('Todas as tentativas falharam, retornando último erro:', lastError);
+  console.log('❌ Todas as tentativas falharam, retornando último erro:', {
+    message: lastError?.message,
+    code: lastError?.code || lastError?.status
+  });
   return { data: null, error: lastError, count: 0 };
 };

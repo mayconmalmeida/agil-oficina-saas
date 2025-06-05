@@ -10,11 +10,12 @@ import ErrorDisplay from "@/components/admin/auth/ErrorDisplay";
 import { useForm } from "react-hook-form";
 import type { FormValues } from "@/hooks/admin/types";
 import { useAdminLogin } from "@/hooks/admin/useAdminLogin";
-import { testSupabaseConnection } from "@/lib/supabase";
+import { testBasicConnection, ConnectionResult } from "@/hooks/admin/utils/connectionUtils";
 import { AlertTriangle } from "lucide-react";
 
 const AdminLogin = () => {
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error' | 'cors-error' | 'timeout'>('checking');
+  const [connectionDetails, setConnectionDetails] = useState<ConnectionResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { isLoading, handleLogin } = useAdminLogin();
   const navigate = useNavigate();
@@ -32,22 +33,31 @@ const AdminLogin = () => {
     const checkConnection = async () => {
       try {
         setConnectionStatus('checking');
-        console.log("Verificando conexão com Supabase na página de admin login...");
-        const isConnected = await testSupabaseConnection();
+        console.log("🔍 Verificando conexão com Supabase na página de admin login...");
         
-        if (isConnected) {
-          console.log("Conexão com Supabase estabelecida");
+        const result = await testBasicConnection();
+        setConnectionDetails(result);
+        
+        if (result.isConnected) {
+          console.log("✅ Conexão com Supabase estabelecida");
           setConnectionStatus('connected');
           setErrorMessage(null);
         } else {
-          console.error("Falha na conexão com Supabase");
-          setConnectionStatus('error');
-          setErrorMessage(
-            "Não foi possível conectar ao servidor. Conecte o Supabase para ativar funcionalidades de backend."
-          );
+          console.error("❌ Falha na conexão com Supabase:", result.error);
+          
+          // Determinar tipo específico de erro
+          if (result.error?.includes('CORS') || result.error?.includes('Access-Control-Allow-Origin')) {
+            setConnectionStatus('cors-error');
+          } else if (result.statusCode === 408 || result.error?.includes('Timeout')) {
+            setConnectionStatus('timeout');
+          } else {
+            setConnectionStatus('error');
+          }
+          
+          setErrorMessage(result.error || "Erro de conexão desconhecido");
         }
       } catch (error) {
-        console.error("Erro ao verificar conexão:", error);
+        console.error("💥 Erro ao verificar conexão:", error);
         setConnectionStatus('error');
         setErrorMessage(
           "Erro ao verificar conexão com o servidor: " + 
@@ -58,16 +68,21 @@ const AdminLogin = () => {
     
     checkConnection();
     
-    // Verificar conexão a cada 30 segundos
-    const intervalId = setInterval(checkConnection, 30000);
+    // Verificar conexão a cada 30 segundos, mas só se estivermos com erro
+    const intervalId = setInterval(() => {
+      if (connectionStatus === 'error' || connectionStatus === 'cors-error' || connectionStatus === 'timeout') {
+        console.log("🔄 Tentando reconectar...");
+        checkConnection();
+      }
+    }, 30000);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [connectionStatus]);
 
   // Função para lidar com o login do administrador
   const onSubmit = async (values: FormValues) => {
-    if (connectionStatus === 'error') {
-      setErrorMessage("Não é possível fazer login sem uma conexão com o servidor. Por favor, conecte o Supabase primeiro.");
+    if (connectionStatus !== 'connected') {
+      setErrorMessage("Não é possível fazer login sem uma conexão estável com o servidor. Por favor, resolva os problemas de conectividade primeiro.");
       return;
     }
     
@@ -85,7 +100,10 @@ const AdminLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AuthConnectionStatus status={connectionStatus} />
+            <AuthConnectionStatus 
+              status={connectionStatus} 
+              errorDetails={connectionDetails?.error}
+            />
             <ErrorDisplay message={errorMessage} />
             
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -116,6 +134,17 @@ const AdminLogin = () => {
             >
               Voltar para a página inicial
             </Button>
+            
+            {connectionStatus !== 'connected' && (
+              <div className="text-center text-xs text-gray-500 mt-2">
+                <p>Problemas de conexão? Verifique:</p>
+                <ul className="text-left mt-1 ml-4">
+                  <li>• Configurações de CORS no Supabase</li>
+                  <li>• Status do serviço em status.supabase.com</li>
+                  <li>• Sua conexão de internet</li>
+                </ul>
+              </div>
+            )}
           </CardFooter>
         </Card>
       </div>
