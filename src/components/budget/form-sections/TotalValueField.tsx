@@ -19,13 +19,11 @@ const TotalValueField: React.FC<TotalValueFieldProps> = ({ form }) => {
           <FormLabel>Valor Total (R$)</FormLabel>
           <FormControl>
             <Input 
-              placeholder="299,90" 
+              placeholder="0,00" 
               {...field} 
-              onChange={(e) => {
-                // Permitir apenas números e vírgula
-                const value = e.target.value.replace(/[^\d,]/g, '');
-                field.onChange(value);
-              }}
+              readOnly
+              className="bg-gray-50 font-medium text-right text-lg"
+              value={field.value ? `R$ ${field.value}` : 'R$ 0,00'}
             />
           </FormControl>
           <FormMessage />

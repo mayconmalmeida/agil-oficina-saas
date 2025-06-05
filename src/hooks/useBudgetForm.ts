@@ -7,6 +7,15 @@ import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { BudgetFormValues } from '@/components/budget/budgetSchema';
 import { safeRpc } from '@/utils/supabaseTypes';
 
+interface SelectedItem {
+  id: string;
+  nome: string;
+  tipo: 'produto' | 'servico';
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+}
+
 export const useBudgetForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -33,7 +42,7 @@ export const useBudgetForm = () => {
     checkUser();
   }, [navigate, toast]);
   
-  const handleSubmit = async (values: BudgetFormValues) => {
+  const handleSubmit = async (values: BudgetFormValues & { itens?: SelectedItem[] }) => {
     if (!userId) {
       toast({
         variant: "destructive",
@@ -46,13 +55,19 @@ export const useBudgetForm = () => {
     setIsLoading(true);
     
     try {
-      // Create budgets table if not exists using RPC function
+      // Calculate total value from items if present
+      let totalValue = parseFloat(values.valor_total.replace(',', '.').replace('R$', '').trim());
+      if (values.itens && values.itens.length > 0) {
+        totalValue = values.itens.reduce((sum, item) => sum + item.valor_total, 0);
+      }
+      
+      // Create budget using RPC function
       const { error } = await safeRpc("create_budget", {
         p_user_id: userId,
         p_cliente: values.cliente,
         p_veiculo: values.veiculo,
         p_descricao: values.descricao,
-        p_valor_total: parseFloat(values.valor_total.replace(',', '.'))
+        p_valor_total: totalValue
       });
       
       if (error) {
@@ -70,11 +85,11 @@ export const useBudgetForm = () => {
       
       toast({
         title: "Orçamento criado com sucesso!",
-        description: "Seu primeiro orçamento foi criado com sucesso.",
+        description: `Orçamento de R$ ${totalValue.toFixed(2)} criado com ${values.itens?.length || 0} itens.`,
       });
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to budgets list
+      navigate('/orcamentos');
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
