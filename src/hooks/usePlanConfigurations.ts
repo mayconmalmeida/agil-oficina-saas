@@ -33,7 +33,7 @@ export const usePlanConfigurations = () => {
       // Convert the Json type to string[] for features
       const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
         ...plan,
-        features: Array.isArray(plan.features) ? plan.features : []
+        features: Array.isArray(plan.features) ? plan.features.map(String) : []
       }));
       
       setPlans(formattedPlans);

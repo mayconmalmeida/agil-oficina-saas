@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -49,7 +48,7 @@ const AdminPlansPage: React.FC = () => {
       // Convert the Json type to string[] for features
       const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
         ...plan,
-        features: Array.isArray(plan.features) ? plan.features : []
+        features: Array.isArray(plan.features) ? plan.features.map(String) : []
       }));
       
       setPlans(formattedPlans);
@@ -371,7 +370,7 @@ const PlanEditModal: React.FC<{
               <Save className="h-4 w-4 mr-2" />
               Salvar
             </Button>
-            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
