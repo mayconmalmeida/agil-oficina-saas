@@ -29,7 +29,14 @@ export const usePlanConfigurations = () => {
         .order('display_order');
 
       if (error) throw error;
-      setPlans(data || []);
+      
+      // Convert the Json type to string[] for features
+      const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
+        ...plan,
+        features: Array.isArray(plan.features) ? plan.features : []
+      }));
+      
+      setPlans(formattedPlans);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar configurações dos planos:', err);

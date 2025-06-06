@@ -45,7 +45,14 @@ const AdminPlansPage: React.FC = () => {
         .order('display_order');
 
       if (error) throw error;
-      setPlans(data || []);
+      
+      // Convert the Json type to string[] for features
+      const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
+        ...plan,
+        features: Array.isArray(plan.features) ? plan.features : []
+      }));
+      
+      setPlans(formattedPlans);
     } catch (error) {
       console.error('Erro ao carregar planos:', error);
       toast({
@@ -364,7 +371,7 @@ const PlanEditModal: React.FC<{
               <Save className="h-4 w-4 mr-2" />
               Salvar
             </Button>
-          </div>
+            </div>
         </CardContent>
       </Card>
     </div>
