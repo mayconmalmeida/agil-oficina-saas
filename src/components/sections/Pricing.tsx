@@ -1,70 +1,30 @@
 
 import React from 'react';
 import { Check } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-
-const tiers = [
-  {
-    name: 'Essencial',
-    id: 'essencial',
-    price: 'R$ 89,90',
-    yearlyPrice: 'R$ 899,00',
-    description: 'Ideal para oficinas de pequeno porte.',
-    features: [
-      'Cadastro de clientes ilimitado',
-      'Gestão de orçamentos',
-      'Controle de serviços',
-      'Relatórios básicos',
-      'Suporte via e-mail',
-    ],
-    most_popular: false,
-    caktoLinks: {
-      monthly: 'https://pay.cakto.com.br/essencial-mensal',
-      yearly: 'https://pay.cakto.com.br/essencial-anual'
-    }
-  },
-  {
-    name: 'Premium',
-    id: 'premium',
-    price: 'R$ 179,90',
-    yearlyPrice: 'R$ 1.799,00',
-    description: 'Recomendado para oficinas em crescimento.',
-    features: [
-      'Todos os recursos do plano Essencial',
-      'Módulo de estoque integrado',
-      'Agendamento de serviços',
-      'Relatórios avançados',
-      'Suporte prioritário',
-      'Backup automático',
-    ],
-    most_popular: true,
-    caktoLinks: {
-      monthly: 'https://pay.cakto.com.br/premium-mensal',
-      yearly: 'https://pay.cakto.com.br/premium-anual'
-    }
-  },
-];
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { startFreeTrial, subscriptionStatus } = useSubscription();
+  const { plans, loading, getPlansByType } = usePlanConfigurations();
+
+  const essencialPlans = getPlansByType('essencial');
+  const premiumPlans = getPlansByType('premium');
 
   const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
-    // Verificar se usuário está logado
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      // Redirecionar para registro/login com parâmetro do plano
       navigate(`/register?plan=${planType}`);
       return;
     }
 
-    // Se já tem assinatura ativa, redirecionar para dashboard
     if (subscriptionStatus.canAccessFeatures) {
       toast({
         title: "Você já tem acesso!",
@@ -74,7 +34,6 @@ const Pricing = () => {
       return;
     }
 
-    // Iniciar teste gratuito
     const result = await startFreeTrial(planType);
     if (result.success) {
       navigate('/dashboard');
@@ -84,6 +43,47 @@ const Pricing = () => {
   const handlePaidPlan = (caktoUrl: string) => {
     window.open(caktoUrl, '_blank');
   };
+
+  if (loading) {
+    return (
+      <div id="precos" className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <p>Carregando planos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const tiers = [
+    {
+      name: 'Essencial',
+      id: 'essencial',
+      price: essencialPlans.find(p => p.billing_cycle === 'mensal')?.price || 89.90,
+      yearlyPrice: essencialPlans.find(p => p.billing_cycle === 'anual')?.price || 899.00,
+      description: 'Ideal para oficinas de pequeno porte.',
+      features: essencialPlans.find(p => p.billing_cycle === 'mensal')?.features || [],
+      most_popular: false,
+      caktoLinks: {
+        monthly: 'https://pay.cakto.com.br/essencial-mensal',
+        yearly: 'https://pay.cakto.com.br/essencial-anual'
+      }
+    },
+    {
+      name: 'Premium',
+      id: 'premium',
+      price: premiumPlans.find(p => p.billing_cycle === 'mensal')?.price || 179.90,
+      yearlyPrice: premiumPlans.find(p => p.billing_cycle === 'anual')?.price || 1799.00,
+      description: 'Recomendado para oficinas em crescimento.',
+      features: premiumPlans.find(p => p.billing_cycle === 'mensal')?.features || [],
+      most_popular: true,
+      caktoLinks: {
+        monthly: 'https://pay.cakto.com.br/premium-mensal',
+        yearly: 'https://pay.cakto.com.br/premium-anual'
+      }
+    },
+  ];
 
   return (
     <div id="precos" className="py-20 bg-gray-50">
@@ -114,16 +114,15 @@ const Pricing = () => {
                 <h3 className="text-xl font-semibold text-gray-900">{tier.name}</h3>
                 <div className="mt-4 flex items-baseline">
                   <span className="text-4xl font-bold tracking-tight text-gray-900">
-                    {tier.price}
+                    R$ {tier.price.toFixed(2)}
                   </span>
                   <span className="ml-1 text-xl font-semibold text-gray-500">/mês</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">
-                  ou {tier.yearlyPrice}/ano (2 meses grátis)
+                  ou R$ {tier.yearlyPrice.toFixed(2)}/ano (2 meses grátis)
                 </p>
                 <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
                 
-                {/* Botão de teste gratuito */}
                 <Button
                   onClick={() => handleFreeTrial(tier.id as 'essencial' | 'premium')}
                   className={`mt-6 w-full py-3 px-6 text-center font-medium rounded-md ${
@@ -135,7 +134,6 @@ const Pricing = () => {
                   Iniciar teste grátis (7 dias)
                 </Button>
                 
-                {/* Botões de assinatura paga */}
                 <div className="mt-3 space-y-2">
                   <Button
                     variant="outline"
@@ -143,7 +141,7 @@ const Pricing = () => {
                     className="w-full"
                     onClick={() => handlePaidPlan(tier.caktoLinks.monthly)}
                   >
-                    Assinar Mensal - {tier.price}
+                    Assinar Mensal - R$ {tier.price.toFixed(2)}
                   </Button>
                   <Button
                     variant="outline"
@@ -151,7 +149,7 @@ const Pricing = () => {
                     className="w-full"
                     onClick={() => handlePaidPlan(tier.caktoLinks.yearly)}
                   >
-                    Assinar Anual - {tier.yearlyPrice}
+                    Assinar Anual - R$ {tier.yearlyPrice.toFixed(2)}
                   </Button>
                 </div>
               </div>
@@ -160,8 +158,8 @@ const Pricing = () => {
                   O que está incluído
                 </h4>
                 <ul className="mt-6 space-y-4">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
+                  {tier.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
                       <div className="flex-shrink-0">
                         <Check className="h-5 w-5 text-green-500" />
                       </div>

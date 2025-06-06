@@ -13,7 +13,6 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Verificar se o usuário é um administrador através da role na tabela profiles
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -23,7 +22,6 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Verificar role na tabela profiles ao invés da tabela admins
       const { data: profileData } = await supabase
         .from('profiles')
         .select('role')
@@ -39,7 +37,6 @@ const AdminDashboard = () => {
           description: "Você não tem permissão de administrador.",
         });
       } else {
-        // Carregar estatísticas
         fetchStats();
       }
     };
@@ -80,6 +77,12 @@ const AdminDashboard = () => {
           title="Gerenciar Assinaturas"
           buttonText="Ver Todas as Assinaturas"
           onNavigate={() => navigate('/admin/subscriptions')}
+        />
+
+        <SectionLink 
+          title="Gerenciar Planos"
+          buttonText="Editar Planos e Preços"
+          onNavigate={() => navigate('/admin/plans')}
         />
       </main>
     </div>

@@ -173,6 +173,48 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_configurations: {
+        Row: {
+          billing_cycle: string
+          created_at: string | null
+          currency: string | null
+          display_order: number | null
+          features: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          plan_type: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle: string
+          created_at?: string | null
+          currency?: string | null
+          display_order?: number | null
+          features?: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          plan_type: string
+          price: number
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string | null
+          currency?: string | null
+          display_order?: number | null
+          features?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          plan_type?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cep: string | null
