@@ -10,6 +10,7 @@ import SocialProof from '@/components/sections/SocialProof';
 import FAQ from '@/components/sections/FAQ';
 import CTA from '@/components/sections/CTA';
 import Contact from '@/components/sections/Contact';
+import AIFeatures from '@/components/sections/AIFeatures';
 
 const Index: React.FC = () => {
   return (
@@ -18,6 +19,7 @@ const Index: React.FC = () => {
       <main className="flex-grow">
         <Hero />
         <Features />
+        <AIFeatures />
         <SocialProof />
         <HowItWorks />
         <Pricing />

@@ -1,57 +1,39 @@
 
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import VehicleForm from '@/components/vehicles/VehicleForm';
+import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
+import DiagnosticoIA from '@/components/ai/DiagnosticoIA';
+import SuporteIA from '@/components/ai/SuporteIA';
 
 const VehicleRegistrationPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { clientId } = useParams<{ clientId?: string }>();
-  const { vehicleId } = useParams<{ vehicleId?: string }>();
-  const isEditing = !!vehicleId;
-  
-  const handleSaved = () => {
-    // Navigate back to vehicles list after a short delay
-    setTimeout(() => {
-      navigate('/veiculos');
-    }, 1500);
-  };
-  
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">
-          {isEditing ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}
-        </h1>
-        <Button variant="outline" onClick={() => navigate('/veiculos')}>
-          Voltar
-        </Button>
+    <SubscriptionGuard>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-extrabold text-gray-900">
+              Cadastro de Veículo
+            </h1>
+            <p className="mt-4 text-lg text-gray-600">
+              Registre um novo veículo no sistema
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {/* Formulário principal */}
+            <div className="xl:col-span-2">
+              <VehicleForm />
+            </div>
+            
+            {/* Sidebar com funcionalidades de IA */}
+            <div className="space-y-6">
+              <DiagnosticoIA />
+              <SuporteIA />
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Veículo</CardTitle>
-          <CardDescription>
-            Preencha os dados do veículo a ser cadastrado
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <VehicleForm 
-            onSave={handleSaved}
-            vehicleId={vehicleId}
-            isEditing={isEditing}
-            clientId={clientId}
-          />
-        </CardContent>
-      </Card>
-    </div>
+    </SubscriptionGuard>
   );
 };
 
