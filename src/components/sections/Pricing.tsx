@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -59,26 +60,7 @@ const Pricing = () => {
     await createCheckoutSession(planType, billingCycle);
   };
 
-  if (loading) {
-    return (
-      <div id="precos" className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Planos Simples e Acessíveis
-            </h2>
-            <p className="text-lg text-gray-600">Carregando planos...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    console.error('Erro ao carregar planos:', error);
-  }
-
-  // Fallback para planos quando não conseguimos carregar do banco
+  // Fallback para planos quando não conseguimos carregar do banco ou está carregando
   const fallbackTiers = [
     {
       name: 'Essencial',
@@ -114,7 +96,7 @@ const Pricing = () => {
   ];
 
   // Use dados do banco se disponíveis, senão use fallback
-  const tiers = plans.length > 0 ? [
+  const tiers = !loading && plans.length > 0 ? [
     {
       name: 'Essencial',
       id: 'essencial',
@@ -147,6 +129,11 @@ const Pricing = () => {
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
             Escolha o plano ideal para sua oficina e aproveite 7 dias de teste grátis. Sem compromisso.
           </p>
+          {loading && (
+            <p className="mt-2 text-sm text-blue-600">
+              Carregando configurações dos planos...
+            </p>
+          )}
           {error && (
             <p className="mt-2 text-sm text-orange-600">
               Usando configuração padrão de planos
