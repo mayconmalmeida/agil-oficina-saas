@@ -121,7 +121,7 @@ export const useAdminLogin = () => {
 
       console.log("Redirecionando para dashboard admin");
       setIsLoading(false);
-      navigate("/admin/dashboard");
+      navigate("/admin");
     } catch (error: any) {
       console.error("Erro inesperado:", error);
       setErrorMessage('Ocorreu um erro durante o login. ' + (error.message || ''));
