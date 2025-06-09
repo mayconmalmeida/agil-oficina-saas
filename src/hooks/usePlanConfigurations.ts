@@ -22,25 +22,42 @@ export const usePlanConfigurations = () => {
   const fetchPlans = async () => {
     try {
       setLoading(true);
+      setError(null);
+
+      console.log('Fetching plans from Supabase...');
+      
       const { data, error } = await supabase
         .from('plan_configurations')
         .select('*')
         .eq('is_active', true)
         .order('display_order');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching plans:', error);
+        throw error;
+      }
+      
+      console.log('Raw plans data from Supabase:', data);
       
       // Convert the Json type to string[] for features
-      const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
-        ...plan,
-        features: Array.isArray(plan.features) ? plan.features.map(String) : []
-      }));
+      const formattedPlans: PlanConfiguration[] = (data || []).map(plan => {
+        console.log('Processing plan:', plan.id, 'features:', plan.features);
+        return {
+          ...plan,
+          features: Array.isArray(plan.features) ? plan.features.map(String) : []
+        };
+      });
       
+      console.log('Formatted plans:', formattedPlans);
       setPlans(formattedPlans);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar configurações dos planos:', err);
-      setError('Erro ao carregar planos');
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar planos';
+      setError(errorMessage);
+      
+      // Em caso de erro, manter planos vazios para usar fallback
+      setPlans([]);
     } finally {
       setLoading(false);
     }
@@ -51,12 +68,16 @@ export const usePlanConfigurations = () => {
   }, []);
 
   const getPlansByType = (planType: 'essencial' | 'premium') => {
-    return plans.filter(plan => plan.plan_type === planType);
+    const filtered = plans.filter(plan => plan.plan_type === planType);
+    console.log(`Plans filtered by type ${planType}:`, filtered);
+    return filtered;
   };
 
   const getPlanPrice = (planType: string, billingCycle: string) => {
     const plan = plans.find(p => p.plan_type === planType && p.billing_cycle === billingCycle);
-    return plan ? plan.price : 0;
+    const price = plan ? plan.price : 0;
+    console.log(`Price for ${planType} ${billingCycle}:`, price);
+    return price;
   };
 
   return {

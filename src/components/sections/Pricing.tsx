@@ -12,10 +12,17 @@ const Pricing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { startFreeTrial, subscriptionStatus } = useSubscription();
-  const { plans, loading, getPlansByType } = usePlanConfigurations();
+  const { plans, loading, error, getPlansByType } = usePlanConfigurations();
+
+  console.log('Pricing component - Plans loaded:', plans);
+  console.log('Pricing component - Loading:', loading);
+  console.log('Pricing component - Error:', error);
 
   const essencialPlans = getPlansByType('essencial');
   const premiumPlans = getPlansByType('premium');
+
+  console.log('Essencial plans:', essencialPlans);
+  console.log('Premium plans:', premiumPlans);
 
   const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -49,21 +56,72 @@ const Pricing = () => {
       <div id="precos" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <p>Carregando planos...</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Planos Simples e Acessíveis
+            </h2>
+            <p className="text-lg text-gray-600">Carregando planos...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const tiers = [
+  if (error) {
+    console.error('Erro ao carregar planos:', error);
+  }
+
+  // Fallback para planos quando não conseguimos carregar do banco
+  const fallbackTiers = [
+    {
+      name: 'Essencial',
+      id: 'essencial',
+      price: 89.90,
+      yearlyPrice: 899.00,
+      description: 'Ideal para oficinas de pequeno porte.',
+      features: [
+        'Cadastro de clientes ilimitado',
+        'Gestão de orçamentos',
+        'Controle de serviços',
+        'Relatórios básicos',
+        'Suporte via e-mail'
+      ],
+      most_popular: false,
+      caktoLinks: {
+        monthly: 'https://pay.cakto.com.br/essencial-mensal',
+        yearly: 'https://pay.cakto.com.br/essencial-anual'
+      }
+    },
+    {
+      name: 'Premium',
+      id: 'premium',
+      price: 179.90,
+      yearlyPrice: 1799.00,
+      description: 'Recomendado para oficinas em crescimento.',
+      features: [
+        'Todos os recursos do plano Essencial',
+        'Módulo de estoque integrado',
+        'Agendamento de serviços',
+        'Relatórios avançados',
+        'Suporte prioritário',
+        'Backup automático'
+      ],
+      most_popular: true,
+      caktoLinks: {
+        monthly: 'https://pay.cakto.com.br/premium-mensal',
+        yearly: 'https://pay.cakto.com.br/premium-anual'
+      }
+    },
+  ];
+
+  // Use dados do banco se disponíveis, senão use fallback
+  const tiers = plans.length > 0 ? [
     {
       name: 'Essencial',
       id: 'essencial',
       price: essencialPlans.find(p => p.billing_cycle === 'mensal')?.price || 89.90,
       yearlyPrice: essencialPlans.find(p => p.billing_cycle === 'anual')?.price || 899.00,
       description: 'Ideal para oficinas de pequeno porte.',
-      features: essencialPlans.find(p => p.billing_cycle === 'mensal')?.features || [],
+      features: essencialPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[0].features,
       most_popular: false,
       caktoLinks: {
         monthly: 'https://pay.cakto.com.br/essencial-mensal',
@@ -76,14 +134,16 @@ const Pricing = () => {
       price: premiumPlans.find(p => p.billing_cycle === 'mensal')?.price || 179.90,
       yearlyPrice: premiumPlans.find(p => p.billing_cycle === 'anual')?.price || 1799.00,
       description: 'Recomendado para oficinas em crescimento.',
-      features: premiumPlans.find(p => p.billing_cycle === 'mensal')?.features || [],
+      features: premiumPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[1].features,
       most_popular: true,
       caktoLinks: {
         monthly: 'https://pay.cakto.com.br/premium-mensal',
         yearly: 'https://pay.cakto.com.br/premium-anual'
       }
     },
-  ];
+  ] : fallbackTiers;
+
+  console.log('Final tiers to render:', tiers);
 
   return (
     <div id="precos" className="py-20 bg-gray-50">
@@ -95,6 +155,11 @@ const Pricing = () => {
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
             Escolha o plano ideal para sua oficina e aproveite 7 dias de teste grátis. Sem compromisso.
           </p>
+          {error && (
+            <p className="mt-2 text-sm text-orange-600">
+              Usando configuração padrão de planos
+            </p>
+          )}
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
