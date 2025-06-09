@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 
 type PlanUpgradeModalProps = {
   open: boolean;
@@ -17,10 +17,10 @@ type PlanUpgradeModalProps = {
 };
 
 const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
-  const handleUpgrade = (planType: string, interval: string) => {
-    // Here you would integrate with your payment processor
-    // For now, we'll just close the modal and show a toast
-    console.log(`Selected plan: ${planType}, interval: ${interval}`);
+  const { createCheckoutSession, loading } = useStripeSubscription();
+
+  const handleUpgrade = async (planType: 'essencial' | 'premium', interval: 'mensal' | 'anual') => {
+    await createCheckoutSession(planType, interval);
     onOpenChange(false);
   };
 
@@ -80,17 +80,19 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
             
             <div className="space-y-2">
               <Button 
-                onClick={() => handleUpgrade('essencial', 'monthly')} 
+                onClick={() => handleUpgrade('essencial', 'mensal')} 
                 className="w-full"
+                disabled={loading}
               >
-                Assinar Mensal
+                {loading ? 'Processando...' : 'Assinar Mensal'}
               </Button>
               <Button 
-                onClick={() => handleUpgrade('essencial', 'yearly')} 
+                onClick={() => handleUpgrade('essencial', 'anual')} 
                 variant="outline" 
                 className="w-full"
+                disabled={loading}
               >
-                Anual (2 meses grátis)
+                {loading ? 'Processando...' : 'Anual (2 meses grátis)'}
               </Button>
             </div>
           </div>
@@ -139,17 +141,19 @@ const PlanUpgradeModal = ({ open, onOpenChange }: PlanUpgradeModalProps) => {
             
             <div className="space-y-2">
               <Button 
-                onClick={() => handleUpgrade('premium', 'monthly')} 
+                onClick={() => handleUpgrade('premium', 'mensal')} 
                 className="w-full bg-purple-600 hover:bg-purple-700"
+                disabled={loading}
               >
-                Assinar Mensal
+                {loading ? 'Processando...' : 'Assinar Mensal'}
               </Button>
               <Button 
-                onClick={() => handleUpgrade('premium', 'yearly')} 
+                onClick={() => handleUpgrade('premium', 'anual')} 
                 variant="outline" 
                 className="w-full border-purple-200 text-purple-700 hover:bg-purple-100"
+                disabled={loading}
               >
-                Anual (2 meses grátis)
+                {loading ? 'Processando...' : 'Anual (2 meses grátis)'}
               </Button>
             </div>
           </div>

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ const Pricing = () => {
   const { toast } = useToast();
   const { startFreeTrial, subscriptionStatus } = useSubscription();
   const { plans, loading, error, getPlansByType } = usePlanConfigurations();
+  const { createCheckoutSession, loading: stripeLoading } = useStripeSubscription();
 
   console.log('Pricing component - Plans loaded:', plans);
   console.log('Pricing component - Loading:', loading);
@@ -47,8 +48,15 @@ const Pricing = () => {
     }
   };
 
-  const handlePaidPlan = (caktoUrl: string) => {
-    window.open(caktoUrl, '_blank');
+  const handlePaidPlan = async (planType: 'essencial' | 'premium', billingCycle: 'mensal' | 'anual') => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      navigate(`/register?plan=${planType}`);
+      return;
+    }
+
+    await createCheckoutSession(planType, billingCycle);
   };
 
   if (loading) {
@@ -85,11 +93,7 @@ const Pricing = () => {
         'Relatórios básicos',
         'Suporte via e-mail'
       ],
-      most_popular: false,
-      caktoLinks: {
-        monthly: 'https://pay.cakto.com.br/essencial-mensal',
-        yearly: 'https://pay.cakto.com.br/essencial-anual'
-      }
+      most_popular: false
     },
     {
       name: 'Premium',
@@ -105,11 +109,7 @@ const Pricing = () => {
         'Suporte prioritário',
         'Backup automático'
       ],
-      most_popular: true,
-      caktoLinks: {
-        monthly: 'https://pay.cakto.com.br/premium-mensal',
-        yearly: 'https://pay.cakto.com.br/premium-anual'
-      }
+      most_popular: true
     },
   ];
 
@@ -122,11 +122,7 @@ const Pricing = () => {
       yearlyPrice: essencialPlans.find(p => p.billing_cycle === 'anual')?.price || 899.00,
       description: 'Ideal para oficinas de pequeno porte.',
       features: essencialPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[0].features,
-      most_popular: false,
-      caktoLinks: {
-        monthly: 'https://pay.cakto.com.br/essencial-mensal',
-        yearly: 'https://pay.cakto.com.br/essencial-anual'
-      }
+      most_popular: false
     },
     {
       name: 'Premium',
@@ -135,11 +131,7 @@ const Pricing = () => {
       yearlyPrice: premiumPlans.find(p => p.billing_cycle === 'anual')?.price || 1799.00,
       description: 'Recomendado para oficinas em crescimento.',
       features: premiumPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[1].features,
-      most_popular: true,
-      caktoLinks: {
-        monthly: 'https://pay.cakto.com.br/premium-mensal',
-        yearly: 'https://pay.cakto.com.br/premium-anual'
-      }
+      most_popular: true
     },
   ] : fallbackTiers;
 
@@ -204,17 +196,19 @@ const Pricing = () => {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handlePaidPlan(tier.caktoLinks.monthly)}
+                    onClick={() => handlePaidPlan(tier.id as 'essencial' | 'premium', 'mensal')}
+                    disabled={stripeLoading}
                   >
-                    Assinar Mensal - R$ {tier.price.toFixed(2)}
+                    {stripeLoading ? 'Processando...' : `Assinar Mensal - R$ ${tier.price.toFixed(2)}`}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => handlePaidPlan(tier.caktoLinks.yearly)}
+                    onClick={() => handlePaidPlan(tier.id as 'essencial' | 'premium', 'anual')}
+                    disabled={stripeLoading}
                   >
-                    Assinar Anual - R$ {tier.yearlyPrice.toFixed(2)}
+                    {stripeLoading ? 'Processando...' : `Assinar Anual - R$ ${tier.yearlyPrice.toFixed(2)}`}
                   </Button>
                 </div>
               </div>
