@@ -1,124 +1,116 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
-import { supabase, testSupabaseConnection, createProfileIfNotExists } from "@/lib/supabase";
-import { LoginFormValues } from '@/components/auth/LoginForm';
-import { getNextOnboardingStep } from '@/utils/onboardingUtils';
-import { useOnboardingRedirect } from './useOnboardingRedirect';
+import { supabase, testSupabaseConnection } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+
+interface LoginData {
+  email: string;
+  password: string;
+}
 
 export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const { handleRedirect } = useOnboardingRedirect();
+  const { toast } = useToast();
 
-  // Função para verificar conexão com o Supabase
   const checkConnection = async () => {
-    console.log("Verificando conexão com Supabase...");
-    const connected = await testSupabaseConnection();
-    setIsConnected(connected);
-    console.log("Status da conexão:", connected ? "Conectado" : "Desconectado");
-    return connected;
+    return await testSupabaseConnection();
   };
 
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = async (data: LoginData) => {
     setIsLoading(true);
     
     try {
-      // Primeiro verificar a conexão com o Supabase
-      const connected = await checkConnection();
+      console.log('Iniciando processo de login para:', data.email);
       
-      if (!connected) {
+      // Verificar conexão
+      const isConnected = await checkConnection();
+      if (!isConnected) {
         toast({
           variant: "destructive",
           title: "Erro de conexão",
-          description: "Não foi possível conectar ao servidor de autenticação. Conecte o Supabase para continuar ou o sistema funcionará em modo de demonstração.",
+          description: "Não foi possível conectar ao servidor. Tente novamente.",
         });
-        console.log("Funcionando em modo demo (Supabase desconectado)");
+        setIsLoading(false);
+        return;
       }
-      
-      console.log("Iniciando login com:", values.email);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
 
       if (error) {
-        console.error("Erro de autenticação:", error);
+        console.error('Erro no login:', error);
         toast({
           variant: "destructive",
-          title: "Erro ao fazer login",
-          description: `${error.message} (Código: ${error.status || 'desconhecido'})`,
+          title: "Erro no login",
+          description: error.message === "Invalid login credentials" 
+            ? "Email ou senha incorretos" 
+            : "Erro ao fazer login. Tente novamente.",
         });
         setIsLoading(false);
         return;
       }
 
-      console.log("Login bem-sucedido, aguardando carregamento dos dados do usuário");
-      
-      // Lidar com o cliente Supabase dummy ou desconexão
-      if (!data || !data.user) {
-        console.log("Funcionando em modo demo (sem Supabase conectado)");
-        
-        toast({
-          title: "Login simulado com sucesso",
-          description: "Sistema funcionando em modo de demonstração.",
-        });
-        
-        // Simular um ID de usuário para teste
-        const demoUserId = "demo-user-" + Date.now();
-        setUserId(demoUserId);
-        
-        console.log("Redirecionando para dashboard (modo demo)");
-        setIsLoading(false);
-        navigate('/dashboard');
-        return;
-      }
-      
-      // Tentamos garantir que o usuário tenha um perfil
-      if (connected) {
-        console.log("Verificando/criando perfil para usuário:", data.user.id);
-        const profileResult = await createProfileIfNotExists(
-          data.user.id, 
-          data.user.email || values.email,
-          data.user.user_metadata?.full_name
-        );
-        
-        if (!profileResult.success) {
-          console.warn("Alerta: Não foi possível verificar/criar o perfil do usuário:", 
-            profileResult.error);
-          // Continuamos mesmo sem conseguir criar o perfil
-          // para permitir que o usuário entre no sistema
-        } else {
-          console.log("Perfil verificado/criado com sucesso");
+      if (authData.user) {
+        console.log('Login bem-sucedido para:', authData.user.email);
+        setUserId(authData.user.id);
+
+        // Verificar se é admin
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.log('Erro ao verificar perfil ou perfil não existe:', profileError.message);
+          }
+
+          // Se é admin, redirecionar para painel admin
+          if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
+            console.log('Admin detectado, redirecionando para /admin');
+            toast({
+              title: "Login realizado com sucesso!",
+              description: "Bem-vindo ao painel de administração.",
+            });
+            navigate('/admin');
+            setIsLoading(false);
+            return;
+          }
+        } catch (adminError) {
+          console.error('Erro ao verificar admin:', adminError);
         }
+
+        // Para usuários normais
+        console.log('Usuário normal, redirecionando para dashboard');
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo de volta!",
+        });
+        navigate('/dashboard');
       }
-      
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo de volta ao OficinaÁgil.",
-      });
-
-      // CRÍTICO: O redirecionamento será feito pelo useAuthState e useAccessControl
-      // baseado na role do usuário carregada
-      console.log("Login concluído, aguardando processamento dos dados do usuário...");
-      setUserId(data.user.id);
-      setIsLoading(false);
-
     } catch (error) {
-      console.error("Erro inesperado:", error);
+      console.error('Erro inesperado no login:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro durante o login. Verifique sua conexão.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
       });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  return { isLoading, isConnected, userId, handleLogin, setUserId, checkConnection };
+  return {
+    isLoading,
+    userId,
+    handleLogin,
+    setUserId,
+    checkConnection,
+  };
 };

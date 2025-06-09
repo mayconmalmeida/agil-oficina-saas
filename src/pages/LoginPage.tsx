@@ -70,25 +70,25 @@ const LoginPage: React.FC = () => {
           console.log("Sessão existente encontrada:", session.user.email);
           setUserId(session.user.id);
           
-          // Verificar se é admin
+          // Verificar se é admin através da role na tabela profiles
           try {
-            const { data: adminData, error: adminError } = await supabase
-              .from('admins')
-              .select('*')
-              .eq('email', session.user.email)
-              .single();
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .maybeSingle();
                 
-            if (adminError) {
-              console.log("Erro ao verificar se é admin ou usuário não é admin:", adminError.message);
+            if (profileError) {
+              console.log("Erro ao verificar profile ou usuário não tem perfil:", profileError.message);
             }
                 
-            if (adminData) {
+            if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
               console.log("Usuário é admin, redirecionando para dashboard admin");
               toast({
                 title: "Login automático",
                 description: "Você foi redirecionado para o painel de administração.",
               });
-              navigate("/admin/dashboard");
+              navigate("/admin");
               return;
             }
           } catch (adminCheckError) {
