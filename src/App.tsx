@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -32,6 +33,9 @@ import AdminUsers from '@/pages/AdminUsers';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AdminLayout from '@/components/layout/AdminLayout';
+import AdminGuard from '@/components/admin/AdminGuard';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -46,32 +50,71 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile-setup" element={<ProfileSetupPage />} />
-            <Route path="/profile-edit" element={<ProfileEditPage />} />
             <Route path="/workshop-registration" element={<WorkshopRegistrationPage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/produtos" element={<ProductsPage />} />
-            <Route path="/servicos" element={<ServicesListPage />} />
-            <Route path="/veiculos" element={<VehiclesPage />} />
-            <Route path="/veiculos/novo" element={<VehicleRegistrationPage />} />
-            <Route path="/orcamentos" element={<BudgetPage />} />
-            <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
-            <Route path="/orcamentos/:id" element={<BudgetDetailsPage />} />
-            <Route path="/orcamentos/:id/editar" element={<BudgetEditPage />} />
-            <Route path="/agendamentos" element={<SchedulingPage />} />
-            <Route path="/agendamentos/novo" element={<NewAppointmentPage />} />
-            <Route path="/configuracoes" element={<SettingsPage />} />
-            <Route path="/empresa" element={<CompanyProfilePage />} />
+            <Route path="/profile-setup" element={<ProfileSetupPage />} />
+            <Route path="/profile-edit" element={<ProfileEditPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="/payment-success" element={<PaymentSuccessPage />} />
+            
+            {/* Dashboard routes with layout */}
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+            </Route>
+            <Route path="/clientes" element={<DashboardLayout />}>
+              <Route index element={<ClientsPage />} />
+            </Route>
+            <Route path="/produtos" element={<DashboardLayout />}>
+              <Route index element={<ProductsPage />} />
+            </Route>
+            <Route path="/servicos" element={<DashboardLayout />}>
+              <Route index element={<ServicesListPage />} />
+            </Route>
+            <Route path="/veiculos" element={<DashboardLayout />}>
+              <Route index element={<VehiclesPage />} />
+            </Route>
+            <Route path="/veiculos/novo" element={<DashboardLayout />}>
+              <Route index element={<VehicleRegistrationPage />} />
+            </Route>
+            <Route path="/orcamentos" element={<DashboardLayout />}>
+              <Route index element={<BudgetPage />} />
+            </Route>
+            <Route path="/orcamentos/novo" element={<DashboardLayout />}>
+              <Route index element={<NewBudgetPage />} />
+            </Route>
+            <Route path="/orcamentos/:id" element={<DashboardLayout />}>
+              <Route index element={<BudgetDetailsPage />} />
+            </Route>
+            <Route path="/orcamentos/:id/editar" element={<DashboardLayout />}>
+              <Route index element={<BudgetEditPage />} />
+            </Route>
+            <Route path="/agendamentos" element={<DashboardLayout />}>
+              <Route index element={<SchedulingPage />} />
+            </Route>
+            <Route path="/agendamentos/novo" element={<DashboardLayout />}>
+              <Route index element={<NewAppointmentPage />} />
+            </Route>
+            <Route path="/configuracoes" element={<DashboardLayout />}>
+              <Route index element={<SettingsPage />} />
+            </Route>
+            <Route path="/empresa" element={<DashboardLayout />}>
+              <Route index element={<CompanyProfilePage />} />
+            </Route>
+
+            {/* Admin routes with protection and layout */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/register" element={<AdminRegister />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
-            <Route path="/admin/plans" element={<AdminPlansPage />} />
-            <Route path="/payment-success" element={<PaymentSuccessPage />} />
+            <Route path="/admin" element={
+              <AdminGuard>
+                <AdminLayout />
+              </AdminGuard>
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="subscriptions" element={<AdminSubscriptions />} />
+              <Route path="plans" element={<AdminPlansPage />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

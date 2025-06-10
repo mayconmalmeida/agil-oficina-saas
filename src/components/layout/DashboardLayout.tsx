@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -201,9 +202,9 @@ const DashboardLayout = () => {
                 </nav>
               </div>
               <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-                <Link to="/profile" className="flex-shrink-0 w-full group block">
+                <div className="flex-shrink-0 w-full group block">
                   <div className="flex items-center">
-                    <div className="ml-3">
+                    <div className="ml-3 flex-1">
                       <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
                         {userProfile?.nome_oficina || 'Oficina'}
                       </p>
@@ -211,8 +212,16 @@ const DashboardLayout = () => {
                         {userProfile?.email}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleLogout}
+                      className="ml-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
                   </div>
-                </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -220,14 +229,34 @@ const DashboardLayout = () => {
 
         {/* Conteúdo principal */}
         <div className="flex flex-col w-0 flex-1 overflow-hidden">
-          {/* Header mobile */}
-          <div className="md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
-            <button
-              className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
+          {/* Header com menu sanduíche */}
+          <div className="bg-white shadow-sm border-b border-gray-200">
+            <div className="flex items-center justify-between px-4 py-3">
+              <button
+                className="md:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              
+              {/* Logo/título para mobile */}
+              <div className="md:hidden">
+                <Link to="/" className="text-lg font-bold text-oficina-dark">
+                  Oficina<span className="text-oficina-accent">Ágil</span>
+                </Link>
+              </div>
+              
+              {/* Menu de usuário para mobile */}
+              <div className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
           
           {/* Área de conteúdo */}
