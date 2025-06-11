@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -28,14 +27,15 @@ import UnauthorizedPage from '@/pages/UnauthorizedPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminRegister from '@/pages/AdminRegister';
-import AdminDashboard from '@/pages/AdminDashboard';
+import OptimizedAdminDashboard from '@/pages/OptimizedAdminDashboard';
 import AdminUsers from '@/pages/AdminUsers';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import AdminLayout from '@/components/layout/AdminLayout';
-import AdminGuard from '@/components/admin/AdminGuard';
+import OptimizedAdminLayout from '@/components/layout/OptimizedAdminLayout';
+import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
+import { AdminProvider } from '@/contexts/AdminContext';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -105,11 +105,13 @@ function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/register" element={<AdminRegister />} />
             <Route path="/admin" element={
-              <AdminGuard>
-                <AdminLayout />
-              </AdminGuard>
+              <AdminProvider>
+                <OptimizedAdminGuard>
+                  <OptimizedAdminLayout />
+                </OptimizedAdminGuard>
+              </AdminProvider>
             }>
-              <Route index element={<AdminDashboard />} />
+              <Route index element={<OptimizedAdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="subscriptions" element={<AdminSubscriptions />} />
               <Route path="plans" element={<AdminPlansPage />} />
