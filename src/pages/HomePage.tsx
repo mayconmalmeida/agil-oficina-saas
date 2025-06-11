@@ -1,29 +1,33 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import Hero from '@/components/sections/Hero';
+import Features from '@/components/sections/Features';
+import HowItWorks from '@/components/sections/HowItWorks';
+import Pricing from '@/components/sections/Pricing';
+import SocialProof from '@/components/sections/SocialProof';
+import FAQ from '@/components/sections/FAQ';
+import CTA from '@/components/sections/CTA';
+import Contact from '@/components/sections/Contact';
+import AIFeatures from '@/components/sections/AIFeatures';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">
-            Sistema de Gestão para Oficinas
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Gerencie clientes, orçamentos, serviços e muito mais
-          </p>
-          <div className="space-x-4">
-            <Button asChild>
-              <Link to="/login">Entrar</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/register">Cadastrar</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-screen font-sans">
+      <Navbar />
+      <main className="flex-grow">
+        <Hero />
+        <Features />
+        <AIFeatures />
+        <SocialProof />
+        <HowItWorks />
+        <Pricing />
+        <FAQ />
+        <CTA />
+        <Contact />
+      </main>
+      <Footer />
     </div>
   );
 };
