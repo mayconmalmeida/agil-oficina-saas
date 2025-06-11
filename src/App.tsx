@@ -50,8 +50,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AdminProvider>
-          <Router>
+        <Router>
+          <AdminProvider>
             <div className="App">
               <Routes>
                 {/* Public routes */}
@@ -95,8 +95,8 @@ function App() {
               </Routes>
               <Toaster />
             </div>
-          </Router>
-        </AdminProvider>
+          </AdminProvider>
+        </Router>
       </AuthProvider>
     </QueryClientProvider>
   );
