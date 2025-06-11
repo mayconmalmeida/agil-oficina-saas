@@ -5,8 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import DashboardHeader from "@/components/admin/DashboardHeader";
-import UsersHeader from "@/components/admin/UsersHeader";
 import UsersTable from "@/components/admin/UsersTable";
 import Loading from '@/components/ui/loading';
 
@@ -99,11 +97,6 @@ const AdminUsers = () => {
     fetchUsers();
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/admin/login');
-  };
-
   const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
@@ -175,39 +168,39 @@ const AdminUsers = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader 
-        title="Gerenciamento de Oficinas"
-        onLogout={handleLogout} 
-      />
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Gerenciamento de Usuários
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Visualize e gerencie todos os usuários da plataforma.
+        </p>
+      </div>
       
-      <UsersHeader onBack={() => navigate('/admin')} />
+      <div className="flex justify-end mb-4">
+        <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar dados
+        </Button>
+      </div>
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-end mb-4">
-          <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar dados
-          </Button>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Usuários cadastrados</h3>
+          <UsersTable 
+            users={users}
+            isLoading={isLoading}
+            onToggleStatus={handleToggleStatus}
+            onViewQuotes={handleViewBudgets}
+            onViewDetails={handleViewDetails}
+            onEditUser={handleEditUser}
+            onChangePlan={handleChangePlan}
+            onRenewSubscription={handleRenewSubscription}
+            onGeneratePDF={generatePDFInvoice}
+          />
         </div>
-        
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900">Oficinas cadastradas</h3>
-            <UsersTable 
-              users={users}
-              isLoading={isLoading}
-              onToggleStatus={handleToggleStatus}
-              onViewQuotes={handleViewBudgets}
-              onViewDetails={handleViewDetails}
-              onEditUser={handleEditUser}
-              onChangePlan={handleChangePlan}
-              onRenewSubscription={handleRenewSubscription}
-              onGeneratePDF={generatePDFInvoice}
-            />
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 };

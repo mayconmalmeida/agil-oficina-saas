@@ -1,15 +1,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { AdminContextValue, AdminUser } from '@/types/admin';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { AdminUser, AdminContextValue, AdminRole } from '@/types/admin';
 
-const AdminContext = createContext<AdminContextValue | null>(null);
+const AdminContext = createContext<AdminContextValue | undefined>(undefined);
 
-export const useAdminContext = (): AdminContextValue => {
+export const useAdminContext = () => {
   const context = useContext(AdminContext);
-  if (!context) {
-    throw new Error('useAdminContext must be used within AdminProvider');
+  if (context === undefined) {
+    throw new Error('useAdminContext must be used within an AdminProvider');
   }
   return context;
 };
@@ -19,89 +20,157 @@ interface AdminProviderProps {
 }
 
 export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
-  const { user, isLoadingAuth, signOut } = useAuth();
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const processUser = () => {
-      if (isLoadingAuth) {
-        setIsLoading(true);
-        return;
-      }
-
-      if (!user) {
-        setAdminUser(null);
-        setIsLoading(false);
-        setError(null);
-        return;
-      }
-
-      // Verificar se é admin
-      const isAdmin = user.role === 'admin' || user.role === 'superadmin' || user.isAdmin;
-      
-      if (!isAdmin) {
-        setError('Usuário não tem permissões de administrador');
-        setAdminUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Criar objeto AdminUser
-      const adminUserData: AdminUser = {
-        id: user.id,
-        email: user.email || 'admin@system.com',
-        role: (user.role as 'admin' | 'superadmin') || 'admin',
-        isAdmin: true,
-        canAccessFeatures: true
-      };
-
-      setAdminUser(adminUserData);
-      setError(null);
-      setIsLoading(false);
-    };
-
-    processUser();
-  }, [user, isLoadingAuth]);
-
-  const checkAdminPermissions = (requiredRole?: 'admin' | 'superadmin'): boolean => {
-    if (!adminUser) return false;
+  const checkAdminPermissions = (requiredRole?: AdminRole): boolean => {
+    if (!user) return false;
     
     if (!requiredRole) return true;
     
-    if (requiredRole === 'admin') return true;
-    if (requiredRole === 'superadmin') return adminUser.role === 'superadmin';
+    if (user.role === 'superadmin') return true;
     
-    return false;
+    return user.role === requiredRole;
   };
 
-  const handleSignOut = async () => {
+  const signOut = async () => {
     try {
-      await signOut();
-      setAdminUser(null);
-      setError(null);
+      await supabase.auth.signOut();
+      setUser(null);
+      navigate('/admin/login');
+      
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
     } catch (error) {
-      console.error('Erro ao fazer logout admin:', error);
+      console.error('Erro ao fazer logout:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao realizar logout administrativo"
+        description: "Erro ao realizar logout."
       });
     }
   };
 
-  const value: AdminContextValue = {
-    user: adminUser,
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAdmin = async () => {
+      try {
+        console.log('AdminContext: Inicializando verificação de admin...');
+        
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('AdminContext: Erro ao obter sessão:', sessionError);
+          throw sessionError;
+        }
+
+        if (!session?.user) {
+          console.log('AdminContext: Nenhum usuário autenticado');
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        console.log('AdminContext: Usuário encontrado, verificando permissões admin...');
+        
+        // Verificar se o usuário tem role de admin na tabela profiles
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, email')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('AdminContext: Erro ao buscar perfil:', profileError);
+          throw profileError;
+        }
+
+        if (!profile) {
+          console.log('AdminContext: Perfil não encontrado');
+          throw new Error('Perfil não encontrado');
+        }
+
+        const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
+        
+        if (!isAdmin) {
+          console.log('AdminContext: Usuário não é admin, role:', profile.role);
+          throw new Error('Acesso negado: usuário não é administrador');
+        }
+
+        if (mounted) {
+          const adminUser: AdminUser = {
+            id: session.user.id,
+            email: profile.email || session.user.email || '',
+            role: profile.role as 'admin' | 'superadmin',
+            isAdmin: true,
+            canAccessFeatures: true
+          };
+
+          console.log('AdminContext: Admin autenticado com sucesso:', adminUser);
+          setUser(adminUser);
+          setError(null);
+        }
+
+      } catch (error: any) {
+        console.error('AdminContext: Erro na inicialização:', error);
+        if (mounted) {
+          setUser(null);
+          setError(error.message || 'Erro ao verificar permissões administrativas');
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Configurar listener de mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log('AdminContext: Auth state change:', event);
+        
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setError(null);
+          setIsLoading(false);
+          return;
+        }
+
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await initializeAdmin();
+        }
+      }
+    );
+
+    // Inicializar verificação
+    initializeAdmin();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
+
+  const contextValue: AdminContextValue = {
+    user,
     isLoading,
     error,
     checkAdminPermissions,
-    signOut: handleSignOut
+    signOut
   };
 
   return (
-    <AdminContext.Provider value={value}>
+    <AdminContext.Provider value={contextValue}>
       {children}
     </AdminContext.Provider>
   );

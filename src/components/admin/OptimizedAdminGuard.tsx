@@ -36,7 +36,7 @@ const OptimizedAdminGuard: React.FC<OptimizedAdminGuardProps> = ({
   // Verificar permissões específicas
   if (!checkAdminPermissions(requiredRole)) {
     console.log('OptimizedAdminGuard: Permissões insuficientes');
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   console.log('OptimizedAdminGuard: Acesso permitido');
