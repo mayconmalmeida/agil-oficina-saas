@@ -13,6 +13,7 @@ interface PlanConfiguration {
   features: string[];
   is_active: boolean;
   display_order: number;
+  affiliate_link?: string;
 }
 
 export const usePlansManagement = () => {
@@ -62,7 +63,8 @@ export const usePlansManagement = () => {
           currency: plan.currency,
           features: plan.features,
           is_active: plan.is_active,
-          display_order: plan.display_order
+          display_order: plan.display_order,
+          affiliate_link: plan.affiliate_link
         });
 
       if (error) throw error;
@@ -122,7 +124,8 @@ export const usePlansManagement = () => {
       currency: 'BRL',
       features: [],
       is_active: true,
-      display_order: plans.length + 1
+      display_order: plans.length + 1,
+      affiliate_link: ''
     });
     setIsCreating(true);
   };

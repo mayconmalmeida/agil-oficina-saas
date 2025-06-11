@@ -19,6 +19,7 @@ interface PlanConfiguration {
   features: string[];
   is_active: boolean;
   display_order: number;
+  affiliate_link?: string;
 }
 
 interface PlanEditModalProps {
@@ -87,6 +88,17 @@ const PlanEditModal: React.FC<PlanEditModalProps> = ({ plan, onSave, onCancel })
               id="name"
               value={editedPlan.name}
               onChange={(e) => setEditedPlan({...editedPlan, name: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="affiliate_link">Link de Afiliado (Cakto)</Label>
+            <Input
+              id="affiliate_link"
+              type="url"
+              placeholder="https://cakto.com.br/link-afiliado"
+              value={editedPlan.affiliate_link || ''}
+              onChange={(e) => setEditedPlan({...editedPlan, affiliate_link: e.target.value})}
             />
           </div>
 

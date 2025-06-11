@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -8,55 +8,92 @@ import { RefreshCw } from "lucide-react";
 import DashboardHeader from "@/components/admin/DashboardHeader";
 import UsersHeader from "@/components/admin/UsersHeader";
 import UsersTable from "@/components/admin/UsersTable";
-import UserDetailsDialog from '@/components/admin/users/UserDetailsDialog';
-import EditUserDialog from '@/components/admin/users/EditUserDialog';
-import ChangePlanDialog from '@/components/admin/users/ChangePlanDialog';
-import RenewSubscriptionDialog from '@/components/admin/users/RenewSubscriptionDialog';
-import { useAdminData } from '@/hooks/admin/useAdminData';
+import Loading from '@/components/ui/loading';
+
+interface UserProfile {
+  id: string;
+  nome_oficina: string | null;
+  email: string | null;
+  telefone: string | null;
+  cnpj: string | null;
+  responsavel: string | null;
+  plano: string;
+  is_active: boolean;
+  created_at: string;
+  trial_ends_at: string | null;
+  subscription_status: string;
+  quote_count: number;
+}
 
 const AdminUsers = () => {
-  const { 
-    users,
-    isLoadingUsers,
-    fetchUsers,
-    refetch
-  } = useAdminData();
-
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    checkAdminAuthAndLoadData();
-  }, []);
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Buscar todos os perfis de usuários
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const checkAdminAuthAndLoadData = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate('/admin/login');
-      return;
-    }
+      if (profilesError) throw profilesError;
 
-    // Verificar role na tabela profiles ao invés da tabela admins
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .maybeSingle();
+      // Para cada usuário, buscar sua assinatura mais recente e contagem de orçamentos
+      const usersWithDetails = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          // Buscar assinatura mais recente
+          const { data: subscription } = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', profile.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-    if (!profileData || (profileData.role !== 'admin' && profileData.role !== 'superadmin')) {
-      await supabase.auth.signOut();
-      navigate('/admin/login');
+          // Buscar contagem de orçamentos
+          const { count: quotesCount } = await supabase
+            .from('orcamentos')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', profile.id);
+
+          return {
+            id: profile.id,
+            nome_oficina: profile.nome_oficina || 'Não definido',
+            email: profile.email,
+            telefone: profile.telefone,
+            cnpj: profile.cnpj,
+            responsavel: profile.responsavel,
+            plano: subscription?.plan_type || profile.plano || 'essencial',
+            is_active: profile.is_active ?? true,
+            created_at: profile.created_at,
+            trial_ends_at: profile.trial_ends_at,
+            subscription_status: subscription?.status || 'inactive',
+            quote_count: quotesCount || 0
+          };
+        })
+      );
+
+      setUsers(usersWithDetails);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
       toast({
         variant: "destructive",
-        title: "Acesso negado",
-        description: "Você não tem permissão de administrador.",
+        title: "Erro",
+        description: "Não foi possível carregar os usuários."
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    await fetchUsers();
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleRefreshData = () => {
     fetchUsers();
@@ -66,22 +103,6 @@ const AdminUsers = () => {
     await supabase.auth.signOut();
     navigate('/admin/login');
   };
-
-  // Converter AdminUser para Workshop format
-  const workshopsData = users.map(user => ({
-    id: user.id,
-    nome_oficina: user.nome_oficina || 'Não definido',
-    email: user.email,
-    telefone: user.telefone,
-    cnpj: user.cnpj,
-    responsavel: user.responsavel,
-    plano: user.subscription?.plan_type || 'essencial',
-    is_active: user.is_active,
-    created_at: user.created_at,
-    trial_ends_at: user.trial_ends_at,
-    subscription_status: user.subscription?.status || 'inactive',
-    quote_count: 0 // TODO: Implement quote count if needed
-  }));
 
   const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
     try {
@@ -149,6 +170,10 @@ const AdminUsers = () => {
     });
   };
 
+  if (isLoading) {
+    return <Loading fullscreen text="Carregando usuários..." />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader 
@@ -156,7 +181,7 @@ const AdminUsers = () => {
         onLogout={handleLogout} 
       />
       
-      <UsersHeader onBack={() => navigate('/admin/dashboard')} />
+      <UsersHeader onBack={() => navigate('/admin')} />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-end mb-4">
@@ -170,8 +195,8 @@ const AdminUsers = () => {
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg font-medium text-gray-900">Oficinas cadastradas</h3>
             <UsersTable 
-              users={workshopsData}
-              isLoading={isLoadingUsers}
+              users={users}
+              isLoading={isLoading}
               onToggleStatus={handleToggleStatus}
               onViewQuotes={handleViewBudgets}
               onViewDetails={handleViewDetails}

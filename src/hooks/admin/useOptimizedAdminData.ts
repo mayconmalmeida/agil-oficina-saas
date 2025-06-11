@@ -24,7 +24,6 @@ export const useOptimizedAdminData = (): UseAdminDataReturn => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Usar ref para evitar múltiplas chamadas simultâneas
   const isLoadingRef = useRef(false);
   const cacheRef = useRef<{ data: AdminStats; timestamp: number } | null>(null);
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
@@ -78,12 +77,12 @@ export const useOptimizedAdminData = (): UseAdminDataReturn => {
     setError(null);
 
     try {
-      console.log('Iniciando busca otimizada de estatísticas admin...');
+      console.log('Iniciando busca de estatísticas admin...');
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      // Executar todas as consultas em paralelo para melhor performance
+      // Executar todas as consultas em paralelo
       const [
         totalUsersResult,
         activeSubscriptionsResult,
@@ -108,11 +107,36 @@ export const useOptimizedAdminData = (): UseAdminDataReturn => {
         )
       ]);
 
+      // Calcular receita total das assinaturas ativas
+      const { data: subscriptionsData } = await supabase
+        .from('user_subscriptions')
+        .select('plan_type')
+        .eq('status', 'active');
+
+      let totalRevenue = 0;
+      if (subscriptionsData) {
+        // Buscar preços dos planos
+        const { data: plansData } = await supabase
+          .from('plan_configurations')
+          .select('plan_type, billing_cycle, price');
+
+        if (plansData) {
+          subscriptionsData.forEach(sub => {
+            const plan = plansData.find(p => 
+              p.plan_type === sub.plan_type.replace('_anual', '').replace('_mensal', '')
+            );
+            if (plan) {
+              totalRevenue += plan.price;
+            }
+          });
+        }
+      }
+
       const newStats: AdminStats = {
         totalUsers: totalUsersResult.count,
         activeSubscriptions: activeSubscriptionsResult.count,
         trialingUsers: trialingUsersResult.count,
-        totalRevenue: 0, // Implementar cálculo de receita se necessário
+        totalRevenue,
         newUsersThisMonth: newUsersResult.count
       };
 

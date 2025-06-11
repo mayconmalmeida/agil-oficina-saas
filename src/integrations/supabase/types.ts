@@ -175,6 +175,7 @@ export type Database = {
       }
       plan_configurations: {
         Row: {
+          affiliate_link: string | null
           billing_cycle: string
           created_at: string | null
           currency: string | null
@@ -188,6 +189,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          affiliate_link?: string | null
           billing_cycle: string
           created_at?: string | null
           currency?: string | null
@@ -201,6 +203,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          affiliate_link?: string | null
           billing_cycle?: string
           created_at?: string | null
           currency?: string | null

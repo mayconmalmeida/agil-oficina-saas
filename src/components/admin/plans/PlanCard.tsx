@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, X } from 'lucide-react';
+import { Edit2, X, ExternalLink } from 'lucide-react';
 
 interface PlanConfiguration {
   id: string;
@@ -14,6 +14,7 @@ interface PlanConfiguration {
   features: string[];
   is_active: boolean;
   display_order: number;
+  affiliate_link?: string;
 }
 
 interface PlanCardProps {
@@ -39,6 +40,19 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete }) => {
           <p className="text-lg font-bold text-green-600">
             R$ {plan.price.toFixed(2)}
           </p>
+          {plan.affiliate_link && (
+            <div className="flex items-center gap-2 mt-2">
+              <ExternalLink className="h-4 w-4 text-blue-500" />
+              <a 
+                href={plan.affiliate_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:underline"
+              >
+                Link de Afiliado
+              </a>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => onEdit(plan)}>
