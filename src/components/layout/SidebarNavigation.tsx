@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useSubscription } from '@/hooks/useSubscription';
 import UserMenu from './UserMenu';
 import NavigationLinks from './NavigationLinks';
+import SubscriptionInfoCard from './SubscriptionInfoCard';
 
 interface SidebarNavigationProps {
   onLogout: () => void;
@@ -33,35 +33,13 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
       </div>
       {/* Status da assinatura */}
       <div className="mt-4 px-4">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium text-blue-900">
-                  {subscriptionStatus.planDetails?.name || 'Sem plano'}
-                </div>
-                {subscriptionStatus.isTrialActive && (
-                  <div className="text-xs text-blue-600">
-                    {subscriptionStatus.daysRemaining} dias restantes
-                  </div>
-                )}
-              </div>
-              {subscriptionStatus.isPremium && (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                  Premium
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <SubscriptionInfoCard subscriptionStatus={subscriptionStatus} />
       </div>
-
       {/* Navegação */}
       <NavigationLinks 
         subscriptionStatus={subscriptionStatus}
         onNavigate={handleNavigation}
       />
-
       {/* Usuário e logout */}
       <UserMenu 
         userProfile={userProfile}
@@ -72,4 +50,3 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
 };
 
 export default SidebarNavigation;
-
