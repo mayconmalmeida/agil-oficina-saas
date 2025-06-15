@@ -48,6 +48,7 @@ const queryClient = new QueryClient({
 });
 
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
+import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
 
 function App() {
   return (
@@ -129,6 +130,8 @@ function App() {
             <Route path="empresa" element={<CompanyPage />} />
             <Route path="perfil" element={<ProfilePage />} />
             <Route path="assinatura" element={<SubscriptionPage />} />
+            <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
+            <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
           </Route>
 
           {/* Catch all route */}
