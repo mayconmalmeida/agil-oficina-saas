@@ -5,7 +5,8 @@ import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authSer
 import { AuthUser } from '@/types/auth';
 
 /**
- * Busca e prepara userProfile, isAdmin, canAccessFeatures e subscription
+ * Faz busca do "profile" e status de assinatura para um User Supabase.
+ * Retorna rapidamente (null) se não há user informado!
  */
 export function useUserProfileData(authUser: User | null) {
   const [profile, setProfile] = useState<AuthUser | null>(null);
@@ -18,8 +19,8 @@ export function useUserProfileData(authUser: User | null) {
       setRole(null);
       return;
     }
-    setLoading(true);
 
+    setLoading(true);
     fetchUserProfile(authUser.id)
       .then(userData => {
         const isAdmin = userData.role === 'admin' || userData.role === 'superadmin';
@@ -28,8 +29,18 @@ export function useUserProfileData(authUser: User | null) {
         const formattedSubscription = userData.subscription ? {
           id: userData.subscription.id,
           user_id: authUser.id,
-          plan_type: userData.subscription.plan_type as "essencial_mensal" | "essencial_anual" | "premium_mensal" | "premium_anual" | "free_trial_essencial" | "free_trial_premium",
-          status: userData.subscription.status as "active" | "trialing" | "cancelled" | "expired",
+          plan_type: userData.subscription.plan_type as
+            | "essencial_mensal"
+            | "essencial_anual"
+            | "premium_mensal"
+            | "premium_anual"
+            | "free_trial_essencial"
+            | "free_trial_premium",
+          status: userData.subscription.status as
+            | "active"
+            | "trialing"
+            | "cancelled"
+            | "expired",
           starts_at: userData.subscription.starts_at,
           ends_at: userData.subscription.ends_at || null,
           trial_ends_at: userData.subscription.trial_ends_at || null,
@@ -46,8 +57,8 @@ export function useUserProfileData(authUser: User | null) {
         });
         setRole(userData.role);
       })
-      .catch(error => {
-        // Fallback se não conseguir buscar perfil
+      .catch(() => {
+        // fallback perfil mínimo
         setProfile({
           ...authUser,
           role: 'user',
