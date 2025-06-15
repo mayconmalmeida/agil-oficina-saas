@@ -47,6 +47,8 @@ const queryClient = new QueryClient({
   },
 });
 
+import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
