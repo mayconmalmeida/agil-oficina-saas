@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -49,55 +48,88 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AdminProvider>
-            <div className="App">
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                
-                {/* Admin routes with separate layout */}
-                <Route path="/admin/login" element={<AdminLoginPage />} />
-                <Route path="/admin" element={
-                  <OptimizedAdminGuard>
-                    <OptimizedAdminLayout />
-                  </OptimizedAdminGuard>
-                }>
-                  <Route index element={<OptimizedAdminDashboard />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="subscriptions" element={<AdminSubscriptions />} />
-                  <Route path="plans" element={<AdminPlansPage />} />
-                </Route>
-                
-                {/* Protected user routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route index element={<DashboardPage />} />
-                  <Route path="clientes" element={<ClientsPage />} />
-                  <Route path="servicos" element={<ServicesPage />} />
-                  <Route path="orcamentos" element={<BudgetsPage />} />
-                  <Route path="agendamentos" element={<SchedulingPage />} />
-                  <Route path="produtos" element={<ProductsPage />} />
-                  <Route path="configuracoes" element={<SettingsPage />} />
-                  <Route path="empresa" element={<CompanyPage />} />
-                  <Route path="perfil" element={<ProfilePage />} />
-                  <Route path="assinatura" element={<SubscriptionPage />} />
-                </Route>
+      <Router>
+        {/* CONTEXTO DE ADMIN SÓ NAS ROTAS /admin */}
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/"
+            element={
+              <AuthProvider>
+                <HomePage />
+              </AuthProvider>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <AuthProvider>
+                <LoginPage />
+              </AuthProvider>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AuthProvider>
+                <RegisterPage />
+              </AuthProvider>
+            }
+          />
 
-                {/* Catch all route */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-              <Toaster />
-            </div>
-          </AdminProvider>
-        </Router>
-      </AuthProvider>
+          {/* ADMIN ROUTES - SÓ ADMINPROVIDER */}
+          <Route
+            path="/admin/login"
+            element={
+              <AdminProvider>
+                <AdminLoginPage />
+              </AdminProvider>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminProvider>
+                <OptimizedAdminGuard>
+                  <OptimizedAdminLayout />
+                </OptimizedAdminGuard>
+              </AdminProvider>
+            }
+          >
+            <Route index element={<OptimizedAdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="plans" element={<AdminPlansPage />} />
+          </Route>
+
+          {/* Protected user routes - SÓ AUTHPROVIDER */}
+          <Route
+            path="/dashboard"
+            element={
+              <AuthProvider>
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              </AuthProvider>
+            }
+          >
+            <Route index element={<DashboardPage />} />
+            <Route path="clientes" element={<ClientsPage />} />
+            <Route path="servicos" element={<ServicesPage />} />
+            <Route path="orcamentos" element={<BudgetsPage />} />
+            <Route path="agendamentos" element={<SchedulingPage />} />
+            <Route path="produtos" element={<ProductsPage />} />
+            <Route path="configuracoes" element={<SettingsPage />} />
+            <Route path="empresa" element={<CompanyPage />} />
+            <Route path="perfil" element={<ProfilePage />} />
+            <Route path="assinatura" element={<SubscriptionPage />} />
+          </Route>
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Toaster />
+      </Router>
     </QueryClientProvider>
   );
 }
