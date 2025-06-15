@@ -2,7 +2,18 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart, LineChart } from "lucide-react";
-import { ResponsiveContainer, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, BarChart as ReBarChart } from "recharts";
+import {
+  ResponsiveContainer,
+  Line as ReLine,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Bar as ReBar,
+  BarChart as ReBarChart,
+  LineChart as ReLineChart,
+} from "recharts";
 import React from "react";
 
 const data = [
@@ -31,14 +42,14 @@ export default function RelatoriosAvancadosPage() {
           <Card>
             <CardContent className="h-[300px] pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
+                <ReLineChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="serviços" stroke="#2563eb" strokeWidth={2} />
-                </LineChart>
+                  <ReLine type="monotone" dataKey="serviços" stroke="#2563eb" strokeWidth={2} />
+                </ReLineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -54,7 +65,7 @@ export default function RelatoriosAvancadosPage() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="orcamentos" fill="#22c55e" radius={[6, 6, 0, 0]} />
+                  <ReBar dataKey="orcamentos" fill="#22c55e" radius={[6, 6, 0, 0]} />
                 </ReBarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -64,3 +75,4 @@ export default function RelatoriosAvancadosPage() {
     </div>
   );
 }
+
