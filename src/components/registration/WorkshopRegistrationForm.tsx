@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -113,7 +112,11 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
         }
       }
       
-      // 3. Update profile with additional information
+      // 3. Update profile with additional information + plano + trial_ends_at + is_active
+      const selectedPlanValue = "Premium";
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -126,8 +129,10 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
           cnpj: data.documentType === 'CNPJ' ? data.documentNumber : null,
           inscricao_estadual: data.stateRegistration,
           responsavel: data.responsiblePerson,
-          plano: selectedPlan || 'basic',
+          plano: selectedPlanValue,
           logo_url: logoUrl,
+          is_active: true,
+          trial_ends_at: trialEndDate.toISOString(),
         })
         .eq('id', authData.user.id);
         

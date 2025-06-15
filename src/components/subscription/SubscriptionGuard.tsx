@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccessControl } from '@/hooks/useAccessControl';
@@ -42,6 +41,18 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // Se é admin, sempre permitir acesso
   if (isAdmin) {
     return <>{children}</>;
+  }
+
+  // BLOQUEIO DE TRIAL PREMIUM
+  const isTrialExpired =
+    user.trial_ends_at &&
+    new Date(user.trial_ends_at) < new Date() &&
+    user.plano === "Premium";
+
+  // Comportamento: se expired e não tem plano pago, bloqueia.
+  if (isTrialExpired && !user.subscription) {
+    window.location.replace('/plano-expirado');
+    return null;
   }
 
   // Se não tem acesso geral às funcionalidades
