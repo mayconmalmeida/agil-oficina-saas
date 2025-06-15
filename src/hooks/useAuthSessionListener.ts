@@ -11,7 +11,7 @@ export function useAuthSessionListener() {
   useEffect(() => {
     let mounted = true;
     // CORREÇÃO: Extrair Subscription corretamente e limpar com subscription.unsubscribe()
-    const { subscription } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!mounted) return;
         setSession(session);
