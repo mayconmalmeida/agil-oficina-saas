@@ -10,7 +10,7 @@ export function useWorkshopRegistration() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  // **Salvamento progressivo de perfil/oficina**
+  // Salvamento progressivo de perfil/oficina
   const createOrUpdatePartialProfile = async (
     data: Partial<WorkshopRegistrationFormValues>,
     profileId: string | null,
@@ -21,20 +21,24 @@ export function useWorkshopRegistration() {
     try {
       let resp;
       if (!profileId) {
-        // Criação inicial do perfil (perfil "temporário" até login final)
+        // Criação inicial do perfil temporário: Atenção aos campos existentes na table
         resp = await supabase
           .from('profiles')
           .insert([{
             nome_oficina: data.businessName,
             cnpj: data.documentType === 'CNPJ' ? data.documentNumber : null,
             responsavel: data.responsiblePerson,
-            inscricao_estadual: data.stateRegistration,
+            // REMOVE inscricao_estadual pois não existe em profiles
             endereco: data.address,
             cidade: data.city,
             estado: data.state,
             cep: data.zipCode,
             plano: "Essencial",
-            // ... outros campos que puder salvar
+            email: data.email,
+            telefone: data.phone,
+            logo_url: undefined, // só atualiza depois caso logo for enviado!
+            is_active: false, // status provisório antes do cadastro
+            role: "oficina" // define como oficina desde o início!
           }])
           .select('id')
           .maybeSingle();
@@ -42,11 +46,10 @@ export function useWorkshopRegistration() {
       } else {
         // Atualização incremental do perfil
         const updateObj: any = {};
-        // Mapeamento flexível (só atualiza os campos relevantes do step)
+        // Mapeamento flexível dos campos válidos
         if ('businessName' in data) updateObj.nome_oficina = data.businessName;
-        if ('tradingName' in data) updateObj.trading_name = data.tradingName;
+        if ('tradingName' in data) updateObj.trading_name = data.tradingName; // Verifique se a coluna existe, caso contrário remova.
         if ('documentType' in data && data.documentType === 'CNPJ') updateObj.cnpj = data.documentNumber;
-        if ('stateRegistration' in data) updateObj.inscricao_estadual = data.stateRegistration;
         if ('responsiblePerson' in data) updateObj.responsavel = data.responsiblePerson;
         if ('phone' in data) updateObj.telefone = data.phone;
         if ('email' in data) updateObj.email = data.email;
@@ -60,7 +63,7 @@ export function useWorkshopRegistration() {
         if ('logo' in data && data.logo instanceof File) {
           const fileName = `${profileId}/logo.${data.logo.name.split('.').pop()}`;
           try {
-            // TODO: verificar bucket
+            // TODO: verificar bucket e criar se necessário
             await supabase.storage.from('logos').upload(fileName, data.logo, { upsert: true, contentType: data.logo.type });
             const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName);
             updateObj.logo_url = publicUrl;
@@ -107,13 +110,11 @@ export function useWorkshopRegistration() {
       if (profileId) {
         await supabase
           .from('profiles')
-          .update({ id: authData.user.id })
+          .update({ id: authData.user.id, is_active: true })
           .eq('id', profileId);
       }
 
       // 3. Atualiza perfil com todos os dados finais
-      const logoUrl = null; // Logo já salvo antes, caso exista. Pode ser também atualizado aqui se necessário.
-
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 7);
 
@@ -126,11 +127,10 @@ export function useWorkshopRegistration() {
           plano: selectedPlan,
           trial_ends_at: trialEndDate.toISOString(),
           is_active: true,
-          // outros campos finais
         })
         .eq('id', authData.user.id);
 
-      // 4. Onboarding/Status/Assinatura (resta igual)
+      // 4. Onboarding
       await supabase
         .from('onboarding_status')
         .insert([{ user_id: authData.user.id, profile_completed: true }]);
@@ -141,7 +141,6 @@ export function useWorkshopRegistration() {
         end_date: trialEndDate.toISOString()
       });
 
-      // Mensagem sucesso e login automático
       toast({
         title: "Cadastro realizado com sucesso!",
         description:
