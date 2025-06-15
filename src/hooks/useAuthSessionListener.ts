@@ -10,8 +10,9 @@ export function useAuthSessionListener() {
 
   useEffect(() => {
     let mounted = true;
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    // CORREÇÃO: Extrair Subscription corretamente e limpar com subscription.unsubscribe()
+    const { subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
         if (!mounted) return;
         setSession(session);
         setUser(session?.user ?? null);
@@ -29,7 +30,8 @@ export function useAuthSessionListener() {
 
     return () => {
       mounted = false;
-      listener.unsubscribe();
+      // Assinatura corretamente limpa
+      subscription.unsubscribe();
     };
   }, []);
 
