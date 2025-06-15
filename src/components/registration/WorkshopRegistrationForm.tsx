@@ -163,7 +163,7 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
       // Success!
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Você será redirecionado para o painel em instantes."
+        description: "Oficina criada no sistema! Aguarde o redirecionamento ao painel. Caso isso não ocorra automaticamente, faça login para acessar sua conta e o teste gratuito."
       });
       
       // Login the user automatically
