@@ -1,4 +1,3 @@
-
 import { User, Session } from '@supabase/supabase-js';
 import { UserSubscription } from './subscription';
 
@@ -7,6 +6,8 @@ export interface AuthUser extends User {
   isAdmin?: boolean;
   canAccessFeatures?: boolean;
   subscription?: UserSubscription;
+  trial_ends_at?: string;
+  plano?: string;
 }
 
 export interface AuthContextValue {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authService';
@@ -53,7 +52,9 @@ export function useUserProfileData(authUser: User | null) {
           role: userData.role,
           isAdmin,
           canAccessFeatures,
-          subscription: formattedSubscription
+          subscription: formattedSubscription,
+          trial_ends_at: userData.trial_ends_at,
+          plano: userData.plano,
         });
         setRole(userData.role);
       })
@@ -64,7 +65,9 @@ export function useUserProfileData(authUser: User | null) {
           role: 'user',
           isAdmin: false,
           canAccessFeatures: true,
-          subscription: null
+          subscription: null,
+          trial_ends_at: undefined,
+          plano: undefined,
         });
         setRole('user');
       })

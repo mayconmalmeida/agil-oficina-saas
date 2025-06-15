@@ -112,11 +112,12 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
         }
       }
       
-      // 3. Update profile with additional information + plano + trial_ends_at + is_active
+      // Prepare trial end date only ONCE!
       const selectedPlanValue = "Premium";
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 7);
 
+      // 3. Update profile with additional information + plano + trial_ends_at + is_active
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -148,9 +149,6 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
       }
       
       // 5. Create a trial subscription
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 7); // 7-day trial, changed from 15
-      
       try {
         await supabase.rpc('create_subscription', {
           user_id: authData.user.id,
