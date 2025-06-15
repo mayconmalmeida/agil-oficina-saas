@@ -52,6 +52,7 @@ export type Database = {
           modelo: string | null
           nome: string
           numero: string | null
+          oficina_id: string | null
           placa: string | null
           telefone: string
           tipo: string | null
@@ -76,6 +77,7 @@ export type Database = {
           modelo?: string | null
           nome: string
           numero?: string | null
+          oficina_id?: string | null
           placa?: string | null
           telefone: string
           tipo?: string | null
@@ -100,11 +102,45 @@ export type Database = {
           modelo?: string | null
           nome?: string
           numero?: string | null
+          oficina_id?: string | null
           placa?: string | null
           telefone?: string
           tipo?: string | null
           user_id?: string | null
           veiculo?: string
+        }
+        Relationships: []
+      }
+      oficinas: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          nome_oficina: string | null
+          telefone: string | null
+          user_id: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          nome_oficina?: string | null
+          telefone?: string | null
+          user_id: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          nome_oficina?: string | null
+          telefone?: string | null
+          user_id?: string
         }
         Relationships: []
       }

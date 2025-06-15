@@ -1,38 +1,29 @@
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import Loading from '@/components/ui/loading';
+import Loading from "@/components/ui/loading";
 
-// Interface baseada na tabela profiles
-export interface ProfileUser {
+interface Oficina {
   id: string;
-  full_name: string | null;
-  email: string | null;
+  user_id: string;
   nome_oficina: string | null;
+  cnpj: string | null;
   telefone: string | null;
-  cidade: string | null;
-  estado: string | null;
-  plano: string | null;
-  cnpj?: string | null;
-  responsavel?: string | null;
-  is_active?: boolean | null;
+  email: string | null;
+  is_active: boolean | null;
   created_at: string | null;
-  role?: string | null;
-  trial_ends_at?: string | null;
 }
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<ProfileUser[]>([]);
+  const [oficinas, setOficinas] = useState<Oficina[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Proteção: Só admins!
+  // Proteção: apenas admins/superadmins
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -53,88 +44,86 @@ const AdminUsers = () => {
     checkAdmin();
   }, [navigate]);
 
-  const fetchUsers = async () => {
+  const fetchOficinas = async () => {
     setIsLoading(true);
     setError(null);
 
     const { data, error } = await supabase
-      .from("profiles")
+      .from("oficinas")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Erro ao buscar perfis:", error);
-      setError("Erro ao buscar perfis: " + error.message);
-      setUsers([]);
+      setError("Erro ao buscar oficinas: " + error.message);
+      setOficinas([]);
       setIsLoading(false);
       return;
     }
-
-    setUsers(data ?? []);
+    setOficinas(data || []);
     setIsLoading(false);
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchOficinas();
   }, []);
-
-  const handleRefreshData = () => {
-    fetchUsers();
-  };
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4 text-gray-900">Oficinas Registradas (Tabela profiles)</h1>
-      <p className="text-gray-600 mb-6">Aqui estão todas as oficinas cadastradas no sistema.</p>
-
-      <div className="flex justify-end mb-4">
-        <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Oficinas Registradas</h1>
+        <Button onClick={fetchOficinas} variant="outline" className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
-          Atualizar dados
+          Atualizar
         </Button>
       </div>
 
+      <p className="text-gray-600 mb-4">
+        Lista de todas as oficinas clientes cadastradas no sistema.
+      </p>
+
       {error && (
-        <div className="bg-red-100 text-red-700 px-4 py-2 rounded my-3">
-          {error}
-        </div>
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded my-3">{error}</div>
       )}
 
       {isLoading ? (
         <Loading fullscreen={false} text="Carregando oficinas..." />
       ) : (
-        <div className="overflow-auto bg-white rounded-lg shadow">
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full border">
             <thead>
               <tr className="bg-gray-100">
                 <th className="border px-4 py-2">ID</th>
-                <th className="border px-4 py-2">Nome</th>
-                <th className="border px-4 py-2">Nome da Oficina</th>
-                <th className="border px-4 py-2">Email</th>
+                <th className="border px-4 py-2">Oficina</th>
+                <th className="border px-4 py-2">CNPJ</th>
                 <th className="border px-4 py-2">Telefone</th>
-                <th className="border px-4 py-2">Cidade</th>
-                <th className="border px-4 py-2">Plano</th>
-                <th className="border px-4 py-2">Criado em</th>
-                <th className="border px-4 py-2">Papel</th>
+                <th className="border px-4 py-2">Email</th>
+                <th className="border px-4 py-2">Status</th>
+                <th className="border px-4 py-2">Criada em</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="border px-4 py-2">{u.id}</td>
-                  <td className="border px-4 py-2">{u.full_name || '-'}</td>
-                  <td className="border px-4 py-2">{u.nome_oficina || '-'}</td>
-                  <td className="border px-4 py-2">{u.email || '-'}</td>
-                  <td className="border px-4 py-2">{u.telefone || '-'}</td>
-                  <td className="border px-4 py-2">{u.cidade || '-'}</td>
-                  <td className="border px-4 py-2">{u.plano || '-'}</td>
-                  <td className="border px-4 py-2">{u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : '-'}</td>
-                  <td className="border px-4 py-2">{u.role || '-'}</td>
+              {oficinas.map((o) => (
+                <tr key={o.id}>
+                  <td className="border px-4 py-2">{o.id}</td>
+                  <td className="border px-4 py-2">{o.nome_oficina || "-"}</td>
+                  <td className="border px-4 py-2">{o.cnpj || "-"}</td>
+                  <td className="border px-4 py-2">{o.telefone || "-"}</td>
+                  <td className="border px-4 py-2">{o.email || "-"}</td>
+                  <td className="border px-4 py-2">
+                    {o.is_active === false ? (
+                      <span className="text-red-600">Inativa</span>
+                    ) : (
+                      <span className="text-green-700">Ativa</span>
+                    )}
+                  </td>
+                  <td className="border px-4 py-2">
+                    {o.created_at ? new Date(o.created_at).toLocaleDateString("pt-BR") : "-"}
+                  </td>
                 </tr>
               ))}
-              {users.length === 0 && (
+              {oficinas.length === 0 && (
                 <tr>
-                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={9}>
+                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={7}>
                     Nenhuma oficina cadastrada.
                   </td>
                 </tr>
