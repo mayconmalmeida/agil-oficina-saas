@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SidebarNavigation from './SidebarNavigation';
 import MobileHeader from './MobileHeader';
+import DashboardMainContent from "./DashboardMainContent";
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -60,12 +61,11 @@ const DashboardLayout = () => {
           <SidebarNavigation onLogout={handleLogout} />
         </div>
 
-        {/* Sidebar Mobile (mantém implementação modal, mas pode ser extraído no futuro) */}
+        {/* Sidebar Mobile */}
         {sidebarOpen && (
           <div className="fixed inset-0 flex z-40 lg:hidden">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
-              {/* Header Sidebar mobile */}
               <div className="absolute top-0 right-0 -mr-12 pt-2">
                 <button
                   className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -75,26 +75,20 @@ const DashboardLayout = () => {
                   <X className="h-6 w-6 text-white" />
                 </button>
               </div>
-              {/* SidebarNavigation no mobile, com onLogout */}
               <SidebarNavigation onLogout={handleLogout} />
             </div>
           </div>
         )}
 
-        {/* Conteúdo principal */}
+        {/* Conteúdo principal centralizado */}
         <div className="flex flex-col w-0 flex-1 overflow-hidden">
-          {/* Header mobile */}
           <MobileHeader 
             onMenuClick={() => setSidebarOpen(true)}
             onLogout={handleLogout}
           />
 
-          {/* Área de conteúdo com margem de segurança */}
-          <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50">
-            <div className="min-h-full">
-              <Outlet />
-            </div>
-          </main>
+          {/* Usando componente novo para o main content */}
+          <DashboardMainContent />
         </div>
       </div>
     </SubscriptionGuard>
