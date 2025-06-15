@@ -31,19 +31,6 @@ const DashboardLayout = () => {
   const { userProfile, handleLogout } = useUserProfile();
   const { subscriptionStatus } = useSubscription();
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Clientes', href: '/clientes', icon: Users },
-    { name: 'Veículos', href: '/veiculos', icon: Car },
-    { name: 'Produtos', href: '/produtos', icon: Package },
-    { name: 'Serviços', href: '/servicos', icon: Wrench },
-    { name: 'Agendamentos', href: '/agendamentos', icon: Calendar, premium: true },
-    { name: 'Orçamentos', href: '/orcamentos', icon: FileText },
-    { name: 'Configurações', href: '/configuracoes', icon: Settings },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
-
   const handleNavigation = (href: string, isPremium?: boolean) => {
     // Se é premium e usuário não tem plano premium, bloquear
     if (isPremium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive) {

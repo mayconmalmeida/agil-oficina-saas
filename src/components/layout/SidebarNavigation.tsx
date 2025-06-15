@@ -72,3 +72,4 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
 };
 
 export default SidebarNavigation;
+
