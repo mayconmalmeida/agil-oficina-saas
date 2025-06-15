@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -66,6 +65,24 @@ const Pricing = () => {
     }
 
     await createCheckoutSession(planType, billingCycle);
+  };
+
+  // Função debug da sessão Supabase
+  const handleDebugSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('=== [DEBUG SESSÃO SUPABASE] ===');
+    console.log('session:', session);
+    console.log('user:', user);
+    if (!user) {
+      console.warn('Nenhum usuário autenticado!');
+    }
+    if (!session) {
+      console.warn('Nenhuma sessão ativa!');
+    }
+    if (user && session) {
+      console.log('Usuário autenticado e sessão válida.');
+    }
   };
 
   // Fallback para planos quando não conseguimos carregar do banco ou está carregando
@@ -226,6 +243,16 @@ const Pricing = () => {
           ))}
         </div>
         
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm font-semibold text-gray-700 shadow border border-gray-300"
+            onClick={handleDebugSession}
+          >
+            Debug Sessão Supabase
+          </button>
+        </div>
+
         <div className="mt-10 text-center">
           <p className="text-gray-600">
             Precisa de um plano personalizado para sua rede de oficinas?{' '}
