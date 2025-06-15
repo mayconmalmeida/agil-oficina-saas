@@ -43,13 +43,22 @@ const AdminUsers = () => {
     try {
       setIsLoading(true);
 
-      // Buscar clientes da tabela "clients"
+      console.log('[ADMIN-USERS] Fazendo consulta na tabela "clients"...');
       const { data: clients, error } = await supabase
         .from('clients')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[ADMIN-USERS] Erro ao buscar clientes:', error);
+        throw error;
+      }
+
+      if (!clients || clients.length === 0) {
+        console.warn('[ADMIN-USERS] Nenhum cliente encontrado na tabela clients.');
+      } else {
+        console.log('[ADMIN-USERS] Clientes encontrados:', clients);
+      }
 
       setUsers(clients || []);
     } catch (error: any) {
@@ -142,6 +151,9 @@ const AdminUsers = () => {
     return <Loading fullscreen text="Carregando clientes..." />;
   }
 
+  // LOG dos usuários do state (apenas para diagnóstico)
+  console.log('[ADMIN-USERS] State "users":', users);
+
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -170,13 +182,13 @@ const AdminUsers = () => {
                 nome_oficina: client.nome,
                 email: client.email || '',
                 telefone: client.telefone || '',
-                cnpj: '',
-                responsavel: '',
+                cnpj: '', // Adapte se sua tabela clients tiver campo cnpj
+                responsavel: '', // Adapte se precisar
                 plano: client.tipo || '',
                 is_active: client.is_active ?? true,
                 created_at: client.created_at || '',
-                trial_ends_at: '',
-                subscription_status: '',
+                trial_ends_at: '', // Adapte se sua tabela clients tiver campo trial_ends_at
+                subscription_status: '', // Adapte se sua tabela clients tiver campo de assinatura
                 quote_count: 0
               }))
             }
@@ -196,3 +208,4 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
+
