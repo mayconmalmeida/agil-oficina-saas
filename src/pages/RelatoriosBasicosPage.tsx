@@ -17,8 +17,9 @@ function RelatoriosBasicosPage() {
   const { data, loading } = useRelatoriosBasicosData();
   const { userProfile } = useUserProfile();
 
-  if (!userProfile || userProfile.role !== "oficina") {
-    // Admin ou outros papéis são redirecionados
+  // Não precisa de role, só verifica se o perfil existe (ou use o campo correto se quiser)
+  if (!userProfile) {
+    // Redireciona se não autenticado
     return <Navigate to="/dashboard" />;
   }
 

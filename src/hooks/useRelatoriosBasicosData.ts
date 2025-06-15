@@ -51,14 +51,13 @@ export function useRelatoriosBasicosData() {
         .from("services")
         .select("id", { count: "exact", head: true });
 
-      // 4. Faturamento total: usamos valor_total em orcamentos e/ou services
+      // 4. Faturamento total: usamos valor em services
       let faturamentoTotal = 0;
       {
         const { data: servicios } = await supabase
           .from("services")
           .select("valor")
-          .limit(5000); // limite "alto" p/ apps PMEs
-
+          .limit(5000);
         if (servicios && Array.isArray(servicios)) {
           faturamentoTotal = servicios.reduce(
             (acc, cur) => acc + (Number(cur.valor) || 0),
@@ -68,7 +67,6 @@ export function useRelatoriosBasicosData() {
       }
 
       // 5. Gráfico mensal: Orçamentos e Serviços criados por mês (últimos 6 meses)
-      // Agrupar por "MM/YYYY"
       const { data: orcamentosMes } = await supabase
         .from("orcamentos")
         .select("created_at, valor_total")
@@ -101,7 +99,6 @@ export function useRelatoriosBasicosData() {
         }
       }
 
-      // Pegar últimos 6 meses presentes
       const mesesOrdenados = Object.keys(byMonth)
         .sort((a, b) => {
           const [ma, ya] = a.split("/").map(Number);
@@ -119,28 +116,15 @@ export function useRelatoriosBasicosData() {
       // 6. Últimos 10 serviços realizados
       const { data: ultimosServicosRaw } = await supabase
         .from("services")
-        .select("id, cliente_id, valor, status, created_at")
+        .select("id, valor, status, created_at")
         .order("created_at", { ascending: false })
         .limit(10);
 
-      // Buscar nomes dos clientes (faremos com uma segunda consulta, caso cliente_id esteja presente)
       let ultimosServicos: RelatorioBasicoData["ultimosServicos"] = [];
       if (ultimosServicosRaw && ultimosServicosRaw.length > 0) {
-        const clienteIds = ultimosServicosRaw.map((s) => s.cliente_id).filter(Boolean);
-        let clientesMap: { [id: string]: string } = {};
-        if (clienteIds.length > 0) {
-          const { data: clientesData } = await supabase
-            .from("clients")
-            .select("id, nome")
-            .in("id", clienteIds);
-
-          if (clientesData)
-            for (const c of clientesData)
-              clientesMap[c.id] = c.nome;
-        }
-        ultimosServicos = ultimosServicosRaw.map((servico) => ({
+        ultimosServicos = ultimosServicosRaw.map((servico: any) => ({
           id: servico.id,
-          cliente_nome: clientesMap[servico.cliente_id] || "-",
+          cliente_nome: "-",
           valor_total: Number(servico.valor) || 0,
           status: servico.status || "-",
           created_at: servico.created_at,
