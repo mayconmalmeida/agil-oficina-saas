@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAdminContext } from '@/contexts/AdminContext';
 import { 
@@ -12,10 +13,50 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// -- TEMA GLOBAL PAINEL ADMIN:
+function useAdminThemeSync() {
+  // Preferência salva do admin-theme (contexto separado do user normal)
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (localStorage.getItem("admin-theme") as "light" | "dark") || "light"
+  );
+
+  // Ao montar, aplicar tema salvo ao <html> global
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("admin-theme", theme);
+  }, [theme]);
+
+  // Sincronizar se "admin-theme" mudar em outra aba ou processo
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "admin-theme" && (e.newValue === "dark" || e.newValue === "light")) {
+        setTheme(e.newValue as "light" | "dark");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Função de toggle para injetar para subcomponentes do admin
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      const newTheme = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("admin-theme", newTheme);
+      document.documentElement.classList.toggle("dark", newTheme === "dark");
+      return newTheme;
+    });
+  }, []);
+
+  return { theme, setTheme, toggleTheme };
+}
+
 const OptimizedAdminLayout: React.FC = () => {
   const { user, signOut } = useAdminContext();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // TEMA GLOBAL (correção)
+  useAdminThemeSync();
 
   const menuItems = [
     {
@@ -198,3 +239,4 @@ const OptimizedAdminLayout: React.FC = () => {
 };
 
 export default OptimizedAdminLayout;
+
