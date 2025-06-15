@@ -34,6 +34,8 @@ export const usePlansManagement = () => {
         .select('*')
         .order('display_order');
 
+      console.log('[fetchPlans] Resultado bruto:', { data, error });
+
       if (error) {
         console.error('[fetchPlans] Erro ao buscar planos:', error);
         setError(error.message || 'Erro ao carregar planos.');
@@ -161,4 +163,3 @@ export const usePlansManagement = () => {
     setEditingPlan
   };
 };
-

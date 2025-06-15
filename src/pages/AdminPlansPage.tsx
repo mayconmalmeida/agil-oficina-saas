@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +22,23 @@ const AdminPlansPage: React.FC = () => {
     setEditingPlan
   } = usePlansManagement();
 
-  useEffect(() => {
+  // Adiciona uma área de debug para mostrar informação crua da consulta Supabase
+  const [rawData, setRawData] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    // Função para buscar dados e mostrar o resultado cru na tela
+    const debugFetch = async () => {
+      const { data, error } = await import("@/integrations/supabase/client").then(m =>
+        m.supabase.from('plan_configurations').select('*').order('display_order')
+      );
+      setRawData({ data, error });
+      if (error) {
+        console.error("[DEBUG] Supabase error:", error);
+      } else {
+        console.log("[DEBUG] Supabase raw data:", data);
+      }
+    };
+    debugFetch();
     fetchPlans();
   }, [fetchPlans]);
 
@@ -46,6 +61,12 @@ const AdminPlansPage: React.FC = () => {
         >
           Tentar Novamente
         </button>
+        {rawData && (
+          <div className="mt-4 bg-gray-100 p-4 rounded-md max-w-xl text-xs text-left overflow-auto">
+            <b>[DEBUG] Resposta da consulta:</b>
+            <pre>{JSON.stringify(rawData, null, 2)}</pre>
+          </div>
+        )}
       </div>
     );
   }
@@ -67,6 +88,13 @@ const AdminPlansPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* DEBUG BOX TAMBÉM NO SUCESSO */}
+              {rawData && (
+                <div className="mb-4 bg-gray-100 p-4 rounded-md max-w-xl text-xs text-left overflow-auto">
+                  <b>[DEBUG] Resposta da consulta:</b>
+                  <pre>{JSON.stringify(rawData, null, 2)}</pre>
+                </div>
+              )}
               <div className="grid gap-4">
                 {plans.map((plan) => (
                   <PlanCard
@@ -94,4 +122,3 @@ const AdminPlansPage: React.FC = () => {
 };
 
 export default AdminPlansPage;
-
