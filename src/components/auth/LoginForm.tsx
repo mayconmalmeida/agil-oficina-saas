@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { sanitizeInput } from "@/utils/sanitize";
 
 export const loginFormSchema = z.object({
   email: z.string().email("Digite um email válido"),
@@ -29,9 +29,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
     },
   });
 
+  // Novo handler para sanitizar antes de chamar onSubmit
+  const handleSubmit = async (values: LoginFormValues) => {
+    // Sanitize email
+    const sanitizedValues = {
+      ...values,
+      email: sanitizeInput(values.email),
+      // password intencionalmente não é sanitizada (nunca deve ser exibida no DOM)
+    };
+    await onSubmit(sanitizedValues);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
