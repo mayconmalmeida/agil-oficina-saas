@@ -160,25 +160,28 @@ const WorkshopRegistrationForm: React.FC<{ selectedPlan?: string }> = ({ selecte
         console.error("Error creating subscription:", error);
       }
       
-      // Success!
+      // Mensagem de sucesso atualizada
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Oficina criada no sistema! Aguarde o redirecionamento ao painel. Caso isso não ocorra automaticamente, faça login para acessar sua conta e o teste gratuito."
+        description:
+          "Oficina criada no sistema! Aguarde alguns segundos pelo redirecionamento. Caso não ocorra, faça login manualmente para acessar sua conta e o teste gratuito. Se não conseguir entrar imediatamente, aguarde alguns instantes e tente novamente.",
       });
-      
-      // Login the user automatically
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-      
-      if (signInError) {
-        console.error("Error signing in:", signInError);
-        navigate('/login');
-      } else {
-        navigate('/dashboard');
-      }
-      
+
+      // Aguarda 3 segundos antes de tentar login automático
+      setTimeout(async () => {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (signInError) {
+          console.error("Error signing in:", signInError);
+          navigate('/login');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 3000);
+
     } catch (error: any) {
       console.error("Registration error:", error);
       toast({
