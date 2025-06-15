@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -21,6 +20,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import SidebarNavigation from './SidebarNavigation';
+import MobileHeader from './MobileHeader';
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -54,240 +55,40 @@ const DashboardLayout = () => {
   return (
     <SubscriptionGuard>
       <div className="flex h-screen bg-gray-100">
-        {/* Sidebar para desktop */}
+        {/* Sidebar Desktop */}
         <div className="hidden lg:flex lg:w-64 lg:flex-col">
-          <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto border-r border-gray-200">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <Link to="/" className="text-xl font-bold text-oficina-dark">
-                Oficina<span className="text-oficina-accent">Ágil</span>
-              </Link>
-            </div>
-            
-            {/* Status da assinatura */}
-            <div className="mt-4 px-4">
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-blue-900">
-                        {subscriptionStatus.planDetails?.name || 'Sem plano'}
-                      </div>
-                      {subscriptionStatus.isTrialActive && (
-                        <div className="text-xs text-blue-600">
-                          {subscriptionStatus.daysRemaining} dias restantes
-                        </div>
-                      )}
-                    </div>
-                    {subscriptionStatus.isPremium && (
-                      <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                        Premium
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <nav className="mt-5 flex-1 px-2 pb-4 space-y-1">
-              {navigation.map((item) => {
-                const isItemActive = isActive(item.href);
-                const isPremiumLocked = item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
-                
-                return (
-                  <button
-                    key={item.name}
-                    onClick={() => handleNavigation(item.href, item.premium)}
-                    disabled={isPremiumLocked}
-                    className={`${
-                      isItemActive
-                        ? 'bg-blue-100 text-blue-900'
-                        : isPremiumLocked
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
-                  >
-                    <item.icon
-                      className={`${
-                        isItemActive ? 'text-blue-500' : isPremiumLocked ? 'text-gray-300' : 'text-gray-400'
-                      } mr-3 flex-shrink-0 h-5 w-5`}
-                    />
-                    {item.name}
-                    {item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive && (
-                      <Badge variant="outline" className="ml-auto text-xs">
-                        Premium
-                      </Badge>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-            
-            {/* Informações do usuário e logout */}
-            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-              <div className="flex-shrink-0 w-full group block">
-                <div className="flex items-center">
-                  <div className="ml-3 flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate">
-                      {userProfile?.nome_oficina || 'Oficina'}
-                    </p>
-                    <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700 truncate">
-                      {userProfile?.email}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="ml-2 flex-shrink-0"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SidebarNavigation onLogout={handleLogout} />
         </div>
 
-        {/* Sidebar para mobile */}
+        {/* Sidebar Mobile (mantém implementação modal, mas pode ser extraído no futuro) */}
         {sidebarOpen && (
           <div className="fixed inset-0 flex z-40 lg:hidden">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
             <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+              {/* Header Sidebar mobile */}
               <div className="absolute top-0 right-0 -mr-12 pt-2">
                 <button
                   className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
                   onClick={() => setSidebarOpen(false)}
                 >
+                  <span className="sr-only">Fechar menu</span>
                   <X className="h-6 w-6 text-white" />
                 </button>
               </div>
-              
-              <div className="pt-5 pb-4 overflow-y-auto">
-                <div className="flex items-center flex-shrink-0 px-4 mb-5">
-                  <Link to="/" className="text-xl font-bold text-oficina-dark">
-                    Oficina<span className="text-oficina-accent">Ágil</span>
-                  </Link>
-                </div>
-
-                {/* Status da assinatura mobile */}
-                <div className="px-4 mb-5">
-                  <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-blue-900 truncate">
-                            {subscriptionStatus.planDetails?.name || 'Sem plano'}
-                          </div>
-                          {subscriptionStatus.isTrialActive && (
-                            <div className="text-xs text-blue-600">
-                              {subscriptionStatus.daysRemaining} dias restantes
-                            </div>
-                          )}
-                        </div>
-                        {subscriptionStatus.isPremium && (
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-800 ml-2 flex-shrink-0">
-                            Premium
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <nav className="px-2 space-y-1">
-                  {navigation.map((item) => {
-                    const isItemActive = isActive(item.href);
-                    const isPremiumLocked = item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
-                    
-                    return (
-                      <button
-                        key={item.name}
-                        onClick={() => handleNavigation(item.href, item.premium)}
-                        disabled={isPremiumLocked}
-                        className={`${
-                          isItemActive
-                            ? 'bg-blue-100 text-blue-900'
-                            : isPremiumLocked
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        } group flex items-center px-2 py-3 text-base font-medium rounded-md w-full`}
-                      >
-                        <item.icon
-                          className={`${
-                            isItemActive ? 'text-blue-500' : isPremiumLocked ? 'text-gray-300' : 'text-gray-400'
-                          } mr-4 flex-shrink-0 h-6 w-6`}
-                        />
-                        <span className="flex-1 text-left">{item.name}</span>
-                        {item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive && (
-                          <Badge variant="outline" className="ml-2 text-xs flex-shrink-0">
-                            Premium
-                          </Badge>
-                        )}
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-              
-              <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-                <div className="flex-shrink-0 w-full group block">
-                  <div className="flex items-center">
-                    <div className="ml-3 flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate">
-                        {userProfile?.nome_oficina || 'Oficina'}
-                      </p>
-                      <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700 truncate">
-                        {userProfile?.email}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleLogout}
-                      className="ml-2 flex-shrink-0"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              {/* SidebarNavigation no mobile, com onLogout */}
+              <SidebarNavigation onLogout={handleLogout} />
             </div>
           </div>
         )}
 
         {/* Conteúdo principal */}
         <div className="flex flex-col w-0 flex-1 overflow-hidden">
-          {/* Header com menu sanduíche */}
-          <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3">
-              <button
-                className="lg:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              
-              {/* Logo/título para mobile */}
-              <div className="lg:hidden">
-                <Link to="/" className="text-lg font-bold text-oficina-dark">
-                  Oficina<span className="text-oficina-accent">Ágil</span>
-                </Link>
-              </div>
-              
-              {/* Menu de usuário para mobile */}
-              <div className="lg:hidden">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="p-2"
-                >
-                  <LogOut className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          
+          {/* Header mobile */}
+          <MobileHeader 
+            onMenuClick={() => setSidebarOpen(true)}
+            onLogout={handleLogout}
+          />
+
           {/* Área de conteúdo com margem de segurança */}
           <main className="flex-1 relative overflow-y-auto focus:outline-none bg-gray-50">
             <div className="min-h-full">
