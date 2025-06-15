@@ -16,6 +16,7 @@ interface Oficina {
   cnpj: string | null;
   telefone: string | null;
   email: string | null;
+  is_active: boolean | null;
   ativo: boolean | null;
   created_at: string | null;
 }
@@ -28,7 +29,6 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Proteção: apenas admins/superadmins
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -72,10 +72,14 @@ const AdminUsers = () => {
     fetchOficinas();
   }, []);
 
-  const toggleStatus = async (id: string, novoStatus: boolean) => {
+  const toggleStatus = async (id: string, currentStatus: boolean | null | undefined) => {
+    // Atualiza ambos os campos, por segurança de legados
     const { error } = await supabase
       .from("oficinas")
-      .update({ ativo: novoStatus })
+      .update({
+        is_active: !currentStatus,
+        ativo: !currentStatus,
+      })
       .eq("id", id);
 
     if (error) {
@@ -162,7 +166,7 @@ const AdminUsers = () => {
                   <td className="border px-4 py-2">{o.telefone || "-"}</td>
                   <td className="border px-4 py-2">{o.email || "-"}</td>
                   <td className="border px-4 py-2">
-                    {o.ativo === false ? (
+                    {o.is_active === false || o.ativo === false ? (
                       <Badge variant="destructive">Inativa</Badge>
                     ) : (
                       <Badge variant="default">Ativa</Badge>
@@ -173,11 +177,11 @@ const AdminUsers = () => {
                   </td>
                   <td className="border px-4 py-2">
                     <Button
-                      variant={o.ativo ? "destructive" : "default"}
+                      variant={o.is_active ? "destructive" : "default"}
                       size="sm"
-                      onClick={() => toggleStatus(o.id, !o.ativo)}
+                      onClick={() => toggleStatus(o.id, o.is_active)}
                     >
-                      {o.ativo ? "Inativar" : "Ativar"}
+                      {o.is_active ? "Inativar" : "Ativar"}
                     </Button>
                   </td>
                 </tr>
@@ -198,4 +202,3 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
-
