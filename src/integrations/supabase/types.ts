@@ -113,6 +113,7 @@ export type Database = {
       }
       oficinas: {
         Row: {
+          ativo: boolean | null
           cnpj: string | null
           created_at: string | null
           email: string | null
@@ -123,6 +124,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           email?: string | null
@@ -133,6 +135,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ativo?: boolean | null
           cnpj?: string | null
           created_at?: string | null
           email?: string | null

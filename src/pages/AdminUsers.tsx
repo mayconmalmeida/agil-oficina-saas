@@ -3,8 +3,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, LogOut } from "lucide-react";
 import Loading from "@/components/ui/loading";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 interface Oficina {
   id: string;
@@ -13,7 +16,7 @@ interface Oficina {
   cnpj: string | null;
   telefone: string | null;
   email: string | null;
-  is_active: boolean | null;
+  ativo: boolean | null;
   created_at: string | null;
 }
 
@@ -21,6 +24,8 @@ const AdminUsers = () => {
   const [oficinas, setOficinas] = useState<Oficina[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   // Proteção: apenas admins/superadmins
@@ -67,14 +72,60 @@ const AdminUsers = () => {
     fetchOficinas();
   }, []);
 
+  const toggleStatus = async (id: string, novoStatus: boolean) => {
+    const { error } = await supabase
+      .from("oficinas")
+      .update({ ativo: novoStatus })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Erro ao atualizar status da oficina",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Status atualizado!",
+        variant: "default"
+      });
+      fetchOficinas();
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  // Filtro de busca (por nome ou CNPJ)
+  const filteredOficinas = oficinas.filter(
+    (o) =>
+      (o.nome_oficina || "").toLowerCase().includes(search.toLowerCase()) ||
+      (o.cnpj || "").toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Oficinas Registradas</h1>
-        <Button onClick={fetchOficinas} variant="outline" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Atualizar
-        </Button>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900">Oficinas Registradas</h1>
+          <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sair do painel">
+            <LogOut />
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Buscar nome ou CNPJ..."
+            className="max-w-xs"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Button onClick={fetchOficinas} variant="outline" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       <p className="text-gray-600 mb-4">
@@ -99,10 +150,11 @@ const AdminUsers = () => {
                 <th className="border px-4 py-2">Email</th>
                 <th className="border px-4 py-2">Status</th>
                 <th className="border px-4 py-2">Criada em</th>
+                <th className="border px-4 py-2">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {oficinas.map((o) => (
+              {filteredOficinas.map((o) => (
                 <tr key={o.id}>
                   <td className="border px-4 py-2">{o.id}</td>
                   <td className="border px-4 py-2">{o.nome_oficina || "-"}</td>
@@ -110,21 +162,30 @@ const AdminUsers = () => {
                   <td className="border px-4 py-2">{o.telefone || "-"}</td>
                   <td className="border px-4 py-2">{o.email || "-"}</td>
                   <td className="border px-4 py-2">
-                    {o.is_active === false ? (
-                      <span className="text-red-600">Inativa</span>
+                    {o.ativo === false ? (
+                      <Badge variant="destructive">Inativa</Badge>
                     ) : (
-                      <span className="text-green-700">Ativa</span>
+                      <Badge variant="default">Ativa</Badge>
                     )}
                   </td>
                   <td className="border px-4 py-2">
                     {o.created_at ? new Date(o.created_at).toLocaleDateString("pt-BR") : "-"}
                   </td>
+                  <td className="border px-4 py-2">
+                    <Button
+                      variant={o.ativo ? "destructive" : "default"}
+                      size="sm"
+                      onClick={() => toggleStatus(o.id, !o.ativo)}
+                    >
+                      {o.ativo ? "Inativar" : "Ativar"}
+                    </Button>
+                  </td>
                 </tr>
               ))}
-              {oficinas.length === 0 && (
+              {filteredOficinas.length === 0 && (
                 <tr>
-                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={7}>
-                    Nenhuma oficina cadastrada.
+                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={8}>
+                    Nenhuma oficina encontrada.
                   </td>
                 </tr>
               )}
@@ -137,3 +198,4 @@ const AdminUsers = () => {
 };
 
 export default AdminUsers;
+
