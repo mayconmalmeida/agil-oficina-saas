@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import DashboardHeader from "@/components/admin/DashboardHeader";
@@ -22,6 +21,35 @@ const AdminDashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Carregando painel administrativo...</p>
+      </div>
+    );
+  }
+
+  // Fallback para erro ou stats inválido/vazio
+  const isStatsEmpty =
+    !stats ||
+    Object.keys(stats).every((k) => stats[k] === 0 || stats[k] == null);
+
+  if (isStatsEmpty) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Nenhum dado encontrado para o painel administrativo.
+        </h2>
+        <p className="mt-2 text-gray-500">
+          Não foi possível carregar as estatísticas. Isso pode indicar ausência de dados ou erro de comunicação.
+        </p>
+        <button
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={fetchStats}
+        >
+          Tentar Novamente
+        </button>
+        {/* Bloco debug */}
+        <div className="mt-6 bg-gray-100 rounded p-4 text-xs max-w-xl overflow-x-auto">
+          <strong>[DEBUG] stats retornado:</strong>
+          <pre>{JSON.stringify(stats, null, 2)}</pre>
+        </div>
       </div>
     );
   }
