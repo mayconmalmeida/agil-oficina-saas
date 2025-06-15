@@ -27,6 +27,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
+import VehiclesPage from '@/pages/VehiclesPage';
 
 // Admin Pages
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -115,6 +116,7 @@ function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="clientes" element={<ClientsPage />} />
+            <Route path="veiculos" element={<VehiclesPage />} />
             <Route path="servicos" element={<ServicesPage />} />
             <Route path="orcamentos" element={<BudgetsPage />} />
             <Route path="agendamentos" element={<SchedulingPage />} />
