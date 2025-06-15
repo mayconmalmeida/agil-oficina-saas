@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,9 @@ import ClientInfoFields from './form-sections/ClientInfoFields';
 import ClientContactFields from './form-sections/ClientContactFields';
 import ClientVehicleFields from './form-sections/ClientVehicleFields';
 import { useClientFormBasic } from '@/hooks/useClientFormBasic';
+
+import { useSanitizedForm } from '@/hooks/useSanitizedForm';
+import { sanitizePhone, sanitizeEmail, sanitizeName } from '@/utils/formUtils';
 
 export interface ClientFormProps {
   onSubmit: (values: any) => Promise<void>;
@@ -20,15 +24,25 @@ const ClientForm: React.FC<ClientFormProps> = ({
   isLoading, 
   saveSuccess 
 }) => {
-  const { form, handlePhoneFormat } = useClientFormBasic();
-  
+  const { form } = useClientFormBasic();
+
+  // Mapear campos para suas respectivas funções de sanitização
+  const sanitizeMap = {
+    telefone: sanitizePhone,
+    email: sanitizeEmail,
+    nome: sanitizeName,
+  };
+
+  // Uso do hook middleware, que irá sanitizar os campos antes do submit
+  const sanitizedHandleSubmit = useSanitizedForm(form, sanitizeMap);
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={sanitizedHandleSubmit(onSubmit)} className="space-y-4">
         <ClientInfoFields 
           form={form} 
           saveSuccess={saveSuccess} 
-          handlePhoneFormat={handlePhoneFormat} 
+          // handlePhoneFormat prop removido: sanitização agora via hook/utilitário
         />
         
         <ClientContactFields 
@@ -83,3 +97,4 @@ const ClientForm: React.FC<ClientFormProps> = ({
 };
 
 export default ClientForm;
+
