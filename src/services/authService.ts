@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -16,6 +15,8 @@ export interface UserProfile {
     ends_at?: string;
     trial_ends_at?: string;
   } | null;
+  plano?: string;
+  trial_ends_at?: string;
 }
 
 export const signOutUser = async () => {
