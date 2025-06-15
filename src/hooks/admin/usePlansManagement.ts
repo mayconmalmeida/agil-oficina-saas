@@ -21,30 +21,42 @@ export const usePlansManagement = () => {
   const [loading, setLoading] = useState(true);
   const [editingPlan, setEditingPlan] = useState<PlanConfiguration | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchPlans = useCallback(async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log('[fetchPlans] Iniciando consulta dos planos no Supabase...');
       const { data, error } = await supabase
         .from('plan_configurations')
         .select('*')
         .order('display_order');
 
-      if (error) throw error;
-      
+      if (error) {
+        console.error('[fetchPlans] Erro ao buscar planos:', error);
+        setError(error.message || 'Erro ao carregar planos.');
+        throw error;
+      }
+      console.log('[fetchPlans] Dados recebidos:', data);
+
       const formattedPlans: PlanConfiguration[] = (data || []).map(plan => ({
         ...plan,
         features: Array.isArray(plan.features) ? plan.features.map(String) : []
       }));
-      
+
       setPlans(formattedPlans);
     } catch (error) {
-      console.error('Erro ao carregar planos:', error);
+      console.error('[fetchPlans] Erro na execução do fetchPlans:', error);
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível carregar os planos."
       });
+      setPlans([]);
+      if (error instanceof Error) setError(error.message);
+      else setError('Erro desconhecido');
     } finally {
       setLoading(false);
     }
@@ -138,6 +150,7 @@ export const usePlansManagement = () => {
   return {
     plans,
     loading,
+    error,
     editingPlan,
     isCreating,
     fetchPlans,
@@ -148,3 +161,4 @@ export const usePlansManagement = () => {
     setEditingPlan
   };
 };
+

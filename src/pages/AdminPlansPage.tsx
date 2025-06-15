@@ -12,6 +12,7 @@ const AdminPlansPage: React.FC = () => {
   const {
     plans,
     loading,
+    error,
     editingPlan,
     isCreating,
     fetchPlans,
@@ -30,6 +31,21 @@ const AdminPlansPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Carregando planos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-red-600 text-lg font-semibold mb-2">Erro ao carregar planos:</p>
+        <p className="text-gray-600">{error}</p>
+        <button 
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          onClick={() => fetchPlans()}
+        >
+          Tentar Novamente
+        </button>
       </div>
     );
   }
@@ -78,3 +94,4 @@ const AdminPlansPage: React.FC = () => {
 };
 
 export default AdminPlansPage;
+
