@@ -27,13 +27,21 @@ const Pricing = () => {
   console.log('Premium plans:', premiumPlans);
 
   const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
+    // 🚨 Checagem mais robusta da sessão atual
+    const { data: { session } } = await supabase.auth.getSession();
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+
+    if (!user || !session) {
+      toast({
+        variant: "destructive",
+        title: "Você precisa estar logado!",
+        description: "Faça login ou crie uma conta para iniciar o teste gratuito.",
+      });
       navigate(`/register?plan=${planType}`);
       return;
     }
 
+    // Usuário já tem acesso?
     if (subscriptionStatus.canAccessFeatures) {
       toast({
         title: "Você já tem acesso!",
