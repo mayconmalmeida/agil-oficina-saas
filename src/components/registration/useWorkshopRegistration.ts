@@ -21,14 +21,15 @@ export function useWorkshopRegistration() {
     try {
       let resp;
       if (!profileId) {
-        // Criação inicial do perfil temporário: Atenção aos campos existentes na table
+        // Gerar UUID temporário para criar o perfil "rascunho"
+        const tempProfileId = crypto.randomUUID();
         resp = await supabase
           .from('profiles')
           .insert([{
+            id: tempProfileId,
             nome_oficina: data.businessName,
             cnpj: data.documentType === 'CNPJ' ? data.documentNumber : null,
             responsavel: data.responsiblePerson,
-            // REMOVE inscricao_estadual pois não existe em profiles
             endereco: data.address,
             cidade: data.city,
             estado: data.state,
@@ -36,19 +37,19 @@ export function useWorkshopRegistration() {
             plano: "Essencial",
             email: data.email,
             telefone: data.phone,
-            logo_url: undefined, // só atualiza depois caso logo for enviado!
-            is_active: false, // status provisório antes do cadastro
-            role: "oficina" // define como oficina desde o início!
+            logo_url: undefined,
+            is_active: false,
+            role: "oficina"
           }])
           .select('id')
           .maybeSingle();
-        return resp.data; // retorna { id }
+        // Retorna { id } para armazenar localmente
+        return resp.data;
       } else {
         // Atualização incremental do perfil
         const updateObj: any = {};
-        // Mapeamento flexível dos campos válidos
         if ('businessName' in data) updateObj.nome_oficina = data.businessName;
-        if ('tradingName' in data) updateObj.trading_name = data.tradingName; // Verifique se a coluna existe, caso contrário remova.
+        if ('tradingName' in data) updateObj.trading_name = data.tradingName; // Cuidado: só atualize se existir coluna
         if ('documentType' in data && data.documentType === 'CNPJ') updateObj.cnpj = data.documentNumber;
         if ('responsiblePerson' in data) updateObj.responsavel = data.responsiblePerson;
         if ('phone' in data) updateObj.telefone = data.phone;
@@ -63,7 +64,6 @@ export function useWorkshopRegistration() {
         if ('logo' in data && data.logo instanceof File) {
           const fileName = `${profileId}/logo.${data.logo.name.split('.').pop()}`;
           try {
-            // TODO: verificar bucket e criar se necessário
             await supabase.storage.from('logos').upload(fileName, data.logo, { upsert: true, contentType: data.logo.type });
             const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName);
             updateObj.logo_url = publicUrl;
@@ -106,7 +106,7 @@ export function useWorkshopRegistration() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Falha ao criar usuário");
 
-      // 2. Atualiza o perfil parcial com o id Auth (caso profile tenha sido criado sem id igual ao userId)
+      // 2. Atualiza o perfil parcial com o id Auth (caso profile tenha sido criado com id random)
       if (profileId) {
         await supabase
           .from('profiles')
