@@ -92,6 +92,7 @@ const OptimizedAdminLayout: React.FC = () => {
               </div>
               <Button variant="ghost" size="sm" onClick={signOut}>
                 <LogOut className="h-4 w-4" />
+                <span className="ml-1 hidden lg:inline">Sair</span>
               </Button>
             </div>
           </div>
@@ -133,6 +134,30 @@ const OptimizedAdminLayout: React.FC = () => {
                 ))}
               </nav>
             </div>
+            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+              <div className="flex-shrink-0 w-full group block">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-gray-700">Admin</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={signOut}
+                    className="ml-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="ml-1">Sair</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -140,7 +165,7 @@ const OptimizedAdminLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Mobile */}
-        <div className="bg-white shadow-sm border-b border-gray-200 md:hidden">
+        <div className="bg-white shadow-sm border-b border-gray-200 md:hidden sticky top-0 z-10">
           <div className="flex items-center justify-between px-4 py-3">
             <button
               className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900"
@@ -150,11 +175,12 @@ const OptimizedAdminLayout: React.FC = () => {
             </button>
             
             <div>
-              <h1 className="text-lg font-bold text-gray-800">Admin Panel</h1>
+              <h1 className="text-lg font-bold text-gray-800">Painel Admin</h1>
             </div>
             
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4" />
+              <span className="ml-1">Sair</span>
             </Button>
           </div>
         </div>
