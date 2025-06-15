@@ -1,75 +1,77 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import UsersTable from "@/components/admin/UsersTable";
 import Loading from '@/components/ui/loading';
 
-interface ClientUser {
+// Interface baseada na tabela profiles
+export interface ProfileUser {
   id: string;
-  nome: string;
-  telefone: string;
-  veiculo: string;
-  email?: string | null;
-  tipo?: string;
-  cor?: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
-  endereco?: string;
-  cidade?: string;
-  estado?: string;
-  cep?: string;
-  documento?: string;
-  kilometragem?: string;
-  bairro?: string;
-  numero?: string;
-  is_active?: boolean;
-  created_at?: string;
-  user_id?: string | null;
+  full_name: string | null;
+  email: string | null;
+  nome_oficina: string | null;
+  telefone: string | null;
+  cidade: string | null;
+  estado: string | null;
+  plano: string | null;
+  cnpj?: string | null;
+  responsavel?: string | null;
+  is_active?: boolean | null;
+  created_at: string | null;
+  role?: string | null;
+  trial_ends_at?: string | null;
 }
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<ClientUser[]>([]);
+  const [users, setUsers] = useState<ProfileUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Proteção: Só admins!
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) {
+        navigate("/admin/login");
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+      if (!data || (data.role !== "admin" && data.role !== "superadmin")) {
+        navigate("/dashboard");
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+
   const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
+    setIsLoading(true);
+    setError(null);
 
-      console.log('[ADMIN-USERS] Fazendo consulta na tabela "clients"...');
-      const { data: clients, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error('[ADMIN-USERS] Erro ao buscar clientes:', error);
-        throw error;
-      }
-
-      if (!clients || clients.length === 0) {
-        console.warn('[ADMIN-USERS] Nenhum cliente encontrado na tabela clients.');
-      } else {
-        console.log('[ADMIN-USERS] Clientes encontrados:', clients);
-      }
-
-      setUsers(clients || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar clientes:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar os clientes."
-      });
-    } finally {
+    if (error) {
+      console.error("Erro ao buscar perfis:", error);
+      setError("Erro ao buscar perfis: " + error.message);
+      setUsers([]);
       setIsLoading(false);
+      return;
     }
+
+    setUsers(data ?? []);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -80,128 +82,67 @@ const AdminUsers = () => {
     fetchUsers();
   };
 
-  const handleToggleStatus = async (clientId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('clients')
-        .update({ is_active: !currentStatus })
-        .eq('id', clientId);
-
-      if (error) throw error;
-
-      toast({
-        title: currentStatus ? "Cliente desativado" : "Cliente ativado",
-        description: `O cliente foi ${currentStatus ? 'desativado' : 'ativado'} com sucesso.`,
-      });
-
-      fetchUsers();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar status",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleViewBudgets = (clientId: string) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A visualização de orçamentos será implementada em breve.",
-    });
-  };
-
-  const handleViewDetails = (clientId: string) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A visualização de detalhes será implementada em breve.",
-    });
-  };
-
-  const handleEditUser = (client: any) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A edição de clientes será implementada em breve.",
-    });
-  };
-
-  const handleChangePlan = (client: any) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A alteração de planos será implementada em breve.",
-    });
-  };
-
-  const handleRenewSubscription = (client: any) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A renovação de assinaturas será implementada em breve.",
-    });
-  };
-
-  const generatePDFInvoice = (client: any) => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A geração de faturas em PDF será implementada em breve.",
-    });
-  };
-
-  if (isLoading) {
-    return <Loading fullscreen text="Carregando clientes..." />;
-  }
-
-  // LOG dos usuários do state (apenas para diagnóstico)
-  console.log('[ADMIN-USERS] State "users":', users);
-
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Gerenciamento de Clientes (Tabela `clients`)
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Visualize e gerencie todos os clientes cadastrados na plataforma.
-        </p>
-      </div>
-      
+      <h1 className="text-3xl font-bold mb-4 text-gray-900">Oficinas Registradas (Tabela profiles)</h1>
+      <p className="text-gray-600 mb-6">Aqui estão todas as oficinas cadastradas no sistema.</p>
+
       <div className="flex justify-end mb-4">
         <Button onClick={handleRefreshData} variant="outline" className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4" />
           Atualizar dados
         </Button>
       </div>
-      
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Clientes cadastrados</h3>
-          <UsersTable 
-            users={
-              users.map(client => ({
-                id: client.id,
-                nome_oficina: client.nome,
-                email: client.email || '',
-                telefone: client.telefone || '',
-                cnpj: '', // Adapte se sua tabela clients tiver campo cnpj
-                responsavel: '', // Adapte se precisar
-                plano: client.tipo || '',
-                is_active: client.is_active ?? true,
-                created_at: client.created_at || '',
-                trial_ends_at: '', // Adapte se sua tabela clients tiver campo trial_ends_at
-                subscription_status: '', // Adapte se sua tabela clients tiver campo de assinatura
-                quote_count: 0
-              }))
-            }
-            isLoading={isLoading}
-            onToggleStatus={handleToggleStatus}
-            onViewQuotes={handleViewBudgets}
-            onViewDetails={handleViewDetails}
-            onEditUser={handleEditUser}
-            onChangePlan={handleChangePlan}
-            onRenewSubscription={handleRenewSubscription}
-            onGeneratePDF={generatePDFInvoice}
-          />
+
+      {error && (
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded my-3">
+          {error}
         </div>
-      </div>
+      )}
+
+      {isLoading ? (
+        <Loading fullscreen={false} text="Carregando oficinas..." />
+      ) : (
+        <div className="overflow-auto bg-white rounded-lg shadow">
+          <table className="min-w-full border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-4 py-2">ID</th>
+                <th className="border px-4 py-2">Nome</th>
+                <th className="border px-4 py-2">Nome da Oficina</th>
+                <th className="border px-4 py-2">Email</th>
+                <th className="border px-4 py-2">Telefone</th>
+                <th className="border px-4 py-2">Cidade</th>
+                <th className="border px-4 py-2">Plano</th>
+                <th className="border px-4 py-2">Criado em</th>
+                <th className="border px-4 py-2">Papel</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td className="border px-4 py-2">{u.id}</td>
+                  <td className="border px-4 py-2">{u.full_name || '-'}</td>
+                  <td className="border px-4 py-2">{u.nome_oficina || '-'}</td>
+                  <td className="border px-4 py-2">{u.email || '-'}</td>
+                  <td className="border px-4 py-2">{u.telefone || '-'}</td>
+                  <td className="border px-4 py-2">{u.cidade || '-'}</td>
+                  <td className="border px-4 py-2">{u.plano || '-'}</td>
+                  <td className="border px-4 py-2">{u.created_at ? new Date(u.created_at).toLocaleDateString("pt-BR") : '-'}</td>
+                  <td className="border px-4 py-2">{u.role || '-'}</td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={9}>
+                    Nenhuma oficina cadastrada.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
