@@ -34,11 +34,25 @@ const Dashboard: React.FC = () => {
   
   return (
     <div className="p-6">
-      {/* Workshop name and logo */}
-      <WelcomeHeader 
-        workshopName={userProfile?.nome_oficina || 'Oficina'}
-        logoUrl={userProfile?.logo_url || null}
-      />
+      {/* Topo: Logo da oficina + Gráfico principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
+        <div>
+          <WelcomeHeader 
+            workshopName={userProfile?.nome_oficina || 'Oficina'}
+            logoUrl={userProfile?.logo_url || null}
+          />
+        </div>
+        <div>
+          <DashboardCharts 
+            monthlyRevenue={data.monthlyRevenue}
+            topServices={data.topServices}
+            topProducts={data.topProducts}
+            isPremium={isPremium || data.daysRemaining > 0}
+            isLoading={isLoading}
+            onUpgradePlan={handleUpgradePlan}
+          />
+        </div>
+      </div>
       
       {/* Acesso Rápido */}
       <QuickActions />
@@ -55,16 +69,6 @@ const Dashboard: React.FC = () => {
           isLoading={isLoading}
         />
       </section>
-      
-      {/* Gráficos (disponíveis apenas no plano premium) */}
-      <DashboardCharts 
-        monthlyRevenue={data.monthlyRevenue}
-        topServices={data.topServices}
-        topProducts={data.topProducts}
-        isPremium={isPremium || data.daysRemaining > 0}
-        isLoading={isLoading}
-        onUpgradePlan={handleUpgradePlan}
-      />
       
       {/* Status da Oficina e Atividades Recentes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -92,3 +96,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
