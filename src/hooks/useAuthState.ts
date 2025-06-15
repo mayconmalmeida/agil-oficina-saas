@@ -12,8 +12,11 @@ export const useAuthState = () => {
   const { session, user } = useAuthSessionListener();
   const { profile, loading, role } = useUserProfileData(user);
 
-  // isLoadingAuth: loading perfil OU sessão (não logado em window/contexto browser)
-  const isLoadingAuth = loading || (typeof window !== 'undefined' && !session);
+  // isLoadingAuth: loading perfil OU sessão indefinida OU perfil indefinido enquanto tem sessão
+  const isLoadingAuth =
+    loading ||
+    (typeof window !== 'undefined' && !session) ||
+    (session && !profile);
 
   return {
     user: profile,
