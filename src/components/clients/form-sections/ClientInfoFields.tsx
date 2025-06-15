@@ -7,13 +7,11 @@ import { Input } from '@/components/ui/input';
 interface ClientInfoFieldsProps {
   form: UseFormReturn<any>;
   saveSuccess: boolean;
-  handlePhoneFormat: (value: string) => string;
 }
 
 const ClientInfoFields: React.FC<ClientInfoFieldsProps> = ({ 
   form, 
-  saveSuccess,
-  handlePhoneFormat 
+  saveSuccess
 }) => {
   return (
     <>
@@ -46,10 +44,7 @@ const ClientInfoFields: React.FC<ClientInfoFieldsProps> = ({
               <Input 
                 placeholder="(11) 99999-9999" 
                 {...field}
-                onChange={(e) => {
-                  const formatted = handlePhoneFormat(e.target.value);
-                  field.onChange(formatted);
-                }}
+                // Removido handlePhoneFormat, passa padrão do react-hook-form
                 disabled={saveSuccess}
                 className={saveSuccess ? "bg-green-50 border-green-200" : ""}
               />
@@ -83,3 +78,4 @@ const ClientInfoFields: React.FC<ClientInfoFieldsProps> = ({
 };
 
 export default ClientInfoFields;
+
