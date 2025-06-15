@@ -61,12 +61,6 @@ const AdminPlansPage: React.FC = () => {
         >
           Tentar Novamente
         </button>
-        {rawData && (
-          <div className="mt-4 bg-gray-100 p-4 rounded-md max-w-xl text-xs text-left overflow-auto">
-            <b>[DEBUG] Resposta da consulta:</b>
-            <pre>{JSON.stringify(rawData, null, 2)}</pre>
-          </div>
-        )}
       </div>
     );
   }
@@ -88,13 +82,6 @@ const AdminPlansPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* DEBUG BOX TAMBÉM NO SUCESSO */}
-              {rawData && (
-                <div className="mb-4 bg-gray-100 p-4 rounded-md max-w-xl text-xs text-left overflow-auto">
-                  <b>[DEBUG] Resposta da consulta:</b>
-                  <pre>{JSON.stringify(rawData, null, 2)}</pre>
-                </div>
-              )}
               <div className="grid gap-4">
                 {plans.map((plan) => (
                   <PlanCard

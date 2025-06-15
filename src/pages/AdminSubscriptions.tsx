@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -138,18 +137,6 @@ const AdminSubscriptions = () => {
           >
             Tentar Novamente
           </button>
-          {debugData && (
-            <div className="mt-6">
-              <div className="bg-gray-100 p-3 rounded-md text-xs overflow-x-auto mb-1">
-                <strong>[DEBUG] subscriptionsData:</strong>
-                <pre>{JSON.stringify(debugData.subscriptionsData, null, 2)}</pre>
-              </div>
-              <div className="bg-gray-100 p-3 rounded-md text-xs overflow-x-auto">
-                <strong>[DEBUG] subscriptionsError:</strong>
-                <pre>{JSON.stringify(debugData.subscriptionsError, null, 2)}</pre>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -166,15 +153,6 @@ const AdminSubscriptions = () => {
             isLoading={isLoading}
           />
         </div>
-        {/* Bloco debug adicional em casos de sucesso */}
-        {debugData && (
-          <div className="mt-4 mb-12 bg-gray-100 rounded-md p-4 text-xs overflow-x-auto max-w-2xl">
-            <strong>[DEBUG] subscriptionsData:</strong>
-            <pre>{JSON.stringify(debugData.subscriptionsData, null, 2)}</pre>
-            <strong>[DEBUG] subscriptionsError:</strong>
-            <pre>{JSON.stringify(debugData.subscriptionsError, null, 2)}</pre>
-          </div>
-        )}
       </main>
     </div>
   );
