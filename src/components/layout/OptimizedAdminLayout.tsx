@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAdminContext } from '@/contexts/AdminContext';
@@ -37,6 +36,11 @@ const OptimizedAdminLayout: React.FC = () => {
     {
       title: 'Planos',
       href: '/admin/plans',
+      icon: Settings
+    },
+    {
+      title: 'Configurações',
+      href: '/admin/settings',
       icon: Settings
     }
   ];

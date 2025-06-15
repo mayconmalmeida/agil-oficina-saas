@@ -28,6 +28,7 @@ import CompanyPage from '@/pages/CompanyPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
 import VehiclesPage from '@/pages/VehiclesPage';
+import AdminSettingsPage from '@/pages/AdminSettingsPage';
 
 // Admin Pages
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -101,6 +102,7 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="plans" element={<AdminPlansPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
           {/* Protected user routes - SÓ AUTHPROVIDER */}
