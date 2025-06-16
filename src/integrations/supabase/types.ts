@@ -284,6 +284,7 @@ export type Database = {
           cidade: string | null
           cnpj: string | null
           created_at: string | null
+          documents: Json | null
           email: string | null
           endereco: string | null
           estado: string | null
@@ -304,6 +305,7 @@ export type Database = {
           cidade?: string | null
           cnpj?: string | null
           created_at?: string | null
+          documents?: Json | null
           email?: string | null
           endereco?: string | null
           estado?: string | null
@@ -324,6 +326,7 @@ export type Database = {
           cidade?: string | null
           cnpj?: string | null
           created_at?: string | null
+          documents?: Json | null
           email?: string | null
           endereco?: string | null
           estado?: string | null

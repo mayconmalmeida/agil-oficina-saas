@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import Loading from '@/components/ui/loading';
 import CompanyProfileForm from '@/components/company/CompanyProfileForm';
 import CompanyLogoUpload from '@/components/company/CompanyLogoUpload';
+import CompanyDocuments from '@/components/company/CompanyDocuments';
 import { Building, Upload, FileText, Settings } from 'lucide-react';
 
 const CompanyPage: React.FC = () => {
@@ -141,15 +142,11 @@ const CompanyPage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="documents">
-                <div className="text-center py-12">
-                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Documentos da Empresa
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Funcionalidade em desenvolvimento. Em breve você poderá fazer upload e gerenciar documentos importantes da sua oficina.
-                  </p>
-                </div>
+                <CompanyDocuments 
+                  documents={profileData?.documents || []}
+                  userId={profileData?.id}
+                  onSave={handleProfileSaved}
+                />
               </TabsContent>
             </CardContent>
           </Card>
