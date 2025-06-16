@@ -1,8 +1,8 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { SubscriptionStatus } from "@/types/subscription";
+import DaysRemainingCounter from "@/components/subscription/DaysRemainingCounter";
 
 interface SubscriptionInfoCardProps {
   subscriptionStatus: SubscriptionStatus;
@@ -19,16 +19,14 @@ const SubscriptionInfoCard: React.FC<SubscriptionInfoCardProps> = ({
             <div className="text-sm font-medium text-blue-900">
               {subscriptionStatus.planDetails?.name || "Sem plano"}
             </div>
-            {subscriptionStatus.isTrialActive && (
-              <div className="text-xs text-blue-600">
-                {subscriptionStatus.daysRemaining} dias restantes
-              </div>
-            )}
+            <div className="mt-1">
+              <DaysRemainingCounter />
+            </div>
           </div>
           {subscriptionStatus.isPremium && (
-            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+            <div className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-medium">
               Premium
-            </Badge>
+            </div>
           )}
         </div>
       </CardContent>
