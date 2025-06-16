@@ -15,6 +15,7 @@ import NewBudgetPage from '@/pages/NewBudgetPage';
 import SchedulesPage from '@/pages/SchedulesPage';
 import SchedulingPage from '@/pages/SchedulingPage';
 import MarketingPage from '@/pages/MarketingPage';
+import ContabilidadePage from '@/pages/ContabilidadePage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SuppliersPage from '@/pages/SuppliersPage';
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
@@ -44,6 +45,7 @@ export const premiumRoutes = [
   <Route key="schedules" path="agendamentos" element={<SchedulesPage />} />,
   <Route key="scheduling" path="agendamentos/novo" element={<SchedulingPage />} />,
   <Route key="marketing" path="marketing" element={<MarketingPage />} />,
+  <Route key="contabilidade" path="contabilidade" element={<ContabilidadePage />} />,
   <Route key="categories" path="categorias" element={<CategoriesPage />} />,
   <Route key="suppliers" path="fornecedores" element={<SuppliersPage />} />,
   <Route key="reports-basic" path="relatorios-basicos" element={<RelatoriosBasicosPage />} />,

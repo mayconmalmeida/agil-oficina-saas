@@ -11,42 +11,26 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
   const { restoreLastRoute } = useRoutePersistence();
   const { isLoadingAuth, user } = useAuth();
   const hasTriedRestore = useRef(false);
-  const isRestoring = useRef(false);
 
   useEffect(() => {
-    // Aguardar a autenticação estar completamente carregada
-    if (isLoadingAuth) {
-      console.log('RouteManager: Aguardando carregamento da autenticação...');
+    // Se ainda está carregando ou não há usuário, não fazer nada
+    if (isLoadingAuth || !user) {
       return;
     }
 
-    // Múltiplas proteções contra execução desnecessária
-    if (hasTriedRestore.current || 
-        isRestoring.current || 
-        !user) {
+    // Se já tentou restaurar, não tentar novamente
+    if (hasTriedRestore.current) {
       return;
     }
 
     hasTriedRestore.current = true;
-    isRestoring.current = true;
     
-    console.log('RouteManager: Iniciando restauração de rota');
-    
-    // Delay para garantir que tudo esteja carregado
-    const timer = setTimeout(() => {
-      try {
-        restoreLastRoute();
-      } catch (error) {
-        console.error('Erro ao restaurar rota:', error);
-      } finally {
-        isRestoring.current = false;
-      }
-    }, 1000); // Reduzido para 1s
-
-    return () => {
-      clearTimeout(timer);
-      isRestoring.current = false;
-    };
+    // Restaurar rota imediatamente sem delay desnecessário
+    try {
+      restoreLastRoute();
+    } catch (error) {
+      console.error('Erro ao restaurar rota:', error);
+    }
   }, [isLoadingAuth, user, restoreLastRoute]);
 
   return <>{children}</>;

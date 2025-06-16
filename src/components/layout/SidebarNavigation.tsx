@@ -14,7 +14,8 @@ import {
   BarChart3,
   Building,
   MessageSquare,
-  Megaphone
+  Megaphone,
+  Calculator
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -37,6 +38,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
     { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench, current: location.pathname.startsWith('/dashboard/servicos') },
     { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar, current: location.pathname.startsWith('/dashboard/agendamentos') },
     { name: 'Marketing', href: '/dashboard/marketing', icon: Megaphone, current: location.pathname.startsWith('/dashboard/marketing'), isPremium: true },
+    { name: 'Contabilidade', href: '/dashboard/contabilidade', icon: Calculator, current: location.pathname.startsWith('/dashboard/contabilidade'), isPremium: true },
     { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText, current: location.pathname.startsWith('/dashboard/orcamento') },
     { name: 'Relatórios', href: '/dashboard/relatorios-basicos', icon: BarChart3, current: location.pathname.startsWith('/dashboard/relatorios') },
     { name: 'Empresa', href: '/dashboard/empresa', icon: Building, current: location.pathname.startsWith('/dashboard/empresa') },
