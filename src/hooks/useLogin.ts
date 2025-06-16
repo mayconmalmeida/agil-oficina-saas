@@ -29,14 +29,16 @@ export const useLogin = () => {
         .eq('id', uid)
         .maybeSingle();
 
+      // Se houver erro diferente de "não encontrado", logar erro
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao verificar perfil:', error);
-        return false;
+        return { exists: false, isComplete: false };
       }
 
+      // Se não encontrou perfil, retornar que não existe
       if (!profile) {
-        console.log('Perfil não encontrado, precisa ser criado');
-        return false;
+        console.log('Perfil não encontrado na tabela profiles - precisa ser criado');
+        return { exists: false, isComplete: false };
       }
 
       console.log('Perfil encontrado:', profile);
@@ -48,10 +50,10 @@ export const useLogin = () => {
       );
 
       console.log('Verificação de perfil completo:', isComplete);
-      return isComplete;
+      return { exists: true, isComplete };
     } catch (error) {
       console.error('Erro inesperado ao verificar perfil:', error);
-      return false;
+      return { exists: false, isComplete: false };
     }
   };
 
@@ -103,6 +105,7 @@ export const useLogin = () => {
             .eq('id', authData.user.id)
             .maybeSingle();
 
+          // Se encontrou perfil e é admin, redirecionar para admin
           if (!profileError && profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
             console.log('Admin detectado, redirecionando para /admin');
             toast({
@@ -117,12 +120,13 @@ export const useLogin = () => {
           console.error('Erro ao verificar admin:', adminError);
         }
 
-        // Para usuários normais, verificar se o perfil está completo
+        // Para usuários normais, verificar se o perfil existe e está completo
         console.log('Verificando completude do perfil para usuário normal...');
-        const isProfileComplete = await checkProfileCompletion(authData.user.id);
+        const profileStatus = await checkProfileCompletion(authData.user.id);
         
-        if (!isProfileComplete) {
-          console.log('Perfil incompleto detectado, redirecionando para /perfil-setup');
+        // Se o perfil não existe OU não está completo, redirecionar para setup
+        if (!profileStatus.exists || !profileStatus.isComplete) {
+          console.log('Perfil inexistente ou incompleto detectado, redirecionando para /perfil-setup');
           toast({
             title: "Complete seu perfil",
             description: "Por favor, complete as informações da sua oficina para continuar.",

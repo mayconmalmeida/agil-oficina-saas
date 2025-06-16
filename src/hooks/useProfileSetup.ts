@@ -74,7 +74,7 @@ export const useProfileSetup = () => {
             telefone: profile.telefone || ''
           });
         } else {
-          console.log('Nenhum perfil encontrado, criando um novo');
+          console.log('Nenhum perfil encontrado, criando um novo registro básico');
           // Criar perfil básico se não existir
           const { error: createError } = await supabase
             .from('profiles')
@@ -88,6 +88,11 @@ export const useProfileSetup = () => {
             
           if (createError) {
             console.error('Erro ao criar perfil inicial:', createError);
+            toast({
+              variant: "destructive",
+              title: "Erro ao criar perfil",
+              description: "Ocorreu um erro ao criar seu perfil. Tente novamente.",
+            });
           } else {
             console.log('Perfil inicial criado com sucesso');
           }
