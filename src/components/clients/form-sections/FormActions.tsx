@@ -7,6 +7,7 @@ interface FormActionsProps {
   activeTab: string;
   isLoading: boolean;
   isEditing?: boolean;
+  saveSuccess?: boolean;
   onNextTab: () => void;
   onPrevTab: () => void;
   onSubmit: () => void;
@@ -16,11 +17,12 @@ const FormActions: React.FC<FormActionsProps> = ({
   activeTab,
   isLoading,
   isEditing = false,
+  saveSuccess = false,
   onNextTab,
   onPrevTab,
   onSubmit
 }) => {
-  console.log('FormActions renderizado:', { activeTab, isLoading, isEditing });
+  console.log('FormActions renderizado:', { activeTab, isLoading, isEditing, saveSuccess });
 
   if (activeTab === 'cliente') {
     return (
@@ -29,7 +31,7 @@ const FormActions: React.FC<FormActionsProps> = ({
           type="button" 
           onClick={onNextTab}
           className="bg-oficina hover:bg-blue-700"
-          disabled={isLoading}
+          disabled={isLoading || saveSuccess}
         >
           {isLoading ? (
             <>
@@ -50,7 +52,7 @@ const FormActions: React.FC<FormActionsProps> = ({
         type="button" 
         variant="outline" 
         onClick={onPrevTab}
-        disabled={isLoading}
+        disabled={isLoading || saveSuccess}
       >
         Voltar
       </Button>
@@ -58,7 +60,7 @@ const FormActions: React.FC<FormActionsProps> = ({
         type="submit"
         onClick={onSubmit}
         className="bg-oficina hover:bg-blue-700"
-        disabled={isLoading}
+        disabled={isLoading || saveSuccess}
       >
         {isLoading ? (
           <>

@@ -92,11 +92,11 @@ const ClientForm: React.FC<ClientFormProps> = ({
               </TabsList>
 
               <TabsContent value="cliente" className="space-y-4">
-                <PersonalInfoSection form={form} />
+                <PersonalInfoSection form={form} saveSuccess={saveSuccess} />
               </TabsContent>
 
               <TabsContent value="veiculo" className="space-y-4">
-                <VehicleInfoSection form={form} />
+                <VehicleInfoSection form={form} saveSuccess={saveSuccess} />
               </TabsContent>
             </Tabs>
 

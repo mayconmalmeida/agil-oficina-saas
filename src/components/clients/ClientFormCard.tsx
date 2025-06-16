@@ -5,17 +5,21 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import ClientForm from './ClientForm';
 
 interface ClientFormCardProps {
-  onSubmit: (values: any) => Promise<void>;
-  onSkip: () => void;
+  onSave: () => void;
   isLoading: boolean;
   saveSuccess: boolean;
+  initialData?: any;
+  isEditing?: boolean;
+  clientId?: string;
 }
 
 const ClientFormCard: React.FC<ClientFormCardProps> = ({
-  onSubmit,
-  onSkip,
+  onSave,
   isLoading,
-  saveSuccess
+  saveSuccess,
+  initialData,
+  isEditing,
+  clientId
 }) => {
   return (
     <Card className={`transition-all duration-300 ${saveSuccess ? 'border-green-500 shadow-md' : ''}`}>
@@ -30,10 +34,10 @@ const ClientFormCard: React.FC<ClientFormCardProps> = ({
       </CardHeader>
       <CardContent>
         <ClientForm 
-          onSubmit={onSubmit}
-          onSkip={onSkip}
-          isLoading={isLoading}
-          saveSuccess={saveSuccess}
+          onSave={onSave}
+          initialData={initialData}
+          isEditing={isEditing}
+          clientId={clientId}
         />
       </CardContent>
     </Card>

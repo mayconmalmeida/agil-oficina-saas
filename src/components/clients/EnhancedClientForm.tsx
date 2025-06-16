@@ -62,10 +62,12 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
               <PersonalInfoSection form={form} saveSuccess={saveSuccess} />
               <AddressSection form={form} saveSuccess={saveSuccess} />
               <FormActions 
+                activeTab="cliente"
                 isLoading={isLoading} 
                 saveSuccess={saveSuccess} 
-                onPrev={handleNextTab}
-                isFirstTab={true} 
+                onNextTab={handleNextTab}
+                onPrevTab={handlePrevTab}
+                onSubmit={onSubmit}
                 isEditing={isEditing}
               />
             </div>
@@ -75,10 +77,12 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
             <div className="space-y-4">
               <VehicleInfoSection form={form} saveSuccess={saveSuccess} />
               <FormActions 
+                activeTab="veiculo"
                 isLoading={isLoading} 
                 saveSuccess={saveSuccess} 
-                onPrev={handlePrevTab}
-                isFirstTab={false}
+                onNextTab={handleNextTab}
+                onPrevTab={handlePrevTab}
+                onSubmit={onSubmit}
                 isEditing={isEditing}
               />
             </div>
