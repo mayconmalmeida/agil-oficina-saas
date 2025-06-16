@@ -5,7 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Search, Loader2 } from 'lucide-react';
 import { useVehicleLookup } from '@/hooks/useVehicleLookup';
-import { formatLicensePlate } from '@/utils/formatUtils';
+import { formatLicensePlate, validateLicensePlate } from '@/utils/formatUtils';
 
 interface ClientVehicleFieldsProps {
   form: UseFormReturn<any>;
@@ -26,14 +26,14 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
     }
   }, [placa, form]);
 
-  // Busca automática quando a placa estiver completa
+  // Auto search when plate is complete (7 characters without spaces/hyphens)
   useEffect(() => {
     if (placa) {
       const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
       
-      // Verifica se a placa está completa (7 caracteres)
-      if (cleanPlaca.length === 7) {
-        // Aguarda um pequeno delay para evitar muitas requisições
+      // Check if plate is complete (7 characters) and valid
+      if (cleanPlaca.length === 7 && validateLicensePlate(placa)) {
+        // Add delay to avoid too many requests while typing
         const timeoutId = setTimeout(() => {
           console.log('Iniciando busca automática para placa:', placa);
           searchVehicleData(placa);
@@ -44,12 +44,12 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
     }
   }, [placa, searchVehicleData]);
 
-  // Handle plate field blur como fallback
+  // Handle plate field blur as fallback
   const handlePlateBlur = () => {
     if (placa) {
       const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
       
-      if (cleanPlaca.length === 7) {
+      if (cleanPlaca.length === 7 && validateLicensePlate(placa)) {
         console.log('Busca por blur do campo placa:', placa);
         searchVehicleData(placa);
       }
@@ -83,6 +83,9 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
               <FormMessage />
               {isSearching && (
                 <p className="text-xs text-blue-600">Buscando dados do veículo...</p>
+              )}
+              {placa && !validateLicensePlate(placa) && placa.replace(/[^A-Za-z0-9]/g, '').length >= 7 && (
+                <p className="text-xs text-red-600">Formato de placa inválido. Use ABC-1234 ou ABC1D23</p>
               )}
             </FormItem>
           )}

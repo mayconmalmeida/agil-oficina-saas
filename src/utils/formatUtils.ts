@@ -1,94 +1,99 @@
+/**
+ * Format utilities for forms and data display
+ */
 
-// Format a CPF string to the standard format: 000.000.000-00
-export const formatCPF = (value: string): string => {
-  // Remove all non-digits
-  const digits = value.replace(/\D/g, '');
+/**
+ * Formats a Brazilian phone number with proper mask
+ * @param phone Phone number to format
+ * @returns Formatted phone number
+ */
+export function formatPhone(phone: string): string {
+  // Keep only numbers
+  const cleanPhone = phone.replace(/\D/g, '');
   
-  // Limit to 11 digits
-  const limitedDigits = digits.substring(0, 11);
+  // Apply mask based on length
+  if (cleanPhone.length <= 2) return `(${cleanPhone}`;
+  if (cleanPhone.length <= 6) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2)}`;
+  if (cleanPhone.length <= 10) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
+  return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7, 11)}`;
+}
+
+/**
+ * Formats a Brazilian CPF number with proper mask
+ * @param cpf CPF to format
+ * @returns Formatted CPF (000.000.000-00)
+ */
+export function formatCPF(cpf: string): string {
+  // Keep only numbers
+  const cleanCpf = cpf.replace(/\D/g, '');
   
-  // Apply formatting
-  if (limitedDigits.length <= 3) {
-    return limitedDigits;
-  } else if (limitedDigits.length <= 6) {
-    return `${limitedDigits.substring(0, 3)}.${limitedDigits.substring(3)}`;
-  } else if (limitedDigits.length <= 9) {
-    return `${limitedDigits.substring(0, 3)}.${limitedDigits.substring(3, 6)}.${limitedDigits.substring(6)}`;
-  } else {
-    return `${limitedDigits.substring(0, 3)}.${limitedDigits.substring(3, 6)}.${limitedDigits.substring(6, 9)}-${limitedDigits.substring(9)}`;
+  // Apply mask
+  if (cleanCpf.length <= 3) return cleanCpf;
+  if (cleanCpf.length <= 6) return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3)}`;
+  if (cleanCpf.length <= 9) return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3, 6)}.${cleanCpf.slice(6)}`;
+  return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3, 6)}.${cleanCpf.slice(6, 9)}-${cleanCpf.slice(9, 11)}`;
+}
+
+/**
+ * Formats a CEP with proper mask
+ * @param cep CEP to format
+ * @returns Formatted CEP (00000-000)
+ */
+export function formatCEP(cep: string): string {
+  // Keep only numbers
+  const cleanCep = cep.replace(/\D/g, '');
+  
+  // Apply mask
+  if (cleanCep.length <= 5) return cleanCep;
+  return `${cleanCep.slice(0, 5)}-${cleanCep.slice(5, 8)}`;
+}
+
+/**
+ * Formats a license plate according to Brazilian standards
+ * Supports both old format (ABC-1234) and new format (ABC1D23)
+ * @param plate License plate to format
+ * @returns Formatted license plate
+ */
+export function formatLicensePlate(plate: string): string {
+  // Remove spaces and hyphens, convert to uppercase
+  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
+  
+  // If it's empty or less than 3 characters, return as is
+  if (cleanPlate.length <= 3) return cleanPlate;
+  
+  // Limit to 7 characters maximum
+  const limitedPlate = cleanPlate.slice(0, 7);
+  
+  // Check if it matches old format pattern (3 letters followed by 4 numbers)
+  if (/^[A-Z]{3}\d{4}$/.test(limitedPlate)) {
+    // Old format: add hyphen after 3 letters (ABC-1234)
+    return `${limitedPlate.slice(0, 3)}-${limitedPlate.slice(3)}`;
   }
-};
-
-// Format a CEP string to the standard format: 00000-000
-export const formatCEP = (value: string): string => {
-  // Remove all non-digits
-  const digits = value.replace(/\D/g, '');
   
-  // Limit to 8 digits
-  const limitedDigits = digits.substring(0, 8);
-  
-  // Apply formatting
-  if (limitedDigits.length <= 5) {
-    return limitedDigits;
-  } else {
-    return `${limitedDigits.substring(0, 5)}-${limitedDigits.substring(5)}`;
-  }
-};
-
-// Format a license plate string to standard format (ABC-1234 or ABC1D23)
-export const formatLicensePlate = (value: string): string => {
-  // Remove spaces and convert to uppercase
-  const plate = value.replace(/\s/g, '').toUpperCase();
-  
-  // Check if it's the new Mercosul format (ABC1D23)
-  if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(plate)) {
-    return plate;
+  // Check if it matches new format pattern (3 letters + 1 number + 1 letter + 2 numbers)
+  if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(limitedPlate)) {
+    // New format: no hyphen needed (ABC1D23)
+    return limitedPlate;
   }
   
-  // For the traditional format (ABC-1234) or partial input
-  const letters = plate.replace(/[^A-Z]/g, '').substring(0, 3);
-  const numbers = plate.replace(/[^0-9]/g, '').substring(0, 4);
-  
-  if (letters.length === 0) {
-    return '';
-  } else if (letters.length < 3) {
-    return letters;
-  } else if (numbers.length === 0) {
-    return letters;
-  } else {
-    return `${letters}-${numbers}`;
-  }
-};
+  // For incomplete plates, return without formatting until complete
+  return limitedPlate;
+}
 
-// Format phone number to (XX) XXXXX-XXXX or (XX) XXXX-XXXX
-export const formatPhone = (value: string): string => {
-  // Remove all non-digits
-  const digits = value.replace(/\D/g, '');
+/**
+ * Validates a Brazilian license plate in both old (ABC-1234) and new (ABC1D23) formats
+ * @param plate License plate to validate
+ * @returns true if valid, false otherwise
+ */
+export function validateLicensePlate(plate: string): boolean {
+  // Remove spaces and hyphens, convert to uppercase
+  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
   
-  // Limit to 11 digits (with area code)
-  const limitedDigits = digits.substring(0, 11);
+  // Old format: ABC1234 (7 characters: 3 letters + 4 numbers)
+  const oldFormat = /^[A-Z]{3}\d{4}$/;
   
-  // Apply formatting based on length
-  if (limitedDigits.length <= 2) {
-    return limitedDigits.length ? `(${limitedDigits}` : '';
-  } else if (limitedDigits.length <= 6) {
-    return `(${limitedDigits.substring(0, 2)}) ${limitedDigits.substring(2)}`;
-  } else if (limitedDigits.length <= 10) {
-    // Format as (XX) XXXX-XXXX for 8-digit numbers
-    return `(${limitedDigits.substring(0, 2)}) ${limitedDigits.substring(2, 6)}-${limitedDigits.substring(6)}`;
-  } else {
-    // Format as (XX) XXXXX-XXXX for 9-digit numbers
-    return `(${limitedDigits.substring(0, 2)}) ${limitedDigits.substring(2, 7)}-${limitedDigits.substring(7)}`;
-  }
-};
-
-// Format phone number - alias for formatPhone to maintain compatibility
-export const formatPhoneNumber = formatPhone;
-
-// Format currency to R$ format
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value);
-};
+  // New format: ABC1D23 (7 characters: 3 letters + 1 number + 1 letter + 2 numbers)
+  const newFormat = /^[A-Z]{3}\d[A-Z]\d{2}$/;
+  
+  return oldFormat.test(cleanPlate) || newFormat.test(cleanPlate);
+}

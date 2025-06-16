@@ -20,15 +20,51 @@ interface PlateAPIResponse {
   error?: string;
 }
 
+// Função para validar formato de placa (antigo e novo)
+const validatePlateFormat = (plate: string): boolean => {
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  
+  // Formato antigo: ABC1234 (3 letras + 4 números)
+  const oldFormat = /^[A-Z]{3}\d{4}$/;
+  
+  // Formato novo: ABC1D23 (3 letras + 1 número + 1 letra + 2 números)
+  const newFormat = /^[A-Z]{3}\d[A-Z]\d{2}$/;
+  
+  return oldFormat.test(cleanPlate) || newFormat.test(cleanPlate);
+};
+
+// Função para formatar placa para busca na API
+const formatPlateForAPI = (plate: string): string => {
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  
+  // Verifica se é formato antigo (ABC1234) e adiciona hífen se necessário
+  if (/^[A-Z]{3}\d{4}$/.test(cleanPlate)) {
+    return `${cleanPlate.slice(0, 3)}-${cleanPlate.slice(3)}`;
+  }
+  
+  // Para formato novo (ABC1D23), mantém sem hífen
+  return cleanPlate;
+};
+
 export const searchVehicleByPlateReal = async (plate: string): Promise<VehicleData | null> => {
-  // Remove formatação da placa para busca
+  // Remove formatação da placa para validação
   const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   
   console.log('Buscando dados reais para placa:', cleanPlate);
   
+  // Valida formato da placa
+  if (!validatePlateFormat(cleanPlate)) {
+    console.log('Formato de placa inválido:', cleanPlate);
+    return null;
+  }
+  
   try {
     // Simula delay de API real
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Formata placa para envio à API
+    const formattedPlate = formatPlateForAPI(cleanPlate);
+    console.log('Placa formatada para API:', formattedPlate);
     
     // Por enquanto, retornamos null para forçar preenchimento manual
     // TODO: Integrar com API real de consulta de placas quando disponível
@@ -36,7 +72,7 @@ export const searchVehicleByPlateReal = async (plate: string): Promise<VehicleDa
     
     /*
     // Exemplo de como seria a integração real:
-    const response = await fetch(`https://api-consulta-placas.com.br/v1/veiculos/${cleanPlate}`, {
+    const response = await fetch(`https://api-consulta-placas.com.br/v1/veiculos/${formattedPlate}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
