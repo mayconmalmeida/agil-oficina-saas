@@ -14,13 +14,13 @@ interface NavigationLinksProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Clientes', href: '/clientes', icon: Users },
-  { name: 'Veículos', href: '/veiculos', icon: Car },
-  { name: 'Produtos', href: '/produtos', icon: Package },
-  { name: 'Serviços', href: '/servicos', icon: Wrench },
-  { name: 'Agendamentos', href: '/agendamentos', icon: Calendar, premium: true },
-  { name: 'Orçamentos', href: '/orcamentos', icon: FileText },
-  { name: 'Configurações', href: '/configuracoes', icon: Settings },
+  { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
+  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
+  { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
+  { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench },
+  { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar, premium: true },
+  { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
+  { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ];
 
 const NavigationLinks: React.FC<NavigationLinksProps> = ({ subscriptionStatus, onNavigate }) => {
@@ -64,4 +64,3 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({ subscriptionStatus, o
 };
 
 export default NavigationLinks;
-

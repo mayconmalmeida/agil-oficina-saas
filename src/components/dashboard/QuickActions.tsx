@@ -30,37 +30,37 @@ const QuickActions = () => {
     {
       title: "Novo Orçamento",
       icon: FileText,
-      href: "/orcamentos/novo",
+      href: "/dashboard/orcamentos",
       color: "bg-blue-500 hover:bg-blue-600 text-white"
     },
     {
       title: "Agendamentos",
       icon: CalendarClock,
-      href: "/agendamentos",
+      href: "/dashboard/agendamentos",
       color: "bg-purple-500 hover:bg-purple-600 text-white"
     },
     {
       title: "Clientes",
       icon: Users,
-      href: "/clientes",
+      href: "/dashboard/clientes",
       color: "bg-green-500 hover:bg-green-600 text-white"
     },
     {
       title: "Produtos",
       icon: Package,
-      href: "/produtos",
+      href: "/dashboard/produtos",
       color: "bg-orange-500 hover:bg-orange-600 text-white"
     },
     {
       title: "Veículos",
       icon: Car,
-      href: "/veiculos",
+      href: "/dashboard/veiculos",
       color: "bg-red-500 hover:bg-red-600 text-white"
     },
     {
       title: "Configurações",
       icon: Settings,
-      href: "/configuracoes",
+      href: "/dashboard/configuracoes",
       color: "bg-gray-500 hover:bg-gray-600 text-white"
     }
   ];
