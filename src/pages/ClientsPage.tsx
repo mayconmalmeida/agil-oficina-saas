@@ -6,10 +6,15 @@ import { Card } from '@/components/ui/card';
 import ClientList from '@/components/clients/ClientList';
 import ClientsPageHeader from '@/components/clients/ClientsPageHeader';
 import ClientSearchForm from '@/components/clients/ClientSearchForm';
+import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
+import ClientEditDialog from '@/components/clients/ClientEditDialog';
 import { PlusCircle } from 'lucide-react';
 
 const ClientsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const navigate = useNavigate();
   
   const handleSearchChange = (value: string) => {
@@ -17,11 +22,15 @@ const ClientsPage: React.FC = () => {
   };
   
   const handleViewClient = (clientId: string) => {
-    navigate(`/dashboard/clientes/${clientId}`);
+    setSelectedClientId(clientId);
+    setShowDetails(true);
+    setShowEditDialog(false);
   };
   
   const handleEditClient = (clientId: string) => {
-    navigate(`/dashboard/clientes/editar/${clientId}`);
+    setSelectedClientId(clientId);
+    setShowEditDialog(true);
+    setShowDetails(false);
   };
   
   const handleDeleteClient = (clientId: string) => {
@@ -31,6 +40,27 @@ const ClientsPage: React.FC = () => {
   
   const handleAddClient = () => {
     navigate('/dashboard/clientes/novo');
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetails(false);
+    setSelectedClientId(null);
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditDialog(false);
+    setSelectedClientId(null);
+  };
+
+  const handleEditFromDetails = () => {
+    setShowDetails(false);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = () => {
+    setShowEditDialog(false);
+    setSelectedClientId(null);
+    // Refresh the client list if needed
   };
   
   return (
@@ -48,14 +78,36 @@ const ClientsPage: React.FC = () => {
         </div>
       </div>
       
-      <Card>
-        <ClientList 
-          searchTerm={searchTerm} 
-          onViewClient={handleViewClient}
-          onEditClient={handleEditClient}
-          onDeleteClient={handleDeleteClient}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className={`${showDetails ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+          <Card>
+            <ClientList 
+              searchTerm={searchTerm} 
+              onViewClient={handleViewClient}
+              onEditClient={handleEditClient}
+              onDeleteClient={handleDeleteClient}
+            />
+          </Card>
+        </div>
+        
+        {showDetails && selectedClientId && (
+          <div className="lg:col-span-1">
+            <ClientDetailsPanel 
+              clientId={selectedClientId}
+              onClose={handleCloseDetails}
+              onEdit={handleEditFromDetails}
+            />
+          </div>
+        )}
+      </div>
+
+      {showEditDialog && selectedClientId && (
+        <ClientEditDialog
+          clientId={selectedClientId}
+          onClose={handleCloseEdit}
+          onSave={handleSaveEdit}
         />
-      </Card>
+      )}
     </div>
   );
 };
