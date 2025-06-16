@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Edit, Car } from 'lucide-react';
+import { X, Edit } from 'lucide-react';
 import ClientHeader from './details/ClientHeader';
 import ClientContactInfo from './details/ClientContactInfo';
 import ClientVehicleInfo from './details/ClientVehicleInfo';
@@ -41,9 +41,14 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
+  // Use useEffect with proper dependencies to avoid infinite re-renders
   useEffect(() => {
     const fetchClientDetails = async () => {
+      if (!clientId) return;
+      
+      console.log('Buscando detalhes do cliente:', clientId);
       setIsLoading(true);
+      
       try {
         // Buscar dados do cliente
         const { data: clientData, error: clientError } = await supabase
@@ -52,7 +57,12 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
           .eq('id', clientId)
           .single();
           
-        if (clientError) throw clientError;
+        if (clientError) {
+          console.error('Erro ao buscar cliente:', clientError);
+          throw clientError;
+        }
+        
+        console.log('Cliente encontrado:', clientData);
         
         // Ensure tipo property is set to default 'pf' if missing
         const clientDataFormatted = {
@@ -63,14 +73,20 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
         setClient(clientDataFormatted as Client);
 
         // Buscar veículos do cliente na nova tabela
+        console.log('Buscando veículos para o cliente:', clientId);
         const { data: vehiclesData, error: vehiclesError } = await supabase
           .from('veiculos')
           .select('*')
           .eq('cliente_id', clientId);
           
-        if (vehiclesError) throw vehiclesError;
+        if (vehiclesError) {
+          console.error('Erro ao buscar veículos:', vehiclesError);
+          throw vehiclesError;
+        }
         
+        console.log('Veículos encontrados:', vehiclesData);
         setVehicles(vehiclesData || []);
+        
       } catch (error: any) {
         console.error('Error fetching client details:', error);
         toast({
@@ -83,10 +99,8 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
       }
     };
     
-    if (clientId) {
-      fetchClientDetails();
-    }
-  }, [clientId, toast]);
+    fetchClientDetails();
+  }, [clientId, toast]); // Only depend on clientId and toast
 
   const handleCreateBudget = () => {
     if (onCreateBudget && client) {
@@ -134,6 +148,13 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
             />
             <ClientVehicleInfo 
               vehicles={vehicles}
+              marca={client.marca}
+              modelo={client.modelo}
+              ano={client.ano}
+              placa={client.placa}
+              veiculo={client.veiculo}
+              cor={client.cor}
+              kilometragem={client.kilometragem}
               onCreateBudget={handleCreateBudget}
             />
             <ClientBudgetsList 

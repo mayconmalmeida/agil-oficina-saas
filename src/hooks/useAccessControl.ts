@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthUser } from '@/types/auth';
 
@@ -12,10 +12,24 @@ interface UseAccessControlProps {
 export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAccessControlProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const lastLocationRef = useRef(location.pathname);
+  const lastUserIdRef = useRef(user?.id);
 
   useEffect(() => {
-    // LOG estado dos principais valores de controle
-    console.log('[useAccessControl] INICIO', { user, isLoadingAuth, requiredPlan, pathname: location.pathname });
+    // Prevent unnecessary re-runs if user and location haven't changed
+    if (lastLocationRef.current === location.pathname && lastUserIdRef.current === user?.id) {
+      return;
+    }
+
+    lastLocationRef.current = location.pathname;
+    lastUserIdRef.current = user?.id;
+
+    console.log('[useAccessControl] INICIO', { 
+      userId: user?.id, 
+      isLoadingAuth, 
+      requiredPlan, 
+      pathname: location.pathname 
+    });
 
     if (isLoadingAuth) {
       console.log('[useAccessControl] Aguardando carregamento da autenticação...');
@@ -47,7 +61,6 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
     // USUÁRIOS COMUNS: garantir acesso ao dashboard
     if (user.role === 'user' || user.canAccessFeatures) {
       console.log('[useAccessControl] Usuário comum autenticado (role=user ou canAccessFeatures), acesso ok');
-      // Não faz nada, libera!
       return;
     }
 
@@ -69,9 +82,8 @@ export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAcces
         return;
       }
     }
-  }, [user, isLoadingAuth, location.pathname, navigate, requiredPlan]);
+  }, [user?.id, user?.role, user?.canAccessFeatures, user?.isAdmin, isLoadingAuth, location.pathname, navigate, requiredPlan]);
 
-  // Mudar: Garante que qualquer user autenticado role=user OU canAccessFeatures tenha acesso (sem travar no loading!)
   return {
     shouldShowContent: !isLoadingAuth && user && (user.role === 'user' || user.canAccessFeatures || user.isAdmin),
     isAdmin: user?.isAdmin || false,
