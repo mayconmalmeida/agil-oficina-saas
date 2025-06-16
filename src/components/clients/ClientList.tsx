@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, Edit, Trash2, Phone, Mail, Car } from 'lucide-react';
+import { Eye, Edit, Trash2, Phone, Mail, Car, Calendar } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -82,43 +82,44 @@ const ClientList: React.FC<ClientListProps> = ({
     );
   }, [clients, searchTerm]);
 
-  // Função para formatar informações do veículo de forma mais visual e organizada
+  // Função para formatar informações do veículo
   const formatVehicleInfo = (client: Client) => {
     // Verificar se há dados estruturados do veículo
     if (client.marca && client.modelo) {
       return {
-        vehicle: `${client.marca} ${client.modelo}`,
+        brand: client.marca,
+        model: client.modelo,
         year: client.ano || '',
-        plate: client.placa || 'N/A',
-        hasStructuredData: true
+        plate: client.placa || 'Não informado',
+        hasStructuredData: true,
+        displayName: `${client.marca} ${client.modelo}`
       };
     }
     
     // Fallback para o campo veiculo antigo
     if (client.veiculo) {
-      // Tentar extrair informações do campo veiculo
       const vehicleText = client.veiculo.trim();
-      
-      // Verificar se contém "Placa:" para extrair a placa
       const plateMatch = vehicleText.match(/Placa:\s*([A-Z0-9-]+)/i);
-      const plate = plateMatch ? plateMatch[1] : client.placa || 'N/A';
-      
-      // Remover a parte da placa para obter apenas o veículo
+      const plate = plateMatch ? plateMatch[1] : client.placa || 'Não informado';
       const vehiclePart = vehicleText.replace(/,?\s*Placa:.*$/i, '').trim();
       
       return {
-        vehicle: vehiclePart || 'Veículo não especificado',
+        brand: '',
+        model: '',
         year: '',
         plate: plate,
-        hasStructuredData: false
+        hasStructuredData: false,
+        displayName: vehiclePart || 'Veículo não especificado'
       };
     }
     
     return {
-      vehicle: 'Não informado',
+      brand: '',
+      model: '',
       year: '',
-      plate: 'N/A',
-      hasStructuredData: false
+      plate: 'Não informado',
+      hasStructuredData: false,
+      displayName: 'Não informado'
     };
   };
 
@@ -167,82 +168,129 @@ const ClientList: React.FC<ClientListProps> = ({
           const vehicleInfo = formatVehicleInfo(client);
           
           return (
-            <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-3">
-                    <h3 className="font-medium text-gray-900">{client.nome}</h3>
-                    <Badge variant={client.tipo === 'pj' ? 'default' : 'secondary'}>
-                      {client.tipo === 'pj' ? 'PJ' : 'PF'}
-                    </Badge>
+            <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-4">
+                  {/* Header do cliente */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900">{client.nome}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={client.tipo === 'pj' ? 'default' : 'secondary'} className="text-xs">
+                          {client.tipo === 'pj' ? 'Pessoa Jurídica' : 'Pessoa Física'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 flex-shrink-0" />
-                      <span>{client.telefone}</span>
+                  {/* Informações de contato */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                      <span className="font-medium">{client.telefone}</span>
                     </div>
                     
                     {client.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 flex-shrink-0" />
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="h-4 w-4 text-green-500 flex-shrink-0" />
                         <span className="truncate">{client.email}</span>
                       </div>
                     )}
-                    
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 flex-shrink-0" />
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">
-                          {vehicleInfo.vehicle}
-                        </span>
-                        {vehicleInfo.year && (
-                          <Badge variant="outline" className="text-xs">
-                            {vehicleInfo.year}
-                          </Badge>
-                        )}
-                        <Badge 
-                          variant={vehicleInfo.plate === 'N/A' ? 'destructive' : 'secondary'} 
-                          className="text-xs font-mono"
-                        >
-                          {vehicleInfo.plate}
-                        </Badge>
-                        {!vehicleInfo.hasStructuredData && vehicleInfo.vehicle !== 'Não informado' && (
-                          <Badge variant="outline" className="text-xs text-orange-600">
-                            Legado
-                          </Badge>
-                        )}
+                  </div>
+                  
+                  {/* Informações do veículo */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Car className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium text-gray-900">
+                            {vehicleInfo.displayName}
+                          </h4>
+                          {!vehicleInfo.hasStructuredData && vehicleInfo.displayName !== 'Não informado' && (
+                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-600 border-orange-200">
+                              Legado
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {vehicleInfo.hasStructuredData && (
+                            <>
+                              {vehicleInfo.brand && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-500">Marca:</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {vehicleInfo.brand}
+                                  </Badge>
+                                </div>
+                              )}
+                              
+                              {vehicleInfo.year && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-gray-500">Ano:</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {vehicleInfo.year}
+                                  </Badge>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">Placa:</span>
+                            <Badge 
+                              variant={vehicleInfo.plate === 'Não informado' ? 'destructive' : 'default'} 
+                              className="text-xs font-mono"
+                            >
+                              {vehicleInfo.plate}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                {/* Botões de ação */}
+                <div className="flex flex-col gap-2 ml-4">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onViewClient(client.id)}
-                    className="h-8 w-8 p-0"
+                    className="h-9 px-3"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver
                   </Button>
                   
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onEditClient(client.id)}
-                    className="h-8 w-8 p-0"
+                    className="h-9 px-3"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
                   </Button>
                   
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onDeleteClient(client.id)}
-                    className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9 px-3"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
                   </Button>
                 </div>
               </div>
