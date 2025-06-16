@@ -20,32 +20,65 @@ export const useAuth = (): AuthState => {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('useAuth: Iniciando verificação de sessão');
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
-        if (session?.user) {
-          // Buscar role do usuário apenas uma vez
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (!mounted) return;
-          
-          const userRole = profile?.role || 'user';
-          console.log('Role do usuário encontrada:', userRole);
-          
+        if (error) {
+          console.error('useAuth: Erro ao obter sessão:', error);
           setAuthState({
-            user: session.user,
+            user: null,
             loading: false,
-            role: userRole
+            role: null
           });
+          return;
+        }
+        
+        if (session?.user) {
+          console.log('useAuth: Sessão encontrada, buscando perfil...');
+          try {
+            // Definir timeout para evitar loading infinito
+            const profilePromise = supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+              
+            const timeoutPromise = new Promise((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Timeout')), 10000);
+            });
+            
+            const { data: profile } = await Promise.race([profilePromise, timeoutPromise]) as any;
+            
+            if (timeoutId) clearTimeout(timeoutId);
+            
+            if (!mounted) return;
+            
+            const userRole = profile?.role || 'user';
+            console.log('useAuth: Role do usuário:', userRole);
+            
+            setAuthState({
+              user: session.user,
+              loading: false,
+              role: userRole
+            });
+          } catch (profileError) {
+            console.warn('useAuth: Erro ao buscar perfil, usando role padrão:', profileError);
+            if (mounted) {
+              setAuthState({
+                user: session.user,
+                loading: false,
+                role: 'user'
+              });
+            }
+          }
         } else {
+          console.log('useAuth: Nenhuma sessão encontrada');
           setAuthState({
             user: null,
             loading: false,
@@ -53,7 +86,7 @@ export const useAuth = (): AuthState => {
           });
         }
       } catch (error) {
-        console.error('Erro na autenticação:', error);
+        console.error('useAuth: Erro geral na autenticação:', error);
         if (mounted) {
           setAuthState({
             user: null,
@@ -68,6 +101,8 @@ export const useAuth = (): AuthState => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
+      
+      console.log('useAuth: Auth state change:', event);
       
       if (session?.user) {
         try {
@@ -87,7 +122,7 @@ export const useAuth = (): AuthState => {
             role: userRole
           });
         } catch (error) {
-          console.error('Erro ao buscar role:', error);
+          console.error('useAuth: Erro ao buscar role na mudança de estado:', error);
           if (mounted) {
             setAuthState({
               user: session.user,
@@ -105,8 +140,21 @@ export const useAuth = (): AuthState => {
       }
     });
 
+    // Timeout de segurança para garantir que loading não fique infinito
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('useAuth: Timeout de segurança ativado, definindo loading como false');
+        setAuthState(prev => ({
+          ...prev,
+          loading: false
+        }));
+      }
+    }, 15000);
+
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -133,7 +181,7 @@ export const useAuth = (): AuthState => {
 
   return {
     user: authState.user,
-    session: null, // We don't need session for most use cases
+    session: null,
     loading: authState.loading,
     isLoadingAuth,
     role: authState.role,
