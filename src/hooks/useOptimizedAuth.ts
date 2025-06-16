@@ -10,7 +10,7 @@ export const useOptimizedAuth = (): AuthContextValue => {
   const { user, session, loading, isLoadingAuth, role } = useAuthState();
   const { toast } = useToast();
 
-  // Configurar plano automaticamente para novos usuários
+  // Configurar plano Premium automaticamente para novos usuários por 7 dias
   useEffect(() => {
     const setupUserPlan = async () => {
       if (!user?.id) return;
@@ -30,19 +30,19 @@ export const useOptimizedAuth = (): AuthContextValue => {
           return;
         }
 
-        // Se não tem plano ou trial_started_at, configurar plano Essencial com trial
+        // Se não tem plano ou trial_started_at, configurar plano Premium com trial de 7 dias
         if (!profile.plano || !profile.trial_started_at) {
-          console.log('Configurando plano Essencial para novo usuário');
+          console.log('Configurando plano Premium para novo usuário com trial de 7 dias');
           
           const { error: updateError } = await supabase.rpc('update_user_plan', {
             user_profile_id: user.id,
-            new_plan: 'Essencial'
+            new_plan: 'Premium'
           });
 
           if (updateError) {
-            console.error('Erro ao configurar plano:', updateError);
+            console.error('Erro ao configurar plano Premium:', updateError);
           } else {
-            console.log('Plano Essencial configurado com sucesso');
+            console.log('Plano Premium configurado com sucesso para trial de 7 dias');
           }
         }
       } catch (error) {

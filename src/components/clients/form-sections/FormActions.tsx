@@ -57,7 +57,7 @@ const FormActions: React.FC<FormActionsProps> = ({
         Voltar
       </Button>
       <Button 
-        type="submit"
+        type="button"
         onClick={onSubmit}
         className="bg-oficina hover:bg-blue-700"
         disabled={isLoading || saveSuccess}

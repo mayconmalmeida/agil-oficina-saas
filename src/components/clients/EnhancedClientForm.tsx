@@ -48,6 +48,13 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
   const isLoading = externalIsLoading !== undefined ? externalIsLoading : internalIsLoading;
   const saveSuccess = externalSaveSuccess !== undefined ? externalSaveSuccess : internalSaveSuccess;
   
+  const handleFormSubmit = () => {
+    console.log('Form submit triggered from EnhancedClientForm');
+    const values = form.getValues();
+    console.log('Form values:', values);
+    onSubmit(values);
+  };
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -67,7 +74,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                 saveSuccess={saveSuccess} 
                 onNextTab={handleNextTab}
                 onPrevTab={handlePrevTab}
-                onSubmit={onSubmit}
+                onSubmit={handleFormSubmit}
                 isEditing={isEditing}
               />
             </div>
@@ -82,7 +89,7 @@ const EnhancedClientForm: React.FC<EnhancedClientFormProps> = ({
                 saveSuccess={saveSuccess} 
                 onNextTab={handleNextTab}
                 onPrevTab={handlePrevTab}
-                onSubmit={onSubmit}
+                onSubmit={handleFormSubmit}
                 isEditing={isEditing}
               />
             </div>
