@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -28,17 +27,44 @@ const ClientList: React.FC<ClientListProps> = ({
 }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
 
+  // Wait for user authentication
   useEffect(() => {
-    fetchClients();
-  }, [searchTerm, filters]);
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Only fetch clients when user is authenticated
+    if (user) {
+      fetchClients();
+    } else {
+      setIsLoading(false);
+    }
+  }, [searchTerm, filters, user]);
 
   const fetchClients = async () => {
+    if (!user) {
+      console.error('Usuário não autenticado');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      console.log('Buscando clientes para usuário:', user.id);
 
       let query = supabase
         .from('clients')
@@ -52,7 +78,12 @@ const ClientList: React.FC<ClientListProps> = ({
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar clientes:', error);
+        throw error;
+      }
+
+      console.log('Clientes encontrados:', data);
 
       // Ensure all clients have the required fields with defaults
       const clientsWithDefaults = (data || []).map(client => ({
@@ -115,6 +146,20 @@ const ClientList: React.FC<ClientListProps> = ({
             </CardContent>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <Car className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          Usuário não autenticado
+        </h3>
+        <p className="text-gray-600">
+          Faça login para visualizar seus clientes.
+        </p>
       </div>
     );
   }
