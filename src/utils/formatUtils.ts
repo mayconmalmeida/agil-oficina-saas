@@ -1,129 +1,86 @@
 
-/**
- * Format utilities for forms and data display
- */
+// Utility functions for formatting data
 
-/**
- * Formats a Brazilian phone number with proper mask
- * @param phone Phone number to format
- * @returns Formatted phone number
- */
-export function formatPhone(phone: string): string {
-  // Keep only numbers
-  const cleanPhone = phone.replace(/\D/g, '');
+export const formatLicensePlate = (plate: string): string => {
+  if (!plate) return '';
   
-  // Apply mask based on length
-  if (cleanPhone.length <= 2) return `(${cleanPhone}`;
-  if (cleanPhone.length <= 6) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2)}`;
-  if (cleanPhone.length <= 10) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
-  return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7, 11)}`;
-}
-
-/**
- * Formats a Brazilian phone number with proper mask (alias for formatPhone)
- * @param phone Phone number to format
- * @returns Formatted phone number
- */
-export function formatPhoneNumber(phone: string): string {
-  return formatPhone(phone);
-}
-
-/**
- * Formats a Brazilian CPF number with proper mask
- * @param cpf CPF to format
- * @returns Formatted CPF (000.000.000-00)
- */
-export function formatCPF(cpf: string): string {
-  // Keep only numbers
-  const cleanCpf = cpf.replace(/\D/g, '');
+  // Remove all non-alphanumeric characters and convert to uppercase
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
   
-  // Apply mask
-  if (cleanCpf.length <= 3) return cleanCpf;
-  if (cleanCpf.length <= 6) return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3)}`;
-  if (cleanCpf.length <= 9) return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3, 6)}.${cleanCpf.slice(6)}`;
-  return `${cleanCpf.slice(0, 3)}.${cleanCpf.slice(3, 6)}.${cleanCpf.slice(6, 9)}-${cleanCpf.slice(9, 11)}`;
-}
-
-/**
- * Formats a CEP with proper mask
- * @param cep CEP to format
- * @returns Formatted CEP (00000-000)
- */
-export function formatCEP(cep: string): string {
-  // Keep only numbers
-  const cleanCep = cep.replace(/\D/g, '');
-  
-  // Apply mask
-  if (cleanCep.length <= 5) return cleanCep;
-  return `${cleanCep.slice(0, 5)}-${cleanCep.slice(5, 8)}`;
-}
-
-/**
- * Formats a currency value to Brazilian Real format
- * @param value Number or string value to format
- * @returns Formatted currency string (R$ 0,00)
- */
-export function formatCurrency(value: number | string): string {
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-  
-  if (isNaN(numericValue)) {
-    return 'R$ 0,00';
+  // Check if it's the old format (3 letters + 4 numbers)
+  if (/^[A-Z]{3}\d{4}$/.test(cleanPlate)) {
+    return `${cleanPlate.slice(0, 3)}-${cleanPlate.slice(3)}`;
   }
   
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue);
-}
-
-/**
- * Formats a license plate according to Brazilian standards
- * Supports both old format (ABC-1234) and new format (ABC1D23)
- * @param plate License plate to format
- * @returns Formatted license plate
- */
-export function formatLicensePlate(plate: string): string {
-  // Remove spaces and hyphens, convert to uppercase
-  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
-  
-  // If it's empty or less than 3 characters, return as is
-  if (cleanPlate.length <= 3) return cleanPlate;
-  
-  // Limit to 7 characters maximum
-  const limitedPlate = cleanPlate.slice(0, 7);
-  
-  // Check if it matches old format pattern (3 letters followed by 4 numbers)
-  if (/^[A-Z]{3}\d{4}$/.test(limitedPlate)) {
-    // Old format: add hyphen after 3 letters (ABC-1234)
-    return `${limitedPlate.slice(0, 3)}-${limitedPlate.slice(3)}`;
+  // Check if it's the new format (3 letters + 1 number + 1 letter + 2 numbers)
+  if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(cleanPlate)) {
+    return cleanPlate; // New format doesn't use hyphen
   }
   
-  // Check if it matches new format pattern (3 letters + 1 number + 1 letter + 2 numbers)
-  if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(limitedPlate)) {
-    // New format: no hyphen needed (ABC1D23)
-    return limitedPlate;
-  }
-  
-  // For incomplete plates, return without formatting until complete
-  return limitedPlate;
-}
+  // If it doesn't match either format completely, return as typed but uppercase
+  return cleanPlate;
+};
 
-/**
- * Validates a Brazilian license plate in both old (ABC-1234) and new (ABC1D23) formats
- * @param plate License plate to validate
- * @returns true if valid, false otherwise
- */
-export function validateLicensePlate(plate: string): boolean {
-  // Remove spaces and hyphens, convert to uppercase
-  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
+export const validateLicensePlate = (plate: string): boolean => {
+  if (!plate) return false;
   
-  // Old format: ABC1234 (7 characters: 3 letters + 4 numbers)
+  const cleanPlate = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  
+  // Old format: ABC1234 (3 letters + 4 numbers)
   const oldFormat = /^[A-Z]{3}\d{4}$/;
   
-  // New format: ABC1D23 (7 characters: 3 letters + 1 number + 1 letter + 2 numbers)
+  // New format: ABC1D23 (3 letters + 1 number + 1 letter + 2 numbers)
   const newFormat = /^[A-Z]{3}\d[A-Z]\d{2}$/;
   
   return oldFormat.test(cleanPlate) || newFormat.test(cleanPlate);
-}
+};
+
+export const formatCPF = (cpf: string): string => {
+  if (!cpf) return '';
+  
+  // Remove all non-numeric characters
+  const cleanCPF = cpf.replace(/\D/g, '');
+  
+  // Apply CPF mask: 000.000.000-00
+  if (cleanCPF.length <= 11) {
+    return cleanCPF
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+  
+  return cleanCPF.slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+};
+
+export const formatCEP = (cep: string): string => {
+  if (!cep) return '';
+  
+  // Remove all non-numeric characters
+  const cleanCEP = cep.replace(/\D/g, '');
+  
+  // Apply CEP mask: 00000-000
+  if (cleanCEP.length <= 8) {
+    return cleanCEP.replace(/(\d{5})(\d)/, '$1-$2');
+  }
+  
+  return cleanCEP.slice(0, 8).replace(/(\d{5})(\d)/, '$1-$2');
+};
+
+export const formatPhone = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-numeric characters
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Apply phone mask: (00) 00000-0000 or (00) 0000-0000
+  if (cleanPhone.length === 11) {
+    return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  } else if (cleanPhone.length === 10) {
+    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  
+  return cleanPhone;
+};

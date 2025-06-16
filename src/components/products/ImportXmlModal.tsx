@@ -117,8 +117,8 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
 
       if (error) throw error;
 
-      // Type assertion para tratar o retorno Json do Supabase
-      const processedResult = data as ProcessResult;
+      // Type assertion with proper unknown conversion first
+      const processedResult = data as unknown as ProcessResult;
       setResult(processedResult);
       
       toast({

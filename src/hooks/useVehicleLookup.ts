@@ -20,12 +20,23 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
       if (vehicleData) {
         console.log('✅ Dados encontrados:', vehicleData);
         
-        // Atualiza os campos do formulário
-        form.setValue('veiculo.marca', vehicleData.marca);
-        form.setValue('veiculo.modelo', vehicleData.modelo);
-        form.setValue('veiculo.ano', vehicleData.ano);
-        if (vehicleData.cor) {
-          form.setValue('veiculo.cor', vehicleData.cor);
+        // Atualiza os campos do formulário conforme a estrutura do form
+        if ('veiculo' in form.getValues()) {
+          // Formulário com estrutura aninhada (cliente form)
+          form.setValue('veiculo.marca', vehicleData.marca);
+          form.setValue('veiculo.modelo', vehicleData.modelo);
+          form.setValue('veiculo.ano', vehicleData.ano);
+          if (vehicleData.cor) {
+            form.setValue('veiculo.cor', vehicleData.cor);
+          }
+        } else {
+          // Formulário direto de veículo
+          form.setValue('marca', vehicleData.marca);
+          form.setValue('modelo', vehicleData.modelo);
+          form.setValue('ano', vehicleData.ano);
+          if (vehicleData.cor) {
+            form.setValue('cor', vehicleData.cor);
+          }
         }
         
         toast({
@@ -50,7 +61,7 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
     } finally {
       setIsSearching(false);
     }
-  }, [form, toast]); // Dependências estáveis
+  }, [form, toast]);
 
   return {
     isSearching,
