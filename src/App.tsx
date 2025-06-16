@@ -13,6 +13,7 @@ import OptimizedAdminLayout from '@/components/layout/OptimizedAdminLayout';
 // Guards
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
+import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 
 // Pages
 import HomePage from '@/pages/HomePage';
@@ -51,6 +52,12 @@ const queryClient = new QueryClient({
 
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
 import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
+
+// New Premium Pages
+import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import BackupPage from '@/pages/BackupPage';
+import SuportePage from '@/pages/SuportePage';
 
 function App() {
   return (
@@ -136,7 +143,14 @@ function App() {
             <Route path="veiculos" element={<VehiclesPage />} />
             <Route path="servicos" element={<ServicesPage />} />
             <Route path="orcamentos" element={<BudgetsPage />} />
-            <Route path="agendamentos" element={<SchedulingPage />} />
+            <Route 
+              path="agendamentos" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <SchedulingPage />
+                </SubscriptionGuard>
+              } 
+            />
             <Route path="produtos" element={<ProductsPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="empresa" element={<CompanyPage />} />
@@ -144,6 +158,40 @@ function App() {
             <Route path="assinatura" element={<SubscriptionPage />} />
             <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
             <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
+            
+            {/* New Premium Routes */}
+            <Route 
+              path="integracao-contabil" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <IntegracaoContabilPage />
+                </SubscriptionGuard>
+              } 
+            />
+            <Route 
+              path="ia-diagnostico" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <IADiagnosticoPage />
+                </SubscriptionGuard>
+              } 
+            />
+            <Route 
+              path="backup" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <BackupPage />
+                </SubscriptionGuard>
+              } 
+            />
+            <Route 
+              path="suporte" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <SuportePage />
+                </SubscriptionGuard>
+              } 
+            />
           </Route>
 
           {/* Catch all route */}
