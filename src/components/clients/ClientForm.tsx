@@ -12,17 +12,19 @@ import { useSanitizedForm } from '@/hooks/useSanitizedForm';
 import { sanitizePhone, sanitizeEmail, sanitizeName } from '@/utils/formUtils';
 
 export interface ClientFormProps {
-  onSubmit: (values: any) => Promise<void>;
-  onSkip: () => void;
-  isLoading: boolean;
-  saveSuccess: boolean;
+  onSubmit?: (values: any) => Promise<void>;
+  onSkip?: () => void;
+  onSuccess?: () => void;
+  isLoading?: boolean;
+  saveSuccess?: boolean;
 }
 
 const ClientForm: React.FC<ClientFormProps> = ({ 
   onSubmit, 
   onSkip, 
-  isLoading, 
-  saveSuccess 
+  onSuccess,
+  isLoading = false, 
+  saveSuccess = false 
 }) => {
   const { form } = useClientFormBasic();
 
@@ -36,9 +38,18 @@ const ClientForm: React.FC<ClientFormProps> = ({
   // Uso do hook middleware, que irá sanitizar os campos antes do submit
   const sanitizedHandleSubmit = useSanitizedForm(form, sanitizeMap);
 
+  const handleFormSubmit = async (values: any) => {
+    if (onSubmit) {
+      await onSubmit(values);
+    }
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={sanitizedHandleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={sanitizedHandleSubmit(handleFormSubmit)} className="space-y-4">
         <ClientInfoFields 
           form={form} 
           saveSuccess={saveSuccess} 
@@ -80,7 +91,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
           )}
         </Button>
         
-        {!saveSuccess && (
+        {!saveSuccess && onSkip && (
           <div className="text-center mt-4">
             <Button 
               variant="link" 
@@ -97,4 +108,3 @@ const ClientForm: React.FC<ClientFormProps> = ({
 };
 
 export default ClientForm;
-
