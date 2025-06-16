@@ -12,6 +12,17 @@ import ClientVehicleInfo from './details/ClientVehicleInfo';
 import ClientBudgetsList from './details/ClientBudgetsList';
 import { Client } from '@/utils/supabaseTypes';
 
+interface Vehicle {
+  id: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  ano: string;
+  cor?: string;
+  kilometragem?: string;
+  tipo_combustivel?: string;
+}
+
 interface ClientDetailsPanelProps {
   clientId: string;
   onClose: () => void;
@@ -26,6 +37,7 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
   onCreateBudget
 }) => {
   const [client, setClient] = useState<Client | null>(null);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
@@ -33,21 +45,32 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
     const fetchClientDetails = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Buscar dados do cliente
+        const { data: clientData, error: clientError } = await supabase
           .from('clients')
           .select('*')
           .eq('id', clientId)
           .single();
           
-        if (error) throw error;
+        if (clientError) throw clientError;
         
         // Ensure tipo property is set to default 'pf' if missing
-        const clientData = {
-          ...(data as any),
-          tipo: (data as any).tipo || 'pf'
+        const clientDataFormatted = {
+          ...(clientData as any),
+          tipo: (clientData as any).tipo || 'pf'
         };
         
-        setClient(clientData as Client);
+        setClient(clientDataFormatted as Client);
+
+        // Buscar veículos do cliente na nova tabela
+        const { data: vehiclesData, error: vehiclesError } = await supabase
+          .from('veiculos')
+          .select('*')
+          .eq('cliente_id', clientId);
+          
+        if (vehiclesError) throw vehiclesError;
+        
+        setVehicles(vehiclesData || []);
       } catch (error: any) {
         console.error('Error fetching client details:', error);
         toast({
@@ -110,13 +133,7 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
               cep={client.cep}
             />
             <ClientVehicleInfo 
-              veiculo={client.veiculo}
-              marca={client.marca}
-              modelo={client.modelo}
-              ano={client.ano}
-              placa={client.placa}
-              cor={client.cor}
-              kilometragem={client.kilometragem}
+              vehicles={vehicles}
               onCreateBudget={handleCreateBudget}
             />
             <ClientBudgetsList 
