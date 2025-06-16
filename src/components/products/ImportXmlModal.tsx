@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -117,7 +116,7 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
 
       if (error) throw error;
 
-      // Type assertion with proper unknown conversion first
+      // Safe type conversion with proper unknown intermediate step
       const processedResult = data as unknown as ProcessResult;
       setResult(processedResult);
       
