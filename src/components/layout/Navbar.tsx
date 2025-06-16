@@ -18,11 +18,10 @@ export default function Navbar() {
         <div className="flex items-center">
           <a href="#" className="flex items-center">
             <img 
-              src="/lovable-uploads/4daf69fb-edaf-4fe1-8d3c-8ab243d67c06.png" 
+              src="/lovable-uploads/12c7617f-1eb1-4392-9617-845adb9c8efa.png" 
               alt="OficinaGO"
-              className="h-8 w-8 mr-2"
+              className="h-10 w-auto"
             />
-            <span className="text-2xl font-bold text-oficina-dark">OficinaGO</span>
           </a>
         </div>
 
