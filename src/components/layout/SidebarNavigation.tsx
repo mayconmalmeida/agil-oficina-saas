@@ -26,26 +26,28 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto border-r border-gray-200 h-full">
-      <div className="flex items-center flex-shrink-0 px-4">
-        <Link to="/" className="flex items-center">
+    <div className="flex flex-col flex-grow pt-3 lg:pt-5 bg-white overflow-y-auto border-r border-gray-200 h-full">
+      <div className="flex items-center flex-shrink-0 px-3 lg:px-4">
+        <Link to="/" className="flex items-center justify-center w-full">
           <img 
             src="/lovable-uploads/9fef4ca2-faa7-4cfe-b8d1-20c95046fdb3.png" 
             alt="OficinaGO"
-            className="w-60 h-40 object-contain"
-            style={{ width: '240px', height: '160px' }}
+            className="h-16 w-auto sm:h-20 lg:h-24 xl:h-32 object-contain max-w-full"
           />
         </Link>
       </div>
+      
       {/* Status da assinatura */}
-      <div className="mt-4 px-4">
+      <div className="mt-3 lg:mt-4 px-3 lg:px-4">
         <SubscriptionInfoCard subscriptionStatus={subscriptionStatus} />
       </div>
+      
       {/* Navegação */}
       <NavigationLinks 
         subscriptionStatus={subscriptionStatus}
         onNavigate={handleNavigation}
       />
+      
       {/* Usuário e logout */}
       <UserMenu 
         userProfile={userProfile}
