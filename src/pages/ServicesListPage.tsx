@@ -36,9 +36,14 @@ const ServicesListPage: React.FC = () => {
   const fetchServices = async () => {
     try {
       setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .eq('user_id', user.id)
+        .eq('tipo', 'servico') // Filtrar apenas serviços
         .eq('is_active', true)
         .order('nome');
 
@@ -153,7 +158,6 @@ const ServicesListPage: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -163,15 +167,6 @@ const ServicesListPage: React.FC = () => {
                 {filteredServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell className="font-medium">{service.nome}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={
-                        service.tipo === 'servico' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-purple-100 text-purple-800'
-                      }>
-                        {service.tipo === 'servico' ? 'Serviço' : 'Produto'}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="max-w-xs truncate">
                       {service.descricao || '-'}
                     </TableCell>

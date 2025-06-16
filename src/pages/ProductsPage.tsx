@@ -1,14 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Archive, Package, AlertTriangle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Plus, Archive, Package, AlertTriangle, Eye, Edit, Trash2 } from 'lucide-react';
 import ProductList from '@/components/products/ProductList';
 import ProductForm from '@/components/products/ProductForm';
 import ProductDetailsPanel from '@/components/products/ProductDetailsPanel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { Service } from '@/utils/supabaseTypes';
 
 const ProductsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
@@ -16,11 +20,46 @@ const ProductsPage: React.FC = () => {
   const [filter, setFilter] = useState('todos');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [products, setProducts] = useState<Service[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tipo', 'produto') // Filtrar apenas produtos
+        .eq('is_active', true)
+        .order('nome');
+
+      if (error) throw error;
+
+      setProducts(data || []);
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar produtos",
+        description: "Não foi possível carregar a lista de produtos.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality
-    console.log("Searching for:", searchQuery);
+    // Search functionality is handled by filteredProducts
   };
   
   const handleNewProduct = () => {
@@ -37,6 +76,18 @@ const ProductsPage: React.FC = () => {
   const handleCloseDetails = () => {
     setShowDetails(false);
     setSelectedProductId(null);
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.descricao?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
+  );
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
   
   return (
@@ -64,10 +115,6 @@ const ProductsPage: React.FC = () => {
                         <Plus className="mr-2 h-4 w-4" /> 
                         Novo Produto
                       </TabsTrigger>
-                      <TabsTrigger value="estoque" className="flex items-center">
-                        <Archive className="mr-2 h-4 w-4" /> 
-                        Estoque
-                      </TabsTrigger>
                     </TabsList>
                     
                     {activeTab === 'lista' && (
@@ -84,51 +131,72 @@ const ProductsPage: React.FC = () => {
                             <Search className="h-4 w-4" />
                           </Button>
                         </form>
-                        
-                        <Select value={filter} onValueChange={setFilter}>
-                          <SelectTrigger className="md:w-[180px]">
-                            <SelectValue placeholder="Filtrar por" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="todos">Todos</SelectItem>
-                            <SelectItem value="pecas">Peças</SelectItem>
-                            <SelectItem value="servicos">Serviços</SelectItem>
-                            <SelectItem value="baixo-estoque">Baixo Estoque</SelectItem>
-                            <SelectItem value="esgotados">Esgotados</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     )}
                   </div>
                   
                   <TabsContent value="lista" className="mt-0">
-                    <ProductList 
-                      onSelectProduct={handleProductSelect} 
-                      searchQuery={searchQuery} 
-                      filter={filter} 
-                    />
+                    {isLoading ? (
+                      <div className="flex justify-center items-center h-48">
+                        <div className="text-lg">Carregando produtos...</div>
+                      </div>
+                    ) : filteredProducts.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium">
+                          {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                        </h3>
+                        <p className="text-gray-500 mt-2">
+                          {searchQuery
+                            ? `Nenhum resultado para "${searchQuery}"`
+                            : 'Cadastre um produto para começar'
+                          }
+                        </p>
+                        {!searchQuery && (
+                          <Button onClick={handleNewProduct} className="mt-4">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Criar Primeiro Produto
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead className="text-right">Valor</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredProducts.map((product) => (
+                            <TableRow key={product.id}>
+                              <TableCell className="font-medium">{product.nome}</TableCell>
+                              <TableCell className="max-w-xs truncate">
+                                {product.descricao || '-'}
+                              </TableCell>
+                              <TableCell className="text-right">{formatCurrency(product.valor)}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleProductSelect(product.id)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
                   </TabsContent>
                   
                   <TabsContent value="novo" className="mt-0">
                     <ProductForm />
-                  </TabsContent>
-                  
-                  <TabsContent value="estoque" className="mt-0">
-                    <div className="mb-6 p-4 border border-yellow-200 bg-yellow-50 rounded-md flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                      <div>
-                        <h3 className="font-medium text-yellow-800">Alerta de Estoque</h3>
-                        <p className="text-sm text-yellow-700">
-                          5 produtos estão com estoque baixo e 2 produtos estão esgotados.
-                        </p>
-                      </div>
-                    </div>
-                    <ProductList 
-                      onSelectProduct={handleProductSelect} 
-                      searchQuery="" 
-                      filter="baixo-estoque"
-                      showInventoryControls
-                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>
