@@ -1,74 +1,74 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface FormActionsProps {
+  activeTab: string;
   isLoading: boolean;
-  saveSuccess: boolean;
-  onPrev?: () => void;
-  isFirstTab: boolean;
   isEditing?: boolean;
+  onNextTab: () => void;
+  onPrevTab: () => void;
+  onSubmit: () => void;
 }
 
 const FormActions: React.FC<FormActionsProps> = ({
+  activeTab,
   isLoading,
-  saveSuccess,
-  onPrev,
-  isFirstTab,
-  isEditing = false
+  isEditing = false,
+  onNextTab,
+  onPrevTab,
+  onSubmit
 }) => {
+  console.log('FormActions renderizado:', { activeTab, isLoading, isEditing });
+
+  if (activeTab === 'cliente') {
+    return (
+      <div className="flex justify-end">
+        <Button 
+          type="button" 
+          onClick={onNextTab}
+          className="bg-oficina hover:bg-blue-700"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Carregando...
+            </>
+          ) : (
+            'Próximo: Veículo'
+          )}
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col space-y-4 pt-4">
+    <div className="flex justify-between">
       <Button 
-        type="submit" 
-        className={`w-full transition-colors ${saveSuccess 
-          ? "bg-green-500 hover:bg-green-600" 
-          : "bg-oficina hover:bg-blue-700"}`}
-        disabled={isLoading || saveSuccess}
+        type="button" 
+        variant="outline" 
+        onClick={onPrevTab}
+        disabled={isLoading}
+      >
+        Voltar
+      </Button>
+      <Button 
+        type="submit"
+        onClick={onSubmit}
+        className="bg-oficina hover:bg-blue-700"
+        disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-            {isEditing ? 'Salvando...' : 'Adicionando...'}
-          </>
-        ) : saveSuccess ? (
-          <>
-            <CheckCircle className="mr-2 h-4 w-4" />
-            {isEditing ? 'Cliente atualizado!' : 'Cliente adicionado!'}
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvando...
           </>
         ) : (
-          <>
-            {isEditing ? 'Salvar Alterações' : 'Salvar Cliente'}
-          </>
+          isEditing ? 'Salvar Alterações' : 'Salvar Cliente'
         )}
       </Button>
-      
-      {!isFirstTab && onPrev && (
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onPrev} 
-          className="w-full"
-          disabled={isLoading || saveSuccess}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para Dados Pessoais
-        </Button>
-      )}
-      
-      {isFirstTab && onPrev && (
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onPrev} 
-          className="w-full"
-          disabled={isLoading || saveSuccess}
-        >
-          <ArrowRight className="mr-2 h-4 w-4" />
-          Continuar para Dados do Veículo
-        </Button>
-      )}
     </div>
   );
 };

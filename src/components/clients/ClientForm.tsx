@@ -1,109 +1,118 @@
 
 import React from 'react';
+import { useClientForm } from '@/hooks/useClientForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Loader2 } from 'lucide-react';
-import ClientInfoFields from './form-sections/ClientInfoFields';
-import ClientContactFields from './form-sections/ClientContactFields';
-import ClientVehicleFields from './form-sections/ClientVehicleFields';
-import { useClientFormBasic } from '@/hooks/useClientFormBasic';
+import PersonalInfoSection from './form-sections/PersonalInfoSection';
+import VehicleInfoSection from './form-sections/VehicleInfoSection';
+import FormActions from './form-sections/FormActions';
+import { CheckCircle } from 'lucide-react';
 
-import { useSanitizedForm } from '@/hooks/useSanitizedForm';
-import { sanitizePhone, sanitizeEmail, sanitizeName } from '@/utils/formUtils';
-
-export interface ClientFormProps {
-  onSubmit?: (values: any) => Promise<void>;
-  onSkip?: () => void;
-  onSuccess?: () => void;
-  isLoading?: boolean;
-  saveSuccess?: boolean;
+interface ClientFormProps {
+  onSave: () => void;
+  initialData?: any;
+  isEditing?: boolean;
+  clientId?: string;
 }
 
-const ClientForm: React.FC<ClientFormProps> = ({ 
-  onSubmit, 
-  onSkip, 
-  onSuccess,
-  isLoading = false, 
-  saveSuccess = false 
+const ClientForm: React.FC<ClientFormProps> = ({
+  onSave,
+  initialData = {},
+  isEditing = false,
+  clientId
 }) => {
-  const { form } = useClientFormBasic();
+  console.log('ClientForm renderizado:', { isEditing, clientId, initialData });
 
-  // Mapear campos para suas respectivas funções de sanitização
-  const sanitizeMap = {
-    telefone: sanitizePhone,
-    email: sanitizeEmail,
-    nome: sanitizeName,
+  const {
+    form,
+    activeTab,
+    setActiveTab,
+    isLoading,
+    saveSuccess,
+    setSaveSuccess,
+    handleNextTab,
+    handlePrevTab,
+    onSubmit
+  } = useClientForm({
+    onSave,
+    initialData,
+    isEditing,
+    clientId
+  });
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form submit triggered');
+    
+    const values = form.getValues();
+    console.log('Valores do formulário:', values);
+    
+    await onSubmit(values);
   };
 
-  // Uso do hook middleware, que irá sanitizar os campos antes do submit
-  const sanitizedHandleSubmit = useSanitizedForm(form, sanitizeMap);
-
-  const handleFormSubmit = async (values: any) => {
-    if (onSubmit) {
-      await onSubmit(values);
-    }
-    if (onSuccess) {
-      onSuccess();
-    }
+  const handleSaveClick = async () => {
+    console.log('Save button clicked');
+    const values = form.getValues();
+    console.log('Valores para salvar:', values);
+    
+    await onSubmit(values);
   };
+
+  // Mostrar feedback de sucesso
+  if (saveSuccess) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-4">
+            <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+            <h3 className="text-lg font-semibold text-green-700">
+              {isEditing ? 'Cliente atualizado com sucesso!' : 'Cliente adicionado com sucesso!'}
+            </h3>
+            <p className="text-gray-600">
+              {isEditing ? 'As alterações foram salvas.' : 'O cliente foi cadastrado no sistema.'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Form {...form}>
-      <form onSubmit={sanitizedHandleSubmit(handleFormSubmit)} className="space-y-4">
-        <ClientInfoFields 
-          form={form} 
-          saveSuccess={saveSuccess} 
-          // handlePhoneFormat prop removido: sanitização agora via hook/utilitário
-        />
-        
-        <ClientContactFields 
-          form={form} 
-        />
-        
-        <div className="border-t pt-3 mt-2">
-          <h3 className="text-md font-medium mb-3">Dados do Veículo</h3>
-          
-          <ClientVehicleFields 
-            form={form} 
-            saveSuccess={saveSuccess} 
-          />
-        </div>
-        
-        <Button 
-          type="submit" 
-          className={`w-full transition-colors ${saveSuccess 
-            ? "bg-green-500 hover:bg-green-600" 
-            : "bg-oficina hover:bg-blue-700"}`}
-          disabled={isLoading || saveSuccess}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-              Adicionando...
-            </>
-          ) : saveSuccess ? (
-            <>
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Cliente adicionado!
-            </>
-          ) : (
-            'Adicionar Cliente e Continuar'
-          )}
-        </Button>
-        
-        {!saveSuccess && onSkip && (
-          <div className="text-center mt-4">
-            <Button 
-              variant="link" 
-              onClick={onSkip}
-              type="button"
-            >
-              Pular esta etapa por enquanto
-            </Button>
-          </div>
-        )}
-      </form>
-    </Form>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={handleFormSubmit} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cliente">Dados Pessoais</TabsTrigger>
+                <TabsTrigger value="veiculo">Veículo</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="cliente" className="space-y-4">
+                <PersonalInfoSection form={form} />
+              </TabsContent>
+
+              <TabsContent value="veiculo" className="space-y-4">
+                <VehicleInfoSection form={form} />
+              </TabsContent>
+            </Tabs>
+
+            <FormActions
+              activeTab={activeTab}
+              isLoading={isLoading}
+              isEditing={isEditing}
+              onNextTab={handleNextTab}
+              onPrevTab={handlePrevTab}
+              onSubmit={handleSaveClick}
+            />
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 

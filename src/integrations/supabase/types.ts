@@ -336,6 +336,7 @@ export type Database = {
           role: string | null
           telefone: string | null
           trial_ends_at: string | null
+          trial_started_at: string | null
           whatsapp_suporte: string | null
         }
         Insert: {
@@ -357,6 +358,7 @@ export type Database = {
           role?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
+          trial_started_at?: string | null
           whatsapp_suporte?: string | null
         }
         Update: {
@@ -378,6 +380,7 @@ export type Database = {
           role?: string | null
           telefone?: string | null
           trial_ends_at?: string | null
+          trial_started_at?: string | null
           whatsapp_suporte?: string | null
         }
         Relationships: []
@@ -699,6 +702,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      is_trial_active: {
+        Args: { user_profile_id: string }
+        Returns: boolean
+      }
       process_nfce_xml: {
         Args: { p_user_id: string; p_produtos: Json }
         Returns: Json
@@ -714,6 +721,10 @@ export type Database = {
       update_subscription_after_payment: {
         Args: { p_user_id: string; p_plan_type: string }
         Returns: Json
+      }
+      update_user_plan: {
+        Args: { user_profile_id: string; new_plan: string }
+        Returns: undefined
       }
     }
     Enums: {

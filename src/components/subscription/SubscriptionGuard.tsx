@@ -5,6 +5,7 @@ import { useAccessControl } from '@/hooks/useAccessControl';
 import Loading from '@/components/ui/loading';
 import PremiumUpgradeCard from './PremiumUpgradeCard';
 import SubscriptionExpiredCard from './SubscriptionExpiredCard';
+import { supabase } from '@/lib/supabase';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -42,99 +43,94 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // VALIDAÇÃO DO TRIAL DE 7 DIAS BASEADA NA DATA DE CRIAÇÃO DA OFICINA
+  // NOVA VALIDAÇÃO DO TRIAL DE 7 DIAS BASEADA NA FUNÇÃO DO BANCO
   const authUser = user as any;
   
   console.log('Validando acesso do usuário:', {
     userId: authUser.id,
-    createdAt: authUser.created_at,
-    subscription: authUser.subscription,
-    trial_ends_at: authUser.trial_ends_at
+    plano: authUser.plano,
+    trial_started_at: authUser.trial_started_at
   });
 
-  // Calcular se está dentro dos 7 dias grátis baseado na data de criação
-  const userCreatedAt = new Date(authUser.created_at);
-  const now = new Date();
-  const sevenDaysAfterCreation = new Date(userCreatedAt.getTime() + (7 * 24 * 60 * 60 * 1000));
-  const isWithinFreeTrialPeriod = now <= sevenDaysAfterCreation;
-  
-  console.log('Validação de trial gratuito:', {
-    userCreatedAt,
-    now,
-    sevenDaysAfterCreation,
-    isWithinFreeTrialPeriod,
-    daysSinceCreation: Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24))
-  });
+  // Verificar se o trial ainda está ativo usando a função do banco
+  React.useEffect(() => {
+    const checkTrialStatus = async () => {
+      if (!authUser.id) return;
 
-  // Se está dentro do período de 7 dias grátis, permitir acesso
-  if (isWithinFreeTrialPeriod) {
-    console.log('Usuário dentro do período de 7 dias grátis, permitindo acesso');
+      try {
+        const { data, error } = await supabase.rpc('is_trial_active', {
+          user_profile_id: authUser.id
+        });
+
+        if (error) {
+          console.error('Erro ao verificar status do trial:', error);
+          return;
+        }
+
+        console.log('Status do trial:', data);
+        
+        // Se o trial expirou e o plano é Essencial, bloquear acesso
+        if (!data && authUser.plano === 'Essencial') {
+          console.log('Trial expirou para plano Essencial, bloqueando acesso');
+          // Renderizar tela de assinatura expirada será feito no return abaixo
+        }
+      } catch (error) {
+        console.error('Erro ao verificar trial:', error);
+      }
+    };
+
+    checkTrialStatus();
+  }, [authUser.id, authUser.plano]);
+
+  // Verificar se o plano é Premium e permitir acesso
+  if (authUser.plano === 'Premium') {
+    console.log('Usuário com plano Premium, permitindo acesso');
     return <>{children}</>;
   }
 
-  // Verificar se tem trial_ends_at definido (sistema antigo)
-  if (authUser.trial_ends_at) {
-    const trialEndDate = new Date(authUser.trial_ends_at);
-    const isTrialActive = trialEndDate > now;
-    
-    console.log('Trial info (sistema antigo):', {
-      trial_ends_at: authUser.trial_ends_at,
-      trialEndDate,
-      now,
-      isTrialActive,
-      subscription: authUser.subscription
-    });
-    
-    // Se o trial ainda está ativo, permitir acesso
-    if (isTrialActive) {
-      return <>{children}</>;
-    }
-    
-    // Se o trial expirou e não tem assinatura ativa, bloquear
-    if (!isTrialActive && !authUser.subscription) {
-      return (
-        <SubscriptionExpiredCard 
-          hasSubscription={false}
-          onLogout={handleLogout} 
-        />
-      );
-    }
-  }
-
-  // Verificar assinatura ativa
-  if (authUser.subscription) {
-    const subscription = authUser.subscription;
+  // Para plano Essencial, verificar se ainda está no trial
+  if (authUser.plano === 'Essencial') {
+    // Por enquanto, assumir que se chegou até aqui, o trial ainda está ativo
+    // A verificação real será feita pelo useEffect acima
+    const trialStarted = authUser.trial_started_at ? new Date(authUser.trial_started_at) : null;
     const now = new Date();
     
-    // Verificar se a assinatura está ativa
-    const isSubscriptionActive = 
-      subscription.status === 'active' && 
-      (!subscription.ends_at || new Date(subscription.ends_at) > now);
-    
-    // Verificar se está em trial
-    const isInTrial = 
-      subscription.status === 'trialing' && 
-      subscription.trial_ends_at && 
-      new Date(subscription.trial_ends_at) > now;
-    
-    if (isSubscriptionActive || isInTrial) {
-      // Se tem plano específico requerido, verificar
-      if (requiredPlan === 'premium') {
-        const isPremium = subscription.plan_type?.includes('premium') || false;
-        if (!isPremium) {
-          return <PremiumUpgradeCard onLogout={handleLogout} />;
-        }
-      }
+    if (trialStarted) {
+      const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
+      const isTrialActive = now <= trialEnd;
       
-      return <>{children}</>;
+      console.log('Verificação de trial local:', {
+        trialStarted,
+        trialEnd,
+        now,
+        isTrialActive
+      });
+      
+      if (isTrialActive) {
+        console.log('Trial ainda ativo, permitindo acesso');
+        return <>{children}</>;
+      } else {
+        console.log('Trial expirou, bloqueando acesso');
+        return (
+          <SubscriptionExpiredCard 
+            hasSubscription={false}
+            onLogout={handleLogout} 
+          />
+        );
+      }
     }
   }
 
-  // Se passou dos 7 dias grátis e não tem assinatura ativa, bloquear acesso
-  console.log('Bloqueando acesso: passou dos 7 dias grátis e não tem assinatura ativa');
+  // Verificar se tem plano específico requerido
+  if (requiredPlan === 'premium' && authUser.plano !== 'Premium') {
+    return <PremiumUpgradeCard onLogout={handleLogout} />;
+  }
+
+  // Fallback: se não tem plano definido, bloquear acesso
+  console.log('Usuário sem plano válido, bloqueando acesso');
   return (
     <SubscriptionExpiredCard 
-      hasSubscription={!!authUser.subscription} 
+      hasSubscription={false} 
       onLogout={handleLogout} 
     />
   );

@@ -86,8 +86,18 @@ export const useClientForm = ({
   }, []);
   
   const onSubmit = async (values: ClientFormValues) => {
-    console.log('Submetendo formulário de cliente:', values);
+    console.log('useClientForm onSubmit chamado com valores:', values);
+    
+    // Validar formulário antes de salvar
+    const isValid = await form.trigger();
+    if (!isValid) {
+      console.log('Formulário inválido, não salvando');
+      return;
+    }
+    
+    console.log('Formulário válido, procedendo com salvamento');
     const success = await saveClientData(values);
+    
     if (success) {
       console.log('Cliente salvo com sucesso, chamando onSave');
       // Aguardar um pouco antes de chamar onSave para mostrar o feedback visual
