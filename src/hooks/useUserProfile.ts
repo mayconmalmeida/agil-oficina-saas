@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   id: string;
@@ -25,6 +26,7 @@ export const useUserProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -75,7 +77,7 @@ export const useUserProfile = () => {
     return () => {
       mounted = false;
     };
-  }, [user?.id]); // Só depende do ID do usuário
+  }, [user?.id]);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user?.id) return false;
@@ -98,11 +100,32 @@ export const useUserProfile = () => {
     }
   };
 
+  const handleLogout = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao realizar logout."
+      });
+    }
+  }, [toast]);
+
   return {
     profile,
+    userProfile: profile, // Backward compatibility
     isLoading,
+    loading: isLoading, // Backward compatibility
     error,
     updateProfile,
+    userId: user?.id,
+    handleLogout,
     refetch: () => {
       if (user?.id) {
         setIsLoading(true);

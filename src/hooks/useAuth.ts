@@ -1,20 +1,22 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { AuthState } from '@/types/auth';
 
-interface AuthState {
-  user: User | null;
-  loading: boolean;
-  role: string | null;
-}
-
-export const useAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
+export const useAuth = (): AuthState => {
+  const [authState, setAuthState] = useState<{
+    user: User | null;
+    loading: boolean;
+    role: string | null;
+  }>({
     user: null,
     loading: true,
     role: null
   });
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     let mounted = true;
@@ -109,5 +111,33 @@ export const useAuth = () => {
     };
   }, []);
 
-  return authState;
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao realizar logout."
+      });
+    }
+  }, [toast]);
+
+  const isAdmin = authState.role === 'admin' || authState.role === 'superadmin';
+  const isLoadingAuth = authState.loading;
+
+  return {
+    user: authState.user,
+    session: null, // We don't need session for most use cases
+    loading: authState.loading,
+    isLoadingAuth,
+    role: authState.role,
+    isAdmin,
+    signOut
+  };
 };

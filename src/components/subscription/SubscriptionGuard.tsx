@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccessControl } from '@/hooks/useAccessControl';
@@ -18,8 +19,6 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
 }) => {
   const { user, isLoadingAuth, signOut } = useAuth();
   const { shouldShowContent, isAdmin, hasGeneralAccess } = useAccessControl({
-    user,
-    isLoadingAuth,
     requiredPlan
   });
 
@@ -44,13 +43,14 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   }
 
   // BLOQUEIO DE TRIAL PREMIUM
+  const authUser = user as any; // Cast to access extended properties
   const isTrialExpired =
-    user.trial_ends_at &&
-    new Date(user.trial_ends_at) < new Date() &&
-    user.plano === "Premium";
+    authUser.trial_ends_at &&
+    new Date(authUser.trial_ends_at) < new Date() &&
+    authUser.plano === "Premium";
 
   // Comportamento: se expired e não tem plano pago, bloqueia.
-  if (isTrialExpired && !user.subscription) {
+  if (isTrialExpired && !authUser.subscription) {
     window.location.replace('/plano-expirado');
     return null;
   }
@@ -62,7 +62,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
     return (
       <SubscriptionExpiredCard 
-        hasSubscription={!!user.subscription} 
+        hasSubscription={!!authUser.subscription} 
         onLogout={handleLogout} 
       />
     );
@@ -70,7 +70,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
 
   // Se tem acesso geral mas precisa de plano específico
   if (requiredPlan) {
-    const isPremium = user.subscription?.plan_type?.includes('premium') || false;
+    const isPremium = authUser.subscription?.plan_type?.includes('premium') || false;
     
     if (requiredPlan === 'premium' && !isPremium) {
       return <PremiumUpgradeCard onLogout={handleLogout} />;

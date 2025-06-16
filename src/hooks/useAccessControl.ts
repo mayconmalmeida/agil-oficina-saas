@@ -15,13 +15,23 @@ export const useAccessControl = ({ requiredPlan }: AccessControlProps = {}) => {
     const userId = user?.id;
     const pathname = location.pathname;
 
+    console.log('[useAccessControl] INICIO', {
+      userId,
+      isLoadingAuth,
+      requiredPlan,
+      pathname
+    });
+
     // Se ainda está carregando, aguardar
     if (isLoadingAuth) {
       console.log('[useAccessControl] Aguardando carregamento da autenticação...');
       return {
         canAccess: false,
         isLoadingAuth: true,
-        reason: 'loading'
+        reason: 'loading',
+        shouldShowContent: false,
+        isAdmin: false,
+        hasGeneralAccess: false
       };
     }
 
@@ -31,7 +41,10 @@ export const useAccessControl = ({ requiredPlan }: AccessControlProps = {}) => {
       return {
         canAccess: false,
         isLoadingAuth: false,
-        reason: 'not_authenticated'
+        reason: 'not_authenticated',
+        shouldShowContent: false,
+        isAdmin: false,
+        hasGeneralAccess: false
       };
     }
 
@@ -41,17 +54,23 @@ export const useAccessControl = ({ requiredPlan }: AccessControlProps = {}) => {
       return {
         canAccess: true,
         isLoadingAuth: false,
-        reason: 'admin'
+        reason: 'admin',
+        shouldShowContent: true,
+        isAdmin: true,
+        hasGeneralAccess: true
       };
     }
 
     // Usuário comum sempre pode acessar funcionalidades básicas
     if (role === 'user') {
-      console.log('[useAccessControl] Usuário comum autenticado, acesso básico liberado');
+      console.log('[useAccessControl] Usuário comum autenticado (role=user ou canAccessFeatures), acesso ok');
       return {
         canAccess: true,
         isLoadingAuth: false,
-        reason: 'user'
+        reason: 'user',
+        shouldShowContent: true,
+        isAdmin: false,
+        hasGeneralAccess: true
       };
     }
 
@@ -59,7 +78,10 @@ export const useAccessControl = ({ requiredPlan }: AccessControlProps = {}) => {
     return {
       canAccess: true,
       isLoadingAuth: false,
-      reason: 'fallback'
+      reason: 'fallback',
+      shouldShowContent: true,
+      isAdmin: false,
+      hasGeneralAccess: true
     };
   }, [user, isLoadingAuth, role, location.pathname, requiredPlan]);
 

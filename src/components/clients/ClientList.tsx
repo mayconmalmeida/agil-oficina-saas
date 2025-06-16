@@ -28,13 +28,17 @@ interface ClientListProps {
   onViewClient: (clientId: string) => void;
   onEditClient: (clientId: string) => void;
   onDeleteClient: (clientId: string) => void;
+  onSelectClient?: (clientId: string) => void;
+  filters?: any;
 }
 
 const ClientList: React.FC<ClientListProps> = ({
   searchTerm,
   onViewClient,
   onEditClient,
-  onDeleteClient
+  onDeleteClient,
+  onSelectClient,
+  filters = {}
 }) => {
   const { user } = useAuth();
 

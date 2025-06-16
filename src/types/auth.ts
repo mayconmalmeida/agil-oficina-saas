@@ -1,3 +1,4 @@
+
 import { User, Session } from '@supabase/supabase-js';
 import { UserSubscription } from './subscription';
 
@@ -10,7 +11,7 @@ export interface AuthUser extends User {
   plano?: string;
 }
 
-export interface AuthContextValue {
+export interface AuthState {
   user: AuthUser | null;
   session: Session | null;
   loading: boolean;
@@ -19,6 +20,8 @@ export interface AuthContextValue {
   isAdmin: boolean;
   signOut: () => Promise<void>;
 }
+
+export interface AuthContextValue extends AuthState {}
 
 export interface UserProfileData {
   role: string;
