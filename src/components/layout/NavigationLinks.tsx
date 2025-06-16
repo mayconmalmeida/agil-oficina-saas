@@ -1,71 +1,153 @@
 
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Car, Package, Wrench, Calendar, FileText, Settings, Database, Bot, Shield, Headphones, MessageCircle, Tag, Truck } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { 
+  Calendar,
+  Users,
+  FileText,
+  Wrench,
+  Package,
+  BarChart3,
+  Settings,
+  Building2,
+  Layers,
+  UserPlus,
+  Bot,
+  HardDrive,
+  LifeBuoy,
+  FileX,
+  TrendingUp,
+  Car
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface NavigationLinksProps {
-  subscriptionStatus: {
-    isPremium: boolean;
-    isTrialActive: boolean;
-  };
+  subscriptionStatus: any;
   onNavigate: (href: string, isPremium?: boolean) => void;
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
-  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
-  { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
-  { name: 'Categorias', href: '/dashboard/categorias', icon: Tag },
-  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Truck },
-  { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench },
-  { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar, premium: true },
-  { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
-  { name: 'Integração Contábil', href: '/dashboard/integracao-contabil', icon: Database, premium: true },
-  { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Bot, premium: true },
-  { name: 'IA Suporte Inteligente', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle, premium: true },
-  { name: 'Backup Automático', href: '/dashboard/backup', icon: Shield, premium: true },
-  { name: 'Suporte Prioritário', href: '/dashboard/suporte', icon: Headphones, premium: true },
-  { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
-];
-
-const NavigationLinks: React.FC<NavigationLinksProps> = ({ subscriptionStatus, onNavigate }) => {
+const NavigationLinks: React.FC<NavigationLinksProps> = ({ 
+  subscriptionStatus, 
+  onNavigate 
+}) => {
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
+
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+    { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
+    { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
+    { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench },
+    { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
+    { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
+    { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
+    { name: 'Categorias', href: '/dashboard/categorias', icon: Layers },
+    { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: UserPlus },
+    { name: 'Empresa', href: '/dashboard/empresa', icon: Building2 },
+    { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
+  ];
+
+  const premiumFeatures = [
+    { 
+      name: 'Relatórios Avançados', 
+      href: '/dashboard/relatorios-avancados', 
+      icon: TrendingUp,
+      isPremium: true 
+    },
+    { 
+      name: 'Integração Contábil', 
+      href: '/dashboard/integracao-contabil', 
+      icon: FileX,
+      isPremium: true 
+    },
+    { 
+      name: 'IA Diagnóstico', 
+      href: '/dashboard/ia-diagnostico', 
+      icon: Bot,
+      isPremium: true 
+    },
+    { 
+      name: 'IA Suporte Inteligente', 
+      href: '/dashboard/ia-suporte-inteligente', 
+      icon: Bot,
+      isPremium: true 
+    },
+    { 
+      name: 'Backup Automático', 
+      href: '/dashboard/backup', 
+      icon: HardDrive,
+      isPremium: true 
+    },
+    { 
+      name: 'Suporte Premium', 
+      href: '/dashboard/suporte', 
+      icon: LifeBuoy,
+      isPremium: true 
+    },
+  ];
+
+  const renderNavigationItem = (item: any) => {
+    const isActive = location.pathname === item.href;
+    const isAccessible = !item.isPremium || subscriptionStatus.isPremium || subscriptionStatus.isTrialActive;
+
+    return (
+      <Link
+        key={item.name}
+        to={item.href}
+        onClick={(e) => {
+          if (!isAccessible) {
+            e.preventDefault();
+            onNavigate(item.href, item.isPremium);
+          }
+        }}
+        className={cn(
+          'group flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+          isActive
+            ? 'bg-oficina text-white'
+            : isAccessible
+              ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              : 'text-gray-400 cursor-not-allowed'
+        )}
+      >
+        <item.icon
+          className={cn(
+            'mr-3 flex-shrink-0 h-5 w-5',
+            isActive
+              ? 'text-white'
+              : isAccessible
+                ? 'text-gray-500 group-hover:text-gray-700'
+                : 'text-gray-300'
+          )}
+          aria-hidden="true"
+        />
+        <span className="flex-1">{item.name}</span>
+        {item.isPremium && !isAccessible && (
+          <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+            Premium
+          </Badge>
+        )}
+      </Link>
+    );
+  };
 
   return (
-    <nav className="mt-5 flex-1 px-2 pb-4 space-y-1">
-      {navigation.map((item) => {
-        const isItemActive = isActive(item.href);
-        const isPremiumLocked = item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
-        return (
-          <button
-            key={item.name}
-            onClick={() => onNavigate(item.href, item.premium)}
-            disabled={isPremiumLocked}
-            className={`${
-              isItemActive
-                ? 'bg-blue-100 text-blue-900'
-                : isPremiumLocked
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            } group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full`}
-          >
-            <item.icon
-              className={`${
-                isItemActive ? 'text-blue-500' : isPremiumLocked ? 'text-gray-300' : 'text-gray-400'
-              } mr-3 flex-shrink-0 h-5 w-5`}
-            />
-            {item.name}
-            {item.premium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive && (
-              <Badge variant="outline" className="ml-auto text-xs">
-                Premium
-              </Badge>
-            )}
-          </button>
-        );
-      })}
+    <nav className="mt-5 flex-1 px-2 space-y-1">
+      {/* Navegação Principal */}
+      <div className="space-y-1">
+        {navigation.map(renderNavigationItem)}
+      </div>
+
+      {/* Recursos Premium */}
+      <div className="pt-6">
+        <div className="px-4 mb-2">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Recursos Premium
+          </h3>
+        </div>
+        <div className="space-y-1">
+          {premiumFeatures.map(renderNavigationItem)}
+        </div>
+      </div>
     </nav>
   );
 };

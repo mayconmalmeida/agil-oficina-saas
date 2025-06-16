@@ -1,18 +1,102 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Search, Plus, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import BudgetList from '@/components/budgets/BudgetList';
+import BudgetForm from '@/components/budget/BudgetForm';
+import { Input } from '@/components/ui/input';
+import { useBudgetForm } from '@/hooks/useBudgetForm';
+import { useNavigate } from 'react-router-dom';
 
-const BudgetsPage = () => {
+const BudgetsPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('lista');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('todos');
+  const { isLoading, handleSubmit, skipStep } = useBudgetForm();
+  const navigate = useNavigate();
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Searching for:", searchQuery);
+  };
+  
+  const handleNewBudget = () => {
+    navigate('/dashboard/orcamentos/novo');
+  };
+  
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 px-2 sm:px-0">
-          Orçamentos
-        </h1>
-        <div className="bg-white rounded-lg shadow border border-gray-200 p-4 sm:p-6 mx-2 sm:mx-0">
-          <p className="text-gray-600 text-sm sm:text-base">
-            Lista de orçamentos será implementada aqui.
-          </p>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Gerenciar Orçamentos</h1>
+          <Button onClick={handleNewBudget}>
+            <Plus className="mr-2 h-4 w-4" /> Novo Orçamento
+          </Button>
         </div>
+        
+        <Card>
+          <CardContent className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                <TabsList>
+                  <TabsTrigger value="lista" className="flex items-center">
+                    <FileText className="mr-2 h-4 w-4" /> 
+                    Lista de Orçamentos
+                  </TabsTrigger>
+                  <TabsTrigger value="novo" className="flex items-center">
+                    <Plus className="mr-2 h-4 w-4" /> 
+                    Novo Orçamento
+                  </TabsTrigger>
+                </TabsList>
+                
+                {activeTab === 'lista' && (
+                  <div className="flex flex-col md:flex-row gap-2 w-full md:max-w-lg">
+                    <form onSubmit={handleSearch} className="flex items-center space-x-2 flex-1">
+                      <Input
+                        type="text"
+                        placeholder="Buscar orçamentos..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button type="submit" size="icon">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </form>
+                    
+                    <Select value={filter} onValueChange={setFilter}>
+                      <SelectTrigger className="md:w-[180px]">
+                        <SelectValue placeholder="Filtrar por" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="pendentes">Pendentes</SelectItem>
+                        <SelectItem value="aprovados">Aprovados</SelectItem>
+                        <SelectItem value="rejeitados">Rejeitados</SelectItem>
+                        <SelectItem value="convertidos">Convertidos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              
+              <TabsContent value="lista" className="mt-0">
+                <BudgetList searchQuery={searchQuery} filter={filter} />
+              </TabsContent>
+              
+              <TabsContent value="novo" className="mt-0">
+                <BudgetForm 
+                  onSubmit={handleSubmit}
+                  onSkip={skipStep}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

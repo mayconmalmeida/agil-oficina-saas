@@ -1,145 +1,106 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import Loading from '@/components/ui/loading';
-
-// Componentes refatorados
 import BudgetHeader from '@/components/budget/details/BudgetHeader';
 import BudgetInfo from '@/components/budget/details/BudgetInfo';
-import BudgetStatusActions from '@/components/budget/details/BudgetStatusActions';
+import Loading from '@/components/ui/loading';
+import { generateBudgetPDF } from '@/utils/pdfUtils';
 
 interface Budget {
   id: string;
   cliente: string;
   veiculo: string;
-  descricao: string;
-  valor_total: number;
-  status: string;
   created_at: string;
+  valor_total: number;
+  descricao: string;
+  status: string;
 }
 
 const BudgetDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [budget, setBudget] = useState<Budget | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const fetchBudgetDetails = async () => {
-      if (!id) return;
-      
-      setIsLoading(true);
+    if (!id) return;
+
+    const fetchBudget = async () => {
       try {
         const { data, error } = await supabase
           .from('orcamentos')
           .select('*')
           .eq('id', id)
           .single();
-        
-        if (error) {
-          console.error('Erro ao buscar orçamento:', error);
-          toast({
-            variant: "destructive",
-            title: "Erro ao carregar orçamento",
-            description: "Não foi possível carregar os detalhes do orçamento.",
-          });
-          return;
-        }
-        
+
+        if (error) throw error;
         setBudget(data);
-      } catch (error) {
-        console.error('Erro inesperado:', error);
+      } catch (error: any) {
+        console.error('Error fetching budget:', error);
         toast({
           variant: "destructive",
-          title: "Erro",
-          description: "Ocorreu um erro ao carregar o orçamento.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchBudgetDetails();
-  }, [id, toast]);
-  
-  const handleBack = () => {
-    navigate(-1);
-  };
-  
-  const handlePrint = () => {
-    window.print();
-  };
-  
-  const handleEdit = () => {
-    navigate(`/orcamentos/editar/${id}`);
-  };
-  
-  const handleStatusUpdate = async (status: string) => {
-    if (!budget) return;
-    
-    try {
-      const { error } = await supabase
-        .from('orcamentos')
-        .update({ status })
-        .eq('id', budget.id);
-      
-      if (error) {
-        console.error('Erro ao atualizar status:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao atualizar status",
+          title: "Erro ao carregar orçamento",
           description: error.message,
         });
-        return;
+        navigate('/dashboard/orcamentos');
+      } finally {
+        setLoading(false);
       }
-      
-      setBudget({ ...budget, status });
-      
-      toast({
-        title: "Status atualizado",
-        description: `O orçamento foi marcado como ${status}.`,
-      });
-    } catch (error) {
-      console.error('Erro inesperado:', error);
-      toast({
-        variant: "destructive", 
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar o status.",
-      });
+    };
+
+    fetchBudget();
+  }, [id, navigate, toast]);
+
+  const handleBack = () => {
+    navigate('/dashboard/orcamentos');
+  };
+
+  const handlePrint = () => {
+    if (budget) {
+      try {
+        generateBudgetPDF(budget);
+        toast({
+          title: "PDF gerado com sucesso",
+          description: "O orçamento foi enviado para impressão.",
+        });
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar PDF",
+          description: "Não foi possível gerar o PDF do orçamento.",
+        });
+      }
     }
   };
-  
-  if (isLoading) {
-    return <Loading fullscreen text="Carregando orçamento..." />;
+
+  const handleEdit = () => {
+    navigate(`/dashboard/orcamentos/editar/${id}`);
+  };
+
+  if (loading) {
+    return <Loading text="Carregando detalhes do orçamento..." />;
   }
-  
+
   if (!budget) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Orçamento não encontrado</CardTitle>
-            <CardDescription>Não foi possível encontrar o orçamento solicitado.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleBack}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Orçamento não encontrado</h2>
+          <button onClick={handleBack} className="mt-4 text-blue-500 hover:underline">
+            Voltar para orçamentos
+          </button>
+        </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <BudgetHeader 
+    <div className="container mx-auto py-8">
+      <BudgetHeader
         createdAt={budget.created_at}
         onBack={handleBack}
         onPrint={handlePrint}
@@ -154,11 +115,6 @@ const BudgetDetailsPage: React.FC = () => {
         valor_total={budget.valor_total}
         descricao={budget.descricao}
         status={budget.status}
-      />
-      
-      <BudgetStatusActions 
-        status={budget.status} 
-        onStatusUpdate={handleStatusUpdate} 
       />
     </div>
   );

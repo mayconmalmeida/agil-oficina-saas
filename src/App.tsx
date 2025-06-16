@@ -25,6 +25,10 @@ import NewClientPage from '@/pages/NewClientPage';
 import ServicesPage from '@/pages/ServicesPage';
 import ServicesListPage from '@/pages/ServicesListPage';
 import BudgetsPage from '@/pages/BudgetsPage';
+import NewBudgetPage from '@/pages/NewBudgetPage';
+import BudgetDetailsPage from '@/pages/BudgetDetailsPage';
+import SchedulesPage from '@/pages/SchedulesPage';
+import NewSchedulePage from '@/pages/NewSchedulePage';
 import SchedulingPage from '@/pages/SchedulingPage';
 import ProductsPage from '@/pages/ProductsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
@@ -149,8 +153,12 @@ function App() {
             <Route path="servicos" element={<ServicesListPage />} />
             <Route path="servicos/novo" element={<ServicesPage />} />
             <Route path="orcamentos" element={<BudgetsPage />} />
+            <Route path="orcamentos/novo" element={<NewBudgetPage />} />
+            <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
+            <Route path="agendamentos" element={<SchedulesPage />} />
+            <Route path="agendamentos/novo" element={<NewSchedulePage />} />
             <Route 
-              path="agendamentos" 
+              path="agendamento-premium" 
               element={
                 <SubscriptionGuard requiredPlan="premium">
                   <SchedulingPage />

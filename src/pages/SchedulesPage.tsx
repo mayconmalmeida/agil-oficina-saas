@@ -125,13 +125,22 @@ const SchedulesPage = () => {
         <p className="text-sm text-gray-600">{schedule.veiculo}</p>
       </CardContent>
       <CardFooter className="pt-0 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/agendamentos/${schedule.id}`)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/agendamentos/${schedule.id}`)}>
           Ver detalhes
           <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
       </CardFooter>
     </Card>
   );
+
+  const handleNewSchedule = () => {
+    navigate('/dashboard/agendamentos/novo');
+  };
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Searching for:", searchTerm);
+  };
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -148,9 +157,9 @@ const SchedulesPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button onClick={() => navigate('/agendamentos/novo')}>
+          <Button onClick={handleNewSchedule}>
             <Plus className="mr-2 h-4 w-4" />
-            Novo Agendamento
+            Adicionar Agendamento
           </Button>
         </div>
       </div>
@@ -216,7 +225,7 @@ const SchedulesPage = () => {
                     </p>
                     {!searchTerm && (
                       <Button 
-                        onClick={() => navigate('/agendamentos/novo')} 
+                        onClick={handleNewSchedule} 
                         className="mt-4"
                       >
                         <Plus className="mr-2 h-4 w-4" />
@@ -244,7 +253,7 @@ const SchedulesPage = () => {
                       Não há agendamentos para hoje
                     </p>
                     <Button 
-                      onClick={() => navigate('/agendamentos/novo')} 
+                      onClick={handleNewSchedule} 
                       className="mt-4"
                     >
                       <Plus className="mr-2 h-4 w-4" />
@@ -271,7 +280,7 @@ const SchedulesPage = () => {
                       Não há agendamentos para amanhã
                     </p>
                     <Button 
-                      onClick={() => navigate('/agendamentos/novo')} 
+                      onClick={handleNewSchedule} 
                       className="mt-4"
                     >
                       <Plus className="mr-2 h-4 w-4" />
@@ -298,7 +307,7 @@ const SchedulesPage = () => {
                       Não há agendamentos para os próximos dias
                     </p>
                     <Button 
-                      onClick={() => navigate('/agendamentos/novo')} 
+                      onClick={handleNewSchedule} 
                       className="mt-4"
                     >
                       <Plus className="mr-2 h-4 w-4" />

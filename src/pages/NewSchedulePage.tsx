@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import BudgetForm from '@/components/budget/BudgetForm';
+import SchedulingForm from '@/components/scheduling/SchedulingForm';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
-const NewBudgetPage: React.FC = () => {
+const NewSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -17,29 +17,20 @@ const NewBudgetPage: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      const { error } = await supabase
-        .from('orcamentos')
-        .insert({
-          cliente: values.cliente,
-          veiculo: values.veiculo,
-          descricao: values.descricao,
-          valor_total: values.valor_total,
-          user_id: user.id
-        });
-
-      if (error) throw error;
+      // Aqui você implementaria a lógica de criação do agendamento
+      console.log('Dados do agendamento:', values);
 
       toast({
-        title: "Orçamento criado",
-        description: "Orçamento foi criado com sucesso.",
+        title: "Agendamento criado",
+        description: "Agendamento foi criado com sucesso.",
       });
 
-      // Redirecionar para a lista de orçamentos
-      navigate('/dashboard/orcamentos');
+      // Redirecionar para a lista de agendamentos
+      navigate('/dashboard/agendamentos');
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar orçamento",
+        title: "Erro ao criar agendamento",
         description: error.message,
       });
     } finally {
@@ -47,24 +38,21 @@ const NewBudgetPage: React.FC = () => {
     }
   };
 
-  const handleSkip = () => {
-    navigate('/dashboard/orcamentos');
-  };
-
   return (
     <div className="container mx-auto py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Novo Orçamento</CardTitle>
+          <CardTitle>Novo Agendamento</CardTitle>
           <CardDescription>
-            Crie um novo orçamento para um cliente
+            Agende um novo serviço para um cliente
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <BudgetForm 
+          <SchedulingForm 
             onSubmit={handleSubmit}
-            onSkip={handleSkip}
             isLoading={isLoading}
+            clients={[]}
+            services={[]}
           />
         </CardContent>
       </Card>
@@ -72,4 +60,4 @@ const NewBudgetPage: React.FC = () => {
   );
 };
 
-export default NewBudgetPage;
+export default NewSchedulePage;

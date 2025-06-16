@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Eye, FileText, Printer, Mail, ArrowRight, Edit } from 'lucide-react';
+import { Eye, FileText, Printer, Mail, ArrowRight, Edit, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -135,11 +135,11 @@ const BudgetList: React.FC<BudgetListProps> = ({
   };
 
   const handleViewBudget = (budgetId: string) => {
-    navigate(`/orcamentos/${budgetId}`);
+    navigate(`/dashboard/orcamentos/${budgetId}`);
   };
 
   const handleEditBudget = (budgetId: string) => {
-    navigate(`/orcamentos/editar/${budgetId}`);
+    navigate(`/dashboard/orcamentos/editar/${budgetId}`);
   };
 
   const handlePrintBudget = (budget: Budget) => {
@@ -162,6 +162,13 @@ const BudgetList: React.FC<BudgetListProps> = ({
   const handleEmailBudget = (budget: Budget) => {
     setEmailDialog({ open: true, budget });
     setEmailAddress('');
+  };
+
+  const handleWhatsAppBudget = (budget: Budget) => {
+    const message = `Olá! Segue o orçamento ${budget.numero}:\n\nCliente: ${budget.cliente}\nVeículo: ${budget.veiculo}\nValor: ${formatCurrency(budget.valor)}\n\nDescrição: ${budget.descricao}`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleSendEmail = async () => {
@@ -301,6 +308,14 @@ const BudgetList: React.FC<BudgetListProps> = ({
                       onClick={() => handleEmailBudget(budget)}
                     >
                       <Mail className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      title="Enviar por WhatsApp"
+                      onClick={() => handleWhatsAppBudget(budget)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
                     </Button>
                     {budget.status === 'aprovado' && (
                       <Button 
