@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authService';
 import { AuthUser } from '@/types/auth';
@@ -9,8 +9,12 @@ export const useUserProfileData = (user: User | null) => {
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const loadingRef = useRef(false); // Prevenir execuções simultâneas
 
   useEffect(() => {
+    // Prevenir múltiplas execuções simultâneas
+    if (loadingRef.current) return;
+
     const loadUserProfile = async () => {
       console.log('useUserProfileData: Iniciando carregamento de perfil para usuário:', user?.id);
       
@@ -19,10 +23,12 @@ export const useUserProfileData = (user: User | null) => {
         setProfile(null);
         setRole(null);
         setLoading(false);
+        loadingRef.current = false;
         return;
       }
 
       try {
+        loadingRef.current = true;
         setLoading(true);
         console.log('useUserProfileData: Carregando perfil para usuário:', user.id);
         const userProfile = await fetchUserProfile(user.id);
@@ -83,11 +89,12 @@ export const useUserProfileData = (user: User | null) => {
         setRole('user');
       } finally {
         setLoading(false);
+        loadingRef.current = false;
       }
     };
 
     loadUserProfile();
-  }, [user]);
+  }, [user?.id]); // Usar apenas user.id como dependência para evitar re-execuções desnecessárias
 
   console.log('useUserProfileData: Estado atual:', { 
     hasProfile: !!profile, 

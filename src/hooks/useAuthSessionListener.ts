@@ -14,6 +14,7 @@ export function useAuthSessionListener() {
 
   useEffect(() => {
     let mounted = true;
+    let hasInitialized = false;
     
     console.log('useAuthSessionListener: Iniciando listener de autenticação');
     
@@ -31,38 +32,42 @@ export function useAuthSessionListener() {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Marcar como carregado após o primeiro evento
-        if (initialLoad) {
+        // Marcar como carregado apenas uma vez
+        if (!hasInitialized) {
+          hasInitialized = true;
           setInitialLoad(false);
         }
       }
     );
 
-    // Buscar sessão inicial
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!mounted) return;
-      
-      if (error) {
-        console.error('useAuthSessionListener: Erro ao buscar sessão inicial:', error);
-      } else {
-        console.log('useAuthSessionListener: Sessão inicial obtida:', {
-          sessionExists: !!session,
-          userEmail: session?.user?.email,
-          userId: session?.user?.id
-        });
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setInitialLoad(false);
-    });
+    // Buscar sessão inicial apenas uma vez
+    if (!hasInitialized) {
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('useAuthSessionListener: Erro ao buscar sessão inicial:', error);
+        } else {
+          console.log('useAuthSessionListener: Sessão inicial obtida:', {
+            sessionExists: !!session,
+            userEmail: session?.user?.email,
+            userId: session?.user?.id
+          });
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        hasInitialized = true;
+        setInitialLoad(false);
+      });
+    }
 
     return () => {
       console.log('useAuthSessionListener: Limpando listener');
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Array de dependências vazio para executar apenas uma vez
 
   return { session, user, initialLoad };
 }

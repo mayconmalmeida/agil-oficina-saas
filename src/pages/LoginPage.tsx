@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,6 +18,7 @@ const LoginPage: React.FC = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const hasCheckedSession = useRef(false);
 
   // Verificar conexão com o Supabase
   useEffect(() => {
@@ -46,10 +47,13 @@ const LoginPage: React.FC = () => {
     verifyConnection();
   }, []);
 
-  // Verificar se já está autenticado
+  // Verificar se já está autenticado - APENAS UMA VEZ
   useEffect(() => {
+    if (hasCheckedSession.current) return;
+    
     const checkSession = async () => {
       try {
+        hasCheckedSession.current = true;
         setCheckingSession(true);
         console.log("LoginPage: Verificando sessão existente...");
         
@@ -122,7 +126,7 @@ const LoginPage: React.FC = () => {
     };
     
     checkSession();
-  }, [navigate, setUserId]);
+  }, []); // Array vazio para executar apenas uma vez
 
   if (checkingSession) {
     return <Loading fullscreen text="Verificando autenticação..." />;
