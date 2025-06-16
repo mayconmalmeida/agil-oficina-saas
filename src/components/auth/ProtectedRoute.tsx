@@ -19,19 +19,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     currentPath: location.pathname
   });
 
-  // Aguardar o carregamento da autenticação
+  // Aguardar o carregamento completo da autenticação
   if (isLoadingAuth) {
-    console.log('ProtectedRoute: Ainda carregando autenticação...');
+    console.log('ProtectedRoute: Carregando autenticação...');
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
-  // Se não há usuário autenticado, redirecionar para login
+  // Verificação simples e direta
   if (!user) {
-    console.log('ProtectedRoute: Usuário não autenticado, redirecionando para login');
-    return <Navigate to="/login" replace />;
+    console.log('ProtectedRoute: Usuário não autenticado, redirecionando');
+    // Usar replace para evitar loops de navegação
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  console.log('ProtectedRoute: Usuário autenticado, permitindo acesso');
+  console.log('ProtectedRoute: Acesso permitido');
   return <>{children}</>;
 };
 

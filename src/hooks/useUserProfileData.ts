@@ -9,36 +9,41 @@ export const useUserProfileData = (user: User | null) => {
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const loadingRef = useRef(false); // Prevenir execuções simultâneas
+  const isLoadingRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Prevenir múltiplas execuções simultâneas
-    if (loadingRef.current) return;
+    // Evitar execuções desnecessárias se o user ID não mudou
+    if (lastUserIdRef.current === user?.id) return;
+    
+    // Evitar múltiplas execuções simultâneas
+    if (isLoadingRef.current) return;
 
     const loadUserProfile = async () => {
-      console.log('useUserProfileData: Iniciando carregamento de perfil para usuário:', user?.id);
+      console.log('useUserProfileData: Carregando perfil para:', user?.id);
       
       if (!user) {
         console.log('useUserProfileData: Usuário não encontrado, limpando estado');
         setProfile(null);
         setRole(null);
         setLoading(false);
-        loadingRef.current = false;
+        lastUserIdRef.current = null;
         return;
       }
 
+      // Verificar se já estamos carregando
+      if (isLoadingRef.current) return;
+
       try {
-        loadingRef.current = true;
+        isLoadingRef.current = true;
         setLoading(true);
-        console.log('useUserProfileData: Carregando perfil para usuário:', user.id);
-        const userProfile = await fetchUserProfile(user.id);
+        lastUserIdRef.current = user.id;
         
+        const userProfile = await fetchUserProfile(user.id);
         console.log('useUserProfileData: Perfil carregado:', userProfile);
         
-        // Calcular se pode acessar funcionalidades
         const canAccessFeatures = calculateCanAccessFeatures(userProfile.subscription, userProfile.role);
         
-        // Criar o perfil do usuário com todas as informações necessárias
         const authUser: AuthUser = {
           ...user,
           role: userProfile.role,
@@ -59,49 +64,34 @@ export const useUserProfileData = (user: User | null) => {
           trial_started_at: userProfile.trial_started_at
         };
 
-        console.log('useUserProfileData: AuthUser criado:', {
-          userId: authUser.id,
-          email: authUser.email,
-          role: authUser.role,
-          isAdmin: authUser.isAdmin,
-          canAccessFeatures: authUser.canAccessFeatures,
-          plano: authUser.plano,
-          trial_started_at: authUser.trial_started_at
-        });
-
         setProfile(authUser);
         setRole(userProfile.role);
+        
       } catch (error) {
         console.error('useUserProfileData: Erro ao carregar perfil:', error);
         
-        // Em caso de erro, criar um perfil básico mas funcional
-        const fallbackProfile: AuthUser = {
-          ...user,
-          role: 'user',
-          isAdmin: false,
-          canAccessFeatures: true, // Permitir acesso básico mesmo com erro
-          plano: 'Premium', // Premium durante trial
-          trial_started_at: new Date().toISOString() // Definir trial como começando agora
-        };
-        
-        console.log('useUserProfileData: Usando perfil de fallback:', fallbackProfile);
-        setProfile(fallbackProfile);
-        setRole('user');
+        // Criar perfil de fallback para evitar loops
+        if (user) {
+          const fallbackProfile: AuthUser = {
+            ...user,
+            role: 'user',
+            isAdmin: false,
+            canAccessFeatures: true,
+            plano: 'Premium',
+            trial_started_at: new Date().toISOString()
+          };
+          
+          setProfile(fallbackProfile);
+          setRole('user');
+        }
       } finally {
         setLoading(false);
-        loadingRef.current = false;
+        isLoadingRef.current = false;
       }
     };
 
     loadUserProfile();
-  }, [user?.id]); // Usar apenas user.id como dependência para evitar re-execuções desnecessárias
-
-  console.log('useUserProfileData: Estado atual:', { 
-    hasProfile: !!profile, 
-    loading, 
-    role,
-    userId: user?.id 
-  });
+  }, [user?.id]); // Apenas user.id como dependência
 
   return { profile, loading, role };
 };
