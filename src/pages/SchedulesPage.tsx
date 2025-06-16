@@ -72,28 +72,82 @@ const SchedulesPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [agendamentos, setAgendamentos] = useState<any[]>([]);
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [servicos, setServicos] = useState<any[]>([]);
+  const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Carregar dados do banco
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    setIsLoading(true);
+    try {
+      // Carregar agendamentos
+      const { data: agendamentosData, error: agendamentosError } = await supabase
+        .from('agendamentos')
+        .select(`
+          *,
+          clients(id, nome, telefone),
+          services(id, nome)
+        `)
+        .order('data_agendamento', { ascending: true });
+
+      if (agendamentosError) throw agendamentosError;
+      setAgendamentos(agendamentosData || []);
+
+      // Carregar clientes
+      const { data: clientesData, error: clientesError } = await supabase
+        .from('clients')
+        .select('id, nome, telefone')
+        .eq('is_active', true);
+
+      if (clientesError) throw clientesError;
+      setClientes(clientesData || []);
+
+      // Carregar serviços
+      const { data: servicosData, error: servicosError } = await supabase
+        .from('services')
+        .select('id, nome')
+        .eq('is_active', true);
+
+      if (servicosError) throw servicosError;
+      setServicos(servicosData || []);
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Filter schedules by date
   const schedulesByDate = date 
-    ? mockSchedules.filter(schedule => {
-        const scheduleDate = parseISO(schedule.data);
-        return scheduleDate.toDateString() === date.toDateString();
+    ? agendamentos.filter(agendamento => {
+        const agendamentoDate = new Date(agendamento.data_agendamento);
+        return agendamentoDate.toDateString() === date.toDateString();
       })
     : [];
     
   // Filter schedules by search term
-  const filteredSchedules = schedulesByDate.filter(schedule => 
-    schedule.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    schedule.veiculo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    schedule.servico.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSchedules = schedulesByDate.filter(agendamento => 
+    agendamento.clients?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agendamento.services?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agendamento.observacoes?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   // Group schedules by date for tabs
-  const todaySchedules = mockSchedules.filter(schedule => isToday(parseISO(schedule.data)));
-  const tomorrowSchedules = mockSchedules.filter(schedule => isTomorrow(parseISO(schedule.data)));
-  const upcomingSchedules = mockSchedules.filter(schedule => {
-    const scheduleDate = parseISO(schedule.data);
+  const todaySchedules = agendamentos.filter(agendamento => isToday(new Date(agendamento.data_agendamento)));
+  const tomorrowSchedules = agendamentos.filter(agendamento => isTomorrow(new Date(agendamento.data_agendamento)));
+  const upcomingSchedules = agendamentos.filter(agendamento => {
+    const scheduleDate = new Date(agendamento.data_agendamento);
     return scheduleDate > addDays(new Date(), 1);
   });
   
@@ -108,24 +162,47 @@ const SchedulesPage = () => {
   };
   
   // Render schedule card
-  const renderScheduleCard = (schedule: typeof mockSchedules[0]) => (
-    <Card key={schedule.id} className="mb-4 hover:shadow-md transition-shadow">
+  const renderScheduleCard = (agendamento: any) => (
+    <Card key={agendamento.id} className="mb-4 hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{schedule.servico}</CardTitle>
-            <CardDescription>{schedule.cliente}</CardDescription>
+            <CardTitle className="text-lg">{agendamento.services?.nome || agendamento.descricao_servico}</CardTitle>
+            <CardDescription>{agendamento.clients?.nome}</CardDescription>
           </div>
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            {schedule.horario}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {agendamento.horario}
+            </Badge>
+            <Badge 
+              variant={agendamento.status === 'agendado' ? 'default' : 
+                     agendamento.status === 'concluido' ? 'default' : 'destructive'}
+              className={
+                agendamento.status === 'agendado' ? 'bg-yellow-100 text-yellow-800' :
+                agendamento.status === 'concluido' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }
+            >
+              {agendamento.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pb-2">
-        <p className="text-sm text-gray-600">{schedule.veiculo}</p>
+        <p className="text-sm text-gray-600 mb-1">
+          <strong>Cliente:</strong> {agendamento.clients?.nome}
+        </p>
+        <p className="text-sm text-gray-600 mb-1">
+          <strong>Telefone:</strong> {agendamento.clients?.telefone}
+        </p>
+        {agendamento.observacoes && (
+          <p className="text-sm text-gray-600">
+            <strong>Observações:</strong> {agendamento.observacoes}
+          </p>
+        )}
       </CardContent>
       <CardFooter className="pt-0 flex justify-between">
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/agendamentos/${schedule.id}`)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/agendamentos/${agendamento.id}`)}>
           Ver detalhes
           <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
@@ -178,6 +255,29 @@ const SchedulesPage = () => {
                 onSelect={setDate}
                 className="rounded-md border"
               />
+            </CardContent>
+          </Card>
+          
+          {/* Estatísticas rápidas */}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-lg">Resumo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Hoje:</span>
+                  <span className="font-medium">{todaySchedules.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Amanhã:</span>
+                  <span className="font-medium">{tomorrowSchedules.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Esta semana:</span>
+                  <span className="font-medium">{agendamentos.length}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

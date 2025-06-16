@@ -33,6 +33,132 @@ export type Database = {
         }
         Relationships: []
       }
+      agendamentos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data_agendamento: string
+          data_hora: string | null
+          descricao_servico: string | null
+          horario: string
+          id: string
+          observacoes: string | null
+          oficina_id: string | null
+          servico_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_agendamento: string
+          data_hora?: string | null
+          descricao_servico?: string | null
+          horario: string
+          id?: string
+          observacoes?: string | null
+          oficina_id?: string | null
+          servico_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_agendamento?: string
+          data_hora?: string | null
+          descricao_servico?: string | null
+          horario?: string
+          id?: string
+          observacoes?: string | null
+          oficina_id?: string | null
+          servico_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_oficina_id_fkey"
+            columns: ["oficina_id"]
+            isOneToOne: false
+            referencedRelation: "oficinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campanhas_marketing: {
+        Row: {
+          arquivo_url: string | null
+          clientes_ids: string[] | null
+          created_at: string | null
+          data_agendada: string
+          id: string
+          mensagem: string
+          oficina_id: string | null
+          status: string | null
+          tipo_arquivo: string | null
+          tipo_envio: string
+          titulo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          arquivo_url?: string | null
+          clientes_ids?: string[] | null
+          created_at?: string | null
+          data_agendada: string
+          id?: string
+          mensagem: string
+          oficina_id?: string | null
+          status?: string | null
+          tipo_arquivo?: string | null
+          tipo_envio: string
+          titulo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          arquivo_url?: string | null
+          clientes_ids?: string[] | null
+          created_at?: string | null
+          data_agendada?: string
+          id?: string
+          mensagem?: string
+          oficina_id?: string | null
+          status?: string | null
+          tipo_arquivo?: string | null
+          tipo_envio?: string
+          titulo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campanhas_marketing_oficina_id_fkey"
+            columns: ["oficina_id"]
+            isOneToOne: false
+            referencedRelation: "oficinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
