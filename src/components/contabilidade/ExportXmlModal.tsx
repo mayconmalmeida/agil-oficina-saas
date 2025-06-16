@@ -98,7 +98,7 @@ const ExportXmlModal: React.FC<ExportXmlModalProps> = ({ isOpen, onClose }) => {
                 <Checkbox
                   id="entrada"
                   checked={includeEntrada}
-                  onCheckedChange={setIncludeEntrada}
+                  onCheckedChange={(checked) => setIncludeEntrada(checked === true)}
                 />
                 <Label htmlFor="entrada">Notas de Entrada</Label>
               </div>
@@ -106,7 +106,7 @@ const ExportXmlModal: React.FC<ExportXmlModalProps> = ({ isOpen, onClose }) => {
                 <Checkbox
                   id="saida"
                   checked={includeSaida}
-                  onCheckedChange={setIncludeSaida}
+                  onCheckedChange={(checked) => setIncludeSaida(checked === true)}
                 />
                 <Label htmlFor="saida">Notas de Saída</Label>
               </div>

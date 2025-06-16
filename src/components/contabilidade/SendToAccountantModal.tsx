@@ -131,7 +131,7 @@ const SendToAccountantModal: React.FC<SendToAccountantModalProps> = ({ isOpen, o
                 <Checkbox
                   id="entrada"
                   checked={includeEntrada}
-                  onCheckedChange={setIncludeEntrada}
+                  onCheckedChange={(checked) => setIncludeEntrada(checked === true)}
                 />
                 <Label htmlFor="entrada">Notas de Entrada</Label>
               </div>
@@ -139,7 +139,7 @@ const SendToAccountantModal: React.FC<SendToAccountantModalProps> = ({ isOpen, o
                 <Checkbox
                   id="saida"
                   checked={includeSaida}
-                  onCheckedChange={setIncludeSaida}
+                  onCheckedChange={(checked) => setIncludeSaida(checked === true)}
                 />
                 <Label htmlFor="saida">Notas de Saída</Label>
               </div>
