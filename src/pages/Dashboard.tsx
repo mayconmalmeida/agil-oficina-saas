@@ -3,6 +3,7 @@ import React from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
+import { useDashboardCharts } from '@/hooks/useDashboardCharts';
 import DashboardLoading from '@/components/dashboard/Loading';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import RecentActivities from '@/components/dashboard/RecentActivities';
@@ -15,6 +16,7 @@ import DashboardCharts from '@/components/dashboard/DashboardCharts';
 const Dashboard: React.FC = () => {
   const { userProfile, loading: profileLoading, userId } = useUserProfile();
   const { data, isLoading: dataLoading } = useDashboardData(userId);
+  const { chartData, isLoading: chartsLoading } = useDashboardCharts();
   
   // Get premium features access
   const { handlePremiumFeature, isPremium } = usePremiumFeatures(
@@ -44,11 +46,13 @@ const Dashboard: React.FC = () => {
         </div>
         <div>
           <DashboardCharts 
-            monthlyRevenue={data.monthlyRevenue}
-            topServices={data.topServices}
-            topProducts={data.topProducts}
+            monthlyRevenue={chartData.monthlyRevenue}
+            topServices={chartData.topServices}
+            topClients={chartData.topClients}
+            serviceTypes={chartData.serviceTypes}
+            criticalStock={chartData.criticalStock}
             isPremium={isPremium || data.daysRemaining > 0}
-            isLoading={isLoading}
+            isLoading={chartsLoading}
             onUpgradePlan={handleUpgradePlan}
           />
         </div>
@@ -96,4 +100,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-

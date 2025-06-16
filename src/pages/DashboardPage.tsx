@@ -12,6 +12,7 @@ import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
 import { useDashboardCharts } from '@/hooks/useDashboardCharts';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { allStepsCompleted, getCompletedSteps } from '@/utils/onboardingUtils';
 import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
@@ -19,7 +20,7 @@ const DashboardPage: React.FC = () => {
   const { isPremium, handlePremiumFeature } = usePremiumFeatures('premium', 30);
   const { chartData, isLoading: chartsLoading } = useDashboardCharts();
   const { data: dashboardData, isLoading: dashboardLoading } = useDashboardData(userId);
-  const { onboardingStatus, getCompletedSteps, allStepsCompleted } = useOnboardingProgress();
+  const { status: onboardingStatus } = useOnboardingProgress(userId);
   const navigate = useNavigate();
 
   const handleUpgradePlan = () => {
