@@ -24,19 +24,18 @@ export const useDashboardCounts = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Buscar contagens reais do banco de dados
-        const [clientsResult, budgetsResult, servicesResult, appointmentsResult] = await Promise.all([
+        // Buscar contagens reais do banco de dados (removendo agendamentos que não existe)
+        const [clientsResult, budgetsResult, servicesResult] = await Promise.all([
           supabase.from('clients').select('id', { count: 'exact' }).eq('user_id', user.id),
           supabase.from('orcamentos').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('services').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('agendamentos').select('id', { count: 'exact' }).eq('user_id', user.id)
+          supabase.from('services').select('id', { count: 'exact' }).eq('user_id', user.id)
         ]);
 
         setCounts({
           clientsCount: clientsResult.count || 0,
           budgetsCount: budgetsResult.count || 0,
           servicesCount: servicesResult.count || 0,
-          appointmentsCount: appointmentsResult.count || 0
+          appointmentsCount: 0 // Zero pois a tabela agendamentos não existe
         });
       } catch (error) {
         console.error('Erro ao buscar contadores:', error);

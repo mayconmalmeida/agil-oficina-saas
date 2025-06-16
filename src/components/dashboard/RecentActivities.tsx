@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, User, FileText, Package } from "lucide-react";
@@ -84,7 +85,10 @@ const RecentActivities = ({ activities, isLoading = false }: RecentActivitiesPro
                 <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap">
                   <Clock className="h-3 w-3 mr-1" />
                   {typeof activity.createdAt === 'string' 
-                    ? activity.createdAt 
+                    ? formatDistanceToNow(new Date(activity.createdAt), { 
+                        addSuffix: true, 
+                        locale: ptBR 
+                      })
                     : formatDistanceToNow(new Date(activity.createdAt), { 
                         addSuffix: true, 
                         locale: ptBR 

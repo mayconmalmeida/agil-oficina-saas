@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabase';
 interface RecentActivity {
   id: string;
   type: 'client' | 'budget' | 'service' | 'appointment';
+  title: string;
   description: string;
+  createdAt: string;
   timestamp: string;
-  created_at: string;
 }
 
 export const useRecentActivities = () => {
@@ -36,9 +37,10 @@ export const useRecentActivities = () => {
             recentActivities.push({
               id: client.id,
               type: 'client',
+              title: `Cliente ${client.nome}`,
               description: `Cliente ${client.nome} foi adicionado`,
               timestamp: new Date(client.created_at).toLocaleString(),
-              created_at: client.created_at
+              createdAt: client.created_at
             });
           });
         }
@@ -56,9 +58,10 @@ export const useRecentActivities = () => {
             recentActivities.push({
               id: budget.id,
               type: 'budget',
+              title: `Orçamento para ${budget.cliente}`,
               description: `Orçamento criado para ${budget.cliente}`,
               timestamp: new Date(budget.created_at).toLocaleString(),
-              created_at: budget.created_at
+              createdAt: budget.created_at
             });
           });
         }
@@ -76,16 +79,17 @@ export const useRecentActivities = () => {
             recentActivities.push({
               id: service.id,
               type: 'service',
+              title: `Serviço ${service.nome}`,
               description: `Serviço ${service.nome} foi criado`,
               timestamp: new Date(service.created_at).toLocaleString(),
-              created_at: service.created_at
+              createdAt: service.created_at
             });
           });
         }
 
         // Ordenar por data de criação (mais recente primeiro) e limitar a 10
         const sortedActivities = recentActivities
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 10);
 
         setActivities(sortedActivities);

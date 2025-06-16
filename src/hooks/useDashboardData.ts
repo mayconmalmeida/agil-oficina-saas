@@ -10,9 +10,9 @@ import { useChartData } from '@/hooks/dashboard/useChartData';
 export type { WorkshopStatus, DashboardData } from '@/types/dashboardTypes';
 
 export const useDashboardData = (userId?: string) => {
-  const { counts, isLoading: countsLoading } = useDashboardCounts(userId);
-  const { activities, isLoading: activitiesLoading } = useRecentActivities(userId);
-  const { status, isLoading: statusLoading } = useWorkshopStatus(userId);
+  const { counts, isLoading: countsLoading } = useDashboardCounts();
+  const { activities, isLoading: activitiesLoading } = useRecentActivities();
+  const { status, isLoading: statusLoading } = useWorkshopStatus();
   const chartData = useChartData();
   
   const [data, setData] = useState<DashboardData>({
@@ -35,10 +35,18 @@ export const useDashboardData = (userId?: string) => {
   // Combine all data into a single state
   useEffect(() => {
     setData({
-      ...counts,
+      totalClients: counts.clientsCount,
+      totalServices: counts.servicesCount,
+      totalBudgets: counts.budgetsCount,
+      openServices: 0,
+      scheduledServices: counts.appointmentsCount,
       recentActivities: activities,
-      ...status,
-      ...chartData
+      workshopStatus: status.workshopStatus || 'trial',
+      daysRemaining: status.daysRemaining || 7,
+      planType: status.planType || 'basic',
+      monthlyRevenue: chartData.chartData || [],
+      topServices: [],
+      topProducts: []
     });
     
     // Consider loading complete when all data sources are loaded
