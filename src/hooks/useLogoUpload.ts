@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
@@ -15,14 +15,18 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  // Verificar se o bucket existe
+  // Atualizar logoUrl quando initialLogo mudar
+  useEffect(() => {
+    setLogoUrl(initialLogo);
+  }, [initialLogo]);
+
   const checkBucket = async () => {
     try {
       console.log("Verificando se o bucket 'logos' existe");
       
       const { data, error } = await supabase.storage
         .from('logos')
-        .list(userId || '');
+        .list('', { limit: 1 });
       
       if (error) {
         console.warn("Erro ao verificar bucket:", error.message);
@@ -37,7 +41,7 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     
-    // Validation
+    // Validação
     if (!file.type.startsWith('image/')) {
       toast({
         variant: "destructive",
@@ -60,11 +64,9 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
     setUploadProgress(0);
     
     try {
-      // Gera um nome simples para o arquivo
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
       const timeStamp = Date.now();
       const safeFileName = `logo-${timeStamp}.${fileExt}`;
-      // Caminho simplificado
       const filePath = `${userId}/${safeFileName}`;
       
       // Simulação de progresso
@@ -92,7 +94,7 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
         throw error;
       }
       
-      console.log("Upload concluído com sucesso, data:", data);
+      console.log("Upload concluído com sucesso:", data);
       
       // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
@@ -102,14 +104,17 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
       console.log("URL pública gerada:", publicUrl);
       
       setUploadProgress(100);
-      setLogoUrl(publicUrl);
+      
+      // Adicionar timestamp para forçar atualização da imagem no cache do browser
+      const urlWithTimestamp = `${publicUrl}?t=${timeStamp}`;
+      setLogoUrl(urlWithTimestamp);
       
       // Atualiza o perfil com o novo logo
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
-          logo_url: publicUrl 
-        } as any)
+          logo_url: urlWithTimestamp 
+        })
         .eq('id', userId);
       
       if (updateError) {
@@ -152,12 +157,10 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
         .from('profiles')
         .update({ 
           logo_url: null 
-        } as any)
+        })
         .eq('id', userId);
       
       if (error) throw error;
-      
-      // Não removemos o arquivo do storage para manter histórico
       
       setLogoUrl(null);
       
@@ -175,7 +178,7 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
         description: error.message || "Ocorreu um erro ao remover o logo.",
       });
     } finally {
-      setIsUploading(false);
+      setIsLoading(false);
     }
   };
 

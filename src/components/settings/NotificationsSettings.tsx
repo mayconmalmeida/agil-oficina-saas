@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,9 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Loader2, Bell, Mail, Volume2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useUserProfile, UserProfile } from '@/hooks/useUserProfile';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
-// Schema for notifications settings
 const notificationsSchema = z.object({
   notify_new_client: z.boolean().default(true),
   notify_approved_budget: z.boolean().default(true),
@@ -25,20 +24,32 @@ export type NotificationsFormValues = z.infer<typeof notificationsSchema>;
 const NotificationsSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { userProfile } = useUserProfile();
+  const { userProfile, userId } = useUserProfile();
   
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsSchema),
     defaultValues: {
-      notify_new_client: userProfile?.notify_new_client || true,
-      notify_approved_budget: userProfile?.notify_approved_budget || true,
-      notify_by_email: userProfile?.notify_by_email || false,
-      sound_enabled: userProfile?.sound_enabled || false
+      notify_new_client: true,
+      notify_approved_budget: true,
+      notify_by_email: false,
+      sound_enabled: false
     }
   });
   
+  // Atualizar valores do form quando o perfil carregar
+  useEffect(() => {
+    if (userProfile) {
+      form.reset({
+        notify_new_client: userProfile.notify_new_client ?? true,
+        notify_approved_budget: userProfile.notify_approved_budget ?? true,
+        notify_by_email: userProfile.notify_by_email ?? false,
+        sound_enabled: userProfile.sound_enabled ?? false
+      });
+    }
+  }, [userProfile, form]);
+  
   const onSubmit = async (values: NotificationsFormValues) => {
-    if (!userProfile?.id) {
+    if (!userId) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -57,8 +68,8 @@ const NotificationsSettings = () => {
           notify_approved_budget: values.notify_approved_budget,
           notify_by_email: values.notify_by_email,
           sound_enabled: values.sound_enabled
-        } as Partial<UserProfile>)
-        .eq('id', userProfile.id);
+        })
+        .eq('id', userId);
         
       if (error) throw error;
       
@@ -67,7 +78,7 @@ const NotificationsSettings = () => {
         description: "Suas preferências de notificações foram atualizadas.",
       });
       
-      // Store sound setting in localStorage to persist between sessions
+      // Armazenar configuração de som no localStorage
       localStorage.setItem('sound_enabled', values.sound_enabled ? 'true' : 'false');
       
     } catch (error: any) {
@@ -81,11 +92,30 @@ const NotificationsSettings = () => {
     }
   };
   
-  // Effect to play a test sound when sound setting is enabled
+  // Som de teste
   const playTestSound = () => {
-    const sound = new Audio('/notification.mp3');  // You'll need to add this audio file
-    sound.volume = 0.5;
-    sound.play().catch(err => console.log('Audio playback failed:', err));
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.1;
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.2);
+      
+      toast({
+        title: "Som de teste",
+        description: "Assim você será notificado sobre eventos importantes.",
+      });
+    } catch (error) {
+      console.log('Erro ao reproduzir som:', error);
+    }
   };
   
   return (
@@ -100,9 +130,9 @@ const NotificationsSettings = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Bell className="h-4 w-4 text-gray-500" />
+              <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <Bell className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="font-medium">Novo Cliente</p>
                     <p className="text-sm text-muted-foreground">
@@ -116,9 +146,9 @@ const NotificationsSettings = () => {
                 />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Bell className="h-4 w-4 text-gray-500" />
+              <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <Bell className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-medium">Orçamento Aprovado</p>
                     <p className="text-sm text-muted-foreground">
@@ -132,9 +162,9 @@ const NotificationsSettings = () => {
                 />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-gray-500" />
+              <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-5 w-5 text-purple-600" />
                   <div>
                     <p className="font-medium">Notificações por E-mail</p>
                     <p className="text-sm text-muted-foreground">
@@ -148,9 +178,9 @@ const NotificationsSettings = () => {
                 />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Volume2 className="h-4 w-4 text-gray-500" />
+              <div className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <Volume2 className="h-5 w-5 text-orange-600" />
                   <div>
                     <p className="font-medium">Tema Sonoro</p>
                     <p className="text-sm text-muted-foreground">
@@ -158,19 +188,30 @@ const NotificationsSettings = () => {
                     </p>
                   </div>
                 </div>
-                <Switch
-                  checked={form.watch('sound_enabled')}
-                  onCheckedChange={(checked) => {
-                    form.setValue('sound_enabled', checked);
-                    if (checked) {
-                      playTestSound();
-                    }
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={playTestSound}
+                    className="text-xs"
+                  >
+                    Testar
+                  </Button>
+                  <Switch
+                    checked={form.watch('sound_enabled')}
+                    onCheckedChange={(checked) => {
+                      form.setValue('sound_enabled', checked);
+                      if (checked) {
+                        playTestSound();
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
             
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

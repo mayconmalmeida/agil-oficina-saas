@@ -1,30 +1,65 @@
 
 import React from 'react';
+import DashboardStats from '@/components/dashboard/DashboardStats';
+import QuickActions from '@/components/dashboard/QuickActions';
+import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import RecentActivities from '@/components/dashboard/RecentActivities';
+import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
+import PlanInfoCard from '@/components/dashboard/PlanInfoCard';
+import OnboardingCard from '@/components/dashboard/OnboardingCard';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
+import { useDashboardCharts } from '@/hooks/useDashboardCharts';
+import { useNavigate } from 'react-router-dom';
 
-const DashboardPage = () => {
+const DashboardPage: React.FC = () => {
+  const { userProfile, loading } = useUserProfile();
+  const { isPremium, handlePremiumFeature } = usePremiumFeatures('premium', 30);
+  const { chartData, isLoading: chartsLoading } = useDashboardCharts();
+  const navigate = useNavigate();
+
+  const handleUpgradePlan = () => {
+    navigate('/dashboard/assinatura');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-oficina"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 px-2 sm:px-0">
-          Dashboard
-        </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-2 sm:px-0">
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Clientes</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-blue-600">0</p>
-          </div>
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Orçamentos</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-green-600">0</p>
-          </div>
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Serviços</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-purple-600">0</p>
-          </div>
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow border border-gray-200">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-2">Produtos</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-orange-600">0</p>
-          </div>
+    <div className="p-6 space-y-6">
+      <WelcomeHeader 
+        workshopName={userProfile?.nome_oficina}
+        logoUrl={userProfile?.logo_url}
+      />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3 space-y-6">
+          <DashboardStats />
+          <QuickActions />
+          
+          {/* Gráficos e Relatórios */}
+          <DashboardCharts
+            monthlyRevenue={chartData.monthlyRevenue}
+            topServices={chartData.topServices}
+            topClients={chartData.topClients}
+            serviceTypes={chartData.serviceTypes}
+            criticalStock={chartData.criticalStock}
+            isPremium={isPremium}
+            isLoading={chartsLoading}
+            onUpgradePlan={handleUpgradePlan}
+          />
+          
+          <RecentActivities />
+        </div>
+        
+        <div className="space-y-6">
+          <PlanInfoCard />
+          <OnboardingCard />
         </div>
       </div>
     </div>

@@ -16,11 +16,15 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
 
   return (
     <div className="flex items-center gap-4 mb-6">
-      <Avatar className="h-14 w-14 border-2 border-oficina">
+      <Avatar className="h-16 w-16 border-2 border-oficina">
         {logoUrl ? (
-          <AvatarImage src={logoUrl} alt={workshopName} />
+          <AvatarImage 
+            src={logoUrl} 
+            alt={workshopName} 
+            className="object-contain p-1"
+          />
         ) : (
-          <AvatarFallback className="bg-oficina text-white text-xl">
+          <AvatarFallback className="bg-oficina text-white text-xl font-bold">
             {initials}
           </AvatarFallback>
         )}
@@ -29,6 +33,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
         <h1 className="text-2xl font-bold text-gray-900">
           {workshopName}
         </h1>
+        <p className="text-gray-600">Bem-vindo ao seu painel de controle</p>
       </div>
     </div>
   );
