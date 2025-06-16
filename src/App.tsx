@@ -40,16 +40,6 @@ import AdminUsers from '@/pages/AdminUsers';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
-
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
 import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
 
@@ -59,11 +49,20 @@ import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import BackupPage from '@/pages/BackupPage';
 import SuportePage from '@/pages/SuportePage';
 
+// Create a client outside the component to prevent recreation
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        {/* CONTEXTO DE ADMIN SÓ NAS ROTAS /admin */}
         <Routes>
           {/* Public routes */}
           <Route
