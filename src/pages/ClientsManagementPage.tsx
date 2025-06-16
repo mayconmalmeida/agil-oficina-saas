@@ -134,7 +134,6 @@ const ClientsManagementPage: React.FC = () => {
                       onViewClient={handleViewClient}
                       onEditClient={handleEditClient}
                       onDeleteClient={handleDeleteClient}
-                      searchQuery={searchQuery}
                       onSelectClient={handleClientSelect}
                     />
                   </TabsContent>
