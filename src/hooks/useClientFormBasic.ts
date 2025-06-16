@@ -3,10 +3,19 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhone } from '@/utils/supabaseTypes';
-import { validateLicensePlate } from '@/utils/validationUtils';
+import { validateLicensePlate, validateCPF } from '@/utils/validationUtils';
 
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome do cliente é obrigatório'),
+  tipo: z.enum(['pf', 'pj']).default('pf'),
+  documento: z.string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true;
+      // For PF, validate CPF; for PJ, just check if it's not empty (CNPJ validation can be added later)
+      return val.length >= 11;
+    }, 'Documento inválido'),
   telefone: z.string()
     .min(1, 'Telefone é obrigatório')
     .refine((phone) => {
@@ -35,6 +44,8 @@ export const useClientFormBasic = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: '',
+      tipo: 'pf',
+      documento: '',
       telefone: '',
       email: '',
       veiculo: {

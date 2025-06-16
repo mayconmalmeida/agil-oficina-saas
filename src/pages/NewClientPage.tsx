@@ -22,6 +22,8 @@ const NewClientPage: React.FC = () => {
         .from('clients')
         .insert({
           nome: values.nome,
+          tipo: values.tipo,
+          documento: values.documento,
           telefone: values.telefone,
           email: values.email,
           veiculo: values.veiculo,
