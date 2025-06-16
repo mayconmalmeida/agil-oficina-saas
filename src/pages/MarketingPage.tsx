@@ -76,7 +76,11 @@ const MarketingPage: React.FC = () => {
       const campanhasTyped: Campanha[] = (campanhasData || []).map(campanha => ({
         ...campanha,
         tipo_envio: campanha.tipo_envio as 'whatsapp' | 'email',
-        status: campanha.status as 'agendado' | 'enviado' | 'falhou'
+        status: campanha.status as 'agendado' | 'enviado' | 'falhou',
+        tipo_arquivo: campanha.tipo_arquivo as 'imagem' | 'video' | undefined,
+        clientes_ids: campanha.clientes_ids || [],
+        arquivo_url: campanha.arquivo_url || undefined,
+        created_at: campanha.created_at || new Date().toISOString()
       }));
       
       setCampanhas(campanhasTyped);
