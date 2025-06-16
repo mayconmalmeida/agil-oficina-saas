@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { profileFormSchema, ProfileFormValues } from '@/components/profile/profileSchema';
+import { profileSchema, ProfileFormValues } from '@/components/profile/profileSchema';
 
 interface UseProfileFormProps {
   userId: string | undefined;
@@ -25,7 +25,7 @@ export const useProfileForm = ({
   const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
