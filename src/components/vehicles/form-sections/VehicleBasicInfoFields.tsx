@@ -1,22 +1,16 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { VehicleFormValues } from '@/hooks/useVehicleForm';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { formatLicensePlate, validateLicensePlate } from '@/utils/formatUtils';
-import { useVehicleLookup } from '@/hooks/useVehicleLookup';
-import { Search, Loader2 } from 'lucide-react';
+import { formatLicensePlate } from '@/utils/formatUtils';
 
 interface VehicleBasicInfoFieldsProps {
   form: UseFormReturn<VehicleFormValues>;
 }
 
 const VehicleBasicInfoFields: React.FC<VehicleBasicInfoFieldsProps> = ({ form }) => {
-  const { isSearching, searchVehicleData } = useVehicleLookup(form);
-  const lastSearchedPlate = useRef<string>('');
-  
-  // Format license plate
   const placa = form.watch('placa');
   
   useEffect(() => {
@@ -28,39 +22,6 @@ const VehicleBasicInfoFields: React.FC<VehicleBasicInfoFieldsProps> = ({ form })
     }
   }, [placa, form]);
 
-  // Auto search when plate is complete and valid
-  useEffect(() => {
-    if (placa && !isSearching) {
-      const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
-      
-      // Check if plate is complete (7 characters), valid, and not already searched
-      if (cleanPlaca.length === 7 && 
-          validateLicensePlate(placa) && 
-          lastSearchedPlate.current !== placa) {
-        
-        console.log('🚗 Placa completa detectada:', placa);
-        lastSearchedPlate.current = placa;
-        
-        // Add delay to avoid too many requests while typing
-        const timeoutId = setTimeout(() => {
-          console.log('⏰ Executando busca automática para placa:', placa);
-          searchVehicleData(placa);
-        }, 1000);
-        
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [placa, searchVehicleData, isSearching]);
-
-  // Handle manual search button click
-  const handleManualSearch = () => {
-    if (placa && validateLicensePlate(placa)) {
-      console.log('🔎 Busca manual iniciada para placa:', placa);
-      lastSearchedPlate.current = placa;
-      searchVehicleData(placa);
-    }
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Placa */}
@@ -69,37 +30,16 @@ const VehicleBasicInfoFields: React.FC<VehicleBasicInfoFieldsProps> = ({ form })
         name="placa"
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-2">
-              Placa *
-              {isSearching && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
-              {!isSearching && placa && validateLicensePlate(placa) && (
-                <button
-                  type="button"
-                  onClick={handleManualSearch}
-                  className="text-blue-500 hover:text-blue-700"
-                  disabled={isSearching}
-                  title="Buscar dados do veículo"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-              )}
-            </FormLabel>
+            <FormLabel>Placa *</FormLabel>
             <FormControl>
               <Input 
                 placeholder="ABC-1234 ou ABC1D23" 
                 {...field} 
                 maxLength={8}
-                disabled={isSearching}
                 style={{ textTransform: 'uppercase' }}
               />
             </FormControl>
             <FormMessage />
-            {isSearching && (
-              <p className="text-xs text-blue-600">Buscando dados do veículo...</p>
-            )}
-            {placa && !validateLicensePlate(placa) && placa.replace(/[^A-Za-z0-9]/g, '').length >= 7 && (
-              <p className="text-xs text-red-600">Formato de placa inválido. Use ABC-1234 ou ABC1D23</p>
-            )}
           </FormItem>
         )}
       />

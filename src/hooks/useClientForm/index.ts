@@ -1,11 +1,12 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clientFormSchema, ClientFormValues } from './validation';
 import { useAddressLookup } from './addressLookup';
 import { useFormatHandlers } from './formatHandlers';
 import { useClientData } from './clientData';
+import { debounce } from '@/utils/debounce';
 
 interface UseClientFormProps {
   onSave: () => void;
@@ -22,6 +23,7 @@ export const useClientForm = ({
 }: UseClientFormProps) => {
   const [activeTab, setActiveTab] = useState<string>('cliente');
   const hasLoadedData = useRef(false);
+  const isFormattingRef = useRef(false);
   
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -62,6 +64,53 @@ export const useClientForm = ({
     isEditing
   );
   
+  // Debounced formatting functions
+  const debouncedDocumentoFormat = useCallback(
+    debounce((doc: string) => {
+      if (!isFormattingRef.current) {
+        isFormattingRef.current = true;
+        handleDocumentoFormat(doc);
+        setTimeout(() => {
+          isFormattingRef.current = false;
+        }, 100);
+      }
+    }, 300),
+    [handleDocumentoFormat]
+  );
+
+  const debouncedCepFormat = useCallback(
+    debounce((cepValue: string) => {
+      if (!isFormattingRef.current) {
+        isFormattingRef.current = true;
+        handleCepFormat(cepValue);
+        setTimeout(() => {
+          isFormattingRef.current = false;
+        }, 100);
+      }
+    }, 300),
+    [handleCepFormat]
+  );
+
+  const debouncedPlacaFormat = useCallback(
+    debounce((placaValue: string) => {
+      if (!isFormattingRef.current) {
+        isFormattingRef.current = true;
+        handlePlacaFormat(placaValue);
+        setTimeout(() => {
+          isFormattingRef.current = false;
+        }, 100);
+      }
+    }, 300),
+    [handlePlacaFormat]
+  );
+
+  const debouncedAddressLookup = useCallback(
+    debounce(() => {
+      fetchAddressData();
+    }, 500),
+    [fetchAddressData]
+  );
+  
   // Fetch client data if in edit mode (only once)
   useEffect(() => {
     if (isEditing && clientId && !hasLoadedData.current) {
@@ -70,57 +119,41 @@ export const useClientForm = ({
     }
   }, [isEditing, clientId, loadClientData]);
   
-  // Auto-lookup address when CEP is fully entered (with debounce)
+  // Auto-lookup address when CEP is fully entered
   useEffect(() => {
-    if (cep && cep.length === 9) {
-      const timeoutId = setTimeout(() => {
-        fetchAddressData();
-      }, 500);
-      
-      return () => clearTimeout(timeoutId);
+    if (cep && cep.length === 9 && !isFormattingRef.current) {
+      debouncedAddressLookup();
     }
-  }, [cep, fetchAddressData]);
+  }, [cep, debouncedAddressLookup]);
   
-  // Format document (CPF) - with debounce to prevent loops
+  // Format document (CPF)
   useEffect(() => {
-    if (documento) {
-      const timeoutId = setTimeout(() => {
-        handleDocumentoFormat(documento);
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+    if (documento && !isFormattingRef.current) {
+      debouncedDocumentoFormat(documento);
     }
-  }, [documento, handleDocumentoFormat]);
+  }, [documento, debouncedDocumentoFormat]);
   
-  // Format CEP - with debounce to prevent loops
+  // Format CEP
   useEffect(() => {
-    if (cep) {
-      const timeoutId = setTimeout(() => {
-        handleCepFormat(cep);
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+    if (cep && !isFormattingRef.current) {
+      debouncedCepFormat(cep);
     }
-  }, [cep, handleCepFormat]);
+  }, [cep, debouncedCepFormat]);
   
-  // Format license plate - with debounce to prevent loops
+  // Format license plate - removed auto search
   useEffect(() => {
-    if (placa) {
-      const timeoutId = setTimeout(() => {
-        handlePlacaFormat(placa);
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
+    if (placa && !isFormattingRef.current) {
+      debouncedPlacaFormat(placa);
     }
-  }, [placa, handlePlacaFormat]);
+  }, [placa, debouncedPlacaFormat]);
   
-  const handleNextTab = () => {
+  const handleNextTab = useCallback(() => {
     setActiveTab('veiculo');
-  };
+  }, []);
   
-  const handlePrevTab = () => {
+  const handlePrevTab = useCallback(() => {
     setActiveTab('cliente');
-  };
+  }, []);
   
   const onSubmit = async (values: ClientFormValues) => {
     const success = await saveClientData(values);

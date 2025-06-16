@@ -9,7 +9,7 @@ export const useFormatHandlers = (form: UseFormReturn<ClientFormValues>) => {
     if (documento) {
       const formattedCPF = formatCPF(documento);
       if (formattedCPF !== documento) {
-        form.setValue('documento', formattedCPF);
+        form.setValue('documento', formattedCPF, { shouldValidate: false });
       }
     }
   }, [form]);
@@ -18,7 +18,7 @@ export const useFormatHandlers = (form: UseFormReturn<ClientFormValues>) => {
     if (cep) {
       const formattedCEP = formatCEP(cep);
       if (formattedCEP !== cep) {
-        form.setValue('cep', formattedCEP);
+        form.setValue('cep', formattedCEP, { shouldValidate: false });
       }
     }
   }, [form]);
@@ -27,7 +27,7 @@ export const useFormatHandlers = (form: UseFormReturn<ClientFormValues>) => {
     if (placa) {
       const formattedPlate = formatLicensePlate(placa);
       if (formattedPlate !== placa) {
-        form.setValue('veiculo.placa', formattedPlate);
+        form.setValue('veiculo.placa', formattedPlate, { shouldValidate: false });
       }
     }
   }, [form]);
