@@ -26,15 +26,31 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
     }
   }, [placa, form]);
 
-  // Handle plate field blur to trigger automatic search
-  const handlePlateBlur = () => {
+  // Busca automática quando a placa estiver completa
+  useEffect(() => {
     if (placa) {
-      // Remove special characters for validation
       const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
       
-      // Check if plate is complete (7 characters for Brazilian plates)
+      // Verifica se a placa está completa (7 caracteres)
       if (cleanPlaca.length === 7) {
-        console.log('Iniciando busca automática ao sair do campo placa:', placa);
+        // Aguarda um pequeno delay para evitar muitas requisições
+        const timeoutId = setTimeout(() => {
+          console.log('Iniciando busca automática para placa:', placa);
+          searchVehicleData(placa);
+        }, 500);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [placa, searchVehicleData]);
+
+  // Handle plate field blur como fallback
+  const handlePlateBlur = () => {
+    if (placa) {
+      const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
+      
+      if (cleanPlaca.length === 7) {
+        console.log('Busca por blur do campo placa:', placa);
         searchVehicleData(placa);
       }
     }

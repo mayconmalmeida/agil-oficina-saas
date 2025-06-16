@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { searchVehicleByPlate } from '@/services/vehicleDataService';
+import { searchVehicleByPlateReal } from '@/services/realVehicleDataService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useVehicleLookup = (form: UseFormReturn<any>) => {
@@ -13,17 +13,26 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
 
     setIsSearching(true);
     try {
-      const vehicleData = await searchVehicleByPlate(plate);
+      const vehicleData = await searchVehicleByPlateReal(plate);
       
       if (vehicleData) {
         // Atualiza os campos do formulário
         form.setValue('veiculo.marca', vehicleData.marca);
         form.setValue('veiculo.modelo', vehicleData.modelo);
         form.setValue('veiculo.ano', vehicleData.ano);
+        if (vehicleData.cor) {
+          form.setValue('veiculo.cor', vehicleData.cor);
+        }
         
         toast({
           title: "Dados encontrados",
           description: `Veículo: ${vehicleData.marca} ${vehicleData.modelo} ${vehicleData.ano}`,
+        });
+      } else {
+        toast({
+          title: "Dados não encontrados",
+          description: "Não foi possível encontrar dados para esta placa. Preencha manualmente.",
+          variant: "default"
         });
       }
     } catch (error) {

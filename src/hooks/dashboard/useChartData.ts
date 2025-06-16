@@ -1,39 +1,66 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
-type ChartData = {
-  monthlyRevenue: { month: string; value: number }[];
-  topServices: { name: string; value: number }[];
-  topProducts: { name: string; value: number }[];
-};
+interface ChartData {
+  name: string;
+  value: number;
+}
 
 export const useChartData = () => {
-  // This is mock data for now - in a real implementation this would
-  // likely come from API calls or database queries
-  const [chartData] = useState<ChartData>({
-    monthlyRevenue: [
-      { month: 'Jan', value: 5000 },
-      { month: 'Fev', value: 7500 },
-      { month: 'Mar', value: 12000 },
-      { month: 'Abr', value: 10000 },
-      { month: 'Mai', value: 9000 },
-      { month: 'Jun', value: 11000 }
-    ],
-    topServices: [
-      { name: 'Troca de Óleo', value: 15000 },
-      { name: 'Revisão Geral', value: 12000 },
-      { name: 'Alinhamento', value: 8000 },
-      { name: 'Balanceamento', value: 6000 },
-      { name: 'Troca de Pastilhas', value: 4500 }
-    ],
-    topProducts: [
-      { name: 'Óleo Motor', value: 8000 },
-      { name: 'Filtro de Ar', value: 3500 },
-      { name: 'Pastilhas de Freio', value: 7000 },
-      { name: 'Filtro de Óleo', value: 2000 },
-      { name: 'Pneus', value: 12000 }
-    ]
-  });
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  return chartData;
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Buscar dados reais dos últimos 6 meses
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        // Buscar orçamentos por mês
+        const { data: budgets } = await supabase
+          .from('orcamentos')
+          .select('valor_total, created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', sixMonthsAgo.toISOString());
+
+        // Agrupar por mês
+        const monthlyData: { [key: string]: number } = {};
+        
+        if (budgets) {
+          budgets.forEach(budget => {
+            const date = new Date(budget.created_at);
+            const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+            
+            if (!monthlyData[monthKey]) {
+              monthlyData[monthKey] = 0;
+            }
+            monthlyData[monthKey] += Number(budget.valor_total) || 0;
+          });
+        }
+
+        // Converter para formato do gráfico
+        const formattedData: ChartData[] = Object.entries(monthlyData).map(([month, value]) => ({
+          name: month,
+          value
+        }));
+
+        // Se não houver dados, retornar array vazio
+        setChartData(formattedData);
+      } catch (error) {
+        console.error('Erro ao buscar dados do gráfico:', error);
+        setChartData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChartData();
+  }, []);
+
+  return { chartData, isLoading };
 };
