@@ -14,10 +14,15 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
   const isRestoring = useRef(false);
 
   useEffect(() => {
+    // Aguardar a autenticação estar completamente carregada
+    if (isLoadingAuth) {
+      console.log('RouteManager: Aguardando carregamento da autenticação...');
+      return;
+    }
+
     // Múltiplas proteções contra execução desnecessária
     if (hasTriedRestore.current || 
         isRestoring.current || 
-        isLoadingAuth || 
         !user) {
       return;
     }
@@ -27,7 +32,7 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
     
     console.log('RouteManager: Iniciando restauração de rota');
     
-    // Delay maior para garantir que tudo esteja carregado
+    // Delay para garantir que tudo esteja carregado
     const timer = setTimeout(() => {
       try {
         restoreLastRoute();
@@ -36,7 +41,7 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
       } finally {
         isRestoring.current = false;
       }
-    }, 1500); // Aumentado para 1.5s
+    }, 1000); // Reduzido para 1s
 
     return () => {
       clearTimeout(timer);
