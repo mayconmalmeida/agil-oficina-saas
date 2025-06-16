@@ -21,10 +21,6 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
   form, 
   saveSuccess = false 
 }) => {
-  // Watch vehicle fields to debug
-  const vehicleData = form.watch('veiculo');
-  console.log('VehicleInfoSection - Dados do veículo:', vehicleData);
-
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
@@ -161,14 +157,6 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
           )}
         />
       </div>
-
-      {/* Debug info - remover em produção */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
-          <strong>Debug - Dados do veículo:</strong>
-          <pre>{JSON.stringify(vehicleData, null, 2)}</pre>
-        </div>
-      )}
     </div>
   );
 };

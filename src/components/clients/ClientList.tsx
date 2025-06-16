@@ -82,47 +82,6 @@ const ClientList: React.FC<ClientListProps> = ({
     );
   }, [clients, searchTerm]);
 
-  // Função para formatar informações do veículo
-  const formatVehicleInfo = (client: Client) => {
-    // Verificar se há dados estruturados do veículo
-    if (client.marca && client.modelo) {
-      return {
-        brand: client.marca,
-        model: client.modelo,
-        year: client.ano || '',
-        plate: client.placa || 'Não informado',
-        hasStructuredData: true,
-        displayName: `${client.marca} ${client.modelo}`
-      };
-    }
-    
-    // Fallback para o campo veiculo antigo
-    if (client.veiculo) {
-      const vehicleText = client.veiculo.trim();
-      const plateMatch = vehicleText.match(/Placa:\s*([A-Z0-9-]+)/i);
-      const plate = plateMatch ? plateMatch[1] : client.placa || 'Não informado';
-      const vehiclePart = vehicleText.replace(/,?\s*Placa:.*$/i, '').trim();
-      
-      return {
-        brand: '',
-        model: '',
-        year: '',
-        plate: plate,
-        hasStructuredData: false,
-        displayName: vehiclePart || 'Veículo não especificado'
-      };
-    }
-    
-    return {
-      brand: '',
-      model: '',
-      year: '',
-      plate: 'Não informado',
-      hasStructuredData: false,
-      displayName: 'Não informado'
-    };
-  };
-
   if (isLoading) {
     return (
       <CardContent className="p-6">
@@ -165,8 +124,6 @@ const ClientList: React.FC<ClientListProps> = ({
     <CardContent className="p-0">
       <div className="divide-y">
         {filteredClients.map((client) => {
-          const vehicleInfo = formatVehicleInfo(client);
-          
           return (
             <div key={client.id} className="p-6 hover:bg-gray-50 transition-colors">
               <div className="flex items-start justify-between">
@@ -200,64 +157,6 @@ const ClientList: React.FC<ClientListProps> = ({
                         <span className="truncate">{client.email}</span>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Informações do veículo */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Car className="h-5 w-5 text-blue-600" />
-                        </div>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium text-gray-900">
-                            {vehicleInfo.displayName}
-                          </h4>
-                          {!vehicleInfo.hasStructuredData && vehicleInfo.displayName !== 'Não informado' && (
-                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-600 border-orange-200">
-                              Legado
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {vehicleInfo.hasStructuredData && (
-                            <>
-                              {vehicleInfo.brand && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-500">Marca:</span>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {vehicleInfo.brand}
-                                  </Badge>
-                                </div>
-                              )}
-                              
-                              {vehicleInfo.year && (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-gray-500">Ano:</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {vehicleInfo.year}
-                                  </Badge>
-                                </div>
-                              )}
-                            </>
-                          )}
-                          
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-gray-500">Placa:</span>
-                            <Badge 
-                              variant={vehicleInfo.plate === 'Não informado' ? 'destructive' : 'default'} 
-                              className="text-xs font-mono"
-                            >
-                              {vehicleInfo.plate}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
                 
