@@ -43,7 +43,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // NOVA VALIDAÇÃO DO TRIAL DE 7 DIAS BASEADA NA FUNÇÃO DO BANCO
+  // VALIDAÇÃO CORRIGIDA DO TRIAL DE 7 DIAS BASEADA NA trial_started_at
   const authUser = user as any;
   
   console.log('Validando acesso do usuário:', {
@@ -52,65 +52,26 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     trial_started_at: authUser.trial_started_at
   });
 
-  // Verificar se o trial ainda está ativo usando a função do banco
-  React.useEffect(() => {
-    const checkTrialStatus = async () => {
-      if (!authUser.id) return;
-
-      try {
-        const { data, error } = await supabase.rpc('is_trial_active', {
-          user_profile_id: authUser.id
-        });
-
-        if (error) {
-          console.error('Erro ao verificar status do trial:', error);
-          return;
-        }
-
-        console.log('Status do trial:', data);
-        
-        // Se o trial expirou e o plano é Essencial, bloquear acesso
-        if (!data && authUser.plano === 'Essencial') {
-          console.log('Trial expirou para plano Essencial, bloqueando acesso');
-          // Renderizar tela de assinatura expirada será feito no return abaixo
-        }
-      } catch (error) {
-        console.error('Erro ao verificar trial:', error);
-      }
-    };
-
-    checkTrialStatus();
-  }, [authUser.id, authUser.plano]);
-
   // Verificar se o plano é Premium e permitir acesso
   if (authUser.plano === 'Premium') {
-    console.log('Usuário com plano Premium, permitindo acesso');
-    return <>{children}</>;
-  }
-
-  // Para plano Essencial, verificar se ainda está no trial
-  if (authUser.plano === 'Essencial') {
-    // Por enquanto, assumir que se chegou até aqui, o trial ainda está ativo
-    // A verificação real será feita pelo useEffect acima
-    const trialStarted = authUser.trial_started_at ? new Date(authUser.trial_started_at) : null;
-    const now = new Date();
-    
-    if (trialStarted) {
+    // Para plano Premium, verificar se ainda está no trial de 7 dias
+    if (authUser.trial_started_at) {
+      const trialStarted = new Date(authUser.trial_started_at);
+      const now = new Date();
       const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
-      const isTrialActive = now <= trialEnd;
       
-      console.log('Verificação de trial local:', {
-        trialStarted,
-        trialEnd,
-        now,
-        isTrialActive
+      console.log('Verificação de trial Premium:', {
+        trialStarted: trialStarted.toISOString(),
+        trialEnd: trialEnd.toISOString(),
+        now: now.toISOString(),
+        isTrialActive: now <= trialEnd
       });
       
-      if (isTrialActive) {
-        console.log('Trial ainda ativo, permitindo acesso');
+      if (now <= trialEnd) {
+        console.log('Trial Premium ainda ativo, permitindo acesso');
         return <>{children}</>;
       } else {
-        console.log('Trial expirou, bloqueando acesso');
+        console.log('Trial Premium expirou, bloqueando acesso');
         return (
           <SubscriptionExpiredCard 
             hasSubscription={false}
@@ -118,6 +79,52 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           />
         );
       }
+    } else {
+      // Se não tem trial_started_at, é um erro - não deveria acontecer
+      console.log('Plano Premium sem trial_started_at, bloqueando acesso');
+      return (
+        <SubscriptionExpiredCard 
+          hasSubscription={false}
+          onLogout={handleLogout} 
+        />
+      );
+    }
+  }
+
+  // Para plano Essencial, verificar se ainda está no trial
+  if (authUser.plano === 'Essencial') {
+    if (authUser.trial_started_at) {
+      const trialStarted = new Date(authUser.trial_started_at);
+      const now = new Date();
+      const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
+      
+      console.log('Verificação de trial Essencial:', {
+        trialStarted: trialStarted.toISOString(),
+        trialEnd: trialEnd.toISOString(),
+        now: now.toISOString(),
+        isTrialActive: now <= trialEnd
+      });
+      
+      if (now <= trialEnd) {
+        console.log('Trial Essencial ainda ativo, permitindo acesso');
+        return <>{children}</>;
+      } else {
+        console.log('Trial Essencial expirou, bloqueando acesso');
+        return (
+          <SubscriptionExpiredCard 
+            hasSubscription={false}
+            onLogout={handleLogout} 
+          />
+        );
+      }
+    } else {
+      console.log('Plano Essencial sem trial_started_at, bloqueando acesso');
+      return (
+        <SubscriptionExpiredCard 
+          hasSubscription={false}
+          onLogout={handleLogout} 
+        />
+      );
     }
   }
 

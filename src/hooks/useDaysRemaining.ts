@@ -28,54 +28,46 @@ export const useDaysRemaining = () => {
       }
 
       try {
-        // Buscar dados da assinatura
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('user_subscriptions')
-          .select('ends_at, trial_ends_at, status, plan_type')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (subscriptionError) {
-          console.warn('Erro ao buscar assinatura:', subscriptionError);
-        }
-
-        // Buscar dados do perfil como fallback
-        const { data: profileData } = await supabase
+        // Buscar dados do perfil para obter trial_started_at e plano
+        const { data: profileData, error } = await supabase
           .from('profiles')
-          .select('trial_ends_at, plano')
+          .select('trial_started_at, plano')
           .eq('id', user.id)
           .single();
+
+        if (error) {
+          console.error('Erro ao buscar perfil:', error);
+          setLoading(false);
+          return;
+        }
 
         const hoje = new Date();
         let dias = 0;
         let tipoPlano: DaysRemainingData['tipoPlano'] = 'sem_plano';
 
-        // Determinar tipo de plano e dias restantes
-        if (subscriptionData) {
-          if (subscriptionData.status === 'trialing' && subscriptionData.trial_ends_at) {
-            const trialEnd = new Date(subscriptionData.trial_ends_at);
-            dias = Math.ceil((trialEnd.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+        // Calcular dias restantes baseado na trial_started_at
+        if (profileData?.trial_started_at) {
+          const trialStart = new Date(profileData.trial_started_at);
+          const trialEnd = new Date(trialStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+          
+          // Calcular dias restantes
+          const diffTime = trialEnd.getTime() - hoje.getTime();
+          dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          // Determinar tipo de plano
+          if (profileData.plano === 'Premium') {
             tipoPlano = 'trial';
-          } else if (subscriptionData.status === 'active' && subscriptionData.ends_at) {
-            const subscriptionEnd = new Date(subscriptionData.ends_at);
-            dias = Math.ceil((subscriptionEnd.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-            
-            if (subscriptionData.plan_type?.includes('anual')) {
-              tipoPlano = 'anual';
-            } else if (subscriptionData.plan_type?.includes('mensal')) {
-              tipoPlano = 'mensal';
-            } else {
-              tipoPlano = 'ativo';
-            }
-          }
-        } else if (profileData?.trial_ends_at) {
-          const trialEnd = new Date(profileData.trial_ends_at);
-          if (trialEnd > hoje) {
-            dias = Math.ceil((trialEnd.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+          } else if (profileData.plano === 'Essencial') {
             tipoPlano = 'trial';
           }
+          
+          console.log('Cálculo de dias restantes:', {
+            trialStart: trialStart.toISOString(),
+            trialEnd: trialEnd.toISOString(),
+            hoje: hoje.toISOString(),
+            diasCalculados: dias,
+            plano: profileData.plano
+          });
         }
 
         const diasRestantes = Math.max(0, dias);
