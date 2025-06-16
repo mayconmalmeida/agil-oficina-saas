@@ -21,9 +21,22 @@ export const callAI = async (type: 'diagnostico' | 'suporte', message: string): 
       body: { type, message }
     });
 
+    console.log('Resposta da função:', data);
+    console.log('Erro da função:', error);
+
     if (error) {
       console.error('Erro na função de IA:', error);
-      throw error;
+      return {
+        success: false,
+        error: `Erro na função: ${error.message}`
+      };
+    }
+
+    if (!data) {
+      return {
+        success: false,
+        error: 'Nenhuma resposta recebida da IA'
+      };
     }
 
     return data;
@@ -31,7 +44,7 @@ export const callAI = async (type: 'diagnostico' | 'suporte', message: string): 
     console.error('Erro ao chamar IA:', error);
     return {
       success: false,
-      error: 'Erro ao conectar com a IA. Tente novamente.'
+      error: `Erro de conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
     };
   }
 };

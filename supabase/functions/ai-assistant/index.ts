@@ -13,11 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const { type, message } = await req.json()
+    console.log('Recebendo requisição para ai-assistant')
+    
+    const requestBody = await req.json()
+    console.log('Body da requisição:', requestBody)
+    
+    const { type, message } = requestBody
+    
+    if (!type || !message) {
+      throw new Error('Parâmetros type e message são obrigatórios')
+    }
+    
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    console.log('OpenAI API Key presente:', !!openAIApiKey)
 
     if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured')
+      throw new Error('Chave da API OpenAI não configurada. Configure OPENAI_API_KEY nos secrets do Supabase.')
     }
 
     let systemPrompt = ''
@@ -34,6 +45,8 @@ serve(async (req) => {
       Seja conciso, direto e útil. Se não souber algo específico, oriente o usuário a entrar em contato com o suporte técnico.`
     }
 
+    console.log('Fazendo chamada para OpenAI...')
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -51,37 +64,48 @@ serve(async (req) => {
       }),
     })
 
+    console.log('Status da resposta OpenAI:', response.status)
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error('Erro da OpenAI:', errorText)
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
+    console.log('Resposta da OpenAI recebida')
+    
     const aiResponse = data.choices[0].message.content
 
     if (type === 'diagnostico') {
       // Dividir a resposta em causas individuais
       const causes = aiResponse.split('\n').filter((line: string) => line.trim().length > 0)
-      return new Response(JSON.stringify({ 
+      const result = { 
         success: true, 
         causes: causes 
-      }), {
+      }
+      console.log('Retornando resultado de diagnóstico:', result)
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     } else {
-      return new Response(JSON.stringify({ 
+      const result = { 
         success: true, 
         answer: aiResponse 
-      }), {
+      }
+      console.log('Retornando resultado de suporte:', result)
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
   } catch (error) {
     console.error('Error in ai-assistant function:', error)
-    return new Response(JSON.stringify({ 
+    const errorResponse = { 
       success: false, 
-      error: error.message 
-    }), {
+      error: error.message || 'Erro interno do servidor'
+    }
+    return new Response(JSON.stringify(errorResponse), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
