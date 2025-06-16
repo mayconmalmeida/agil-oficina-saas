@@ -35,6 +35,29 @@ export const validateLicensePlate = (plate: string): boolean => {
   return oldFormat.test(cleanPlate) || newFormat.test(cleanPlate);
 };
 
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+export const formatPhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-numeric characters
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Apply phone mask: (00) 00000-0000 or (00) 0000-0000
+  if (cleanPhone.length === 11) {
+    return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  } else if (cleanPhone.length === 10) {
+    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  
+  return cleanPhone;
+};
+
 export const formatCPF = (cpf: string): string => {
   if (!cpf) return '';
   
