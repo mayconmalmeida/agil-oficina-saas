@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,15 @@ const MarketingPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (campanhasError) throw campanhasError;
-      setCampanhas(campanhasData || []);
+      
+      // Converter os dados do banco para o tipo correto
+      const campanhasTyped: Campanha[] = (campanhasData || []).map(campanha => ({
+        ...campanha,
+        tipo_envio: campanha.tipo_envio as 'whatsapp' | 'email',
+        status: campanha.status as 'agendado' | 'enviado' | 'falhou'
+      }));
+      
+      setCampanhas(campanhasTyped);
 
     } catch (error: any) {
       toast({

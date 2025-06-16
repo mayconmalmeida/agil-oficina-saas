@@ -51,6 +51,13 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
     window.location.href = href;
   };
 
+  // Determinar o nome do plano atual
+  const getCurrentPlanName = () => {
+    if (subscriptionStatus.isPremium) return 'Premium';
+    if (subscriptionStatus.isEssencial) return 'Essencial';
+    return 'Gratuito';
+  };
+
   return (
     <div className="flex flex-col h-full bg-white shadow-sm">
       <div className="flex items-center justify-center h-16 px-4 border-b">
@@ -103,7 +110,7 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
             {userProfile?.nome_oficina || 'Oficina'}
           </div>
           <div className="text-xs text-blue-700">
-            Plano: {subscriptionStatus.currentPlan}
+            Plano: {getCurrentPlanName()}
           </div>
           {subscriptionStatus.isTrialActive && (
             <div className="text-xs text-orange-600 mt-1">
