@@ -19,6 +19,7 @@ interface UserProfile {
   role?: string;
   whatsapp_suporte?: string;
   logo_url?: string;
+  plano?: string;
 }
 
 export const useUserProfile = () => {
