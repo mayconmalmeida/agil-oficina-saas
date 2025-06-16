@@ -30,11 +30,10 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
       <div className="flex items-center flex-shrink-0 px-4">
         <Link to="/" className="flex items-center">
           <img 
-            src="/lovable-uploads/4daf69fb-edaf-4fe1-8d3c-8ab243d67c06.png" 
+            src="/lovable-uploads/9fef4ca2-faa7-4cfe-b8d1-20c95046fdb3.png" 
             alt="OficinaGO"
-            className="h-8 w-8 mr-2"
+            className="h-8 w-auto"
           />
-          <span className="text-xl font-bold text-oficina-dark">OficinaGO</span>
         </Link>
       </div>
       {/* Status da assinatura */}

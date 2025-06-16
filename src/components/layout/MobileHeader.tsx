@@ -22,11 +22,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ onMenuClick, onLogout }) =>
         <div>
           <Link to="/" className="flex items-center">
             <img 
-              src="/lovable-uploads/4daf69fb-edaf-4fe1-8d3c-8ab243d67c06.png" 
+              src="/lovable-uploads/9fef4ca2-faa7-4cfe-b8d1-20c95046fdb3.png" 
               alt="OficinaGO"
-              className="h-6 w-6 mr-2"
+              className="h-6 w-auto"
             />
-            <span className="text-lg font-bold text-oficina-dark">OficinaGO</span>
           </Link>
         </div>
         <Button
