@@ -12,7 +12,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <a href="#" className="flex items-center">
-            <img alt="OficinaGO" src="/lovable-uploads/0e839f4d-0752-4628-84f5-9f410ef13996.png" className="h-[160px] w-[240px] object-contain mx-auto" />
+            <img alt="OficinaGO" src="/lovable-uploads/0e839f4d-0752-4628-84f5-9f410ef13996.png" className="h-[120px] w-[200px] object-contain mx-auto" />
           </a>
         </div>
 
