@@ -7,12 +7,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { formatCNPJ, formatCEP } from '@/utils/formatUtils';
 
 interface Supplier {
   id: string;
   name: string;
   phone: string;
   email: string;
+  cnpj: string;
+  address: string;
+  cep: string;
+  city: string;
+  state: string;
   created_at: string;
 }
 
@@ -21,8 +27,14 @@ const SuppliersPage: React.FC = () => {
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    cnpj: '',
+    address: '',
+    cep: '',
+    city: '',
+    state: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,12 +55,53 @@ const SuppliersPage: React.FC = () => {
     }
   };
 
-  const addSupplier = async () => {
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
     if (!newSupplier.name.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    }
+
+    if (!newSupplier.phone.trim()) {
+      newErrors.phone = 'Telefone é obrigatório';
+    }
+
+    if (!newSupplier.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(newSupplier.email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    if (!newSupplier.cnpj.trim()) {
+      newErrors.cnpj = 'CNPJ é obrigatório';
+    }
+
+    if (!newSupplier.address.trim()) {
+      newErrors.address = 'Endereço é obrigatório';
+    }
+
+    if (!newSupplier.cep.trim()) {
+      newErrors.cep = 'CEP é obrigatório';
+    }
+
+    if (!newSupplier.city.trim()) {
+      newErrors.city = 'Cidade é obrigatória';
+    }
+
+    if (!newSupplier.state.trim()) {
+      newErrors.state = 'Estado é obrigatório';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const addSupplier = async () => {
+    if (!validateForm()) {
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Nome do fornecedor é obrigatório.",
+        title: "Erro de validação",
+        description: "Por favor, preencha todos os campos obrigatórios.",
       });
       return;
     }
@@ -63,6 +116,11 @@ const SuppliersPage: React.FC = () => {
           name: newSupplier.name.trim(),
           phone: newSupplier.phone.trim(),
           email: newSupplier.email.trim(),
+          cnpj: newSupplier.cnpj.trim(),
+          address: newSupplier.address.trim(),
+          cep: newSupplier.cep.trim(),
+          city: newSupplier.city.trim(),
+          state: newSupplier.state.trim(),
           user_id: user.id
         });
 
@@ -73,7 +131,17 @@ const SuppliersPage: React.FC = () => {
         description: `${newSupplier.name} foi adicionado com sucesso.`,
       });
 
-      setNewSupplier({ name: '', phone: '', email: '' });
+      setNewSupplier({
+        name: '',
+        phone: '',
+        email: '',
+        cnpj: '',
+        address: '',
+        cep: '',
+        city: '',
+        state: ''
+      });
+      setErrors({});
       fetchSuppliers();
     } catch (error: any) {
       toast({
@@ -81,6 +149,53 @@ const SuppliersPage: React.FC = () => {
         title: "Erro ao adicionar fornecedor",
         description: error.message,
       });
+    }
+  };
+
+  const deleteSupplier = async (id: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('suppliers')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Fornecedor removido",
+        description: `${name} foi removido com sucesso.`,
+      });
+
+      fetchSuppliers();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover fornecedor",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    let formattedValue = value;
+    
+    if (field === 'cnpj') {
+      formattedValue = formatCNPJ(value);
+    } else if (field === 'cep') {
+      formattedValue = formatCEP(value);
+    }
+    
+    setNewSupplier(prev => ({
+      ...prev,
+      [field]: formattedValue
+    }));
+    
+    // Limpa o erro do campo quando o usuário começa a digitar
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
 
@@ -95,34 +210,104 @@ const SuppliersPage: React.FC = () => {
           <CardTitle>Adicionar Novo Fornecedor</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <Input
-              placeholder="Nome do fornecedor"
-              value={newSupplier.name}
-              onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-            />
-            <Input
-              placeholder="Telefone"
-              value={newSupplier.phone}
-              onChange={(e) => setNewSupplier({ ...newSupplier, phone: e.target.value })}
-            />
-            <Input
-              placeholder="Email"
-              type="email"
-              value={newSupplier.email}
-              onChange={(e) => setNewSupplier({ ...newSupplier, email: e.target.value })}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Input
+                placeholder="Nome do fornecedor *"
+                value={newSupplier.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className={errors.name ? 'border-red-500' : ''}
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="Telefone *"
+                value={newSupplier.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={errors.phone ? 'border-red-500' : ''}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="Email *"
+                type="email"
+                value={newSupplier.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className={errors.email ? 'border-red-500' : ''}
+              />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="CNPJ *"
+                value={newSupplier.cnpj}
+                onChange={(e) => handleInputChange('cnpj', e.target.value)}
+                className={errors.cnpj ? 'border-red-500' : ''}
+                maxLength={18}
+              />
+              {errors.cnpj && <p className="text-red-500 text-sm mt-1">{errors.cnpj}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="Endereço *"
+                value={newSupplier.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                className={errors.address ? 'border-red-500' : ''}
+              />
+              {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="CEP *"
+                value={newSupplier.cep}
+                onChange={(e) => handleInputChange('cep', e.target.value)}
+                className={errors.cep ? 'border-red-500' : ''}
+                maxLength={9}
+              />
+              {errors.cep && <p className="text-red-500 text-sm mt-1">{errors.cep}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="Cidade *"
+                value={newSupplier.city}
+                onChange={(e) => handleInputChange('city', e.target.value)}
+                className={errors.city ? 'border-red-500' : ''}
+              />
+              {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+            </div>
+            
+            <div>
+              <Input
+                placeholder="Estado *"
+                value={newSupplier.state}
+                onChange={(e) => handleInputChange('state', e.target.value)}
+                className={errors.state ? 'border-red-500' : ''}
+                maxLength={2}
+              />
+              {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
+            </div>
           </div>
-          <Button onClick={addSupplier}>
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Fornecedor
-          </Button>
+          
+          <div className="mt-4">
+            <Button onClick={addSupplier} className="bg-oficina hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Fornecedor
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Fornecedores</CardTitle>
+          <CardTitle>Lista de Fornecedores ({suppliers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {suppliers.length === 0 ? (
@@ -136,21 +321,29 @@ const SuppliersPage: React.FC = () => {
                   <TableHead>Nome</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Cidade</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {suppliers.map((supplier) => (
                   <TableRow key={supplier.id}>
-                    <TableCell>{supplier.name}</TableCell>
-                    <TableCell>{supplier.phone || '-'}</TableCell>
-                    <TableCell>{supplier.email || '-'}</TableCell>
+                    <TableCell className="font-medium">{supplier.name}</TableCell>
+                    <TableCell>{supplier.phone}</TableCell>
+                    <TableCell>{supplier.email}</TableCell>
+                    <TableCell>{supplier.cnpj}</TableCell>
+                    <TableCell>{supplier.city}/{supplier.state}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => deleteSupplier(supplier.id, supplier.name)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

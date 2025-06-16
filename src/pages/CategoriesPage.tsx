@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
@@ -18,22 +18,32 @@ const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingDefaults, setIsCreatingDefaults] = useState(false);
   const { toast } = useToast();
 
   const defaultCategories = [
     'Manutenção Preventiva',
     'Manutenção Corretiva',
-    'Peças de Motor',
-    'Peças de Freio',
-    'Peças de Suspensão',
-    'Filtros',
-    'Óleos e Lubrificantes',
-    'Pneus',
-    'Bateria',
-    'Sistema Elétrico',
+    'Troca de Óleo',
+    'Filtros (Ar, Combustível, Óleo)',
+    'Sistema de Freios',
+    'Suspensão e Amortecedores',
+    'Pneus e Rodas',
+    'Bateria e Sistema Elétrico',
     'Ar Condicionado',
-    'Transmissão',
-    'Embreagem'
+    'Motor e Transmissão',
+    'Embreagem',
+    'Sistema de Escape',
+    'Radiador e Arrefecimento',
+    'Faróis e Lanternas',
+    'Limpador de Para-brisa',
+    'Injeção Eletrônica',
+    'Alinhamento e Balanceamento',
+    'Vidros e Para-brisas',
+    'Estofados e Tapeçaria',
+    'Pintura e Funilaria',
+    'Diagnóstico Automotivo',
+    'Instalação de Acessórios'
   ];
 
   useEffect(() => {
@@ -55,7 +65,7 @@ const CategoriesPage: React.FC = () => {
   };
 
   const createDefaultCategories = async () => {
-    setIsLoading(true);
+    setIsCreatingDefaults(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
@@ -73,7 +83,7 @@ const CategoriesPage: React.FC = () => {
 
       toast({
         title: "Categorias criadas",
-        description: "Categorias padrão foram adicionadas com sucesso.",
+        description: `${defaultCategories.length} categorias padrão foram adicionadas com sucesso.`,
       });
 
       fetchCategories();
@@ -84,12 +94,19 @@ const CategoriesPage: React.FC = () => {
         description: error.message,
       });
     } finally {
-      setIsLoading(false);
+      setIsCreatingDefaults(false);
     }
   };
 
   const addCategory = async () => {
-    if (!newCategory.trim()) return;
+    if (!newCategory.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nome da categoria é obrigatório.",
+      });
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -117,13 +134,48 @@ const CategoriesPage: React.FC = () => {
     }
   };
 
+  const deleteCategory = async (id: string, name: string) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Categoria removida",
+        description: `${name} foi removida com sucesso.`,
+      });
+
+      fetchCategories();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao remover categoria",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Categorias</h1>
+        <h1 className="text-2xl font-bold">Categorias de Serviços</h1>
         {categories.length === 0 && (
-          <Button onClick={createDefaultCategories} disabled={isLoading}>
-            Criar Categorias Padrão
+          <Button 
+            onClick={createDefaultCategories} 
+            disabled={isCreatingDefaults}
+            className="bg-oficina hover:bg-blue-700"
+          >
+            {isCreatingDefaults ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Criando...
+              </>
+            ) : (
+              'Criar Categorias Padrão'
+            )}
           </Button>
         )}
       </div>
@@ -150,12 +202,15 @@ const CategoriesPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Categorias</CardTitle>
+          <CardTitle>Lista de Categorias ({categories.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {categories.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Nenhuma categoria cadastrada.</p>
+              <p className="text-gray-500 mb-4">Nenhuma categoria cadastrada.</p>
+              <p className="text-sm text-gray-400">
+                Clique em "Criar Categorias Padrão" para começar com categorias pré-definidas.
+              </p>
             </div>
           ) : (
             <Table>
@@ -174,7 +229,11 @@ const CategoriesPage: React.FC = () => {
                         <Button variant="ghost" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => deleteCategory(category.id, category.name)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
