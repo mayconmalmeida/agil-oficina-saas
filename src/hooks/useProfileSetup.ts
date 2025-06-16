@@ -84,16 +84,20 @@ export const useProfileSetup = () => {
         
         // Navigate after a short delay to show the success state
         setTimeout(() => {
-          console.log("Redirecionando para próxima etapa: clientes");
-          navigate('/clientes');
+          console.log("Redirecionando para dashboard");
+          navigate('/dashboard');
         }, 1500);
       } else {
         toast({
           variant: "destructive",
           title: "Atenção",
-          description: "Seu perfil foi salvo, mas não conseguimos atualizar seu progresso. Clique em 'Próxima Etapa' manualmente.",
+          description: "Seu perfil foi salvo, mas não conseguimos atualizar seu progresso. Você pode continuar usando o sistema.",
         });
         setSaveSuccess(true);
+        
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
       }
     }
   };

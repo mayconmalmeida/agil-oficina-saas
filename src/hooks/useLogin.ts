@@ -19,6 +19,38 @@ export const useLogin = () => {
     return await testSupabaseConnection();
   };
 
+  const checkProfileCompletion = async (uid: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('nome_oficina, telefone, email')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao verificar perfil:', error);
+        return false;
+      }
+
+      if (!profile) {
+        console.log('Perfil não encontrado, precisa ser criado');
+        return false;
+      }
+
+      // Verificar se os campos obrigatórios estão preenchidos
+      const requiredFields = ['nome_oficina', 'telefone'];
+      const isComplete = requiredFields.every(field => 
+        profile[field] && profile[field].trim() !== ''
+      );
+
+      console.log('Verificação de perfil completo:', isComplete, profile);
+      return isComplete;
+    } catch (error) {
+      console.error('Erro inesperado ao verificar perfil:', error);
+      return false;
+    }
+  };
+
   const handleLogin = async (data: LoginData) => {
     setIsLoading(true);
     
@@ -86,13 +118,24 @@ export const useLogin = () => {
           console.error('Erro ao verificar admin:', adminError);
         }
 
-        // Para usuários normais
-        console.log('Usuário normal, redirecionando para dashboard');
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Bem-vindo de volta!",
-        });
-        navigate('/dashboard');
+        // Para usuários normais, verificar se o perfil está completo
+        const isProfileComplete = await checkProfileCompletion(authData.user.id);
+        
+        if (!isProfileComplete) {
+          console.log('Perfil incompleto, redirecionando para configuração');
+          toast({
+            title: "Complete seu perfil",
+            description: "Por favor, complete as informações da sua oficina.",
+          });
+          navigate('/perfil-setup');
+        } else {
+          console.log('Perfil completo, redirecionando para dashboard');
+          toast({
+            title: "Login realizado com sucesso!",
+            description: "Bem-vindo de volta!",
+          });
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       console.error('Erro inesperado no login:', error);

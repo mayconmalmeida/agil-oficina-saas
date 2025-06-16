@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,6 +30,7 @@ import ProfilePage from '@/pages/ProfilePage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
 import VehiclesPage from '@/pages/VehiclesPage';
 import AdminSettingsPage from '@/pages/AdminSettingsPage';
+import ProfileSetupPage from '@/pages/ProfileSetupPage';
 
 // Admin Pages
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -78,6 +80,16 @@ function App() {
             element={
               <AuthProvider>
                 <RegisterPage />
+              </AuthProvider>
+            }
+          />
+          
+          {/* Profile Setup Route - Semi-protected (requires auth but not complete profile) */}
+          <Route
+            path="/perfil-setup"
+            element={
+              <AuthProvider>
+                <ProfileSetupPage />
               </AuthProvider>
             }
           />
