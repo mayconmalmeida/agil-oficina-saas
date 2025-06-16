@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ interface ClientVehicleFieldsProps {
 const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuccess }) => {
   const { isSearching, searchVehicleData } = useVehicleLookup(form);
   const placa = form.watch('veiculo.placa');
+  const lastSearchedPlate = useRef<string>('');
 
   // Format license plate as user types
   useEffect(() => {
@@ -26,33 +27,36 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
     }
   }, [placa, form]);
 
-  // Auto search when plate is complete (7 characters without spaces/hyphens)
+  // Auto search when plate is complete and valid
   useEffect(() => {
-    if (placa) {
+    if (placa && !isSearching) {
       const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
       
-      // Check if plate is complete (7 characters) and valid
-      if (cleanPlaca.length === 7 && validateLicensePlate(placa)) {
+      // Check if plate is complete (7 characters), valid, and not already searched
+      if (cleanPlaca.length === 7 && 
+          validateLicensePlate(placa) && 
+          lastSearchedPlate.current !== placa) {
+        
+        console.log('🚗 Placa completa detectada:', placa);
+        lastSearchedPlate.current = placa;
+        
         // Add delay to avoid too many requests while typing
         const timeoutId = setTimeout(() => {
-          console.log('Iniciando busca automática para placa:', placa);
+          console.log('⏰ Executando busca automática para placa:', placa);
           searchVehicleData(placa);
-        }, 500);
+        }, 1000); // Increased delay to 1 second
         
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [placa, searchVehicleData]);
+  }, [placa, searchVehicleData, isSearching]);
 
-  // Handle plate field blur as fallback
-  const handlePlateBlur = () => {
-    if (placa) {
-      const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
-      
-      if (cleanPlaca.length === 7 && validateLicensePlate(placa)) {
-        console.log('Busca por blur do campo placa:', placa);
-        searchVehicleData(placa);
-      }
+  // Handle manual search button click
+  const handleManualSearch = () => {
+    if (placa && validateLicensePlate(placa)) {
+      console.log('🔎 Busca manual iniciada para placa:', placa);
+      lastSearchedPlate.current = placa;
+      searchVehicleData(placa);
     }
   };
 
@@ -67,7 +71,16 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
               <FormLabel className="flex items-center gap-2">
                 Placa *
                 {isSearching && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
-                {!isSearching && <Search className="h-4 w-4 text-gray-400" />}
+                {!isSearching && placa && validateLicensePlate(placa) && (
+                  <button
+                    type="button"
+                    onClick={handleManualSearch}
+                    className="text-blue-500 hover:text-blue-700"
+                    disabled={isSearching}
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                )}
               </FormLabel>
               <FormControl>
                 <Input 
@@ -77,7 +90,6 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
                   disabled={saveSuccess || isSearching}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                   style={{ textTransform: 'uppercase' }}
-                  onBlur={handlePlateBlur}
                 />
               </FormControl>
               <FormMessage />

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { searchVehicleByPlateReal } from '@/services/realVehicleDataService';
 import { useToast } from '@/hooks/use-toast';
@@ -8,14 +8,18 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
-  const searchVehicleData = async (plate: string) => {
+  const searchVehicleData = useCallback(async (plate: string) => {
     if (!plate || plate.length < 7) return;
 
+    console.log('🔍 Iniciando busca para placa:', plate);
     setIsSearching(true);
+    
     try {
       const vehicleData = await searchVehicleByPlateReal(plate);
       
       if (vehicleData) {
+        console.log('✅ Dados encontrados:', vehicleData);
+        
         // Atualiza os campos do formulário
         form.setValue('veiculo.marca', vehicleData.marca);
         form.setValue('veiculo.modelo', vehicleData.modelo);
@@ -29,6 +33,7 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
           description: `Veículo: ${vehicleData.marca} ${vehicleData.modelo} ${vehicleData.ano}`,
         });
       } else {
+        console.log('❌ Dados não encontrados para placa:', plate);
         toast({
           title: "Dados não encontrados",
           description: "Não foi possível encontrar dados para esta placa. Preencha manualmente.",
@@ -36,7 +41,7 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
         });
       }
     } catch (error) {
-      console.error('Erro ao buscar dados do veículo:', error);
+      console.error('💥 Erro ao buscar dados do veículo:', error);
       toast({
         variant: "destructive",
         title: "Erro na busca",
@@ -45,7 +50,7 @@ export const useVehicleLookup = (form: UseFormReturn<any>) => {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [form, toast]); // Dependências estáveis
 
   return {
     isSearching,
