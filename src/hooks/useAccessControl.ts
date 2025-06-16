@@ -1,92 +1,67 @@
 
-import { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AuthUser } from '@/types/auth';
+import { useMemo } from 'react';
+import { useAuth } from './useAuth';
+import { useLocation } from 'react-router-dom';
 
-interface UseAccessControlProps {
-  user: AuthUser | null;
-  isLoadingAuth: boolean;
+interface AccessControlProps {
   requiredPlan?: 'essencial' | 'premium';
 }
 
-export const useAccessControl = ({ user, isLoadingAuth, requiredPlan }: UseAccessControlProps) => {
-  const navigate = useNavigate();
+export const useAccessControl = ({ requiredPlan }: AccessControlProps = {}) => {
+  const { user, loading: isLoadingAuth, role } = useAuth();
   const location = useLocation();
-  const lastLocationRef = useRef(location.pathname);
-  const lastUserIdRef = useRef(user?.id);
 
-  useEffect(() => {
-    // Prevent unnecessary re-runs if user and location haven't changed
-    if (lastLocationRef.current === location.pathname && lastUserIdRef.current === user?.id) {
-      return;
-    }
+  const result = useMemo(() => {
+    const userId = user?.id;
+    const pathname = location.pathname;
 
-    lastLocationRef.current = location.pathname;
-    lastUserIdRef.current = user?.id;
-
-    console.log('[useAccessControl] INICIO', { 
-      userId: user?.id, 
-      isLoadingAuth, 
-      requiredPlan, 
-      pathname: location.pathname 
-    });
-
+    // Se ainda está carregando, aguardar
     if (isLoadingAuth) {
       console.log('[useAccessControl] Aguardando carregamento da autenticação...');
-      return;
+      return {
+        canAccess: false,
+        isLoadingAuth: true,
+        reason: 'loading'
+      };
     }
 
-    if (!user) {
-      console.log('[useAccessControl] Usuário não autenticado - redirecionando para login');
-      if (location.pathname !== '/login' && !location.pathname.startsWith('/admin')) {
-        navigate('/login', { replace: true });
-      }
-      return;
+    // Se não há usuário, não pode acessar
+    if (!user || !userId) {
+      console.log('[useAccessControl] Usuário não autenticado');
+      return {
+        canAccess: false,
+        isLoadingAuth: false,
+        reason: 'not_authenticated'
+      };
     }
 
-    // ADMIN sempre tem acesso e é redirecionado se estiver em rota comum/deslogado
-    if (user.role === 'admin' || user.role === 'superadmin' || user.isAdmin) {
-      console.log('[useAccessControl] Usuário é admin/superadmin, acesso irrestrito');
-      if (!location.pathname.startsWith('/admin') && location.pathname !== '/' && location.pathname !== '/login') {
-        navigate('/admin/dashboard', { replace: true });
-        return;
-      }
-      if (location.pathname === '/') {
-        navigate('/admin/dashboard', { replace: true });
-        return;
-      }
-      return;
+    // Admin sempre pode acessar tudo
+    if (role === 'admin' || role === 'superadmin') {
+      console.log('[useAccessControl] Admin detectado, acesso liberado');
+      return {
+        canAccess: true,
+        isLoadingAuth: false,
+        reason: 'admin'
+      };
     }
 
-    // USUÁRIOS COMUNS: garantir acesso ao dashboard
-    if (user.role === 'user' || user.canAccessFeatures) {
-      console.log('[useAccessControl] Usuário comum autenticado (role=user ou canAccessFeatures), acesso ok');
-      return;
+    // Usuário comum sempre pode acessar funcionalidades básicas
+    if (role === 'user') {
+      console.log('[useAccessControl] Usuário comum autenticado, acesso básico liberado');
+      return {
+        canAccess: true,
+        isLoadingAuth: false,
+        reason: 'user'
+      };
     }
 
-    // Se não é admin nem user comum, bloqueia rotas restritas
-    const restrictedPaths = ['/dashboard', '/clientes', '/servicos', '/orcamentos', '/agendamentos', '/produtos'];
-    if (!user.canAccessFeatures && user.role !== 'user') {
-      if (restrictedPaths.some(path => location.pathname.startsWith(path))) {
-        console.log('[useAccessControl] Usuário sem acesso tentando acessar área restrita, bloqueando');
-        navigate('/login', { replace: true });
-      }
-      return;
-    }
+    // Fallback: permitir acesso
+    return {
+      canAccess: true,
+      isLoadingAuth: false,
+      reason: 'fallback'
+    };
+  }, [user, isLoadingAuth, role, location.pathname, requiredPlan]);
 
-    // Verificação de plano
-    if (requiredPlan && (user.role === 'user' || user.canAccessFeatures)) {
-      const isPremium = user.subscription?.plan_type?.includes('premium') || false;
-      if (requiredPlan === 'premium' && !isPremium) {
-        console.log('[useAccessControl] Funcionalidade premium requerida, mas usuário não tem plano premium');
-        return;
-      }
-    }
-  }, [user?.id, user?.role, user?.canAccessFeatures, user?.isAdmin, isLoadingAuth, location.pathname, navigate, requiredPlan]);
-
-  return {
-    shouldShowContent: !isLoadingAuth && user && (user.role === 'user' || user.canAccessFeatures || user.isAdmin),
-    isAdmin: user?.isAdmin || false,
-    hasGeneralAccess: user?.canAccessFeatures || user?.role === 'user' || false
-  };
+  return result;
 };

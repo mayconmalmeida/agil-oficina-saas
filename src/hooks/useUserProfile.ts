@@ -1,88 +1,113 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './useAuth';
 
-// Updated type definition to include notification fields
-export type UserProfile = {
-  id?: string;
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
   nome_oficina?: string;
   telefone?: string;
-  email?: string;
-  full_name?: string;
   endereco?: string;
   cidade?: string;
   estado?: string;
   cep?: string;
   cnpj?: string;
   responsavel?: string;
+  role?: string;
   whatsapp_suporte?: string;
   logo_url?: string;
-  plano?: string;
-  created_at?: string;
-  is_active?: boolean;
-  trial_ends_at?: string;
-  // Add notification fields
-  notify_new_client?: boolean;
-  notify_approved_budget?: boolean;
-  notify_by_email?: boolean;
-  sound_enabled?: boolean;
-};
+}
 
-export function useUserProfile() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [userId, setUserId] = useState<string | undefined>(undefined);
+export const useUserProfile = () => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchUserProfile() {
-      try {
-        setLoading(true);
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setUserProfile(null);
-          return;
+    let mounted = true;
+
+    const fetchProfile = async () => {
+      if (!user?.id) {
+        if (mounted) {
+          setProfile(null);
+          setIsLoading(false);
         }
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
         
-        // Set the userId so it can be used by components
-        setUserId(user.id);
-        
-        const { data, error } = await supabase
+        const { data, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
-        
-        if (error) {
-          throw error;
+
+        if (!mounted) return;
+
+        if (profileError) {
+          console.error('Erro ao buscar perfil:', profileError);
+          setError(profileError.message);
+          setProfile(null);
+        } else if (data) {
+          setProfile(data);
         }
-        
-        setUserProfile(data);
       } catch (err: any) {
-        console.error('Error fetching user profile:', err);
-        setError(err);
+        console.error('Erro ao buscar perfil:', err);
+        if (mounted) {
+          setError(err.message || 'Erro desconhecido');
+          setProfile(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]); // Só depende do ID do usuário
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user?.id) return false;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Atualizar o estado local
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao atualizar perfil:', err);
+      setError(err.message);
+      return false;
+    }
+  };
+
+  return {
+    profile,
+    isLoading,
+    error,
+    updateProfile,
+    refetch: () => {
+      if (user?.id) {
+        setIsLoading(true);
+        // O useEffect vai fazer o refetch automaticamente
       }
     }
-    
-    fetchUserProfile();
-  }, []);
-  
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Logout realizado com sucesso",
-      description: "Você foi desconectado da sua conta.",
-    });
-    navigate('/');
   };
-  
-  return { userProfile, loading, error, userId, handleLogout };
-}
+};
