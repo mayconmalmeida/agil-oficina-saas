@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { callAI } from '@/services/aiService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

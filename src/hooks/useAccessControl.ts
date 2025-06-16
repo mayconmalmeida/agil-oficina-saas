@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 
 interface AccessControlProps {

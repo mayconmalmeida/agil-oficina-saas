@@ -1,17 +1,17 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
   Users, 
   BarChart3, 
   Megaphone, 
   LogOut,
-  Settings
+  Settings,
+  Menu,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 const AdminLayout: React.FC = () => {
   const { user, signOut } = useAuth();

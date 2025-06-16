@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import Loading from '@/components/ui/loading';
 import PremiumUpgradeCard from './PremiumUpgradeCard';
