@@ -1,3 +1,4 @@
+
 /**
  * Format utilities for forms and data display
  */
@@ -16,6 +17,15 @@ export function formatPhone(phone: string): string {
   if (cleanPhone.length <= 6) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2)}`;
   if (cleanPhone.length <= 10) return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 6)}-${cleanPhone.slice(6)}`;
   return `(${cleanPhone.slice(0, 2)}) ${cleanPhone.slice(2, 7)}-${cleanPhone.slice(7, 11)}`;
+}
+
+/**
+ * Formats a Brazilian phone number with proper mask (alias for formatPhone)
+ * @param phone Phone number to format
+ * @returns Formatted phone number
+ */
+export function formatPhoneNumber(phone: string): string {
+  return formatPhone(phone);
 }
 
 /**
@@ -46,6 +56,26 @@ export function formatCEP(cep: string): string {
   // Apply mask
   if (cleanCep.length <= 5) return cleanCep;
   return `${cleanCep.slice(0, 5)}-${cleanCep.slice(5, 8)}`;
+}
+
+/**
+ * Formats a currency value to Brazilian Real format
+ * @param value Number or string value to format
+ * @returns Formatted currency string (R$ 0,00)
+ */
+export function formatCurrency(value: number | string): string {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numericValue)) {
+    return 'R$ 0,00';
+  }
+  
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numericValue);
 }
 
 /**
