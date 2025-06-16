@@ -5,6 +5,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Search, Loader2 } from 'lucide-react';
 import { useVehicleLookup } from '@/hooks/useVehicleLookup';
+import { formatLicensePlate } from '@/utils/formatUtils';
 
 interface ClientVehicleFieldsProps {
   form: UseFormReturn<any>;
@@ -15,16 +16,33 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
   const { isSearching, searchVehicleData } = useVehicleLookup(form);
   const placa = form.watch('veiculo.placa');
 
-  // Busca automática quando a placa é preenchida
+  // Format license plate as user types
   useEffect(() => {
-    if (placa && placa.length >= 8) { // Formato ABC-1234 ou ABC1D23
-      const timeoutId = setTimeout(() => {
-        searchVehicleData(placa);
-      }, 500); // Debounce de 500ms
-
-      return () => clearTimeout(timeoutId);
+    if (placa) {
+      const formattedPlate = formatLicensePlate(placa);
+      if (formattedPlate !== placa) {
+        form.setValue('veiculo.placa', formattedPlate);
+      }
     }
-  }, [placa]);
+  }, [placa, form]);
+
+  // Busca automática quando a placa é preenchida completamente
+  useEffect(() => {
+    if (placa) {
+      // Remove special characters for validation
+      const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
+      
+      // Check if plate is complete (7 or 8 characters for Brazilian plates)
+      if (cleanPlaca.length >= 7) {
+        const timeoutId = setTimeout(() => {
+          console.log('Iniciando busca automática para placa:', placa);
+          searchVehicleData(placa);
+        }, 1000); // Debounce de 1 segundo
+
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [placa, searchVehicleData]);
 
   return (
     <>
@@ -35,17 +53,18 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
           render={({ field }) => (
             <FormItem>
               <FormLabel className="flex items-center gap-2">
-                Placa
-                {isSearching && <Loader2 className="h-4 w-4 animate-spin" />}
+                Placa *
+                {isSearching && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
                 {!isSearching && <Search className="h-4 w-4 text-gray-400" />}
               </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="ABC1D23"
+                  placeholder="ABC-1234 ou ABC1D23"
                   {...field}
                   maxLength={8}
                   disabled={saveSuccess || isSearching}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </FormControl>
               <FormMessage />
@@ -61,7 +80,7 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
           name="veiculo.ano"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ano</FormLabel>
+              <FormLabel>Ano *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="2022" 
@@ -69,6 +88,15 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
                   maxLength={4}
                   disabled={saveSuccess}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  inputMode="numeric"
+                  onKeyDown={(e) => {
+                    if (
+                      !/^\d$/.test(e.key) && 
+                      !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -83,7 +111,7 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
           name="veiculo.marca"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Marca</FormLabel>
+              <FormLabel>Marca *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Fiat" 
@@ -102,10 +130,31 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
           name="veiculo.modelo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Modelo</FormLabel>
+              <FormLabel>Modelo *</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Uno"
+                  {...field}
+                  disabled={saveSuccess}
+                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <div className="mt-3">
+        <FormField
+          control={form.control}
+          name="veiculo.cor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cor</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Branco"
                   {...field}
                   disabled={saveSuccess}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
