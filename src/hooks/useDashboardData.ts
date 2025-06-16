@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardData } from '@/types/dashboardTypes';
 import { useDashboardCounts } from '@/hooks/dashboard/useDashboardCounts';
@@ -12,35 +12,21 @@ export type { WorkshopStatus, DashboardData } from '@/types/dashboardTypes';
 export const useDashboardData = (userId?: string) => {
   const { counts, isLoading: countsLoading } = useDashboardCounts();
   const { activities, isLoading: activitiesLoading } = useRecentActivities();
-  const { status, isLoading: statusLoading } = useWorkshopStatus();
-  const chartData = useChartData();
+  const { status, isLoading: statusLoading } = useWorkshopStatus(userId);
+  const { chartData, isLoading: chartLoading } = useChartData();
   
-  const [data, setData] = useState<DashboardData>({
-    totalClients: 0,
-    totalServices: 0,
-    totalBudgets: 0,
-    openServices: 0,
-    scheduledServices: 0,
-    recentActivities: [],
-    workshopStatus: 'trial',
-    daysRemaining: 7,
-    planType: 'basic',
-    monthlyRevenue: [],
-    topServices: [],
-    topProducts: []
-  });
-  
-  const [isLoading, setIsLoading] = useState(true);
+  // Calculate if all data is loading
+  const isLoading = countsLoading || activitiesLoading || statusLoading || chartLoading;
 
-  // Combine all data into a single state
-  useEffect(() => {
+  // Memoize the dashboard data to prevent unnecessary recalculations
+  const data = useMemo<DashboardData>(() => {
     // Convert chart data to expected format
-    const monthlyRevenue = chartData.chartData.map(item => ({
+    const monthlyRevenue = chartData.map(item => ({
       month: item.name,
       value: item.value
     }));
 
-    setData({
+    return {
       totalClients: counts.clientsCount,
       totalServices: counts.servicesCount,
       totalBudgets: counts.budgetsCount,
@@ -53,18 +39,17 @@ export const useDashboardData = (userId?: string) => {
       monthlyRevenue: monthlyRevenue,
       topServices: [],
       topProducts: []
-    });
-    
-    // Consider loading complete when all data sources are loaded
-    setIsLoading(countsLoading || activitiesLoading || statusLoading);
+    };
   }, [
-    counts, 
-    activities, 
-    status, 
-    chartData, 
-    countsLoading, 
-    activitiesLoading, 
-    statusLoading
+    counts.clientsCount,
+    counts.servicesCount, 
+    counts.budgetsCount,
+    counts.appointmentsCount,
+    activities,
+    status.workshopStatus,
+    status.daysRemaining,
+    status.planType,
+    chartData
   ]);
 
   return { data, isLoading };
