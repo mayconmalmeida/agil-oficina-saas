@@ -1,3 +1,4 @@
+
 /**
  * Validation utilities for forms
  */
@@ -60,13 +61,13 @@ export function formatCPF(cpf: string): string {
  * @returns true if valid, false otherwise
  */
 export function validateLicensePlate(plate: string): boolean {
-  // Remove spaces and convert to uppercase
-  const cleanPlate = plate.replace(/\s/g, '').toUpperCase();
+  // Remove spaces and hyphens, convert to uppercase
+  const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
   
-  // Old format: ABC-1234
-  const oldFormat = /^[A-Z]{3}-?\d{4}$/;
+  // Old format: ABC1234 (7 characters: 3 letters + 4 numbers)
+  const oldFormat = /^[A-Z]{3}\d{4}$/;
   
-  // New format: ABC1D23
+  // New format: ABC1D23 (7 characters: 3 letters + 1 number + 1 letter + 2 numbers)
   const newFormat = /^[A-Z]{3}\d[A-Z]\d{2}$/;
   
   return oldFormat.test(cleanPlate) || newFormat.test(cleanPlate);
@@ -78,14 +79,19 @@ export function validateLicensePlate(plate: string): boolean {
  * @returns Formatted license plate
  */
 export function formatLicensePlate(plate: string): string {
-  // Remove spaces and convert to uppercase
+  // Remove spaces and hyphens, convert to uppercase
   const cleanPlate = plate.replace(/[\s-]/g, '').toUpperCase();
   
-  // If it's the old format (or partial), add hyphen
-  if (/^[A-Z]{3}\d{0,4}$/.test(cleanPlate) && cleanPlate.length > 3) {
+  // If it's empty or less than 3 characters, return as is
+  if (cleanPlate.length <= 3) return cleanPlate;
+  
+  // Check if it matches old format pattern (3 letters followed by numbers)
+  if (/^[A-Z]{3}\d+$/.test(cleanPlate) && cleanPlate.length <= 7) {
+    // Old format: add hyphen after 3 letters
     return `${cleanPlate.slice(0, 3)}-${cleanPlate.slice(3)}`;
   }
   
+  // For new format or mixed patterns, return without hyphen
   return cleanPlate;
 }
 

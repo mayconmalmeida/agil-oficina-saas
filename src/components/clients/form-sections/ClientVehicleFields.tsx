@@ -26,23 +26,19 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
     }
   }, [placa, form]);
 
-  // Busca automática quando a placa é preenchida completamente
-  useEffect(() => {
+  // Handle plate field blur to trigger automatic search
+  const handlePlateBlur = () => {
     if (placa) {
       // Remove special characters for validation
       const cleanPlaca = placa.replace(/[^A-Za-z0-9]/g, '');
       
-      // Check if plate is complete (7 or 8 characters for Brazilian plates)
-      if (cleanPlaca.length >= 7) {
-        const timeoutId = setTimeout(() => {
-          console.log('Iniciando busca automática para placa:', placa);
-          searchVehicleData(placa);
-        }, 1000); // Debounce de 1 segundo
-
-        return () => clearTimeout(timeoutId);
+      // Check if plate is complete (7 characters for Brazilian plates)
+      if (cleanPlaca.length === 7) {
+        console.log('Iniciando busca automática ao sair do campo placa:', placa);
+        searchVehicleData(placa);
       }
     }
-  }, [placa, searchVehicleData]);
+  };
 
   return (
     <>
@@ -65,6 +61,7 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
                   disabled={saveSuccess || isSearching}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                   style={{ textTransform: 'uppercase' }}
+                  onBlur={handlePlateBlur}
                 />
               </FormControl>
               <FormMessage />
