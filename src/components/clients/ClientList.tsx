@@ -82,33 +82,43 @@ const ClientList: React.FC<ClientListProps> = ({
     );
   }, [clients, searchTerm]);
 
-  // Função para formatar informações do veículo de forma mais visual
+  // Função para formatar informações do veículo de forma mais visual e organizada
   const formatVehicleInfo = (client: Client) => {
-    if (client.marca && client.modelo && client.ano) {
+    // Verificar se há dados estruturados do veículo
+    if (client.marca && client.modelo) {
       return {
         vehicle: `${client.marca} ${client.modelo}`,
-        year: client.ano,
-        plate: client.placa || 'N/A'
+        year: client.ano || '',
+        plate: client.placa || 'N/A',
+        hasStructuredData: true
       };
     }
     
     // Fallback para o campo veiculo antigo
     if (client.veiculo) {
-      const parts = client.veiculo.split(',');
-      const vehiclePart = parts[0]?.trim() || '';
-      const platePart = parts.find(part => part.includes('Placa:'))?.replace('Placa:', '').trim();
+      // Tentar extrair informações do campo veiculo
+      const vehicleText = client.veiculo.trim();
+      
+      // Verificar se contém "Placa:" para extrair a placa
+      const plateMatch = vehicleText.match(/Placa:\s*([A-Z0-9-]+)/i);
+      const plate = plateMatch ? plateMatch[1] : client.placa || 'N/A';
+      
+      // Remover a parte da placa para obter apenas o veículo
+      const vehiclePart = vehicleText.replace(/,?\s*Placa:.*$/i, '').trim();
       
       return {
-        vehicle: vehiclePart,
+        vehicle: vehiclePart || 'Veículo não especificado',
         year: '',
-        plate: platePart || client.placa || 'N/A'
+        plate: plate,
+        hasStructuredData: false
       };
     }
     
     return {
       vehicle: 'Não informado',
       year: '',
-      plate: 'N/A'
+      plate: 'N/A',
+      hasStructuredData: false
     };
   };
 
@@ -160,38 +170,48 @@ const ClientList: React.FC<ClientListProps> = ({
             <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     <h3 className="font-medium text-gray-900">{client.nome}</h3>
                     <Badge variant={client.tipo === 'pj' ? 'default' : 'secondary'}>
                       {client.tipo === 'pj' ? 'PJ' : 'PF'}
                     </Badge>
                   </div>
                   
-                  <div className="space-y-1 text-sm text-gray-600">
+                  <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-4 w-4 flex-shrink-0" />
                       <span>{client.telefone}</span>
                     </div>
                     
                     {client.email && (
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span>{client.email}</span>
+                        <Mail className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{client.email}</span>
                       </div>
                     )}
                     
                     <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4" />
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{vehicleInfo.vehicle}</span>
+                      <Car className="h-4 w-4 flex-shrink-0" />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">
+                          {vehicleInfo.vehicle}
+                        </span>
                         {vehicleInfo.year && (
                           <Badge variant="outline" className="text-xs">
                             {vehicleInfo.year}
                           </Badge>
                         )}
-                        <Badge variant="secondary" className="text-xs font-mono">
+                        <Badge 
+                          variant={vehicleInfo.plate === 'N/A' ? 'destructive' : 'secondary'} 
+                          className="text-xs font-mono"
+                        >
                           {vehicleInfo.plate}
                         </Badge>
+                        {!vehicleInfo.hasStructuredData && vehicleInfo.vehicle !== 'Não informado' && (
+                          <Badge variant="outline" className="text-xs text-orange-600">
+                            Legado
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -202,6 +222,7 @@ const ClientList: React.FC<ClientListProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onViewClient(client.id)}
+                    className="h-8 w-8 p-0"
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -210,6 +231,7 @@ const ClientList: React.FC<ClientListProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onEditClient(client.id)}
+                    className="h-8 w-8 p-0"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -218,7 +240,7 @@ const ClientList: React.FC<ClientListProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onDeleteClient(client.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 h-8 w-8 p-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
