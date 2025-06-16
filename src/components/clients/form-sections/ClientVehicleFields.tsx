@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,17 +11,16 @@ interface ClientVehicleFieldsProps {
 }
 
 const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuccess }) => {
-  const placa = form.watch('veiculo.placa');
-
-  // Format license plate as user types
-  useEffect(() => {
-    if (placa) {
-      const formattedPlate = formatLicensePlate(placa);
-      if (formattedPlate !== placa) {
+  // Handle license plate formatting on blur to avoid infinite loops
+  const handlePlacaBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const formattedPlate = formatLicensePlate(value);
+      if (formattedPlate !== value) {
         form.setValue('veiculo.placa', formattedPlate);
       }
     }
-  }, [placa, form]);
+  };
 
   return (
     <>
@@ -40,6 +39,7 @@ const ClientVehicleFields: React.FC<ClientVehicleFieldsProps> = ({ form, saveSuc
                   disabled={saveSuccess}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
                   style={{ textTransform: 'uppercase' }}
+                  onBlur={handlePlacaBlur}
                 />
               </FormControl>
               <FormMessage />

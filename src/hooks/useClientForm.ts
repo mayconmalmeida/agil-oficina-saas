@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -6,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { safeRpc } from '@/utils/supabaseTypes';
 import { validateCPF, validateLicensePlate, fetchAddressByCEP } from '@/utils/validationUtils';
-import { formatCPF, formatCEP, formatLicensePlate } from '@/utils/formatUtils';
 
 // Schema with enhanced validations
 export const clientFormSchema = z.object({
@@ -186,40 +186,6 @@ export const useClientForm = ({
     
     fetchAddressData();
   }, [cep, form]);
-  
-  // Format document (CPF)
-  const documento = form.watch('documento');
-  
-  useEffect(() => {
-    if (documento) {
-      const formattedCPF = formatCPF(documento);
-      if (formattedCPF !== documento) {
-        form.setValue('documento', formattedCPF);
-      }
-    }
-  }, [documento, form]);
-  
-  // Format CEP
-  useEffect(() => {
-    if (cep) {
-      const formattedCEP = formatCEP(cep);
-      if (formattedCEP !== cep) {
-        form.setValue('cep', formattedCEP);
-      }
-    }
-  }, [cep, form]);
-  
-  // Format license plate
-  const placa = form.watch('veiculo.placa');
-  
-  useEffect(() => {
-    if (placa) {
-      const formattedPlate = formatLicensePlate(placa);
-      if (formattedPlate !== placa) {
-        form.setValue('veiculo.placa', formattedPlate);
-      }
-    }
-  }, [placa, form]);
   
   const handleNextTab = () => {
     setActiveTab('veiculo');

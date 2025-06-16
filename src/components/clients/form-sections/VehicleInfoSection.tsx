@@ -12,23 +12,21 @@ interface VehicleInfoSectionProps {
 }
 
 const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSuccess }) => {
-  const { watch, setValue } = form;
-  const placaValue = watch('veiculo.placa');
-  
-  // Format license plate
-  React.useEffect(() => {
-    if (placaValue) {
-      const formattedPlaca = formatLicensePlate(placaValue);
-      if (formattedPlaca !== placaValue) {
-        setValue('veiculo.placa', formattedPlaca);
+  // Handle license plate formatting on blur to avoid infinite loops
+  const handlePlacaBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const formattedPlaca = formatLicensePlate(value);
+      if (formattedPlaca !== value) {
+        form.setValue('veiculo.placa', formattedPlaca);
       }
     }
-  }, [placaValue, setValue]);
+  };
   
   // Restrict year field to only numbers and 4 digits
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setValue('veiculo.ano', value);
+    form.setValue('veiculo.ano', value);
   };
 
   return (
@@ -118,6 +116,8 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSucce
                   maxLength={8}
                   disabled={saveSuccess}
                   className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  onBlur={handlePlacaBlur}
+                  style={{ textTransform: 'uppercase' }}
                 />
               </FormControl>
               <FormMessage />
