@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,6 @@ import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
 import Loading from '@/components/ui/loading';
-import { useOnboardingRedirect } from '@/hooks/useOnboardingRedirect';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -76,10 +76,6 @@ const LoginPage: React.FC = () => {
               .eq('id', session.user.id)
               .maybeSingle();
                 
-            if (profileError) {
-              console.log("Erro ao verificar profile ou usuário não tem perfil:", profileError.message);
-            }
-            
             // Se é admin, redirecionar para admin
             if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
               console.log("Usuário é admin, redirecionando para dashboard admin");
@@ -91,26 +87,56 @@ const LoginPage: React.FC = () => {
               return;
             }
             
-            // Para usuários normais, verificar completude do perfil
-            if (profileData) {
-              const isProfileComplete = profileData.nome_oficina && profileData.telefone &&
-                                      profileData.nome_oficina.trim() !== '' && profileData.telefone.trim() !== '';
-              
-              if (!isProfileComplete) {
-                console.log("Perfil incompleto detectado, redirecionando para setup");
-                toast({
-                  title: "Complete seu perfil",
-                  description: "Por favor, complete as informações da sua oficina.",
-                });
-                navigate('/perfil-setup');
-                return;
-              }
+            // Para usuários normais, verificar se o perfil existe e está completo
+            if (profileError && profileError.code !== 'PGRST116') {
+              console.log("Erro ao verificar profile:", profileError.message);
+              // Em caso de erro, redirecionar para setup por segurança
+              console.log("Erro na verificação do perfil, redirecionando para setup");
+              toast({
+                title: "Complete seu perfil",
+                description: "Por favor, complete as informações da sua oficina.",
+              });
+              navigate('/perfil-setup');
+              return;
             }
+            
+            if (!profileData) {
+              // Perfil não existe, redirecionar para setup
+              console.log("Perfil não encontrado, redirecionando para setup");
+              toast({
+                title: "Complete seu perfil",
+                description: "Por favor, complete as informações da sua oficina.",
+              });
+              navigate('/perfil-setup');
+              return;
+            }
+            
+            // Verificar se o perfil está completo
+            const isProfileComplete = profileData.nome_oficina && profileData.telefone &&
+                                    profileData.nome_oficina.trim() !== '' && profileData.telefone.trim() !== '';
+            
+            if (!isProfileComplete) {
+              console.log("Perfil incompleto detectado, redirecionando para setup");
+              toast({
+                title: "Complete seu perfil",
+                description: "Por favor, complete as informações da sua oficina.",
+              });
+              navigate('/perfil-setup');
+              return;
+            }
+            
           } catch (adminCheckError) {
             console.error("Erro ao verificar admin:", adminCheckError);
+            // Em caso de erro, redirecionar para setup por segurança
+            toast({
+              title: "Complete seu perfil",
+              description: "Por favor, complete as informações da sua oficina.",
+            });
+            navigate('/perfil-setup');
+            return;
           }
           
-          console.log("Redirecionando usuário para dashboard");
+          console.log("Perfil completo encontrado, redirecionando usuário para dashboard");
           navigate('/dashboard');
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
