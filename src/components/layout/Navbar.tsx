@@ -17,7 +17,12 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <a href="#" className="flex items-center">
-            <span className="text-2xl font-bold text-oficina-dark">Oficina<span className="text-oficina-accent">Ágil</span></span>
+            <img 
+              src="/lovable-uploads/4daf69fb-edaf-4fe1-8d3c-8ab243d67c06.png" 
+              alt="OficinaGO"
+              className="h-8 w-8 mr-2"
+            />
+            <span className="text-2xl font-bold text-oficina-dark">OficinaGO</span>
           </a>
         </div>
 

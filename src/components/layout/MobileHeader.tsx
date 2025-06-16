@@ -20,8 +20,13 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ onMenuClick, onLogout }) =>
           <Menu className="h-6 w-6" />
         </button>
         <div>
-          <Link to="/" className="text-lg font-bold text-oficina-dark">
-            Oficina<span className="text-oficina-accent">Ágil</span>
+          <Link to="/" className="flex items-center">
+            <img 
+              src="/lovable-uploads/4daf69fb-edaf-4fe1-8d3c-8ab243d67c06.png" 
+              alt="OficinaGO"
+              className="h-6 w-6 mr-2"
+            />
+            <span className="text-lg font-bold text-oficina-dark">OficinaGO</span>
           </Link>
         </div>
         <Button
