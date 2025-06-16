@@ -33,12 +33,15 @@ export const useUserProfileData = (user: User | null) => {
           isAdmin: userProfile.role === 'admin' || userProfile.role === 'superadmin',
           canAccessFeatures,
           subscription: userProfile.subscription ? {
-            ...userProfile.subscription,
+            id: userProfile.subscription.id,
             user_id: user.id,
             created_at: userProfile.subscription.created_at || new Date().toISOString(),
             updated_at: userProfile.subscription.updated_at || new Date().toISOString(),
             plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type'],
-            status: userProfile.subscription.status as UserSubscription['status']
+            status: userProfile.subscription.status as UserSubscription['status'],
+            starts_at: userProfile.subscription.starts_at,
+            ends_at: userProfile.subscription.ends_at || null,
+            trial_ends_at: userProfile.subscription.trial_ends_at || null
           } : undefined,
           plano: userProfile.plano || 'Premium',
           trial_started_at: userProfile.trial_started_at
