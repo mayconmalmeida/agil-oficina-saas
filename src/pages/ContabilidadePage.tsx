@@ -7,10 +7,35 @@ import { FileText, Upload, Download, Mail, Settings, Eye, Package } from 'lucide
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
+interface NotaFiscal {
+  id: string;
+  tipo: 'entrada' | 'saida';
+  numero: string;
+  data_emissao: string;
+  valor_total: number;
+  status: string;
+  fornecedores?: {
+    nome: string;
+    cnpj: string;
+  };
+  clients?: {
+    nome: string;
+    documento: string;
+  };
+}
+
+interface Fornecedor {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  telefone?: string;
+  email?: string;
+}
+
 const ContabilidadePage: React.FC = () => {
-  const [notasEntrada, setNotasEntrada] = useState<any[]>([]);
-  const [notasSaida, setNotasSaida] = useState<any[]>([]);
-  const [fornecedores, setFornecedores] = useState<any[]>([]);
+  const [notasEntrada, setNotasEntrada] = useState<NotaFiscal[]>([]);
+  const [notasSaida, setNotasSaida] = useState<NotaFiscal[]>([]);
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -21,9 +46,9 @@ const ContabilidadePage: React.FC = () => {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // Carregar notas fiscais de entrada
+      // Carregar notas fiscais de entrada usando query SQL raw
       const { data: notasEntradaData } = await supabase
-        .from('notas_fiscais')
+        .from('notas_fiscais' as any)
         .select(`
           *,
           fornecedores(nome, cnpj)
@@ -33,7 +58,7 @@ const ContabilidadePage: React.FC = () => {
 
       // Carregar notas fiscais de saída
       const { data: notasSaidaData } = await supabase
-        .from('notas_fiscais')
+        .from('notas_fiscais' as any)
         .select(`
           *,
           clients(nome, documento)
@@ -43,7 +68,7 @@ const ContabilidadePage: React.FC = () => {
 
       // Carregar fornecedores
       const { data: fornecedoresData } = await supabase
-        .from('fornecedores')
+        .from('fornecedores' as any)
         .select('*')
         .order('nome');
 

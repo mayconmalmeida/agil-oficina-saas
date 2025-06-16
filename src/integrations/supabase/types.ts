@@ -296,6 +296,111 @@ export type Database = {
           },
         ]
       }
+      fornecedores: {
+        Row: {
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notas_fiscais: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data_emissao: string
+          fornecedor_id: string | null
+          id: string
+          numero: string
+          status: string | null
+          tipo: string
+          updated_at: string | null
+          user_id: string
+          valor_total: number
+          xml_url: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_emissao: string
+          fornecedor_id?: string | null
+          id?: string
+          numero: string
+          status?: string | null
+          tipo: string
+          updated_at?: string | null
+          user_id: string
+          valor_total: number
+          xml_url?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data_emissao?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero?: string
+          status?: string | null
+          tipo?: string
+          updated_at?: string | null
+          user_id?: string
+          valor_total?: number
+          xml_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_fiscais_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oficinas: {
         Row: {
           ativo: boolean | null
