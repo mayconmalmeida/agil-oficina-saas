@@ -31,48 +31,62 @@ export const useDaysRemaining = () => {
         // Buscar dados do perfil para obter trial_started_at e plano
         const { data: profileData, error } = await supabase
           .from('profiles')
-          .select('trial_started_at, plano')
+          .select('trial_started_at, plano, role')
           .eq('id', user.id)
           .single();
 
         if (error) {
-          console.error('Erro ao buscar perfil:', error);
+          console.error('useDaysRemaining - Erro ao buscar perfil:', error);
           setLoading(false);
           return;
         }
 
+        console.log('useDaysRemaining - Dados do perfil:', profileData);
+
         const hoje = new Date();
         let dias = 0;
         let tipoPlano: DaysRemainingData['tipoPlano'] = 'sem_plano';
+
+        // Admin não precisa de validação de trial
+        if (profileData?.role === 'admin' || profileData?.role === 'superadmin') {
+          setData({
+            diasRestantes: 999,
+            tipoPlano: 'ativo',
+            isExpiringSoon: false,
+            isExpired: false
+          });
+          setLoading(false);
+          return;
+        }
 
         // Calcular dias restantes baseado na trial_started_at
         if (profileData?.trial_started_at) {
           const trialStart = new Date(profileData.trial_started_at);
           const trialEnd = new Date(trialStart.getTime() + (7 * 24 * 60 * 60 * 1000));
           
-          // Calcular dias restantes
+          // Calcular dias restantes (arredondar para cima para ser generoso)
           const diffTime = trialEnd.getTime() - hoje.getTime();
           dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           
-          // Determinar tipo de plano
-          if (profileData.plano === 'Premium') {
-            tipoPlano = 'trial';
-          } else if (profileData.plano === 'Essencial') {
+          // Se ainda tem dias restantes, é trial ativo
+          if (dias > 0) {
             tipoPlano = 'trial';
           }
           
-          console.log('Cálculo de dias restantes:', {
+          console.log('useDaysRemaining - Cálculo de dias restantes:', {
             trialStart: trialStart.toISOString(),
             trialEnd: trialEnd.toISOString(),
             hoje: hoje.toISOString(),
             diasCalculados: dias,
-            plano: profileData.plano
+            plano: profileData.plano,
+            diffTime: diffTime,
+            hoursRemaining: Math.ceil(diffTime / (1000 * 60 * 60))
           });
         }
 
         const diasRestantes = Math.max(0, dias);
         const isExpiringSoon = diasRestantes <= 3 && diasRestantes > 0;
-        const isExpired = diasRestantes === 0 && tipoPlano !== 'sem_plano';
+        const isExpired = diasRestantes === 0 && profileData?.trial_started_at;
 
         setData({
           diasRestantes,
@@ -81,7 +95,7 @@ export const useDaysRemaining = () => {
           isExpired
         });
       } catch (error) {
-        console.error('Erro ao calcular dias restantes:', error);
+        console.error('useDaysRemaining - Erro ao calcular dias restantes:', error);
       } finally {
         setLoading(false);
       }

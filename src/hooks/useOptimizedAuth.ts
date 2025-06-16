@@ -16,37 +16,45 @@ export const useOptimizedAuth = (): AuthContextValue => {
       if (!user?.id) return;
 
       try {
-        console.log('Verificando configuração do plano para usuário:', user.id);
+        console.log('useOptimizedAuth - Verificando configuração do plano para usuário:', user.id);
         
         // Verificar se o usuário já tem um plano configurado
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('plano, trial_started_at')
+          .select('plano, trial_started_at, role')
           .eq('id', user.id)
           .single();
 
         if (profileError) {
-          console.error('Erro ao buscar perfil:', profileError);
+          console.error('useOptimizedAuth - Erro ao buscar perfil:', profileError);
           return;
         }
 
-        // Se não tem plano ou trial_started_at, configurar plano Premium com trial de 7 dias
-        if (!profile.plano || !profile.trial_started_at) {
-          console.log('Configurando plano Premium para novo usuário com trial de 7 dias');
+        console.log('useOptimizedAuth - Perfil encontrado:', profile);
+
+        // CORREÇÃO: Só configurar plano se não tem trial_started_at OU se é um usuário novo sem plano
+        if (!profile.trial_started_at || (!profile.plano && profile.role === 'user')) {
+          console.log('useOptimizedAuth - Configurando plano Premium para usuário com trial de 7 dias');
           
-          const { error: updateError } = await supabase.rpc('update_user_plan', {
-            user_profile_id: user.id,
-            new_plan: 'Premium'
-          });
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+              plano: 'Premium',
+              trial_started_at: new Date().toISOString(),
+              role: 'user'
+            })
+            .eq('id', user.id);
 
           if (updateError) {
-            console.error('Erro ao configurar plano Premium:', updateError);
+            console.error('useOptimizedAuth - Erro ao configurar plano Premium:', updateError);
           } else {
-            console.log('Plano Premium configurado com sucesso para trial de 7 dias');
+            console.log('useOptimizedAuth - Plano Premium configurado com sucesso para trial de 7 dias');
           }
+        } else {
+          console.log('useOptimizedAuth - Usuário já tem configuração de trial válida');
         }
       } catch (error) {
-        console.error('Erro ao configurar plano do usuário:', error);
+        console.error('useOptimizedAuth - Erro ao configurar plano do usuário:', error);
       }
     };
 

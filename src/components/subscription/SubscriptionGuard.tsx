@@ -5,7 +5,6 @@ import { useAccessControl } from '@/hooks/useAccessControl';
 import Loading from '@/components/ui/loading';
 import PremiumUpgradeCard from './PremiumUpgradeCard';
 import SubscriptionExpiredCard from './SubscriptionExpiredCard';
-import { supabase } from '@/lib/supabase';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -43,35 +42,39 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // VALIDAÇÃO CORRIGIDA DO TRIAL DE 7 DIAS BASEADA NA trial_started_at
+  // LÓGICA SIMPLIFICADA DO TRIAL DE 7 DIAS
   const authUser = user as any;
   
-  console.log('Validando acesso do usuário:', {
+  console.log('SubscriptionGuard - Validando usuário:', {
     userId: authUser.id,
+    email: authUser.email,
     plano: authUser.plano,
-    trial_started_at: authUser.trial_started_at
+    trial_started_at: authUser.trial_started_at,
+    role: authUser.role
   });
 
-  // Verificar se o plano é Premium e permitir acesso
-  if (authUser.plano === 'Premium') {
-    // Para plano Premium, verificar se ainda está no trial de 7 dias
+  // Se é usuário comum (role = 'user'), verificar trial
+  if (authUser.role === 'user' || !authUser.role) {
+    // Se tem trial_started_at, calcular se ainda está dentro do período
     if (authUser.trial_started_at) {
       const trialStarted = new Date(authUser.trial_started_at);
       const now = new Date();
       const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
       
-      console.log('Verificação de trial Premium:', {
+      console.log('SubscriptionGuard - Verificação de trial:', {
         trialStarted: trialStarted.toISOString(),
         trialEnd: trialEnd.toISOString(),
         now: now.toISOString(),
-        isTrialActive: now <= trialEnd
+        isTrialActive: now <= trialEnd,
+        hoursRemaining: Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60))
       });
       
+      // Se trial ainda está ativo, permitir acesso
       if (now <= trialEnd) {
-        console.log('Trial Premium ainda ativo, permitindo acesso');
+        console.log('SubscriptionGuard - Trial ativo, permitindo acesso');
         return <>{children}</>;
       } else {
-        console.log('Trial Premium expirou, bloqueando acesso');
+        console.log('SubscriptionGuard - Trial expirado, bloqueando acesso');
         return (
           <SubscriptionExpiredCard 
             hasSubscription={false}
@@ -80,8 +83,8 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
         );
       }
     } else {
-      // Se não tem trial_started_at, é um erro - não deveria acontecer
-      console.log('Plano Premium sem trial_started_at, bloqueando acesso');
+      // Se não tem trial_started_at, é um usuário sem trial configurado
+      console.log('SubscriptionGuard - Usuário sem trial_started_at, bloqueando acesso');
       return (
         <SubscriptionExpiredCard 
           hasSubscription={false}
@@ -91,56 +94,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }
 
-  // Para plano Essencial, verificar se ainda está no trial
-  if (authUser.plano === 'Essencial') {
-    if (authUser.trial_started_at) {
-      const trialStarted = new Date(authUser.trial_started_at);
-      const now = new Date();
-      const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
-      
-      console.log('Verificação de trial Essencial:', {
-        trialStarted: trialStarted.toISOString(),
-        trialEnd: trialEnd.toISOString(),
-        now: now.toISOString(),
-        isTrialActive: now <= trialEnd
-      });
-      
-      if (now <= trialEnd) {
-        console.log('Trial Essencial ainda ativo, permitindo acesso');
-        return <>{children}</>;
-      } else {
-        console.log('Trial Essencial expirou, bloqueando acesso');
-        return (
-          <SubscriptionExpiredCard 
-            hasSubscription={false}
-            onLogout={handleLogout} 
-          />
-        );
-      }
-    } else {
-      console.log('Plano Essencial sem trial_started_at, bloqueando acesso');
-      return (
-        <SubscriptionExpiredCard 
-          hasSubscription={false}
-          onLogout={handleLogout} 
-        />
-      );
-    }
-  }
-
-  // Verificar se tem plano específico requerido
-  if (requiredPlan === 'premium' && authUser.plano !== 'Premium') {
-    return <PremiumUpgradeCard onLogout={handleLogout} />;
-  }
-
-  // Fallback: se não tem plano definido, bloquear acesso
-  console.log('Usuário sem plano válido, bloqueando acesso');
-  return (
-    <SubscriptionExpiredCard 
-      hasSubscription={false} 
-      onLogout={handleLogout} 
-    />
-  );
+  // Para outros tipos de usuário, permitir acesso por padrão
+  console.log('SubscriptionGuard - Usuário especial, permitindo acesso');
+  return <>{children}</>;
 };
 
 export default SubscriptionGuard;
