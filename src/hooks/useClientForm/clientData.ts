@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UseFormReturn } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +16,7 @@ export const useClientData = (
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   // Load client data for editing
-  const loadClientData = async () => {
+  const loadClientData = useCallback(async () => {
     if (!isEditing || !clientId) return;
     
     setIsLoading(true);
@@ -78,10 +78,10 @@ export const useClientData = (
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isEditing, clientId, form, toast]);
 
   // Save client data
-  const saveClientData = async (values: ClientFormValues) => {
+  const saveClientData = useCallback(async (values: ClientFormValues) => {
     try {
       setIsLoading(true);
       
@@ -94,7 +94,7 @@ export const useClientData = (
           title: "Erro de autenticação",
           description: "Você precisa estar logado para adicionar clientes."
         });
-        return;
+        return false;
       }
 
       // Format complete address
@@ -130,6 +130,45 @@ export const useClientData = (
           .eq('id', clientId);
           
         if (error) throw error;
+
+        // Update or create vehicle in new veiculos table
+        if (values.veiculo.marca && values.veiculo.modelo && values.veiculo.ano && values.veiculo.placa) {
+          // Check if vehicle already exists for this client
+          const { data: existingVehicle } = await supabase
+            .from('veiculos')
+            .select('id')
+            .eq('cliente_id', clientId)
+            .maybeSingle();
+
+          if (existingVehicle) {
+            // Update existing vehicle
+            await supabase
+              .from('veiculos')
+              .update({
+                marca: values.veiculo.marca,
+                modelo: values.veiculo.modelo,
+                ano: values.veiculo.ano,
+                placa: values.veiculo.placa,
+                cor: values.veiculo.cor || null,
+                kilometragem: values.veiculo.kilometragem || null
+              })
+              .eq('id', existingVehicle.id);
+          } else {
+            // Create new vehicle
+            await supabase
+              .from('veiculos')
+              .insert({
+                cliente_id: clientId,
+                marca: values.veiculo.marca,
+                modelo: values.veiculo.modelo,
+                ano: values.veiculo.ano,
+                placa: values.veiculo.placa,
+                cor: values.veiculo.cor || null,
+                kilometragem: values.veiculo.kilometragem || null,
+                user_id: session.user.id
+              });
+          }
+        }
       } else {
         // Create new client
         const { error } = await safeRpc('create_client', {
@@ -177,7 +216,7 @@ export const useClientData = (
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isEditing, clientId, toast]);
 
   return {
     isLoading,

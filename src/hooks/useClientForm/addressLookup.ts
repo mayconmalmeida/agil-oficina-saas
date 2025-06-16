@@ -1,13 +1,11 @@
 
 import { UseFormReturn } from 'react-hook-form';
-import { fetchAddressByCEP } from '@/utils/validationUtils';
+import { useCallback } from 'react';
 import { ClientFormValues } from './validation';
+import { fetchAddressByCEP } from '@/utils/validationUtils';
 
-export const useAddressLookup = (
-  form: UseFormReturn<ClientFormValues>,
-  cep: string
-) => {
-  const fetchAddressData = async () => {
+export const useAddressLookup = (form: UseFormReturn<ClientFormValues>, cep: string) => {
+  const fetchAddressData = useCallback(async () => {
     if (cep && cep.length === 9) { // Format XXXXX-XXX
       try {
         const addressData = await fetchAddressByCEP(cep);
@@ -25,7 +23,7 @@ export const useAddressLookup = (
         console.error('Error fetching address:', error);
       }
     }
-  };
+  }, [cep, form]);
 
   return { fetchAddressData };
 };

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clientFormSchema, ClientFormValues } from './validation';
@@ -21,6 +21,7 @@ export const useClientForm = ({
   clientId
 }: UseClientFormProps) => {
   const [activeTab, setActiveTab] = useState<string>('cliente');
+  const hasLoadedData = useRef(false);
   
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -61,34 +62,57 @@ export const useClientForm = ({
     isEditing
   );
   
-  // Fetch client data if in edit mode
+  // Fetch client data if in edit mode (only once)
   useEffect(() => {
-    if (isEditing && clientId) {
+    if (isEditing && clientId && !hasLoadedData.current) {
+      hasLoadedData.current = true;
       loadClientData();
     }
-  }, [isEditing, clientId]);
+  }, [isEditing, clientId, loadClientData]);
   
-  // Auto-lookup address when CEP is fully entered
+  // Auto-lookup address when CEP is fully entered (with debounce)
   useEffect(() => {
     if (cep && cep.length === 9) {
-      fetchAddressData();
+      const timeoutId = setTimeout(() => {
+        fetchAddressData();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [cep]);
+  }, [cep, fetchAddressData]);
   
-  // Format document (CPF)
+  // Format document (CPF) - with debounce to prevent loops
   useEffect(() => {
-    handleDocumentoFormat(documento);
-  }, [documento]);
+    if (documento) {
+      const timeoutId = setTimeout(() => {
+        handleDocumentoFormat(documento);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [documento, handleDocumentoFormat]);
   
-  // Format CEP
+  // Format CEP - with debounce to prevent loops
   useEffect(() => {
-    handleCepFormat(cep);
-  }, [cep]);
+    if (cep) {
+      const timeoutId = setTimeout(() => {
+        handleCepFormat(cep);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [cep, handleCepFormat]);
   
-  // Format license plate
+  // Format license plate - with debounce to prevent loops
   useEffect(() => {
-    handlePlacaFormat(placa);
-  }, [placa]);
+    if (placa) {
+      const timeoutId = setTimeout(() => {
+        handlePlacaFormat(placa);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [placa, handlePlacaFormat]);
   
   const handleNextTab = () => {
     setActiveTab('veiculo');
