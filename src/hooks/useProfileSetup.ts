@@ -18,6 +18,8 @@ export const useProfileSetup = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
+        console.log('Verificando usuário na página de setup...');
+        
         // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -35,28 +37,60 @@ export const useProfileSetup = () => {
         console.log("Sessão encontrada para usuário:", session.user.email);
         setUserId(session.user.id);
         
-        // Check if profile exists
-        const { data, error } = await supabase
+        // Buscar perfil existente
+        const { data: existingProfile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
           
-        if (error) {
-          console.log('Perfil não encontrado ou erro ao buscar:', error.message);
-          if (error.code === 'PGRST116') {
-            console.log('Perfil não encontrado, criando um novo');
-            // If no profile exists, we'll create one when the user submits the form
-          } else {
-            console.error('Erro ao buscar perfil:', error);
+        if (error && error.code !== 'PGRST116') {
+          console.error('Erro ao buscar perfil:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro ao carregar perfil",
+            description: "Ocorreu um erro ao buscar suas informações.",
+          });
+        } else if (existingProfile) {
+          console.log('Perfil existente encontrado:', existingProfile);
+          const profile = existingProfile as Profile;
+          
+          // Verificar se já está completo
+          const isComplete = profile.nome_oficina && profile.telefone && 
+                           profile.nome_oficina.trim() !== '' && profile.telefone.trim() !== '';
+          
+          if (isComplete) {
+            console.log('Perfil já está completo, redirecionando para dashboard');
+            toast({
+              title: "Perfil já configurado",
+              description: "Seu perfil já está completo. Redirecionando para o dashboard.",
+            });
+            navigate('/dashboard');
+            return;
           }
-        } else if (data) {
-          console.log('Perfil encontrado:', data);
-          const profile = data as Profile;
+          
           setProfileData({
             nome_oficina: profile.nome_oficina || '',
             telefone: profile.telefone || ''
           });
+        } else {
+          console.log('Nenhum perfil encontrado, criando um novo');
+          // Criar perfil básico se não existir
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              nome_oficina: '',
+              telefone: '',
+              role: 'user'
+            });
+            
+          if (createError) {
+            console.error('Erro ao criar perfil inicial:', createError);
+          } else {
+            console.log('Perfil inicial criado com sucesso');
+          }
         }
       } catch (error) {
         console.error('Erro ao verificar usuário:', error);
@@ -74,31 +108,25 @@ export const useProfileSetup = () => {
   }, [navigate, toast]);
 
   const handleProfileSaved = async () => {
-    // Mark profile as completed
+    console.log("Perfil salvo com sucesso, processando próximos passos...");
+    
     if (userId) {
+      // Marcar perfil como completo no onboarding
       console.log("Atualizando progresso de onboarding após salvar perfil");
       const updated = await updateProgress('profile_completed', true);
       
-      if (updated) {
-        setSaveSuccess(true);
-        
-        // Navigate after a short delay to show the success state
-        setTimeout(() => {
-          console.log("Redirecionando para dashboard");
-          navigate('/dashboard');
-        }, 1500);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Atenção",
-          description: "Seu perfil foi salvo, mas não conseguimos atualizar seu progresso. Você pode continuar usando o sistema.",
-        });
-        setSaveSuccess(true);
-        
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      }
+      setSaveSuccess(true);
+      
+      toast({
+        title: "Perfil configurado com sucesso!",
+        description: "Redirecionando para o dashboard...",
+      });
+      
+      // Redirecionar após um pequeno delay para mostrar o sucesso
+      setTimeout(() => {
+        console.log("Redirecionando para dashboard");
+        navigate('/dashboard');
+      }, 1500);
     }
   };
 

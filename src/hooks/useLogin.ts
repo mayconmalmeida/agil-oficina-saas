@@ -21,9 +21,11 @@ export const useLogin = () => {
 
   const checkProfileCompletion = async (uid: string) => {
     try {
+      console.log('Verificando completude do perfil para usuário:', uid);
+      
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('nome_oficina, telefone, email')
+        .select('nome_oficina, telefone, email, role')
         .eq('id', uid)
         .maybeSingle();
 
@@ -37,13 +39,15 @@ export const useLogin = () => {
         return false;
       }
 
+      console.log('Perfil encontrado:', profile);
+
       // Verificar se os campos obrigatórios estão preenchidos
       const requiredFields = ['nome_oficina', 'telefone'];
       const isComplete = requiredFields.every(field => 
         profile[field] && profile[field].trim() !== ''
       );
 
-      console.log('Verificação de perfil completo:', isComplete, profile);
+      console.log('Verificação de perfil completo:', isComplete);
       return isComplete;
     } catch (error) {
       console.error('Erro inesperado ao verificar perfil:', error);
@@ -91,7 +95,7 @@ export const useLogin = () => {
         console.log('Login bem-sucedido para:', authData.user.email);
         setUserId(authData.user.id);
 
-        // Verificar se é admin
+        // Verificar se é admin primeiro
         try {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -99,12 +103,7 @@ export const useLogin = () => {
             .eq('id', authData.user.id)
             .maybeSingle();
 
-          if (profileError) {
-            console.log('Erro ao verificar perfil ou perfil não existe:', profileError.message);
-          }
-
-          // Se é admin, redirecionar para painel admin
-          if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
+          if (!profileError && profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
             console.log('Admin detectado, redirecionando para /admin');
             toast({
               title: "Login realizado com sucesso!",
@@ -119,13 +118,14 @@ export const useLogin = () => {
         }
 
         // Para usuários normais, verificar se o perfil está completo
+        console.log('Verificando completude do perfil para usuário normal...');
         const isProfileComplete = await checkProfileCompletion(authData.user.id);
         
         if (!isProfileComplete) {
-          console.log('Perfil incompleto, redirecionando para configuração');
+          console.log('Perfil incompleto detectado, redirecionando para /perfil-setup');
           toast({
             title: "Complete seu perfil",
-            description: "Por favor, complete as informações da sua oficina.",
+            description: "Por favor, complete as informações da sua oficina para continuar.",
           });
           navigate('/perfil-setup');
         } else {

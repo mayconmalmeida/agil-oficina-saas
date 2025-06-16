@@ -1,146 +1,90 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { profileSchema } from '@/components/profile/profileSchema';
+import { profileFormSchema, ProfileFormValues } from '@/components/profile/profileSchema';
 
-interface UseProfileFormOptions {
-  userId?: string;
-  onSaveSuccess?: () => void;
+interface UseProfileFormProps {
+  userId: string | undefined;
+  onSaveSuccess: () => void;
   initialValues?: {
     nome_oficina?: string;
     telefone?: string;
-    logo_url?: string;
-    whatsapp_suporte?: string;
-    cnpj?: string;
-    responsavel?: string;
-    endereco?: string;
-    cidade?: string;
-    estado?: string;
-    cep?: string;
-    notify_new_client?: boolean;
-    notify_approved_budget?: boolean;
-    notify_by_email?: boolean;
-    sound_enabled?: boolean;
   };
 }
 
-export function useProfileForm({
-  userId,
-  onSaveSuccess,
-  initialValues = {}
-}: UseProfileFormOptions) {
+export const useProfileForm = ({ 
+  userId, 
+  onSaveSuccess, 
+  initialValues = { nome_oficina: '', telefone: '' } 
+}: UseProfileFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
 
-  // Check if bucket exists
-  const checkAndCreateBucket = async () => {
-    try {
-      // First check if it already exists
-      console.log("Checking if 'logos' bucket exists");
-      
-      // Just check if we can list objects (bucket exists)
-      const { data, error } = await supabase.storage
-        .from('logos')
-        .list(userId || '');
-      
-      if (error) {
-        console.warn("Error checking bucket:", error.message);
-        // We can't create buckets from client side
-        // This should be done via SQL migrations
-      } else {
-        console.log("'logos' bucket is accessible");
-      }
-    } catch (err) {
-      console.error('Error checking bucket:', err);
-    }
-  };
-
-  // Check bucket as soon as initialized
-  if (userId) {
-    checkAndCreateBucket();
-  }
-
-  const form = useForm<z.infer<typeof profileSchema>>({
-    resolver: zodResolver(profileSchema),
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
     defaultValues: {
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
-      logo_url: initialValues.logo_url || '',
-      whatsapp_suporte: initialValues.whatsapp_suporte || '46991270777', // Default value
-      cnpj: initialValues.cnpj || '',
-      responsavel: initialValues.responsavel || '',
-      endereco: initialValues.endereco || '',
-      cidade: initialValues.cidade || '',
-      estado: initialValues.estado || '',
-      cep: initialValues.cep || '',
-      notify_new_client: initialValues.notify_new_client ?? true,
-      notify_approved_budget: initialValues.notify_approved_budget ?? true,
-      notify_by_email: initialValues.notify_by_email ?? false,
-      sound_enabled: initialValues.sound_enabled ?? false,
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof profileSchema>) => {
+  const onSubmit = async (values: ProfileFormValues) => {
     if (!userId) {
+      console.error('UserId não fornecido para salvar perfil');
       toast({
         variant: "destructive",
-        title: "Erro ao salvar",
-        description: "ID do usuário não encontrado. Por favor, faça login novamente.",
+        title: "Erro",
+        description: "Erro de autenticação. Faça login novamente.",
       });
       return;
     }
 
     setIsLoading(true);
+    console.log('Salvando perfil para usuário:', userId, 'com dados:', values);
 
     try {
-      console.log('Saving profile with values:', values);
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: userId,
           nome_oficina: values.nome_oficina,
           telefone: values.telefone,
-          logo_url: values.logo_url,
-          whatsapp_suporte: values.whatsapp_suporte || '46991270777',
-          cnpj: values.cnpj,
-          responsavel: values.responsavel,
-          endereco: values.endereco,
-          cidade: values.cidade,
-          estado: values.estado,
-          cep: values.cep,
-          notify_new_client: values.notify_new_client,
-          notify_approved_budget: values.notify_approved_budget,
-          notify_by_email: values.notify_by_email,
-          sound_enabled: values.sound_enabled,
         })
-        .eq('id', userId);
+        .select();
 
       if (error) {
-        console.error("Error updating profile:", error);
-        throw error;
+        console.error('Erro ao salvar perfil:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar as informações. Tente novamente.",
+        });
+        return;
       }
 
+      console.log('Perfil salvo com sucesso:', data);
+      setSaveSuccess(true);
+      
       toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram salvas com sucesso.",
+        title: "Perfil salvo com sucesso!",
+        description: "Suas informações foram atualizadas.",
       });
 
-      setSaveSuccess(true);
-
-      if (onSaveSuccess) {
+      // Chamar callback de sucesso após breve delay
+      setTimeout(() => {
         onSaveSuccess();
-      }
-    } catch (error: any) {
-      console.error('Error saving profile:', error);
+      }, 500);
+
+    } catch (error) {
+      console.error('Erro inesperado ao salvar perfil:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao salvar perfil",
-        description: error.message || "Não foi possível salvar o perfil. Tente novamente.",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
       });
     } finally {
       setIsLoading(false);
@@ -153,4 +97,4 @@ export function useProfileForm({
     saveSuccess,
     onSubmit,
   };
-}
+};

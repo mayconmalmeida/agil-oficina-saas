@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +18,6 @@ const LoginPage: React.FC = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const { handleRedirect } = useOnboardingRedirect();
 
   // Verificar conexão com o Supabase
   useEffect(() => {
@@ -57,7 +55,7 @@ const LoginPage: React.FC = () => {
     const checkSession = async () => {
       try {
         setCheckingSession(true);
-        console.log("Verificando sessão existente...");
+        console.log("Verificando sessão existente na página de login...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -70,18 +68,19 @@ const LoginPage: React.FC = () => {
           console.log("Sessão existente encontrada:", session.user.email);
           setUserId(session.user.id);
           
-          // Verificar se é admin através da role na tabela profiles
+          // Verificar se é admin
           try {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('role')
+              .select('role, nome_oficina, telefone')
               .eq('id', session.user.id)
               .maybeSingle();
                 
             if (profileError) {
               console.log("Erro ao verificar profile ou usuário não tem perfil:", profileError.message);
             }
-                
+            
+            // Se é admin, redirecionar para admin
             if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
               console.log("Usuário é admin, redirecionando para dashboard admin");
               toast({
@@ -91,11 +90,27 @@ const LoginPage: React.FC = () => {
               navigate("/admin");
               return;
             }
+            
+            // Para usuários normais, verificar completude do perfil
+            if (profileData) {
+              const isProfileComplete = profileData.nome_oficina && profileData.telefone &&
+                                      profileData.nome_oficina.trim() !== '' && profileData.telefone.trim() !== '';
+              
+              if (!isProfileComplete) {
+                console.log("Perfil incompleto detectado, redirecionando para setup");
+                toast({
+                  title: "Complete seu perfil",
+                  description: "Por favor, complete as informações da sua oficina.",
+                });
+                navigate('/perfil-setup');
+                return;
+              }
+            }
           } catch (adminCheckError) {
-            console.error("Erro ao verificar se é admin:", adminCheckError);
+            console.error("Erro ao verificar admin:", adminCheckError);
           }
           
-          console.log("Redirecionando usuário normal para dashboard");
+          console.log("Redirecionando usuário para dashboard");
           navigate('/dashboard');
         } else {
           console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
@@ -108,7 +123,7 @@ const LoginPage: React.FC = () => {
     };
     
     checkSession();
-  }, [navigate, toast, setUserId, handleRedirect]);
+  }, [navigate, toast, setUserId]);
 
   if (checkingSession) {
     return <Loading fullscreen text="Verificando autenticação..." />;
