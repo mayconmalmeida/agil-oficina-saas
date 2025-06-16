@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -12,14 +12,19 @@ import {
   Settings,
   LogOut,
   BarChart3,
-  Building,
-  MessageSquare,
+  Building2,
+  Crown,
+  Shield,
   Megaphone,
-  Calculator
+  Calculator,
+  Archive,
+  Mail,
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/contexts/AuthContext';
+import { useDaysRemaining } from '@/hooks/useDaysRemaining';
+import { Badge } from '@/components/ui/badge';
 
 interface SidebarNavigationProps {
   onLogout: () => void;
@@ -27,108 +32,269 @@ interface SidebarNavigationProps {
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
   const location = useLocation();
-  const { userProfile } = useUserProfile();
-  const { subscriptionStatus } = useSubscription();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { diasRestantes, isPremiumTrial, isExpired } = useDaysRemaining();
+  
+  // Verificar se tem acesso premium (admin ou trial ativo)
+  const hasPremiumAccess = user?.role === 'admin' || user?.role === 'superadmin' || (isPremiumTrial && diasRestantes > 0);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home, current: location.pathname === '/dashboard' },
-    { name: 'Clientes', href: '/dashboard/clientes', icon: Users, current: location.pathname.startsWith('/dashboard/clientes') },
-    { name: 'Veículos', href: '/dashboard/veiculos', icon: Car, current: location.pathname.startsWith('/dashboard/veiculos') },
-    { name: 'Produtos', href: '/dashboard/produtos', icon: Package, current: location.pathname.startsWith('/dashboard/produtos') },
-    { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench, current: location.pathname.startsWith('/dashboard/servicos') },
-    { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar, current: location.pathname.startsWith('/dashboard/agendamentos') },
-    { name: 'Marketing', href: '/dashboard/marketing', icon: Megaphone, current: location.pathname.startsWith('/dashboard/marketing'), isPremium: true },
-    { name: 'Contabilidade', href: '/dashboard/contabilidade', icon: Calculator, current: location.pathname.startsWith('/dashboard/contabilidade'), isPremium: true },
-    { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText, current: location.pathname.startsWith('/dashboard/orcamento') },
-    { name: 'Relatórios', href: '/dashboard/relatorios-basicos', icon: BarChart3, current: location.pathname.startsWith('/dashboard/relatorios') },
-    { name: 'Empresa', href: '/dashboard/empresa', icon: Building, current: location.pathname.startsWith('/dashboard/empresa') },
-    { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings, current: location.pathname.startsWith('/dashboard/configuracoes') },
+  const essentialMenuItems = [
+    { 
+      name: 'Dashboard', 
+      href: '/dashboard', 
+      icon: Home, 
+      current: location.pathname === '/dashboard',
+      premium: false
+    },
+    { 
+      name: 'Clientes', 
+      href: '/dashboard/clientes', 
+      icon: Users, 
+      current: location.pathname.startsWith('/dashboard/clientes'),
+      premium: false
+    },
+    { 
+      name: 'Veículos', 
+      href: '/dashboard/veiculos', 
+      icon: Car, 
+      current: location.pathname.startsWith('/dashboard/veiculos'),
+      premium: false
+    },
+    { 
+      name: 'Produtos', 
+      href: '/dashboard/produtos', 
+      icon: Package, 
+      current: location.pathname.startsWith('/dashboard/produtos'),
+      premium: false
+    },
+    { 
+      name: 'Serviços', 
+      href: '/dashboard/servicos', 
+      icon: Wrench, 
+      current: location.pathname.startsWith('/dashboard/servicos'),
+      premium: false
+    },
+    { 
+      name: 'Orçamentos', 
+      href: '/dashboard/orcamentos', 
+      icon: FileText, 
+      current: location.pathname.startsWith('/dashboard/orcamentos'),
+      premium: false
+    },
+    { 
+      name: 'Categorias', 
+      href: '/dashboard/categorias', 
+      icon: Archive, 
+      current: location.pathname.startsWith('/dashboard/categorias'),
+      premium: false
+    },
+    { 
+      name: 'Fornecedores', 
+      href: '/dashboard/fornecedores', 
+      icon: Building2, 
+      current: location.pathname.startsWith('/dashboard/fornecedores'),
+      premium: false
+    },
+    { 
+      name: 'Relatórios Básicos', 
+      href: '/dashboard/relatorios-basicos', 
+      icon: BarChart3, 
+      current: location.pathname.startsWith('/dashboard/relatorios-basicos'),
+      premium: false
+    }
   ];
 
-  const handleNavigation = (href: string, isPremium?: boolean) => {
-    // Se é premium e usuário não tem plano premium, bloquear
-    if (isPremium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive) {
+  const premiumMenuItems = [
+    { 
+      name: 'Agendamentos', 
+      href: '/dashboard/agendamentos', 
+      icon: Calendar, 
+      current: location.pathname.startsWith('/dashboard/agendamentos'),
+      premium: true
+    },
+    { 
+      name: 'Marketing', 
+      href: '/dashboard/marketing', 
+      icon: Megaphone, 
+      current: location.pathname.startsWith('/dashboard/marketing'),
+      premium: true
+    },
+    { 
+      name: 'Contabilidade', 
+      href: '/dashboard/contabilidade', 
+      icon: Calculator, 
+      current: location.pathname.startsWith('/dashboard/contabilidade'),
+      premium: true
+    },
+    { 
+      name: 'Relatórios Avançados', 
+      href: '/dashboard/relatorios-avancados', 
+      icon: BarChart3, 
+      current: location.pathname.startsWith('/dashboard/relatorios-avancados'),
+      premium: true
+    },
+    { 
+      name: 'IA Suporte', 
+      href: '/dashboard/ia-suporte', 
+      icon: Shield, 
+      current: location.pathname.startsWith('/dashboard/ia-suporte'),
+      premium: true
+    },
+    { 
+      name: 'Backup', 
+      href: '/dashboard/backup', 
+      icon: Archive, 
+      current: location.pathname.startsWith('/dashboard/backup'),
+      premium: true
+    }
+  ];
+
+  const configMenuItems = [
+    { 
+      name: 'Empresa', 
+      href: '/dashboard/empresa', 
+      icon: Building2, 
+      current: location.pathname.startsWith('/dashboard/empresa'),
+      premium: false
+    },
+    { 
+      name: 'Configurações', 
+      href: '/dashboard/configuracoes', 
+      icon: Settings, 
+      current: location.pathname.startsWith('/dashboard/configuracoes'),
+      premium: false
+    }
+  ];
+
+  const handleMenuClick = (href: string, isPremium: boolean) => {
+    if (isPremium && !hasPremiumAccess) {
+      // Não navegar se for premium e usuário não tem acesso
       return;
     }
-    window.location.href = href;
+    navigate(href);
   };
 
-  // Determinar o nome do plano atual
-  const getCurrentPlanName = () => {
-    if (subscriptionStatus.isPremium) return 'Premium';
-    if (subscriptionStatus.isEssencial) return 'Essencial';
-    return 'Gratuito';
+  const renderMenuItem = (item: any) => {
+    const canAccess = !item.premium || hasPremiumAccess;
+    
+    return (
+      <li key={item.name}>
+        <button
+          onClick={() => handleMenuClick(item.href, item.premium)}
+          disabled={item.premium && !hasPremiumAccess}
+          className={`
+            group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-left
+            ${item.current 
+              ? 'bg-gray-100 text-gray-900' 
+              : canAccess 
+                ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                : 'text-gray-400 cursor-not-allowed opacity-60'
+            }
+          `}
+        >
+          <item.icon
+            className={`mr-3 h-5 w-5 flex-shrink-0 ${
+              item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+            }`}
+          />
+          <span className="flex-1">{item.name}</span>
+          {item.premium && !hasPremiumAccess && (
+            <Crown className="h-4 w-4 text-yellow-600 ml-2" />
+          )}
+        </button>
+      </li>
+    );
   };
 
   return (
-    <div className="flex flex-col h-full bg-white shadow-sm">
-      <div className="flex items-center justify-center h-16 px-4 border-b">
-        <h1 className="text-xl font-bold text-gray-900">AutoGestão</h1>
+    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+      {/* Logo */}
+      <div className="flex h-16 items-center px-4 border-b border-gray-200">
+        <h1 className="text-xl font-bold text-gray-900">AutoFlow</h1>
       </div>
-      
-      <nav className="flex-1 px-2 py-4 space-y-2">
-        {navigation.map((item) => {
-          const isBlocked = item.isPremium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive;
-          
-          return (
-            <Link
-              key={item.name}
-              to={isBlocked ? '#' : item.href}
-              className={`
-                group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-150
-                ${item.current
-                  ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-700'
-                  : isBlocked 
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }
-              `}
-              onClick={(e) => {
-                if (isBlocked) {
-                  e.preventDefault();
-                }
-              }}
-            >
-              <item.icon
-                className={`
-                  mr-3 h-5 w-5 flex-shrink-0
-                  ${item.current ? 'text-blue-500' : isBlocked ? 'text-gray-400' : 'text-gray-400 group-hover:text-gray-500'}
-                `}
-              />
-              <span className="flex-1">{item.name}</span>
-              {item.isPremium && (
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded">
-                  PRO
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
 
-      <div className="px-2 py-4 border-t">
-        <div className="mb-3 p-3 bg-blue-50 rounded-lg">
-          <div className="text-xs font-medium text-blue-900 mb-1">
-            {userProfile?.nome_oficina || 'Oficina'}
+      {/* Plan Status */}
+      <div className="p-4 border-b border-gray-200">
+        {user?.role === 'admin' || user?.role === 'superadmin' ? (
+          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
+            <Crown className="h-4 w-4 text-purple-600" />
+            <span className="text-sm font-medium text-purple-800">Admin</span>
           </div>
-          <div className="text-xs text-blue-700">
-            Plano: {getCurrentPlanName()}
-          </div>
-          {subscriptionStatus.isTrialActive && (
-            <div className="text-xs text-orange-600 mt-1">
-              Trial: {subscriptionStatus.daysRemaining} dias restantes
+        ) : isPremiumTrial && diasRestantes > 0 ? (
+          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+            <Crown className="h-4 w-4 text-blue-600" />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-blue-800">Trial Premium</span>
+              <p className="text-xs text-blue-600">{diasRestantes} dias restantes</p>
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+            <User className="h-4 w-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-800">Plano Essencial</span>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <nav className="space-y-6">
+          {/* Essential Features */}
+          <div>
+            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Recursos Essenciais
+            </h3>
+            <ul className="space-y-1">
+              {essentialMenuItems.map(renderMenuItem)}
+            </ul>
+          </div>
+
+          {/* Premium Features */}
+          <div>
+            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+              Recursos Premium
+              {!hasPremiumAccess && <Crown className="h-3 w-3 text-yellow-600" />}
+            </h3>
+            <ul className="space-y-1">
+              {premiumMenuItems.map(renderMenuItem)}
+            </ul>
+          </div>
+
+          {/* Configuration */}
+          <div>
+            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Configurações
+            </h3>
+            <ul className="space-y-1">
+              {configMenuItems.map(renderMenuItem)}
+            </ul>
+          </div>
+        </nav>
+      </div>
+
+      {/* User section */}
+      <div className="border-t border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onLogout}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
-        
-        <Button
-          onClick={onLogout}
-          variant="ghost"
-          className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Sair
-        </Button>
       </div>
     </div>
   );

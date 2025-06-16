@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import ProductForm from '@/components/products/ProductForm';
 import ProductDetailsPanel from '@/components/products/ProductDetailsPanel';
-import ImportXmlModal from '@/components/products/ImportXmlModal';
 import ProductsPageHeader from '@/components/products/page/ProductsPageHeader';
 import ProductsTabsHeader from '@/components/products/page/ProductsTabsHeader';
 import ProductsTable from '@/components/products/page/ProductsTable';
@@ -18,7 +17,6 @@ const ProductsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [products, setProducts] = useState<ServiceWithStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -90,7 +88,6 @@ const ProductsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <ProductsPageHeader 
           onNewProduct={handleNewProduct}
-          onImportModal={() => setShowImportModal(true)}
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -114,7 +111,6 @@ const ProductsPage: React.FC = () => {
                       <EmptyProductsState
                         searchQuery={searchQuery}
                         onNewProduct={handleNewProduct}
-                        onImportModal={() => setShowImportModal(true)}
                       />
                     ) : (
                       <ProductsTable
@@ -142,12 +138,6 @@ const ProductsPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      <ImportXmlModal 
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={handleImportSuccess}
-      />
     </div>
   );
 };
