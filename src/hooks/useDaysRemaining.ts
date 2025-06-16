@@ -86,7 +86,7 @@ export const useDaysRemaining = () => {
 
         const diasRestantes = Math.max(0, dias);
         const isExpiringSoon = diasRestantes <= 3 && diasRestantes > 0;
-        const isExpired = diasRestantes === 0 && profileData?.trial_started_at;
+        const isExpired = diasRestantes === 0 && Boolean(profileData?.trial_started_at);
 
         setData({
           diasRestantes,
