@@ -1,122 +1,116 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
-import { ClientFormValues } from '../EnhancedClientForm';
-import { formatLicensePlate } from '@/utils/validationUtils';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { ClientFormValues } from '@/hooks/useClientForm';
+import { CheckCircle2, Car } from 'lucide-react';
 
 interface VehicleInfoSectionProps {
   form: UseFormReturn<ClientFormValues>;
-  saveSuccess: boolean;
+  saveSuccess?: boolean;
 }
 
-const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSuccess }) => {
-  // Handle license plate formatting on blur to avoid infinite loops
-  const handlePlacaBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value) {
-      const formattedPlaca = formatLicensePlate(value);
-      if (formattedPlaca !== value) {
-        form.setValue('veiculo.placa', formattedPlaca);
-      }
-    }
-  };
-  
-  // Restrict year field to only numbers and 4 digits
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    form.setValue('veiculo.ano', value);
-  };
+const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ 
+  form, 
+  saveSuccess = false 
+}) => {
+  // Watch vehicle fields to debug
+  const vehicleData = form.watch('veiculo');
+  console.log('VehicleInfoSection - Dados do veículo:', vehicleData);
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Car className="h-5 w-5 text-blue-600" />
+        <h3 className="text-lg font-semibold text-gray-900">Informações do Veículo</h3>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
           control={form.control}
           name="veiculo.marca"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Marca</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Marca *
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="Fiat" 
+                  placeholder="Ex: Ford, Volkswagen" 
                   {...field}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  className={saveSuccess ? "border-green-500" : ""}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="veiculo.modelo"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Modelo</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Modelo *
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="Uno" 
+                  placeholder="Ex: Focus, Gol" 
                   {...field}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  className={saveSuccess ? "border-green-500" : ""}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
         <FormField
           control={form.control}
           name="veiculo.ano"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ano</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Ano *
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="2022" 
-                  {...field}
+                  placeholder="Ex: 2020" 
                   maxLength={4}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                  inputMode="numeric"
-                  onChange={handleYearChange}
-                  onKeyDown={(e) => {
-                    // Allow only digits, backspace, tab, delete, and arrow keys
-                    if (
-                      !/^\d$/.test(e.key) && 
-                      !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
+                  {...field}
+                  className={saveSuccess ? "border-green-500" : ""}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="veiculo.placa"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Placa</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Placa *
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="ABC1D23 ou ABC-1234"
+                  placeholder="Ex: ABC-1234 ou ABC1D23" 
                   {...field}
-                  maxLength={8}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                  onBlur={handlePlacaBlur}
+                  className={saveSuccess ? "border-green-500" : ""}
                   style={{ textTransform: 'uppercase' }}
                 />
               </FormControl>
@@ -124,50 +118,42 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSucce
             </FormItem>
           )}
         />
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
         <FormField
           control={form.control}
           name="veiculo.cor"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cor (opcional)</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Cor
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="Branco" 
+                  placeholder="Ex: Branco, Preto" 
                   {...field}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
+                  className={saveSuccess ? "border-green-500" : ""}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="veiculo.kilometragem"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Kilometragem (opcional)</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                Kilometragem
+                {saveSuccess && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+              </FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="50000"
+                  placeholder="Ex: 50000" 
                   {...field}
-                  disabled={saveSuccess}
-                  className={saveSuccess ? "bg-green-50 border-green-200" : ""}
-                  inputMode="numeric"
-                  onKeyDown={(e) => {
-                    // Allow only digits, backspace, tab, delete, and arrow keys
-                    if (
-                      !/^\d$/.test(e.key) && 
-                      !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
+                  className={saveSuccess ? "border-green-500" : ""}
                 />
               </FormControl>
               <FormMessage />
@@ -175,6 +161,14 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({ form, saveSucce
           )}
         />
       </div>
+
+      {/* Debug info - remover em produção */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+          <strong>Debug - Dados do veículo:</strong>
+          <pre>{JSON.stringify(vehicleData, null, 2)}</pre>
+        </div>
+      )}
     </div>
   );
 };

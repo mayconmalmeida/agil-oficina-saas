@@ -29,7 +29,7 @@ export const useClientData = (
       if (error) throw error;
       
       if (data) {
-        console.log('Carregando dados do cliente para edição:', data);
+        console.log('Dados do cliente carregados:', data);
         
         // Handle missing properties with defaults using type assertion
         const clientData = {
@@ -46,8 +46,67 @@ export const useClientData = (
           numero: (data as any).numero || ''
         };
         
+        // Processar dados do veículo - priorizar dados estruturados
+        let vehicleData = {
+          marca: '',
+          modelo: '',
+          ano: '',
+          placa: '',
+          cor: '',
+          kilometragem: ''
+        };
+
+        // Se há dados estruturados do veículo
+        if (clientData.marca && clientData.modelo) {
+          vehicleData = {
+            marca: clientData.marca || '',
+            modelo: clientData.modelo || '',
+            ano: clientData.ano || '',
+            placa: clientData.placa || '',
+            cor: clientData.cor || '',
+            kilometragem: clientData.kilometragem || ''
+          };
+          console.log('Usando dados estruturados do veículo:', vehicleData);
+        } 
+        // Fallback para campo veiculo antigo
+        else if (clientData.veiculo) {
+          const vehicleText = clientData.veiculo;
+          console.log('Processando campo veiculo legado:', vehicleText);
+          
+          // Tentar extrair informações do campo veiculo
+          const parts = vehicleText.split(',').map(part => part.trim());
+          const mainPart = parts[0] || '';
+          
+          // Procurar por placa no texto
+          const plateMatch = vehicleText.match(/Placa:\s*([A-Z0-9-]+)/i);
+          const extractedPlate = plateMatch ? plateMatch[1] : clientData.placa || '';
+          
+          // Tentar separar marca e modelo do texto principal
+          const vehicleParts = mainPart.split(' ');
+          if (vehicleParts.length >= 2) {
+            vehicleData = {
+              marca: vehicleParts[0] || '',
+              modelo: vehicleParts.slice(1).join(' ') || '',
+              ano: '',
+              placa: extractedPlate,
+              cor: clientData.cor || '',
+              kilometragem: clientData.kilometragem || ''
+            };
+          } else {
+            vehicleData = {
+              marca: mainPart,
+              modelo: '',
+              ano: '',
+              placa: extractedPlate,
+              cor: clientData.cor || '',
+              kilometragem: clientData.kilometragem || ''
+            };
+          }
+          console.log('Dados do veículo extraídos:', vehicleData);
+        }
+        
         // Format data for the form
-        form.reset({
+        const formData = {
           nome: clientData.nome || '',
           tipo: clientData.tipo as 'pf' | 'pj' || 'pf',
           documento: clientData.documento || '',
@@ -59,15 +118,11 @@ export const useClientData = (
           bairro: clientData.bairro || '',
           cidade: clientData.cidade || '',
           estado: clientData.estado || '',
-          veiculo: {
-            marca: clientData.marca || '',
-            modelo: clientData.modelo || '',
-            ano: clientData.ano || '',
-            placa: clientData.placa || '',
-            cor: clientData.cor || '',
-            kilometragem: clientData.kilometragem || ''
-          }
-        });
+          veiculo: vehicleData
+        };
+
+        console.log('Dados formatados para o formulário:', formData);
+        form.reset(formData);
       }
     } catch (error: any) {
       console.error('Error fetching client:', error);
