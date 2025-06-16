@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useDaysRemaining } from './useDaysRemaining';
 
 export type PremiumFeature = 
   | 'reports' 
@@ -19,15 +20,17 @@ export type PremiumFeature =
  */
 export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
   const { toast } = useToast();
+  const { isPremiumTrial } = useDaysRemaining();
   const [premiumFeaturesEnabled, setPremiumFeaturesEnabled] = useState<boolean>(false);
   
   useEffect(() => {
-    // During trial or when premium plan is active, premium features are enabled
+    // Durante trial, usuário tem acesso premium, ou quando premium plan está ativo
     const isPremium = planType === 'premium';
     const isTrialActive = daysRemaining > 0;
     
-    setPremiumFeaturesEnabled(isPremium || isTrialActive);
-  }, [planType, daysRemaining]);
+    // MUDANÇA: Durante o trial de 7 dias, usuário tem acesso PREMIUM
+    setPremiumFeaturesEnabled(isPremium || (isTrialActive && isPremiumTrial));
+  }, [planType, daysRemaining, isPremiumTrial]);
 
   // Map premium features to their respective plans
   const featurePlanMap: Record<PremiumFeature, string> = {
@@ -46,12 +49,17 @@ export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
    * @returns True if user has access to the feature
    */
   const checkAccess = (feature: PremiumFeature): boolean => {
-    // If feature is available on any plan or user is in trial, allow access
-    if (featurePlanMap[feature] === 'essencial' || planType === 'premium' || daysRemaining > 0) {
+    // Se feature é disponível em qualquer plano, permitir acesso
+    if (featurePlanMap[feature] === 'essencial') {
       return true;
     }
     
-    // Feature requires premium plan and user isn't in trial
+    // Se usuário tem plano premium OU está em trial premium, permitir acesso
+    if (planType === 'premium' || (daysRemaining > 0 && isPremiumTrial)) {
+      return true;
+    }
+    
+    // Feature requer premium e usuário não tem acesso
     return false;
   };
   
@@ -99,7 +107,7 @@ export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
   };
   
   return {
-    isPremium: planType === 'premium',
+    isPremium: planType === 'premium' || (daysRemaining > 0 && isPremiumTrial),
     isTrialActive: daysRemaining > 0,
     premiumFeaturesEnabled,
     checkAccess,

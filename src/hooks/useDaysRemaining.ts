@@ -8,6 +8,7 @@ interface DaysRemainingData {
   tipoPlano: 'trial' | 'mensal' | 'anual' | 'ativo' | 'sem_plano';
   isExpiringSoon: boolean;
   isExpired: boolean;
+  isPremiumTrial: boolean; // Nova propriedade para indicar se está em trial premium
 }
 
 export const useDaysRemaining = () => {
@@ -16,7 +17,8 @@ export const useDaysRemaining = () => {
     diasRestantes: 0,
     tipoPlano: 'sem_plano',
     isExpiringSoon: false,
-    isExpired: false
+    isExpired: false,
+    isPremiumTrial: false
   });
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +48,7 @@ export const useDaysRemaining = () => {
         const hoje = new Date();
         let dias = 0;
         let tipoPlano: DaysRemainingData['tipoPlano'] = 'sem_plano';
+        let isPremiumTrial = false;
 
         // Admin não precisa de validação de trial
         if (profileData?.role === 'admin' || profileData?.role === 'superadmin') {
@@ -53,7 +56,8 @@ export const useDaysRemaining = () => {
             diasRestantes: 999,
             tipoPlano: 'ativo',
             isExpiringSoon: false,
-            isExpired: false
+            isExpired: false,
+            isPremiumTrial: false
           });
           setLoading(false);
           return;
@@ -68,9 +72,10 @@ export const useDaysRemaining = () => {
           const diffTime = trialEnd.getTime() - hoje.getTime();
           dias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           
-          // Se ainda tem dias restantes, é trial ativo
+          // Se ainda tem dias restantes, é trial ativo COM PLANO PREMIUM
           if (dias > 0) {
             tipoPlano = 'trial';
+            isPremiumTrial = true; // Durante o trial, usuário tem acesso premium
           }
           
           console.log('useDaysRemaining - Cálculo de dias restantes:', {
@@ -80,7 +85,8 @@ export const useDaysRemaining = () => {
             diasCalculados: dias,
             plano: profileData.plano,
             diffTime: diffTime,
-            hoursRemaining: Math.ceil(diffTime / (1000 * 60 * 60))
+            hoursRemaining: Math.ceil(diffTime / (1000 * 60 * 60)),
+            isPremiumTrial
           });
         }
 
@@ -92,7 +98,8 @@ export const useDaysRemaining = () => {
           diasRestantes,
           tipoPlano,
           isExpiringSoon,
-          isExpired
+          isExpired,
+          isPremiumTrial
         });
       } catch (error) {
         console.error('useDaysRemaining - Erro ao calcular dias restantes:', error);

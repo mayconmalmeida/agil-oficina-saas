@@ -4,7 +4,7 @@ import { useDaysRemaining } from '@/hooks/useDaysRemaining';
 import { Badge } from '@/components/ui/badge';
 
 const DaysRemainingCounter: React.FC = () => {
-  const { diasRestantes, tipoPlano, isExpiringSoon, isExpired, loading } = useDaysRemaining();
+  const { diasRestantes, tipoPlano, isExpiringSoon, isExpired, isPremiumTrial, loading } = useDaysRemaining();
 
   if (loading) {
     return (
@@ -27,10 +27,16 @@ const DaysRemainingCounter: React.FC = () => {
     
     return (
       <Badge variant={badgeVariant} className="text-xs">
+        {isPremiumTrial && (
+          <span className="mr-1 text-yellow-600">★</span>
+        )}
         {diasRestantes === 1 
           ? `${diasRestantes} dia restante` 
           : `${diasRestantes} dias restantes`
         }
+        {isPremiumTrial && (
+          <span className="ml-1 text-xs">(Premium)</span>
+        )}
       </Badge>
     );
   }
