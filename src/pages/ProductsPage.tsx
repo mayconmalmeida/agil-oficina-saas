@@ -5,10 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Archive, Package, AlertTriangle, Eye, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, Package, Eye, Upload } from 'lucide-react';
 import ProductList from '@/components/products/ProductList';
 import ProductForm from '@/components/products/ProductForm';
 import ProductDetailsPanel from '@/components/products/ProductDetailsPanel';
+import ImportXmlModal from '@/components/products/ImportXmlModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ const ProductsPage: React.FC = () => {
   const [filter, setFilter] = useState('todos');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [products, setProducts] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -78,6 +80,10 @@ const ProductsPage: React.FC = () => {
     setSelectedProductId(null);
   };
 
+  const handleImportSuccess = () => {
+    fetchProducts(); // Recarregar lista de produtos
+  };
+
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (product.descricao?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
@@ -95,9 +101,15 @@ const ProductsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Gerenciar Produtos e Peças</h1>
-          <Button onClick={handleNewProduct}>
-            <Plus className="mr-2 h-4 w-4" /> Novo Produto
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importar Nota (XML)
+            </Button>
+            <Button onClick={handleNewProduct}>
+              <Plus className="mr-2 h-4 w-4" /> Novo Produto
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -149,14 +161,20 @@ const ProductsPage: React.FC = () => {
                         <p className="text-gray-500 mt-2">
                           {searchQuery
                             ? `Nenhum resultado para "${searchQuery}"`
-                            : 'Cadastre um produto para começar'
+                            : 'Cadastre um produto ou importe uma nota fiscal'
                           }
                         </p>
                         {!searchQuery && (
-                          <Button onClick={handleNewProduct} className="mt-4">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Criar Primeiro Produto
-                          </Button>
+                          <div className="flex justify-center gap-3 mt-4">
+                            <Button onClick={handleNewProduct}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Criar Primeiro Produto
+                            </Button>
+                            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Importar XML
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -164,7 +182,9 @@ const ProductsPage: React.FC = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Nome</TableHead>
+                            <TableHead>Código</TableHead>
                             <TableHead>Descrição</TableHead>
+                            <TableHead className="text-right">Estoque</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
@@ -173,9 +193,11 @@ const ProductsPage: React.FC = () => {
                           {filteredProducts.map((product) => (
                             <TableRow key={product.id}>
                               <TableCell className="font-medium">{product.nome}</TableCell>
+                              <TableCell>{product.codigo || '-'}</TableCell>
                               <TableCell className="max-w-xs truncate">
                                 {product.descricao || '-'}
                               </TableCell>
+                              <TableCell className="text-right">{product.quantidade_estoque || 0}</TableCell>
                               <TableCell className="text-right">{formatCurrency(product.valor)}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
@@ -213,6 +235,12 @@ const ProductsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ImportXmlModal 
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 };

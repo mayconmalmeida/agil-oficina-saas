@@ -9,12 +9,25 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Plus, Eye, Edit, Car } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Client } from '@/utils/supabaseTypes';
+
+interface Vehicle {
+  id: string;
+  nome: string;
+  marca?: string;
+  modelo?: string;
+  ano?: string;
+  placa?: string;
+  cor?: string;
+  kilometragem?: string;
+  veiculo: string;
+  created_at?: string;
+  is_active?: boolean;
+}
 
 const VehiclesPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [vehicles, setVehicles] = useState<Client[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -58,7 +71,7 @@ const VehiclesPage: React.FC = () => {
     (vehicle.placa?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
   );
 
-  const formatVehicleInfo = (vehicle: Client) => {
+  const formatVehicleInfo = (vehicle: Vehicle) => {
     const parts = [];
     if (vehicle.marca) parts.push(vehicle.marca);
     if (vehicle.modelo) parts.push(vehicle.modelo);

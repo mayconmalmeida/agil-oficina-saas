@@ -132,6 +132,44 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque: {
+        Row: {
+          codigo_produto: string | null
+          created_at: string | null
+          id: string
+          produto_id: string | null
+          quantidade: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          codigo_produto?: string | null
+          created_at?: string | null
+          id?: string
+          produto_id?: string | null
+          quantidade?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          codigo_produto?: string | null
+          created_at?: string | null
+          id?: string
+          produto_id?: string | null
+          quantidade?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       oficinas: {
         Row: {
           ativo: boolean | null
@@ -346,31 +384,40 @@ export type Database = {
       }
       services: {
         Row: {
+          codigo: string | null
           created_at: string | null
           descricao: string | null
           id: string
           is_active: boolean | null
           nome: string
+          preco_custo: number | null
+          quantidade_estoque: number | null
           tipo: string
           user_id: string | null
           valor: number
         }
         Insert: {
+          codigo?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
           is_active?: boolean | null
           nome: string
+          preco_custo?: number | null
+          quantidade_estoque?: number | null
           tipo: string
           user_id?: string | null
           valor: number
         }
         Update: {
+          codigo?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
           is_active?: boolean | null
           nome?: string
+          preco_custo?: number | null
+          quantidade_estoque?: number | null
           tipo?: string
           user_id?: string | null
           valor?: number
@@ -597,6 +644,10 @@ export type Database = {
       }
       get_user_subscription: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      process_nfce_xml: {
+        Args: { p_user_id: string; p_produtos: Json }
         Returns: Json
       }
       start_free_trial: {
