@@ -1,66 +1,73 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authService';
+import { AuthUser } from '@/types/auth';
 
 export const useUserProfileData = (user: User | null) => {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    const fetchProfile = async () => {
-      if (!user?.id) {
-        if (mounted) {
-          setProfile(null);
-          setRole(null);
-          setLoading(false);
-        }
+    const loadUserProfile = async () => {
+      if (!user) {
+        setProfile(null);
+        setRole(null);
+        setLoading(false);
         return;
       }
 
       try {
-        console.log('Buscando perfil do usuário:', user.id);
+        console.log('useUserProfileData: Carregando perfil para usuário:', user.id);
+        const userProfile = await fetchUserProfile(user.id);
         
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        // Calcular se pode acessar funcionalidades
+        const canAccessFeatures = calculateCanAccessFeatures(userProfile.subscription, userProfile.role);
+        
+        // Criar o perfil do usuário com todas as informações necessárias
+        const authUser: AuthUser = {
+          ...user,
+          role: userProfile.role,
+          isAdmin: userProfile.role === 'admin' || userProfile.role === 'superadmin',
+          canAccessFeatures,
+          subscription: userProfile.subscription,
+          plano: userProfile.plano || 'Premium', // Definir Premium como padrão para trial
+          trial_started_at: userProfile.trial_started_at
+        };
 
-        if (!mounted) return;
+        console.log('useUserProfileData: Perfil carregado:', {
+          userId: authUser.id,
+          email: authUser.email,
+          role: authUser.role,
+          isAdmin: authUser.isAdmin,
+          canAccessFeatures: authUser.canAccessFeatures,
+          plano: authUser.plano
+        });
 
-        if (error && error.code !== 'PGRST116') {
-          console.error('Erro ao buscar perfil:', error);
-          setProfile(null);
-          setRole('user');
-        } else {
-          const userRole = profileData?.role || 'user';
-          console.log('Perfil encontrado:', profileData, 'Role:', userRole);
-          setProfile(profileData);
-          setRole(userRole);
-        }
+        setProfile(authUser);
+        setRole(userProfile.role);
       } catch (error) {
-        console.error('Erro inesperado ao buscar perfil:', error);
-        if (mounted) {
-          setProfile(null);
-          setRole('user');
-        }
+        console.error('useUserProfileData: Erro ao carregar perfil:', error);
+        
+        // Em caso de erro, criar um perfil básico mas funcional
+        const fallbackProfile: AuthUser = {
+          ...user,
+          role: 'user',
+          isAdmin: false,
+          canAccessFeatures: true, // Permitir acesso básico mesmo com erro
+          plano: 'Premium' // Premium durante trial
+        };
+        
+        setProfile(fallbackProfile);
+        setRole('user');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
-    fetchProfile();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id]);
+    loadUserProfile();
+  }, [user]);
 
   return { profile, loading, role };
 };

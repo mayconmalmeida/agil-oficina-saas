@@ -21,6 +21,7 @@ import {
   Car
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useDaysRemaining } from '@/hooks/useDaysRemaining';
 
 interface NavigationLinksProps {
   subscriptionStatus: any;
@@ -32,6 +33,7 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({
   onNavigate 
 }) => {
   const location = useLocation();
+  const { isPremiumTrial, diasRestantes } = useDaysRemaining();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
@@ -88,7 +90,19 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({
 
   const renderNavigationItem = (item: any) => {
     const isActive = location.pathname === item.href;
-    const isAccessible = !item.isPremium || subscriptionStatus.isPremium || subscriptionStatus.isTrialActive;
+    
+    // NOVA LÓGICA: Durante trial de 7 dias, usuário tem acesso premium
+    const isAccessible = !item.isPremium || 
+                        subscriptionStatus.isPremium || 
+                        (isPremiumTrial && diasRestantes > 0);
+
+    console.log('NavigationLinks: Item:', item.name, {
+      isPremium: item.isPremium,
+      hasSubscriptionPremium: subscriptionStatus.isPremium,
+      isPremiumTrial,
+      diasRestantes,
+      isAccessible
+    });
 
     return (
       <Link
@@ -126,6 +140,11 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({
             Premium
           </Badge>
         )}
+        {item.isPremium && isAccessible && isPremiumTrial && (
+          <Badge variant="outline" className="ml-2 text-xs bg-green-100 text-green-800 border-green-300">
+            Trial
+          </Badge>
+        )}
       </Link>
     );
   };
@@ -142,6 +161,9 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({
         <div className="px-4 mb-2">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Recursos Premium
+            {isPremiumTrial && diasRestantes > 0 && (
+              <span className="ml-2 text-green-600">(Trial Ativo)</span>
+            )}
           </h3>
         </div>
         <div className="space-y-1">
