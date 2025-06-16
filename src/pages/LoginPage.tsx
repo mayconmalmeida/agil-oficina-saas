@@ -24,19 +24,19 @@ const LoginPage: React.FC = () => {
     const verifyConnection = async () => {
       try {
         setConnectionStatus('checking');
-        console.log("Verificando conexão com Supabase na página de login...");
+        console.log("LoginPage: Verificando conexão com Supabase...");
         const connected = await testSupabaseConnection();
         setConnectionStatus(connected ? 'connected' : 'error');
         
         if (!connected) {
           setConnectionError("Não foi possível conectar ao servidor. O sistema funcionará em modo de demonstração.");
-          console.log("Conexão com Supabase falhou, usando modo demo");
+          console.log("LoginPage: Conexão com Supabase falhou, usando modo demo");
         } else {
-          console.log("Conexão com Supabase estabelecida com sucesso");
+          console.log("LoginPage: Conexão com Supabase estabelecida com sucesso");
           setConnectionError(null);
         }
       } catch (error) {
-        console.error("Erro ao verificar conexão:", error);
+        console.error("LoginPage: Erro ao verificar conexão:", error);
         setConnectionStatus('error');
         setConnectionError("Erro ao verificar conexão com o servidor: " + 
           (error instanceof Error ? error.message : "Erro desconhecido"));
@@ -44,10 +44,6 @@ const LoginPage: React.FC = () => {
     };
     
     verifyConnection();
-    
-    // Re-verificar a cada minuto
-    const intervalId = setInterval(verifyConnection, 60000);
-    return () => clearInterval(intervalId);
   }, []);
 
   // Verificar se já está autenticado
@@ -55,20 +51,21 @@ const LoginPage: React.FC = () => {
     const checkSession = async () => {
       try {
         setCheckingSession(true);
-        console.log("Verificando sessão existente na página de login...");
+        console.log("LoginPage: Verificando sessão existente...");
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Erro ao verificar sessão:", error);
+          console.error("LoginPage: Erro ao verificar sessão:", error);
           setCheckingSession(false);
           return;
         }
         
-        if (session) {
-          console.log("Sessão existente encontrada:", session.user.email);
+        if (session?.user) {
+          console.log("LoginPage: Sessão encontrada para:", session.user.email);
           setUserId(session.user.id);
           
-          // Verificar se é admin
+          // Verificar perfil
           try {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
@@ -78,36 +75,21 @@ const LoginPage: React.FC = () => {
                 
             // Se é admin, redirecionar para admin
             if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
-              console.log("Usuário é admin, redirecionando para dashboard admin");
-              toast({
-                title: "Login automático",
-                description: "Você foi redirecionado para o painel de administração.",
-              });
-              navigate("/admin");
+              console.log("LoginPage: Usuário é admin, redirecionando para /admin");
+              navigate("/admin", { replace: true });
               return;
             }
             
-            // Para usuários normais, verificar se o perfil existe e está completo
+            // Para usuários normais, verificar se o perfil está completo
             if (profileError && profileError.code !== 'PGRST116') {
-              console.log("Erro ao verificar profile:", profileError.message);
-              // Em caso de erro, redirecionar para setup por segurança
-              console.log("Erro na verificação do perfil, redirecionando para setup");
-              toast({
-                title: "Complete seu perfil",
-                description: "Por favor, complete as informações da sua oficina.",
-              });
-              navigate('/perfil-setup');
+              console.log("LoginPage: Erro ao verificar profile, redirecionando para setup");
+              navigate('/perfil-setup', { replace: true });
               return;
             }
             
             if (!profileData) {
-              // Perfil não existe, redirecionar para setup
-              console.log("Perfil não encontrado, redirecionando para setup");
-              toast({
-                title: "Complete seu perfil",
-                description: "Por favor, complete as informações da sua oficina.",
-              });
-              navigate('/perfil-setup');
+              console.log("LoginPage: Perfil não encontrado, redirecionando para setup");
+              navigate('/perfil-setup', { replace: true });
               return;
             }
             
@@ -116,40 +98,31 @@ const LoginPage: React.FC = () => {
                                     profileData.nome_oficina.trim() !== '' && profileData.telefone.trim() !== '';
             
             if (!isProfileComplete) {
-              console.log("Perfil incompleto detectado, redirecionando para setup");
-              toast({
-                title: "Complete seu perfil",
-                description: "Por favor, complete as informações da sua oficina.",
-              });
-              navigate('/perfil-setup');
+              console.log("LoginPage: Perfil incompleto, redirecionando para setup");
+              navigate('/perfil-setup', { replace: true });
               return;
             }
             
+            console.log("LoginPage: Perfil completo encontrado, redirecionando para dashboard");
+            navigate('/dashboard', { replace: true });
+            
           } catch (adminCheckError) {
-            console.error("Erro ao verificar admin:", adminCheckError);
-            // Em caso de erro, redirecionar para setup por segurança
-            toast({
-              title: "Complete seu perfil",
-              description: "Por favor, complete as informações da sua oficina.",
-            });
-            navigate('/perfil-setup');
+            console.error("LoginPage: Erro ao verificar perfil:", adminCheckError);
+            navigate('/perfil-setup', { replace: true });
             return;
           }
-          
-          console.log("Perfil completo encontrado, redirecionando usuário para dashboard");
-          navigate('/dashboard');
         } else {
-          console.log("Nenhuma sessão encontrada, permanecendo na tela de login");
+          console.log("LoginPage: Nenhuma sessão encontrada, permanecendo na tela de login");
         }
       } catch (error) {
-        console.error("Erro ao verificar sessão:", error);
+        console.error("LoginPage: Erro ao verificar sessão:", error);
       } finally {
         setCheckingSession(false);
       }
     };
     
     checkSession();
-  }, [navigate, toast, setUserId]);
+  }, [navigate, setUserId]);
 
   if (checkingSession) {
     return <Loading fullscreen text="Verificando autenticação..." />;
