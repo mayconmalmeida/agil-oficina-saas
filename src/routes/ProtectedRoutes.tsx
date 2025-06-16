@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Route } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -32,11 +31,9 @@ const ProtectedRoutes = () => {
     <Route
       path="/dashboard"
       element={
-        <AuthProvider>
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        </AuthProvider>
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
       }
     >
       <Route index element={<DashboardPage />} />

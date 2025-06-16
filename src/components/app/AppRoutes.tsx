@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PublicRoutes from '@/routes/PublicRoutes';
@@ -25,11 +24,9 @@ const AppRoutes = () => {
       <Route
         path="/dashboard"
         element={
-          <AuthProvider>
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          </AuthProvider>
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
         }
       >
         <PremiumRoutes />
