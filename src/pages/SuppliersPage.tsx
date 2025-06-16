@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { formatCNPJ, formatCEP } from '@/utils/formatUtils';
+import { formatCNPJ, formatCEP } from '@/utils/formatters';
 
 interface Supplier {
   id: string;
