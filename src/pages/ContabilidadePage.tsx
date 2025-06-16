@@ -8,6 +8,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useDaysRemaining } from '@/hooks/useDaysRemaining';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import ImportXmlModal from '@/components/contabilidade/ImportXmlModal';
+import ExportXmlModal from '@/components/contabilidade/ExportXmlModal';
+import SendToAccountantModal from '@/components/contabilidade/SendToAccountantModal';
+import ExportHistoryTable from '@/components/contabilidade/ExportHistoryTable';
 
 interface NotaFiscal {
   id: string;
@@ -37,12 +41,15 @@ const ContabilidadePage: React.FC = () => {
   const [notasSaida, setNotasSaida] = useState<NotaFiscal[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
   const { toast } = useToast();
   const { diasRestantes, isPremiumTrial, isExpired } = useDaysRemaining();
   const { user } = useAuth();
 
   // Verificar se tem acesso premium (admin ou trial ativo)
-  const hasPermiumAccess = user?.role === 'admin' || user?.role === 'superadmin' || (isPremiumTrial && diasRestantes > 0);
+  const hasPremiumAccess = user?.role === 'admin' || user?.role === 'superadmin' || (isPremiumTrial && diasRestantes > 0);
 
   useEffect(() => {
     carregarDados();
@@ -83,65 +90,32 @@ const ContabilidadePage: React.FC = () => {
         console.error('Erro ao carregar fornecedores:', errorFornecedores);
       }
 
-      // Carregar dados dos fornecedores para as notas de entrada
-      const notasEntradaComFornecedores = await Promise.all(
-        (notasEntradaData || []).map(async (nota: any) => {
-          const notaFiscal: NotaFiscal = {
-            id: nota.id,
-            tipo: nota.tipo as 'entrada' | 'saida',
-            numero: nota.numero,
-            data_emissao: nota.data_emissao,
-            valor_total: nota.valor_total,
-            status: nota.status,
-            fornecedor_id: nota.fornecedor_id,
-            cliente_id: nota.cliente_id
-          };
+      // Converter dados para tipos corretos
+      const notasEntradaProcessadas = (notasEntradaData || []).map((nota: any): NotaFiscal => ({
+        id: nota.id,
+        tipo: nota.tipo as 'entrada' | 'saida',
+        numero: nota.numero,
+        data_emissao: nota.data_emissao,
+        valor_total: nota.valor_total,
+        status: nota.status,
+        fornecedor_id: nota.fornecedor_id,
+        cliente_id: nota.cliente_id
+      }));
 
-          if (nota.fornecedor_id) {
-            const { data: fornecedor } = await supabase
-              .from('fornecedores')
-              .select('nome, cnpj')
-              .eq('id', nota.fornecedor_id)
-              .single();
-            
-            notaFiscal.fornecedor_nome = fornecedor?.nome;
-            notaFiscal.fornecedor_cnpj = fornecedor?.cnpj;
-          }
-          return notaFiscal;
-        })
-      );
+      const notasSaidaProcessadas = (notasSaidaData || []).map((nota: any): NotaFiscal => ({
+        id: nota.id,
+        tipo: nota.tipo as 'entrada' | 'saida',
+        numero: nota.numero,
+        data_emissao: nota.data_emissao,
+        valor_total: nota.valor_total,
+        status: nota.status,
+        fornecedor_id: nota.fornecedor_id,
+        cliente_id: nota.cliente_id
+      }));
 
-      // Carregar dados dos clientes para as notas de saída
-      const notasSaidaComClientes = await Promise.all(
-        (notasSaidaData || []).map(async (nota: any) => {
-          const notaFiscal: NotaFiscal = {
-            id: nota.id,
-            tipo: nota.tipo as 'entrada' | 'saida',
-            numero: nota.numero,
-            data_emissao: nota.data_emissao,
-            valor_total: nota.valor_total,
-            status: nota.status,
-            fornecedor_id: nota.fornecedor_id,
-            cliente_id: nota.cliente_id
-          };
-
-          if (nota.cliente_id) {
-            const { data: cliente } = await supabase
-              .from('clients')
-              .select('nome, documento')
-              .eq('id', nota.cliente_id)
-              .single();
-            
-            notaFiscal.cliente_nome = cliente?.nome;
-            notaFiscal.cliente_documento = cliente?.documento;
-          }
-          return notaFiscal;
-        })
-      );
-
-      setNotasEntrada(notasEntradaComFornecedores);
-      setNotasSaida(notasSaidaComClientes);
-      setFornecedores((fornecedoresData || []).map((f: any) => ({
+      setNotasEntrada(notasEntradaProcessadas);
+      setNotasSaida(notasSaidaProcessadas);
+      setFornecedores((fornecedoresData || []).map((f: any): Fornecedor => ({
         id: f.id,
         nome: f.nome,
         cnpj: f.cnpj,
@@ -162,7 +136,7 @@ const ContabilidadePage: React.FC = () => {
   };
 
   const handleImportarXML = () => {
-    if (!hasPermiumAccess) {
+    if (!hasPremiumAccess) {
       toast({
         variant: "destructive",
         title: "Recurso Premium",
@@ -170,15 +144,11 @@ const ContabilidadePage: React.FC = () => {
       });
       return;
     }
-    
-    toast({
-      title: "Em desenvolvimento",
-      description: "Funcionalidade de importação de XML será implementada"
-    });
+    setShowImportModal(true);
   };
 
   const handleExportarXMLs = () => {
-    if (!hasPermiumAccess) {
+    if (!hasPremiumAccess) {
       toast({
         variant: "destructive",
         title: "Recurso Premium", 
@@ -186,15 +156,11 @@ const ContabilidadePage: React.FC = () => {
       });
       return;
     }
-    
-    toast({
-      title: "Em desenvolvimento", 
-      description: "Funcionalidade de exportação será implementada"
-    });
+    setShowExportModal(true);
   };
 
   const handleEnviarContador = () => {
-    if (!hasPermiumAccess) {
+    if (!hasPremiumAccess) {
       toast({
         variant: "destructive",
         title: "Recurso Premium",
@@ -202,11 +168,7 @@ const ContabilidadePage: React.FC = () => {
       });
       return;
     }
-    
-    toast({
-      title: "Em desenvolvimento",
-      description: "Funcionalidade de envio para contador será implementada"
-    });
+    setShowSendModal(true);
   };
 
   const formatCurrency = (value: number) => {
@@ -293,6 +255,28 @@ const ContabilidadePage: React.FC = () => {
     return null;
   };
 
+  // Mock data para histórico de exportações
+  const mockExports = [
+    {
+      id: '1',
+      tipo: 'Notas de Entrada',
+      periodo: 'Jan/2024',
+      formato: 'xml',
+      status: 'concluido' as const,
+      data_criacao: '2024-01-31',
+      tamanho: '2.5 MB'
+    },
+    {
+      id: '2',
+      tipo: 'Notas de Saída',
+      periodo: 'Dez/2023',
+      formato: 'excel',
+      status: 'concluido' as const,
+      data_criacao: '2023-12-31',
+      tamanho: '1.8 MB'
+    }
+  ];
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -307,31 +291,31 @@ const ContabilidadePage: React.FC = () => {
             <Button 
               onClick={handleImportarXML} 
               className="flex items-center gap-2"
-              disabled={!hasPermiumAccess}
+              disabled={!hasPremiumAccess}
             >
               <Upload className="h-4 w-4" />
               Importar XML
-              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
             <Button 
               onClick={handleExportarXMLs} 
               variant="outline" 
               className="flex items-center gap-2"
-              disabled={!hasPermiumAccess}
+              disabled={!hasPremiumAccess}
             >
               <Download className="h-4 w-4" />
               Exportar XMLs
-              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
             <Button 
               onClick={handleEnviarContador} 
               variant="outline" 
               className="flex items-center gap-2"
-              disabled={!hasPermiumAccess}
+              disabled={!hasPremiumAccess}
             >
               <Mail className="h-4 w-4" />
               Enviar para Contador
-              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
           </div>
         </div>
@@ -360,10 +344,10 @@ const ContabilidadePage: React.FC = () => {
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900">Nenhuma nota fiscal de entrada</h3>
                   <p className="text-gray-500 mt-2">Importe XMLs de notas fiscais para começar</p>
-                  <Button onClick={handleImportarXML} className="mt-4" disabled={!hasPermiumAccess}>
+                  <Button onClick={handleImportarXML} className="mt-4" disabled={!hasPremiumAccess}>
                     <Upload className="h-4 w-4 mr-2" />
                     Importar primeiro XML
-                    {!hasPermiumAccess && <Crown className="h-4 w-4 ml-2" />}
+                    {!hasPremiumAccess && <Crown className="h-4 w-4 ml-2" />}
                   </Button>
                 </div>
               ) : (
@@ -399,8 +383,8 @@ const ContabilidadePage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <div>
-                              <div className="font-medium">{nota.fornecedor_nome}</div>
-                              <div className="text-xs text-gray-400">{nota.fornecedor_cnpj}</div>
+                              <div className="font-medium">{nota.fornecedor_nome || 'N/A'}</div>
+                              <div className="text-xs text-gray-400">{nota.fornecedor_cnpj || 'N/A'}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -485,8 +469,8 @@ const ContabilidadePage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <div>
-                              <div className="font-medium">{nota.cliente_nome}</div>
-                              <div className="text-xs text-gray-400">{nota.cliente_documento}</div>
+                              <div className="font-medium">{nota.cliente_nome || 'N/A'}</div>
+                              <div className="text-xs text-gray-400">{nota.cliente_documento || 'N/A'}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -530,17 +514,7 @@ const ContabilidadePage: React.FC = () => {
               <CardTitle>📂 Histórico de Exportações</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">Nenhuma exportação realizada</h3>
-                <p className="text-gray-500 mt-2">O histórico de exportações aparecerá aqui</p>
-                {!hasPermiumAccess && (
-                  <Badge variant="outline" className="mt-2 bg-yellow-100 text-yellow-800 border-yellow-300">
-                    <Crown className="h-3 w-3 mr-1" />
-                    Recurso Premium
-                  </Badge>
-                )}
-              </div>
+              <ExportHistoryTable exports={mockExports} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -607,10 +581,10 @@ const ContabilidadePage: React.FC = () => {
                         <p className="text-sm text-gray-500">Sistema de gestão empresarial</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" disabled={!hasPermiumAccess}>
+                        <Button variant="outline" disabled={!hasPremiumAccess}>
                           Conectar
                         </Button>
-                        {!hasPermiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                        {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
                       </div>
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -619,10 +593,10 @@ const ContabilidadePage: React.FC = () => {
                         <p className="text-sm text-gray-500">Plataforma contábil online</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" disabled={!hasPermiumAccess}>
+                        <Button variant="outline" disabled={!hasPremiumAccess}>
                           Conectar
                         </Button>
-                        {!hasPermiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                        {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
                       </div>
                     </div>
                   </div>
@@ -632,6 +606,21 @@ const ContabilidadePage: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modais */}
+      <ImportXmlModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={carregarDados}
+      />
+      <ExportXmlModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
+      <SendToAccountantModal
+        isOpen={showSendModal}
+        onClose={() => setShowSendModal(false)}
+      />
     </div>
   );
 };
