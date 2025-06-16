@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { UseFormReturn } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { ClientFormValues } from './validation';
-import { safeRpc } from '@/utils/supabaseTypes';
 
 export const useClientData = (
   form: UseFormReturn<ClientFormValues>,
@@ -30,6 +29,8 @@ export const useClientData = (
       if (error) throw error;
       
       if (data) {
+        console.log('Carregando dados do cliente para edição:', data);
+        
         // Handle missing properties with defaults using type assertion
         const clientData = {
           ...data,
@@ -84,6 +85,7 @@ export const useClientData = (
   const saveClientData = useCallback(async (values: ClientFormValues) => {
     try {
       setIsLoading(true);
+      console.log('Iniciando salvamento do cliente:', values);
       
       // Verify authentication
       const { data: { session } } = await supabase.auth.getSession();
@@ -92,7 +94,7 @@ export const useClientData = (
         toast({
           variant: "destructive",
           title: "Erro de autenticação",
-          description: "Você precisa estar logado para adicionar clientes."
+          description: "Você precisa estar logado para salvar clientes."
         });
         return false;
       }
@@ -104,6 +106,8 @@ export const useClientData = (
       const veiculoFormatado = `${values.veiculo.marca} ${values.veiculo.modelo} ${values.veiculo.ano}, Placa: ${values.veiculo.placa}`;
       
       if (isEditing && clientId) {
+        console.log('Atualizando cliente existente:', clientId);
+        
         // Update existing client
         const { error } = await supabase
           .from('clients')
@@ -111,27 +115,33 @@ export const useClientData = (
             nome: values.nome,
             telefone: values.telefone,
             email: values.email || null,
-            veiculo: veiculoFormatado,
-            marca: values.veiculo.marca,
-            modelo: values.veiculo.modelo,
-            ano: values.veiculo.ano,
-            placa: values.veiculo.placa,
             endereco: enderecoCompleto,
             cidade: values.cidade || null,
             estado: values.estado || null,
             cep: values.cep || null,
             documento: values.documento || null,
             tipo: values.tipo,
+            bairro: values.bairro || null,
+            numero: values.numero || null,
+            // Campos do veículo
+            marca: values.veiculo.marca,
+            modelo: values.veiculo.modelo,
+            ano: values.veiculo.ano,
+            placa: values.veiculo.placa,
             cor: values.veiculo.cor || null,
             kilometragem: values.veiculo.kilometragem || null,
-            bairro: values.bairro || null,
-            numero: values.numero || null
+            veiculo: veiculoFormatado
           })
           .eq('id', clientId);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao atualizar cliente:', error);
+          throw error;
+        }
 
-        // Update or create vehicle in new veiculos table
+        console.log('Cliente atualizado com sucesso');
+
+        // Update vehicle in new veiculos table
         if (values.veiculo.marca && values.veiculo.modelo && values.veiculo.ano && values.veiculo.placa) {
           // Check if vehicle already exists for this client
           const { data: existingVehicle } = await supabase
@@ -170,30 +180,63 @@ export const useClientData = (
           }
         }
       } else {
-        // Create new client
-        const { error } = await safeRpc('create_client', {
-          p_user_id: session.user.id,
-          p_nome: values.nome,
-          p_telefone: values.telefone,
-          p_email: values.email || null,
-          p_veiculo: veiculoFormatado,
-          p_marca: values.veiculo.marca,
-          p_modelo: values.veiculo.modelo, 
-          p_ano: values.veiculo.ano,
-          p_placa: values.veiculo.placa,
-          p_endereco: enderecoCompleto,
-          p_cidade: values.cidade || null,
-          p_estado: values.estado || null,
-          p_cep: values.cep || null,
-          p_documento: values.documento || null,
-          p_cor: values.veiculo.cor || null,
-          p_kilometragem: values.veiculo.kilometragem || null,
-          p_bairro: values.bairro || null,
-          p_numero: values.numero || null,
-          p_tipo: values.tipo
-        });
+        console.log('Criando novo cliente');
         
-        if (error) throw error;
+        // Create new client
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            user_id: session.user.id,
+            nome: values.nome,
+            telefone: values.telefone,
+            email: values.email || null,
+            veiculo: veiculoFormatado,
+            endereco: enderecoCompleto,
+            cidade: values.cidade || null,
+            estado: values.estado || null,
+            cep: values.cep || null,
+            documento: values.documento || null,
+            tipo: values.tipo,
+            bairro: values.bairro || null,
+            numero: values.numero || null,
+            // Campos do veículo
+            marca: values.veiculo.marca,
+            modelo: values.veiculo.modelo,
+            ano: values.veiculo.ano,
+            placa: values.veiculo.placa,
+            cor: values.veiculo.cor || null,
+            kilometragem: values.veiculo.kilometragem || null
+          })
+          .select()
+          .single();
+        
+        if (clientError) {
+          console.error('Erro ao criar cliente:', clientError);
+          throw clientError;
+        }
+
+        console.log('Cliente criado com sucesso:', newClient);
+
+        // Create vehicle in new veiculos table
+        if (values.veiculo.marca && values.veiculo.modelo && values.veiculo.ano && values.veiculo.placa) {
+          const { error: vehicleError } = await supabase
+            .from('veiculos')
+            .insert({
+              cliente_id: newClient.id,
+              marca: values.veiculo.marca,
+              modelo: values.veiculo.modelo,
+              ano: values.veiculo.ano,
+              placa: values.veiculo.placa,
+              cor: values.veiculo.cor || null,
+              kilometragem: values.veiculo.kilometragem || null,
+              user_id: session.user.id
+            });
+
+          if (vehicleError) {
+            console.error('Erro ao criar veículo:', vehicleError);
+            throw vehicleError;
+          }
+        }
       }
       
       setSaveSuccess(true);

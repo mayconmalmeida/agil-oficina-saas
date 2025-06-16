@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,6 +41,7 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Use useEffect with proper dependencies to avoid infinite re-renders
   useEffect(() => {
@@ -102,10 +104,18 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
     fetchClientDetails();
   }, [clientId, toast]); // Only depend on clientId and toast
 
-  const handleCreateBudget = () => {
-    if (onCreateBudget && client) {
-      onCreateBudget(client.id);
+  const handleCreateBudget = (clientId: string) => {
+    if (onCreateBudget) {
+      onCreateBudget(clientId);
+    } else {
+      // Navegar para a página de criação de orçamento
+      navigate(`/dashboard/orcamentos/novo?cliente=${clientId}`);
     }
+  };
+
+  const handleViewBudget = (budgetId: string) => {
+    // Navegar para a página de visualização do orçamento
+    navigate(`/dashboard/orcamentos/${budgetId}`);
   };
   
   return (
@@ -155,11 +165,12 @@ const ClientDetailsPanel: React.FC<ClientDetailsPanelProps> = ({
               veiculo={client.veiculo}
               cor={client.cor}
               kilometragem={client.kilometragem}
-              onCreateBudget={handleCreateBudget}
+              onCreateBudget={() => handleCreateBudget(client.id)}
             />
             <ClientBudgetsList 
               clientId={client.id} 
-              onViewBudget={(budgetId) => console.log('View budget:', budgetId)}
+              onViewBudget={handleViewBudget}
+              onCreateBudget={handleCreateBudget}
             />
           </>
         ) : (

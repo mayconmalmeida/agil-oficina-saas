@@ -42,16 +42,42 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // VALIDAÇÃO DO TRIAL DE 7 DIAS
+  // VALIDAÇÃO DO TRIAL DE 7 DIAS BASEADA NA DATA DE CRIAÇÃO DA OFICINA
   const authUser = user as any;
   
-  // Verificar se tem trial_ends_at definido
+  console.log('Validando acesso do usuário:', {
+    userId: authUser.id,
+    createdAt: authUser.created_at,
+    subscription: authUser.subscription,
+    trial_ends_at: authUser.trial_ends_at
+  });
+
+  // Calcular se está dentro dos 7 dias grátis baseado na data de criação
+  const userCreatedAt = new Date(authUser.created_at);
+  const now = new Date();
+  const sevenDaysAfterCreation = new Date(userCreatedAt.getTime() + (7 * 24 * 60 * 60 * 1000));
+  const isWithinFreeTrialPeriod = now <= sevenDaysAfterCreation;
+  
+  console.log('Validação de trial gratuito:', {
+    userCreatedAt,
+    now,
+    sevenDaysAfterCreation,
+    isWithinFreeTrialPeriod,
+    daysSinceCreation: Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24))
+  });
+
+  // Se está dentro do período de 7 dias grátis, permitir acesso
+  if (isWithinFreeTrialPeriod) {
+    console.log('Usuário dentro do período de 7 dias grátis, permitindo acesso');
+    return <>{children}</>;
+  }
+
+  // Verificar se tem trial_ends_at definido (sistema antigo)
   if (authUser.trial_ends_at) {
     const trialEndDate = new Date(authUser.trial_ends_at);
-    const now = new Date();
     const isTrialActive = trialEndDate > now;
     
-    console.log('Trial info:', {
+    console.log('Trial info (sistema antigo):', {
       trial_ends_at: authUser.trial_ends_at,
       trialEndDate,
       now,
@@ -104,21 +130,14 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }
 
-  // Se não tem acesso geral às funcionalidades
-  if (!hasGeneralAccess) {
-    if (fallback) {
-      return <>{fallback}</>;
-    }
-    return (
-      <SubscriptionExpiredCard 
-        hasSubscription={!!authUser.subscription} 
-        onLogout={handleLogout} 
-      />
-    );
-  }
-
-  // Usuário tem acesso permitido
-  return <>{children}</>;
+  // Se passou dos 7 dias grátis e não tem assinatura ativa, bloquear acesso
+  console.log('Bloqueando acesso: passou dos 7 dias grátis e não tem assinatura ativa');
+  return (
+    <SubscriptionExpiredCard 
+      hasSubscription={!!authUser.subscription} 
+      onLogout={handleLogout} 
+    />
+  );
 };
 
 export default SubscriptionGuard;

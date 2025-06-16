@@ -6,7 +6,6 @@ import { clientFormSchema, ClientFormValues } from './validation';
 import { useAddressLookup } from './addressLookup';
 import { useFormatHandlers } from './formatHandlers';
 import { useClientData } from './clientData';
-import { debounce } from '@/utils/debounce';
 
 interface UseClientFormProps {
   onSave: () => void;
@@ -23,7 +22,6 @@ export const useClientForm = ({
 }: UseClientFormProps) => {
   const [activeTab, setActiveTab] = useState<string>('cliente');
   const hasLoadedData = useRef(false);
-  const isFormattingRef = useRef(false);
   
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
@@ -51,9 +49,7 @@ export const useClientForm = ({
   });
 
   // Watch for form field values to apply formatting
-  const documento = form.watch('documento');
   const cep = form.watch('cep');
-  const placa = form.watch('veiculo.placa');
   
   // Initialize custom hooks
   const { fetchAddressData } = useAddressLookup(form, cep);
@@ -64,88 +60,22 @@ export const useClientForm = ({
     isEditing
   );
   
-  // Debounced formatting functions
-  const debouncedDocumentoFormat = useCallback(
-    debounce((doc: string) => {
-      if (!isFormattingRef.current) {
-        isFormattingRef.current = true;
-        handleDocumentoFormat(doc);
-        setTimeout(() => {
-          isFormattingRef.current = false;
-        }, 100);
-      }
-    }, 300),
-    [handleDocumentoFormat]
-  );
-
-  const debouncedCepFormat = useCallback(
-    debounce((cepValue: string) => {
-      if (!isFormattingRef.current) {
-        isFormattingRef.current = true;
-        handleCepFormat(cepValue);
-        setTimeout(() => {
-          isFormattingRef.current = false;
-        }, 100);
-      }
-    }, 300),
-    [handleCepFormat]
-  );
-
-  const debouncedPlacaFormat = useCallback(
-    debounce((placaValue: string) => {
-      if (!isFormattingRef.current) {
-        isFormattingRef.current = true;
-        handlePlacaFormat(placaValue);
-        setTimeout(() => {
-          isFormattingRef.current = false;
-        }, 100);
-      }
-    }, 300),
-    [handlePlacaFormat]
-  );
-
-  const debouncedAddressLookup = useCallback(
-    debounce(() => {
-      fetchAddressData();
-    }, 500),
-    [fetchAddressData]
-  );
-  
   // Fetch client data if in edit mode (only once)
   useEffect(() => {
     if (isEditing && clientId && !hasLoadedData.current) {
       hasLoadedData.current = true;
+      console.log('Carregando dados do cliente para edição');
       loadClientData();
     }
   }, [isEditing, clientId, loadClientData]);
   
   // Auto-lookup address when CEP is fully entered
   useEffect(() => {
-    if (cep && cep.length === 9 && !isFormattingRef.current) {
-      debouncedAddressLookup();
+    if (cep && cep.length === 9) {
+      console.log('CEP completo detectado, buscando endereço:', cep);
+      fetchAddressData();
     }
-  }, [cep, debouncedAddressLookup]);
-  
-  // Format document (CPF)
-  useEffect(() => {
-    if (documento && !isFormattingRef.current) {
-      debouncedDocumentoFormat(documento);
-    }
-  }, [documento, debouncedDocumentoFormat]);
-  
-  // Format CEP
-  useEffect(() => {
-    if (cep && !isFormattingRef.current) {
-      debouncedCepFormat(cep);
-    }
-  }, [cep, debouncedCepFormat]);
-  
-  // Format license plate - removed auto search
-  useEffect(() => {
-    if (placa && !isFormattingRef.current) {
-      debouncedPlacaFormat(placa);
-    }
-  }, [placa, debouncedPlacaFormat]);
+  }, [cep, fetchAddressData]);
   
   const handleNextTab = useCallback(() => {
     setActiveTab('veiculo');
@@ -156,9 +86,14 @@ export const useClientForm = ({
   }, []);
   
   const onSubmit = async (values: ClientFormValues) => {
+    console.log('Submetendo formulário de cliente:', values);
     const success = await saveClientData(values);
     if (success) {
-      onSave();
+      console.log('Cliente salvo com sucesso, chamando onSave');
+      // Aguardar um pouco antes de chamar onSave para mostrar o feedback visual
+      setTimeout(() => {
+        onSave();
+      }, 1500);
     }
   };
   
