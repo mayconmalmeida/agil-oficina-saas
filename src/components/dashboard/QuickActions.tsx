@@ -12,7 +12,8 @@ import {
   Database,
   Bot,
   Shield,
-  Headphones
+  Headphones,
+  MessageCircle
 } from "lucide-react";
 import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
 
@@ -73,6 +74,13 @@ const QuickActions = () => {
       icon: Bot,
       href: "/dashboard/ia-diagnostico",
       color: "bg-emerald-500 hover:bg-emerald-600 text-white",
+      isPremium: true
+    },
+    {
+      title: "IA Suporte",
+      icon: MessageCircle,
+      href: "/dashboard/ia-suporte-inteligente",
+      color: "bg-cyan-500 hover:bg-cyan-600 text-white",
       isPremium: true
     },
     {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -48,6 +47,7 @@ import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import BackupPage from '@/pages/BackupPage';
 import SuportePage from '@/pages/SuportePage';
+import IASuporteInteligentePage from '@/pages/IASuporteInteligentePage';
 
 // Create a client outside the component to prevent recreation
 const queryClient = new QueryClient({
@@ -172,6 +172,14 @@ function App() {
               element={
                 <SubscriptionGuard requiredPlan="premium">
                   <IADiagnosticoPage />
+                </SubscriptionGuard>
+              } 
+            />
+            <Route 
+              path="ia-suporte-inteligente" 
+              element={
+                <SubscriptionGuard requiredPlan="premium">
+                  <IASuporteInteligentePage />
                 </SubscriptionGuard>
               } 
             />

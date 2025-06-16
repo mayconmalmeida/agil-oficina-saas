@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Car, Package, Wrench, Calendar, FileText, Settings, Database, Bot, Shield, Headphones } from 'lucide-react';
+import { Home, Users, Car, Package, Wrench, Calendar, FileText, Settings, Database, Bot, Shield, Headphones, MessageCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 interface NavigationLinksProps {
@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
   { name: 'Integração Contábil', href: '/dashboard/integracao-contabil', icon: Database, premium: true },
   { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Bot, premium: true },
+  { name: 'IA Suporte Inteligente', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle, premium: true },
   { name: 'Backup Automático', href: '/dashboard/backup', icon: Shield, premium: true },
   { name: 'Suporte Prioritário', href: '/dashboard/suporte', icon: Headphones, premium: true },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
