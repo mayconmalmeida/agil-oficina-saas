@@ -9,16 +9,13 @@ import { profileSchema, ProfileFormValues } from '@/components/profile/profileSc
 interface UseProfileFormProps {
   userId: string | undefined;
   onSaveSuccess: () => void;
-  initialValues?: {
-    nome_oficina?: string;
-    telefone?: string;
-  };
+  initialValues?: any;
 }
 
 export const useProfileForm = ({ 
   userId, 
   onSaveSuccess, 
-  initialValues = { nome_oficina: '', telefone: '' } 
+  initialValues = {} 
 }: UseProfileFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -29,6 +26,16 @@ export const useProfileForm = ({
     defaultValues: {
       nome_oficina: initialValues.nome_oficina || '',
       telefone: initialValues.telefone || '',
+      email: initialValues.email || '',
+      cnpj: initialValues.cnpj || '',
+      responsavel: initialValues.responsavel || '',
+      endereco: initialValues.endereco || '',
+      cidade: initialValues.cidade || '',
+      estado: initialValues.estado || '',
+      cep: initialValues.cep || '',
+      logo_url: initialValues.logo_url || '',
+      whatsapp_suporte: initialValues.whatsapp_suporte || '',
+      full_name: initialValues.full_name || '',
     },
   });
 
@@ -44,7 +51,7 @@ export const useProfileForm = ({
     }
 
     setIsLoading(true);
-    console.log('Salvando perfil para usuário:', userId, 'com dados:', values);
+    console.log('Salvando perfil completo para usuário:', userId, 'com dados:', values);
 
     try {
       const { data, error } = await supabase
@@ -53,6 +60,16 @@ export const useProfileForm = ({
           id: userId,
           nome_oficina: values.nome_oficina,
           telefone: values.telefone,
+          email: values.email || null,
+          cnpj: values.cnpj || null,
+          responsavel: values.responsavel || null,
+          endereco: values.endereco || null,
+          cidade: values.cidade || null,
+          estado: values.estado || null,
+          cep: values.cep || null,
+          logo_url: values.logo_url || null,
+          whatsapp_suporte: values.whatsapp_suporte || null,
+          full_name: values.full_name || null,
         })
         .select();
 
@@ -66,7 +83,7 @@ export const useProfileForm = ({
         return;
       }
 
-      console.log('Perfil salvo com sucesso:', data);
+      console.log('Perfil completo salvo com sucesso:', data);
       setSaveSuccess(true);
       
       toast({

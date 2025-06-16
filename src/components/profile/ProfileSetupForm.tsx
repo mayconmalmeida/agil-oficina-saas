@@ -2,24 +2,23 @@
 import React from 'react';
 import { Form } from '@/components/ui/form';
 import { CardContent } from '@/components/ui/card';
-import ProfileFormField from './ProfileFormField';
 import ProfileSubmitButton from './ProfileSubmitButton';
 import { useProfileForm } from '@/hooks/useProfileForm';
-import { formatPhoneNumber } from '@/utils/formatUtils';
+import BasicInfoSection from './form-sections/BasicInfoSection';
+import AddressSection from './form-sections/AddressSection';
+import LogoUploadSection from './form-sections/LogoUploadSection';
+import { Separator } from '@/components/ui/separator';
 
 interface ProfileSetupFormProps {
   userId: string | undefined;
   onSaveSuccess: () => void;
-  initialValues?: {
-    nome_oficina?: string;
-    telefone?: string;
-  };
+  initialValues?: any;
 }
 
 const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({ 
   userId, 
   onSaveSuccess,
-  initialValues = { nome_oficina: '', telefone: '' }
+  initialValues = {}
 }) => {
   const { form, isLoading, saveSuccess, onSubmit } = useProfileForm({
     userId,
@@ -28,27 +27,39 @@ const ProfileSetupForm: React.FC<ProfileSetupFormProps> = ({
   });
   
   return (
-    <CardContent>
+    <CardContent className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-xl font-semibold mb-2">Complete seu Perfil</h2>
+        <p className="text-gray-600 text-sm">
+          Preencha as informações da sua oficina para começar a usar o sistema
+        </p>
+      </div>
+      
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <ProfileFormField 
-            form={form}
-            name="nome_oficina"
-            label="Nome da Oficina"
-            placeholder="Auto Center São Paulo"
-            disabled={isLoading}
-            isSuccess={saveSuccess}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <BasicInfoSection 
+            form={form} 
+            isLoading={isLoading} 
+            isSuccess={saveSuccess} 
           />
           
-          <ProfileFormField 
-            form={form}
-            name="telefone"
-            label="Telefone"
-            placeholder="(11) 99999-9999"
-            disabled={isLoading}
-            isSuccess={saveSuccess}
-            formatValue={formatPhoneNumber}
+          <Separator />
+          
+          <AddressSection 
+            form={form} 
+            isLoading={isLoading} 
+            isSuccess={saveSuccess} 
           />
+          
+          <Separator />
+          
+          <LogoUploadSection 
+            form={form} 
+            isLoading={isLoading} 
+            isSuccess={saveSuccess} 
+          />
+          
+          <Separator />
           
           <ProfileSubmitButton 
             isLoading={isLoading} 
