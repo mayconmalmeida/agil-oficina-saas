@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authService';
 import { AuthUser } from '@/types/auth';
+import { UserSubscription } from '@/types/subscription';
 
 export const useUserProfileData = (user: User | null) => {
   const [profile, setProfile] = useState<AuthUser | null>(null);
@@ -35,7 +36,8 @@ export const useUserProfileData = (user: User | null) => {
             ...userProfile.subscription,
             user_id: user.id,
             created_at: userProfile.subscription.created_at || new Date().toISOString(),
-            updated_at: userProfile.subscription.updated_at || new Date().toISOString()
+            updated_at: userProfile.subscription.updated_at || new Date().toISOString(),
+            plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type']
           } : undefined,
           plano: userProfile.plano || 'Premium',
           trial_started_at: userProfile.trial_started_at
