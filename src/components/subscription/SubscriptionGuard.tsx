@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/useAccessControl';
@@ -41,17 +42,66 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // BLOQUEIO DE TRIAL PREMIUM
-  const authUser = user as any; // Cast to access extended properties
-  const isTrialExpired =
-    authUser.trial_ends_at &&
-    new Date(authUser.trial_ends_at) < new Date() &&
-    authUser.plano === "Premium";
+  // VALIDAÇÃO DO TRIAL DE 7 DIAS
+  const authUser = user as any;
+  
+  // Verificar se tem trial_ends_at definido
+  if (authUser.trial_ends_at) {
+    const trialEndDate = new Date(authUser.trial_ends_at);
+    const now = new Date();
+    const isTrialActive = trialEndDate > now;
+    
+    console.log('Trial info:', {
+      trial_ends_at: authUser.trial_ends_at,
+      trialEndDate,
+      now,
+      isTrialActive,
+      subscription: authUser.subscription
+    });
+    
+    // Se o trial ainda está ativo, permitir acesso
+    if (isTrialActive) {
+      return <>{children}</>;
+    }
+    
+    // Se o trial expirou e não tem assinatura ativa, bloquear
+    if (!isTrialActive && !authUser.subscription) {
+      return (
+        <SubscriptionExpiredCard 
+          hasSubscription={false}
+          onLogout={handleLogout} 
+        />
+      );
+    }
+  }
 
-  // Comportamento: se expired e não tem plano pago, bloqueia.
-  if (isTrialExpired && !authUser.subscription) {
-    window.location.replace('/plano-expirado');
-    return null;
+  // Verificar assinatura ativa
+  if (authUser.subscription) {
+    const subscription = authUser.subscription;
+    const now = new Date();
+    
+    // Verificar se a assinatura está ativa
+    const isSubscriptionActive = 
+      subscription.status === 'active' && 
+      (!subscription.ends_at || new Date(subscription.ends_at) > now);
+    
+    // Verificar se está em trial
+    const isInTrial = 
+      subscription.status === 'trialing' && 
+      subscription.trial_ends_at && 
+      new Date(subscription.trial_ends_at) > now;
+    
+    if (isSubscriptionActive || isInTrial) {
+      // Se tem plano específico requerido, verificar
+      if (requiredPlan === 'premium') {
+        const isPremium = subscription.plan_type?.includes('premium') || false;
+        if (!isPremium) {
+          return <PremiumUpgradeCard onLogout={handleLogout} />;
+        }
+      }
+      
+      return <>{children}</>;
+    }
   }
 
   // Se não tem acesso geral às funcionalidades
@@ -65,15 +115,6 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
         onLogout={handleLogout} 
       />
     );
-  }
-
-  // Se tem acesso geral mas precisa de plano específico
-  if (requiredPlan) {
-    const isPremium = authUser.subscription?.plan_type?.includes('premium') || false;
-    
-    if (requiredPlan === 'premium' && !isPremium) {
-      return <PremiumUpgradeCard onLogout={handleLogout} />;
-    }
   }
 
   // Usuário tem acesso permitido

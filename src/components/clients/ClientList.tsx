@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -81,6 +82,36 @@ const ClientList: React.FC<ClientListProps> = ({
     );
   }, [clients, searchTerm]);
 
+  // Função para formatar informações do veículo de forma mais visual
+  const formatVehicleInfo = (client: Client) => {
+    if (client.marca && client.modelo && client.ano) {
+      return {
+        vehicle: `${client.marca} ${client.modelo}`,
+        year: client.ano,
+        plate: client.placa || 'N/A'
+      };
+    }
+    
+    // Fallback para o campo veiculo antigo
+    if (client.veiculo) {
+      const parts = client.veiculo.split(',');
+      const vehiclePart = parts[0]?.trim() || '';
+      const platePart = parts.find(part => part.includes('Placa:'))?.replace('Placa:', '').trim();
+      
+      return {
+        vehicle: vehiclePart,
+        year: '',
+        plate: platePart || client.placa || 'N/A'
+      };
+    }
+    
+    return {
+      vehicle: 'Não informado',
+      year: '',
+      plate: 'N/A'
+    };
+  };
+
   if (isLoading) {
     return (
       <CardContent className="p-6">
@@ -122,74 +153,80 @@ const ClientList: React.FC<ClientListProps> = ({
   return (
     <CardContent className="p-0">
       <div className="divide-y">
-        {filteredClients.map((client) => (
-          <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-medium text-gray-900">{client.nome}</h3>
-                  <Badge variant={client.tipo === 'pj' ? 'default' : 'secondary'}>
-                    {client.tipo === 'pj' ? 'PJ' : 'PF'}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-1 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    <span>{client.telefone}</span>
+        {filteredClients.map((client) => {
+          const vehicleInfo = formatVehicleInfo(client);
+          
+          return (
+            <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-medium text-gray-900">{client.nome}</h3>
+                    <Badge variant={client.tipo === 'pj' ? 'default' : 'secondary'}>
+                      {client.tipo === 'pj' ? 'PJ' : 'PF'}
+                    </Badge>
                   </div>
                   
-                  {client.email && (
+                  <div className="space-y-1 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span>{client.email}</span>
+                      <Phone className="h-4 w-4" />
+                      <span>{client.telefone}</span>
                     </div>
-                  )}
-                  
-                  {(client.marca || client.veiculo) && (
+                    
+                    {client.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        <span>{client.email}</span>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-2">
                       <Car className="h-4 w-4" />
-                      <span>
-                        {client.marca && client.modelo 
-                          ? `${client.marca} ${client.modelo} ${client.ano ? `(${client.ano})` : ''}`
-                          : client.veiculo
-                        }
-                        {client.placa && ` - ${client.placa}`}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{vehicleInfo.vehicle}</span>
+                        {vehicleInfo.year && (
+                          <Badge variant="outline" className="text-xs">
+                            {vehicleInfo.year}
+                          </Badge>
+                        )}
+                        <Badge variant="secondary" className="text-xs font-mono">
+                          {vehicleInfo.plate}
+                        </Badge>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewClient(client.id)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditClient(client.id)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDeleteClient(client.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onViewClient(client.id)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEditClient(client.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onDeleteClient(client.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </CardContent>
   );

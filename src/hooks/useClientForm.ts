@@ -198,6 +198,7 @@ export const useClientForm = ({
   const onSubmit = async (values: ClientFormValues) => {
     try {
       setIsLoading(true);
+      setSaveSuccess(false);
       
       // Verificar autenticação
       const { data: { session } } = await supabase.auth.getSession();
@@ -206,7 +207,7 @@ export const useClientForm = ({
         toast({
           variant: "destructive",
           title: "Erro de autenticação",
-          description: "Você precisa estar logado para adicionar clientes."
+          description: "Você precisa estar logado para salvar clientes."
         });
         return;
       }
@@ -232,7 +233,15 @@ export const useClientForm = ({
             documento: values.documento || null,
             tipo: values.tipo,
             bairro: values.bairro || null,
-            numero: values.numero || null
+            numero: values.numero || null,
+            // Campos do veículo
+            marca: values.veiculo.marca,
+            modelo: values.veiculo.modelo,
+            ano: values.veiculo.ano,
+            placa: values.veiculo.placa,
+            cor: values.veiculo.cor || null,
+            kilometragem: values.veiculo.kilometragem || null,
+            veiculo: veiculoFormatado
           })
           .eq('id', clientId);
           
@@ -245,7 +254,7 @@ export const useClientForm = ({
             .from('veiculos')
             .select('id')
             .eq('cliente_id', clientId)
-            .single();
+            .maybeSingle();
 
           if (existingVehicle) {
             // Update existing vehicle
@@ -293,7 +302,14 @@ export const useClientForm = ({
             documento: values.documento || null,
             tipo: values.tipo,
             bairro: values.bairro || null,
-            numero: values.numero || null
+            numero: values.numero || null,
+            // Campos do veículo
+            marca: values.veiculo.marca,
+            modelo: values.veiculo.modelo,
+            ano: values.veiculo.ano,
+            placa: values.veiculo.placa,
+            cor: values.veiculo.cor || null,
+            kilometragem: values.veiculo.kilometragem || null
           })
           .select()
           .single();
@@ -326,7 +342,12 @@ export const useClientForm = ({
           ? "Cliente atualizado com sucesso!"
           : "Cliente adicionado com sucesso!"
       });
-      onSave();
+      
+      // Aguardar um pouco antes de chamar onSave para mostrar o feedback visual
+      setTimeout(() => {
+        onSave();
+      }, 1500);
+      
     } catch (error: any) {
       console.error('Erro ao salvar cliente:', error);
       toast({
