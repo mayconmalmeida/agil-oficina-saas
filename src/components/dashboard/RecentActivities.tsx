@@ -5,8 +5,8 @@ import { Calendar, Clock, User, FileText, Package } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Define types for activities
-type ActivityType = 'client' | 'budget' | 'service';
+// Define types for activities - updated to match backend
+type ActivityType = 'client' | 'budget' | 'service' | 'appointment';
 
 export type Activity = {
   id: string;
@@ -29,6 +29,8 @@ const getActivityIcon = (type: ActivityType) => {
       return <FileText className="h-4 w-4 text-amber-500" />;
     case 'service':
       return <Package className="h-4 w-4 text-green-500" />;
+    case 'appointment':
+      return <Calendar className="h-4 w-4 text-purple-500" />;
     default:
       return <Calendar className="h-4 w-4 text-gray-500" />;
   }

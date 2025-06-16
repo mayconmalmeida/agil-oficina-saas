@@ -34,6 +34,12 @@ export const useDashboardData = (userId?: string) => {
 
   // Combine all data into a single state
   useEffect(() => {
+    // Convert chart data to expected format
+    const monthlyRevenue = chartData.chartData.map(item => ({
+      month: item.name,
+      value: item.value
+    }));
+
     setData({
       totalClients: counts.clientsCount,
       totalServices: counts.servicesCount,
@@ -44,7 +50,7 @@ export const useDashboardData = (userId?: string) => {
       workshopStatus: status.workshopStatus || 'trial',
       daysRemaining: status.daysRemaining || 7,
       planType: status.planType || 'basic',
-      monthlyRevenue: chartData.chartData || [],
+      monthlyRevenue: monthlyRevenue,
       topServices: [],
       topProducts: []
     });
