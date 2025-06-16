@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,18 @@ const ContabilidadePage: React.FC = () => {
 
       // Carregar dados dos fornecedores para as notas de entrada
       const notasEntradaComFornecedores = await Promise.all(
-        (notasEntradaData || []).map(async (nota) => {
+        (notasEntradaData || []).map(async (nota: any) => {
+          const notaFiscal: NotaFiscal = {
+            id: nota.id,
+            tipo: nota.tipo as 'entrada' | 'saida',
+            numero: nota.numero,
+            data_emissao: nota.data_emissao,
+            valor_total: nota.valor_total,
+            status: nota.status,
+            fornecedor_id: nota.fornecedor_id,
+            cliente_id: nota.cliente_id
+          };
+
           if (nota.fornecedor_id) {
             const { data: fornecedor } = await supabase
               .from('fornecedores')
@@ -86,19 +96,27 @@ const ContabilidadePage: React.FC = () => {
               .eq('id', nota.fornecedor_id)
               .single();
             
-            return {
-              ...nota,
-              fornecedor_nome: fornecedor?.nome,
-              fornecedor_cnpj: fornecedor?.cnpj
-            };
+            notaFiscal.fornecedor_nome = fornecedor?.nome;
+            notaFiscal.fornecedor_cnpj = fornecedor?.cnpj;
           }
-          return nota;
+          return notaFiscal;
         })
       );
 
       // Carregar dados dos clientes para as notas de saída
       const notasSaidaComClientes = await Promise.all(
-        (notasSaidaData || []).map(async (nota) => {
+        (notasSaidaData || []).map(async (nota: any) => {
+          const notaFiscal: NotaFiscal = {
+            id: nota.id,
+            tipo: nota.tipo as 'entrada' | 'saida',
+            numero: nota.numero,
+            data_emissao: nota.data_emissao,
+            valor_total: nota.valor_total,
+            status: nota.status,
+            fornecedor_id: nota.fornecedor_id,
+            cliente_id: nota.cliente_id
+          };
+
           if (nota.cliente_id) {
             const { data: cliente } = await supabase
               .from('clients')
@@ -106,19 +124,22 @@ const ContabilidadePage: React.FC = () => {
               .eq('id', nota.cliente_id)
               .single();
             
-            return {
-              ...nota,
-              cliente_nome: cliente?.nome,
-              cliente_documento: cliente?.documento
-            };
+            notaFiscal.cliente_nome = cliente?.nome;
+            notaFiscal.cliente_documento = cliente?.documento;
           }
-          return nota;
+          return notaFiscal;
         })
       );
 
-      setNotasEntrada(notasEntradaComFornecedores || []);
-      setNotasSaida(notasSaidaComClientes || []);
-      setFornecedores(fornecedoresData || []);
+      setNotasEntrada(notasEntradaComFornecedores);
+      setNotasSaida(notasSaidaComClientes);
+      setFornecedores((fornecedoresData || []).map((f: any) => ({
+        id: f.id,
+        nome: f.nome,
+        cnpj: f.cnpj,
+        telefone: f.telefone,
+        email: f.email
+      })));
 
     } catch (error: any) {
       console.error('Erro geral:', error);
