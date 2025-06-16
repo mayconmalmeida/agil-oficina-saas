@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessage {
   sender: 'user' | 'ai';
@@ -17,11 +18,12 @@ interface ChatMessage {
 
 const SuporteIA: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
     {
       sender: 'ai',
-      text: 'Olá! Sou seu assistente inteligente. Como posso ajudar com o sistema?',
+      text: 'Olá! Sou seu assistente inteligente do OficinaCloud. Como posso ajudar com o sistema hoje?',
       timestamp: new Date()
     }
   ]);
@@ -45,25 +47,42 @@ const SuporteIA: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('Enviando mensagem para IA de suporte:', newMessage.text);
+      
       const aiResponse = await callAI('suporte', newMessage.text);
+      console.log('Resposta da IA de suporte recebida:', aiResponse);
       
       const aiMessage: ChatMessage = {
         sender: 'ai',
         text: aiResponse.success && aiResponse.answer 
           ? aiResponse.answer 
-          : 'Desculpe, não consegui encontrar uma resposta. Tente reformular sua pergunta.',
+          : 'Desculpe, houve um problema ao processar sua pergunta. Tente novamente ou reformule sua pergunta.',
         timestamp: new Date()
       };
 
       setChatHistory(prev => [...prev, aiMessage]);
+
+      if (!aiResponse.success) {
+        toast({
+          variant: "destructive",
+          title: "Erro no suporte",
+          description: aiResponse.error || "Não foi possível processar sua pergunta.",
+        });
+      }
     } catch (error) {
       console.error("Erro no suporte IA:", error);
       const errorMessage: ChatMessage = {
         sender: 'ai',
-        text: 'Ocorreu um erro ao buscar a resposta. Tente novamente.',
+        text: 'Ocorreu um erro ao processar sua pergunta. Verifique sua conexão e tente novamente.',
         timestamp: new Date()
       };
       setChatHistory(prev => [...prev, errorMessage]);
+      
+      toast({
+        variant: "destructive",
+        title: "Erro de conexão",
+        description: "Não foi possível conectar com o suporte inteligente.",
+      });
     } finally {
       setLoading(false);
     }
@@ -84,10 +103,10 @@ const SuporteIA: React.FC = () => {
           Suporte Inteligente
         </CardTitle>
         <CardDescription>
-          Assistente virtual para dúvidas sobre o sistema
+          Assistente virtual especializado no sistema OficinaCloud
         </CardDescription>
         <Badge variant="outline" className="w-fit text-green-700 border-green-300">
-          Disponível no Plano Essencial
+          Online 24/7
         </Badge>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -105,7 +124,7 @@ const SuporteIA: React.FC = () => {
                       : 'bg-gray-200 text-gray-800 rounded-bl-none'
                   }`}
                 >
-                  <p className="text-sm">{msg.text}</p>
+                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                   <p className={`text-xs mt-1 ${
                     msg.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
@@ -122,7 +141,7 @@ const SuporteIA: React.FC = () => {
                 <div className="bg-gray-200 text-gray-800 p-2 rounded-lg rounded-bl-none">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    <span className="text-sm">Digitando...</span>
+                    <span className="text-sm">Analisando sua pergunta...</span>
                   </div>
                 </div>
               </div>
@@ -132,7 +151,7 @@ const SuporteIA: React.FC = () => {
 
         <div className="flex gap-2">
           <Input
-            placeholder="Pergunte sobre o sistema..."
+            placeholder="Como posso ajudar com o sistema?"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}

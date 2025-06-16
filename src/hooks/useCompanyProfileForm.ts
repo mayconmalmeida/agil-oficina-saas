@@ -21,6 +21,9 @@ export const useCompanyProfileForm = ({ initialData, onSave }: UseCompanyProfile
     telefone: initialData?.telefone || '',
     email: initialData?.email || '',
     endereco: initialData?.endereco || '',
+    numero: initialData?.numero || '',
+    complemento: initialData?.complemento || '',
+    bairro: initialData?.bairro || '',
     cidade: initialData?.cidade || '',
     estado: initialData?.estado || '',
     cep: initialData?.cep || '',
@@ -64,6 +67,7 @@ export const useCompanyProfileForm = ({ initialData, onSave }: UseCompanyProfile
       
       onSave();
     } catch (error: any) {
+      console.error('Erro ao salvar perfil da empresa:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar",
