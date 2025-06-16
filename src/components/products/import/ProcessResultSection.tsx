@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Package, Building } from 'lucide-react';
 
 interface ProcessedProduct {
   nome: string;
@@ -16,6 +14,11 @@ interface ProcessResult {
   produtos_processados: ProcessedProduct[];
   novos_produtos: ProcessedProduct[];
   produtos_atualizados: ProcessedProduct[];
+  fornecedor_processado?: {
+    nome: string;
+    cnpj: string;
+    status: 'novo' | 'existente';
+  };
 }
 
 interface ProcessResultSectionProps {
@@ -24,76 +27,86 @@ interface ProcessResultSectionProps {
 }
 
 const ProcessResultSection: React.FC<ProcessResultSectionProps> = ({ result, onClose }) => {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'novo':
-        return <PlusCircle className="h-4 w-4 text-green-600" />;
-      case 'atualizado':
-        return <CheckCircle className="h-4 w-4 text-blue-600" />;
-      default:
-        return <AlertCircle className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'novo':
-        return <Badge variant="default" className="bg-green-100 text-green-800">➕ Novo Produto</Badge>;
-      case 'atualizado':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800">✅ Atualizado</Badge>;
-      default:
-        return <Badge variant="secondary">❓ Desconhecido</Badge>;
-    }
-  };
-
   return (
     <>
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-green-800 mb-2">
-          ✅ Processamento Concluído
-        </h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="font-medium">Total de produtos:</span> {result.produtos_processados.length}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2 text-green-600">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">Processamento concluído com sucesso!</span>
+        </div>
+
+        {/* Resumo do Fornecedor */}
+        {result.fornecedor_processado && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <Building className="h-5 w-5 text-blue-600" />
+              <h4 className="font-medium text-blue-900">Fornecedor</h4>
+            </div>
+            <div className="text-sm text-blue-800">
+              <p><strong>Nome:</strong> {result.fornecedor_processado.nome}</p>
+              <p><strong>CNPJ:</strong> {result.fornecedor_processado.cnpj}</p>
+              <p><strong>Status:</strong> 
+                <span className={`ml-1 px-2 py-1 rounded text-xs ${
+                  result.fornecedor_processado.status === 'novo' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {result.fornecedor_processado.status === 'novo' ? 'Cadastrado' : 'Já existente'}
+                </span>
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="font-medium">Produtos novos:</span> {result.novos_produtos.length}
+        )}
+
+        {/* Resumo dos Produtos */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <Package className="h-5 w-5 text-gray-600" />
+            <h4 className="font-medium text-gray-900">Resumo dos Produtos</h4>
           </div>
-          <div>
-            <span className="font-medium">Produtos atualizados:</span> {result.produtos_atualizados.length}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-green-600 font-medium">{result.novos_produtos.length}</span>
+              <span className="text-gray-600 ml-1">produtos criados</span>
+            </div>
+            <div>
+              <span className="text-blue-600 font-medium">{result.produtos_atualizados.length}</span>
+              <span className="text-gray-600 ml-1">produtos atualizados</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de Produtos Processados */}
+        <div className="max-h-64 overflow-y-auto">
+          <h4 className="font-medium text-gray-900 mb-2">Produtos processados:</h4>
+          <div className="space-y-2">
+            {result.produtos_processados.map((produto, index) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-white border rounded">
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{produto.nome}</div>
+                  <div className="text-xs text-gray-500">
+                    Código: {produto.codigo} | Quantidade: {produto.quantidade}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {produto.status === 'novo' ? (
+                    <div className="flex items-center space-x-1 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-xs">Novo</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1 text-blue-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-xs">Atualizado</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
-      <div>
-        <h4 className="text-lg font-medium mb-3">Relatório de Importação</h4>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Produto</TableHead>
-              <TableHead>Código</TableHead>
-              <TableHead>Qtd.</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {result.produtos_processados.map((produto, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{produto.nome}</TableCell>
-                <TableCell>{produto.codigo}</TableCell>
-                <TableCell>{produto.quantidade}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(produto.status)}
-                    {getStatusBadge(produto.status)}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
+      
       <div className="flex justify-end">
         <Button onClick={onClose}>
           Fechar
