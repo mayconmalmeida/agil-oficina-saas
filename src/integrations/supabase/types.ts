@@ -415,27 +415,42 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          address: string | null
+          cep: string | null
+          city: string | null
+          cnpj: string | null
           created_at: string
           email: string | null
           id: string
           name: string
           phone: string | null
+          state: string | null
           user_id: string
         }
         Insert: {
+          address?: string | null
+          cep?: string | null
+          city?: string | null
+          cnpj?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name: string
           phone?: string | null
+          state?: string | null
           user_id: string
         }
         Update: {
+          address?: string | null
+          cep?: string | null
+          city?: string | null
+          cnpj?: string | null
           created_at?: string
           email?: string | null
           id?: string
           name?: string
           phone?: string | null
+          state?: string | null
           user_id?: string
         }
         Relationships: []

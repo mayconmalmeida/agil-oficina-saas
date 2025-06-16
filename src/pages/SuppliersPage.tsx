@@ -49,7 +49,22 @@ const SuppliersPage: React.FC = () => {
         .order('name');
 
       if (error) throw error;
-      setSuppliers(data || []);
+      
+      // Map the data to ensure all fields are present, with defaults for null values
+      const mappedSuppliers = (data || []).map(supplier => ({
+        id: supplier.id,
+        name: supplier.name || '',
+        phone: supplier.phone || '',
+        email: supplier.email || '',
+        cnpj: supplier.cnpj || '',
+        address: supplier.address || '',
+        cep: supplier.cep || '',
+        city: supplier.city || '',
+        state: supplier.state || '',
+        created_at: supplier.created_at
+      }));
+      
+      setSuppliers(mappedSuppliers);
     } catch (error: any) {
       console.error('Error fetching suppliers:', error);
     }
