@@ -8,7 +8,7 @@ import { Search, Plus, Car, User, Filter, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ClientList from '@/components/clients/ClientList';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
-import EnhancedClientForm from '@/components/clients/EnhancedClientForm';
+import ClientForm from '@/components/clients/ClientForm';
 import ClientSearchForm from '@/components/clients/ClientSearchForm';
 import ClientsPageHeader from '@/components/clients/ClientsPageHeader';
 
@@ -17,8 +17,6 @@ const ClientManagementPage: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [searchFilters, setSearchFilters] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
@@ -29,7 +27,6 @@ const ClientManagementPage: React.FC = () => {
     setActiveTab('novo');
     setSelectedClientId(null);
     setShowDetails(false);
-    setSaveSuccess(false);
     setEditMode(false);
   };
   
@@ -57,9 +54,7 @@ const ClientManagementPage: React.FC = () => {
   };
   
   const handleDeleteClient = (clientId: string) => {
-    // Handle client deletion logic
     console.log('Delete client:', clientId);
-    // Add confirmation modal or direct deletion logic
   };
   
   const handleCloseDetails = () => {
@@ -89,7 +84,6 @@ const ClientManagementPage: React.FC = () => {
   };
   
   const handleClientSaved = () => {
-    setSaveSuccess(true);
     toast({
       title: editMode ? "Cliente atualizado" : "Cliente adicionado",
       description: editMode 
@@ -97,13 +91,10 @@ const ClientManagementPage: React.FC = () => {
         : "O cliente foi cadastrado com sucesso.",
     });
     
-    // Retorna para a lista após um breve delay
     setTimeout(() => {
       setActiveTab('lista');
-      setSaveSuccess(false);
       setEditMode(false);
       
-      // If we were editing and have a selected client, show details again
       if (editMode && selectedClientId) {
         setShowDetails(true);
       }
@@ -134,7 +125,6 @@ const ClientManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Show welcome message only on the new client tab */}
         {activeTab === 'novo' && (
           <ClientsPageHeader showWelcomeMessage={true} />
         )}
@@ -195,11 +185,7 @@ const ClientManagementPage: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="novo" className="mt-0 overflow-visible">
-                    <EnhancedClientForm 
-                      onSave={handleClientSaved}
-                      isLoading={isLoading}
-                      saveSuccess={saveSuccess}
-                    />
+                    <ClientForm onSave={handleClientSaved} />
                   </TabsContent>
                   
                   <TabsContent value="editar" className="mt-0 overflow-visible">
@@ -211,10 +197,8 @@ const ClientManagementPage: React.FC = () => {
                             Cancelar
                           </Button>
                         </div>
-                        <EnhancedClientForm 
+                        <ClientForm 
                           onSave={handleClientSaved}
-                          isLoading={isLoading}
-                          saveSuccess={saveSuccess}
                           isEditing={true}
                           clientId={selectedClientId}
                         />

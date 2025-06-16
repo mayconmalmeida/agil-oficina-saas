@@ -15,13 +15,10 @@ const ClientsManagementPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const { toast } = useToast();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality
     console.log("Searching for:", searchQuery);
   };
   
@@ -29,7 +26,6 @@ const ClientsManagementPage: React.FC = () => {
     setActiveTab('novo');
     setSelectedClientId(null);
     setShowDetails(false);
-    setSaveSuccess(false);
   };
 
   const handleViewClient = (clientId: string) => {
@@ -38,12 +34,10 @@ const ClientsManagementPage: React.FC = () => {
   };
   
   const handleEditClient = (clientId: string) => {
-    // Navigate to edit page or change state
     console.log("Edit client:", clientId);
   };
   
   const handleDeleteClient = (clientId: string) => {
-    // Handle deletion logic
     console.log("Delete client:", clientId);
   };
   
@@ -57,32 +51,12 @@ const ClientsManagementPage: React.FC = () => {
     setSelectedClientId(null);
   };
   
-  const handleSubmitClient = async (values: any) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Show success message
-      setSaveSuccess(true);
-      toast({
-        title: "Cliente adicionado",
-        description: "O cliente foi cadastrado com sucesso.",
-      });
-    } catch (error) {
-      console.error("Error adding client:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao adicionar cliente",
-        description: "Ocorreu um erro ao cadastrar o cliente.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleSkip = () => {
+  const handleClientSave = () => {
     setActiveTab('lista');
+    toast({
+      title: "Cliente adicionado",
+      description: "O cliente foi cadastrado com sucesso.",
+    });
   };
   
   return (
@@ -139,12 +113,7 @@ const ClientsManagementPage: React.FC = () => {
                   </TabsContent>
                   
                   <TabsContent value="novo" className="mt-0">
-                    <ClientForm 
-                      onSubmit={handleSubmitClient}
-                      onSkip={handleSkip}
-                      isLoading={isLoading}
-                      saveSuccess={saveSuccess}
-                    />
+                    <ClientForm onSave={handleClientSave} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

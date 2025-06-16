@@ -30,7 +30,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
     setActiveTab,
     isLoading,
     saveSuccess,
-    setSaveSuccess,
     handleNextTab,
     handlePrevTab,
     onSubmit

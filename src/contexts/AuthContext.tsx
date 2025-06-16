@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
-import { useUserPlanSetup } from '@/hooks/useUserPlanSetup';
 import { AuthContextValue } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -9,9 +8,6 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   console.log('AuthProvider: Renderizando contexto de autenticação');
   const authValue = useOptimizedAuth();
-  
-  // Configurar plano automaticamente para novos usuários
-  useUserPlanSetup();
   
   console.log('AuthProvider: Estado atual:', {
     user: authValue.user?.email || 'não logado',
