@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Download, Mail, Settings, Eye, Package } from 'lucide-react';
+import { FileText, Upload, Download, Mail, Settings, Eye, Package, Crown, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useDaysRemaining } from '@/hooks/useDaysRemaining';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 interface NotaFiscal {
   id: string;
@@ -35,6 +38,11 @@ const ContabilidadePage: React.FC = () => {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { diasRestantes, isPremiumTrial, isExpired } = useDaysRemaining();
+  const { user } = useAuth();
+
+  // Verificar se tem acesso premium (admin ou trial ativo)
+  const hasPermiumAccess = user?.role === 'admin' || user?.role === 'superadmin' || (isPremiumTrial && diasRestantes > 0);
 
   useEffect(() => {
     carregarDados();
@@ -154,7 +162,15 @@ const ContabilidadePage: React.FC = () => {
   };
 
   const handleImportarXML = () => {
-    // Implementar importação de XML
+    if (!hasPermiumAccess) {
+      toast({
+        variant: "destructive",
+        title: "Recurso Premium",
+        description: "Importação de XML está disponível apenas no plano Premium"
+      });
+      return;
+    }
+    
     toast({
       title: "Em desenvolvimento",
       description: "Funcionalidade de importação de XML será implementada"
@@ -162,7 +178,15 @@ const ContabilidadePage: React.FC = () => {
   };
 
   const handleExportarXMLs = () => {
-    // Implementar exportação de XMLs
+    if (!hasPermiumAccess) {
+      toast({
+        variant: "destructive",
+        title: "Recurso Premium", 
+        description: "Exportação de XMLs está disponível apenas no plano Premium"
+      });
+      return;
+    }
+    
     toast({
       title: "Em desenvolvimento", 
       description: "Funcionalidade de exportação será implementada"
@@ -170,7 +194,15 @@ const ContabilidadePage: React.FC = () => {
   };
 
   const handleEnviarContador = () => {
-    // Implementar envio para contador
+    if (!hasPermiumAccess) {
+      toast({
+        variant: "destructive",
+        title: "Recurso Premium",
+        description: "Envio para contador está disponível apenas no plano Premium"
+      });
+      return;
+    }
+    
     toast({
       title: "Em desenvolvimento",
       description: "Funcionalidade de envio para contador será implementada"
@@ -188,6 +220,79 @@ const ContabilidadePage: React.FC = () => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
 
+  const renderPlanBanner = () => {
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      return (
+        <Card className="mb-6 border-purple-200 bg-purple-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-purple-600" />
+              <span className="font-medium text-purple-800">Modo Administrador - Acesso Total</span>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isPremiumTrial && diasRestantes > 0) {
+      return (
+        <Card className="mb-6 border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-800">
+                  Trial Premium Ativo - {diasRestantes} dias restantes
+                </span>
+              </div>
+              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                Acesso Total
+              </Badge>
+            </div>
+            <div className="mt-2 text-sm text-blue-700">
+              <p className="font-medium mb-1">Recursos Premium disponíveis:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Módulo de estoque integrado</li>
+                <li>Agendamento de serviços</li>
+                <li>Relatórios avançados</li>
+                <li>Suporte prioritário</li>
+                <li>Backup automático</li>
+                <li>Importação/Exportação de XMLs</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (isExpired || diasRestantes === 0) {
+      return (
+        <Card className="mb-6 border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <h3 className="font-medium text-red-800 mb-2">Trial Expirado - Acesso Limitado</h3>
+              <p className="text-sm text-red-700 mb-3">
+                Você tem acesso apenas aos recursos essenciais. Faça upgrade para acessar recursos premium.
+              </p>
+              <div className="text-sm text-red-700">
+                <p className="font-medium mb-1">Recursos Essenciais disponíveis:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Cadastro de clientes ilimitado</li>
+                  <li>Gestão de orçamentos</li>
+                  <li>Controle de serviços</li>
+                  <li>Relatórios básicos</li>
+                  <li>Suporte via e-mail</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -199,21 +304,40 @@ const ContabilidadePage: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={handleImportarXML} className="flex items-center gap-2">
+            <Button 
+              onClick={handleImportarXML} 
+              className="flex items-center gap-2"
+              disabled={!hasPermiumAccess}
+            >
               <Upload className="h-4 w-4" />
               Importar XML
+              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
-            <Button onClick={handleExportarXMLs} variant="outline" className="flex items-center gap-2">
+            <Button 
+              onClick={handleExportarXMLs} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={!hasPermiumAccess}
+            >
               <Download className="h-4 w-4" />
               Exportar XMLs
+              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
-            <Button onClick={handleEnviarContador} variant="outline" className="flex items-center gap-2">
+            <Button 
+              onClick={handleEnviarContador} 
+              variant="outline" 
+              className="flex items-center gap-2"
+              disabled={!hasPermiumAccess}
+            >
               <Mail className="h-4 w-4" />
               Enviar para Contador
+              {!hasPermiumAccess && <Crown className="h-4 w-4 ml-1" />}
             </Button>
           </div>
         </div>
       </div>
+
+      {renderPlanBanner()}
 
       <Tabs defaultValue="entrada" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -236,9 +360,10 @@ const ContabilidadePage: React.FC = () => {
                   <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900">Nenhuma nota fiscal de entrada</h3>
                   <p className="text-gray-500 mt-2">Importe XMLs de notas fiscais para começar</p>
-                  <Button onClick={handleImportarXML} className="mt-4">
+                  <Button onClick={handleImportarXML} className="mt-4" disabled={!hasPermiumAccess}>
                     <Upload className="h-4 w-4 mr-2" />
                     Importar primeiro XML
+                    {!hasPermiumAccess && <Crown className="h-4 w-4 ml-2" />}
                   </Button>
                 </div>
               ) : (
@@ -409,6 +534,12 @@ const ContabilidadePage: React.FC = () => {
                 <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900">Nenhuma exportação realizada</h3>
                 <p className="text-gray-500 mt-2">O histórico de exportações aparecerá aqui</p>
+                {!hasPermiumAccess && (
+                  <Badge variant="outline" className="mt-2 bg-yellow-100 text-yellow-800 border-yellow-300">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Recurso Premium
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -475,14 +606,24 @@ const ContabilidadePage: React.FC = () => {
                         <h4 className="font-medium">Omie</h4>
                         <p className="text-sm text-gray-500">Sistema de gestão empresarial</p>
                       </div>
-                      <Button variant="outline">Conectar</Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" disabled={!hasPermiumAccess}>
+                          Conectar
+                        </Button>
+                        {!hasPermiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                      </div>
                     </div>
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
                         <h4 className="font-medium">Nibo</h4>
                         <p className="text-sm text-gray-500">Plataforma contábil online</p>
                       </div>
-                      <Button variant="outline">Conectar</Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" disabled={!hasPermiumAccess}>
+                          Conectar
+                        </Button>
+                        {!hasPermiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                      </div>
                     </div>
                   </div>
                 </div>
