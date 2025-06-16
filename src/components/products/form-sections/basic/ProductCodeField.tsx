@@ -16,9 +16,14 @@ const ProductCodeField: React.FC<ProductCodeFieldProps> = ({ form }) => {
       name="codigo"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Código/Referência (opcional)</FormLabel>
+          <FormLabel>Código/Referência</FormLabel>
           <FormControl>
-            <Input placeholder="Ex: OL-5W30-1L" {...field} />
+            <Input 
+              placeholder="Gerado automaticamente" 
+              {...field} 
+              readOnly
+              className="bg-gray-100 cursor-not-allowed"
+            />
           </FormControl>
           <FormMessage />
         </FormItem>

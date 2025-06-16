@@ -85,19 +85,14 @@ const ServicesPage: React.FC = () => {
       // Show success state
       setSaveSuccess(true);
       
-      // Navigate after a short delay, but only during onboarding
-      if (isOnboarding) {
-        setTimeout(() => {
+      // Navigate after a short delay
+      setTimeout(() => {
+        if (isOnboarding) {
           navigate('/onboarding/orcamento');
-        }, 1500);
-      } else {
-        // Reset the form after success if not in onboarding
-        setTimeout(() => {
-          setSaveSuccess(false);
-          // Redirect to services list or reset the form
-          navigate('/servicos');
-        }, 1500);
-      }
+        } else {
+          navigate('/dashboard/servicos');
+        }
+      }, 1500);
       
     } catch (error) {
       console.error('Erro inesperado:', error);
@@ -116,7 +111,7 @@ const ServicesPage: React.FC = () => {
       await updateProgress('services_added', true);
       navigate('/onboarding/orcamento');
     } else {
-      navigate('/servicos');
+      navigate('/dashboard/servicos');
     }
   };
   

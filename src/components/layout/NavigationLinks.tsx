@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, Car, Package, Wrench, Calendar, FileText, Settings, Database, Bot, Shield, Headphones, MessageCircle } from 'lucide-react';
+import { Home, Users, Car, Package, Wrench, Calendar, FileText, Settings, Database, Bot, Shield, Headphones, MessageCircle, Tag, Truck } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 interface NavigationLinksProps {
@@ -17,6 +17,8 @@ const navigation = [
   { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
   { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
   { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
+  { name: 'Categorias', href: '/dashboard/categorias', icon: Tag },
+  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Truck },
   { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar, premium: true },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },

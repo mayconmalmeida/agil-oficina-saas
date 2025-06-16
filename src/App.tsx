@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,10 +21,14 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ClientsPage from '@/pages/ClientsPage';
+import NewClientPage from '@/pages/NewClientPage';
 import ServicesPage from '@/pages/ServicesPage';
+import ServicesListPage from '@/pages/ServicesListPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import SchedulingPage from '@/pages/SchedulingPage';
 import ProductsPage from '@/pages/ProductsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import SuppliersPage from '@/pages/SuppliersPage';
 import SettingsPage from '@/pages/SettingsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import ProfilePage from '@/pages/ProfilePage';
@@ -139,8 +144,10 @@ function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="clientes" element={<ClientsPage />} />
+            <Route path="clientes/novo" element={<NewClientPage />} />
             <Route path="veiculos" element={<VehiclesPage />} />
-            <Route path="servicos" element={<ServicesPage />} />
+            <Route path="servicos" element={<ServicesListPage />} />
+            <Route path="servicos/novo" element={<ServicesPage />} />
             <Route path="orcamentos" element={<BudgetsPage />} />
             <Route 
               path="agendamentos" 
@@ -151,6 +158,8 @@ function App() {
               } 
             />
             <Route path="produtos" element={<ProductsPage />} />
+            <Route path="categorias" element={<CategoriesPage />} />
+            <Route path="fornecedores" element={<SuppliersPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="empresa" element={<CompanyPage />} />
             <Route path="perfil" element={<ProfilePage />} />

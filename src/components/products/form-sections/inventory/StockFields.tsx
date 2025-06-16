@@ -10,6 +10,12 @@ interface StockFieldsProps {
 }
 
 const StockFields: React.FC<StockFieldsProps> = ({ form }) => {
+  const handleNumberChange = (value: string, onChange: (value: string) => void) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    onChange(numbers);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
@@ -19,7 +25,12 @@ const StockFields: React.FC<StockFieldsProps> = ({ form }) => {
           <FormItem>
             <FormLabel>Quantidade em Estoque</FormLabel>
             <FormControl>
-              <Input type="number" min="0" {...field} />
+              <Input 
+                type="text"
+                placeholder="0"
+                {...field}
+                onChange={(e) => handleNumberChange(e.target.value, field.onChange)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -33,7 +44,12 @@ const StockFields: React.FC<StockFieldsProps> = ({ form }) => {
           <FormItem>
             <FormLabel>Estoque Mínimo</FormLabel>
             <FormControl>
-              <Input type="number" min="0" {...field} />
+              <Input 
+                type="text"
+                placeholder="0"
+                {...field}
+                onChange={(e) => handleNumberChange(e.target.value, field.onChange)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

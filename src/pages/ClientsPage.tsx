@@ -17,11 +17,11 @@ const ClientsPage: React.FC = () => {
   };
   
   const handleViewClient = (clientId: string) => {
-    navigate(`/clientes/${clientId}`);
+    navigate(`/dashboard/clientes/${clientId}`);
   };
   
   const handleEditClient = (clientId: string) => {
-    navigate(`/clientes/editar/${clientId}`);
+    navigate(`/dashboard/clientes/editar/${clientId}`);
   };
   
   const handleDeleteClient = (clientId: string) => {
@@ -30,7 +30,7 @@ const ClientsPage: React.FC = () => {
   };
   
   const handleAddClient = () => {
-    navigate('/clientes/novo');
+    navigate('/dashboard/clientes/novo');
   };
   
   return (

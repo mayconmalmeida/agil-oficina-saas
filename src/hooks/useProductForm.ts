@@ -10,6 +10,13 @@ import { mapServiceToFormValues, defaultProductValues } from '@/utils/formUtils'
 
 export { productSchema, type ProductFormValues } from '@/schemas/productSchema';
 
+// Generate automatic product code
+const generateProductCode = () => {
+  const timestamp = Date.now().toString().slice(-6);
+  const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `PROD-${timestamp}${random}`;
+};
+
 export const useProductForm = (productId?: string, onSaveSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -17,7 +24,10 @@ export const useProductForm = (productId?: string, onSaveSuccess?: () => void) =
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: defaultProductValues,
+    defaultValues: {
+      ...defaultProductValues,
+      codigo: generateProductCode() // Auto-generate code for new products
+    },
   });
   
   // Fetch product data if editing an existing product
@@ -69,8 +79,11 @@ export const useProductForm = (productId?: string, onSaveSuccess?: () => void) =
       });
       
       if (!isEditing) {
-        // Reset the form for new products
-        form.reset(defaultProductValues);
+        // Reset the form for new products with new auto-generated code
+        form.reset({
+          ...defaultProductValues,
+          codigo: generateProductCode()
+        });
       }
       
       // Call the onSaveSuccess callback if provided
