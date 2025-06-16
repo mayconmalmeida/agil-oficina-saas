@@ -24,7 +24,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ onMenuClick, onLogout }) =>
             <img 
               src="/lovable-uploads/9fef4ca2-faa7-4cfe-b8d1-20c95046fdb3.png" 
               alt="OficinaGO"
-              className="h-6 w-auto"
+              className="w-60 h-40 object-contain"
+              style={{ width: '240px', height: '160px' }}
             />
           </Link>
         </div>
