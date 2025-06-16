@@ -11,3 +11,13 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
   }
 })
+
+export const testSupabaseConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1)
+    return !error
+  } catch (error) {
+    console.error('Erro ao testar conexão com Supabase:', error)
+    return false
+  }
+}
