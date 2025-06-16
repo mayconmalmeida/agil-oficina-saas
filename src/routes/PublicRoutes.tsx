@@ -6,17 +6,9 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import ProfileSetupPage from '@/pages/ProfileSetupPage';
 
-const PublicRoutes = () => {
-  return (
-    <>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      
-      {/* Profile Setup Route - Semi-protected (requires auth but not complete profile) */}
-      <Route path="/perfil-setup" element={<ProfileSetupPage />} />
-    </>
-  );
-};
-
-export default PublicRoutes;
+export const publicRoutes = [
+  <Route key="home" path="/" element={<HomePage />} />,
+  <Route key="login" path="/login" element={<LoginPage />} />,
+  <Route key="register" path="/register" element={<RegisterPage />} />,
+  <Route key="profile-setup" path="/perfil-setup" element={<ProfileSetupPage />} />
+];

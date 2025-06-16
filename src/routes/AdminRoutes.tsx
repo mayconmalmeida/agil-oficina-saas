@@ -11,35 +11,31 @@ import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import AdminSettingsPage from '@/pages/AdminSettingsPage';
 
-const AdminRoutes = () => {
-  return (
-    <>
-      <Route
-        path="/admin/login"
-        element={
-          <AdminProvider>
-            <AdminLoginPage />
-          </AdminProvider>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <AdminProvider>
-            <OptimizedAdminGuard>
-              <OptimizedAdminLayout />
-            </OptimizedAdminGuard>
-          </AdminProvider>
-        }
-      >
-        <Route index element={<OptimizedAdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="subscriptions" element={<AdminSubscriptions />} />
-        <Route path="plans" element={<AdminPlansPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
-      </Route>
-    </>
-  );
-};
-
-export default AdminRoutes;
+export const adminRoutes = [
+  <Route
+    key="admin-login"
+    path="/admin/login"
+    element={
+      <AdminProvider>
+        <AdminLoginPage />
+      </AdminProvider>
+    }
+  />,
+  <Route
+    key="admin-dashboard"
+    path="/admin"
+    element={
+      <AdminProvider>
+        <OptimizedAdminGuard>
+          <OptimizedAdminLayout />
+        </OptimizedAdminGuard>
+      </AdminProvider>
+    }
+  >
+    <Route index element={<OptimizedAdminDashboard />} />
+    <Route path="users" element={<AdminUsers />} />
+    <Route path="subscriptions" element={<AdminSubscriptions />} />
+    <Route path="plans" element={<AdminPlansPage />} />
+    <Route path="settings" element={<AdminSettingsPage />} />
+  </Route>
+];

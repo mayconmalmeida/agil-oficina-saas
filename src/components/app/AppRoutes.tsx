@@ -3,22 +3,22 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import PublicRoutes from '@/routes/PublicRoutes';
-import AdminRoutes from '@/routes/AdminRoutes';
-import ProtectedRoutes from '@/routes/ProtectedRoutes';
-import PremiumRoutes from '@/routes/PremiumRoutes';
+import { publicRoutes } from '@/routes/PublicRoutes';
+import { adminRoutes } from '@/routes/AdminRoutes';
+import { protectedRoutes } from '@/routes/ProtectedRoutes';
+import { premiumRoutes } from '@/routes/PremiumRoutes';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <PublicRoutes />
+      {publicRoutes}
 
       {/* Admin routes */}
-      <AdminRoutes />
+      {adminRoutes}
 
       {/* Protected user routes */}
-      <ProtectedRoutes />
+      {protectedRoutes}
 
       {/* Premium routes need to be nested inside the dashboard layout */}
       <Route
@@ -29,7 +29,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <PremiumRoutes />
+        {premiumRoutes}
       </Route>
 
       {/* Catch all route */}

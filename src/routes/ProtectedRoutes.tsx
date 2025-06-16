@@ -26,46 +26,43 @@ import VehiclesPage from '@/pages/VehiclesPage';
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
 import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
 
-const ProtectedRoutes = () => {
-  return (
-    <Route
-      path="/dashboard"
+export const protectedRoutes = [
+  <Route
+    key="dashboard"
+    path="/dashboard"
+    element={
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    }
+  >
+    <Route index element={<DashboardPage />} />
+    <Route path="clientes" element={<ClientsPage />} />
+    <Route path="clientes/novo" element={<NewClientPage />} />
+    <Route path="veiculos" element={<VehiclesPage />} />
+    <Route path="servicos" element={<ServicesListPage />} />
+    <Route path="servicos/novo" element={<ServicesPage />} />
+    <Route path="orcamentos" element={<BudgetsPage />} />
+    <Route path="orcamentos/novo" element={<NewBudgetPage />} />
+    <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
+    <Route path="agendamentos" element={<SchedulesPage />} />
+    <Route path="agendamentos/novo" element={<NewSchedulePage />} />
+    <Route 
+      path="agendamento-premium" 
       element={
-        <ProtectedRoute>
-          <DashboardLayout />
-        </ProtectedRoute>
-      }
-    >
-      <Route index element={<DashboardPage />} />
-      <Route path="clientes" element={<ClientsPage />} />
-      <Route path="clientes/novo" element={<NewClientPage />} />
-      <Route path="veiculos" element={<VehiclesPage />} />
-      <Route path="servicos" element={<ServicesListPage />} />
-      <Route path="servicos/novo" element={<ServicesPage />} />
-      <Route path="orcamentos" element={<BudgetsPage />} />
-      <Route path="orcamentos/novo" element={<NewBudgetPage />} />
-      <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
-      <Route path="agendamentos" element={<SchedulesPage />} />
-      <Route path="agendamentos/novo" element={<NewSchedulePage />} />
-      <Route 
-        path="agendamento-premium" 
-        element={
-          <SubscriptionGuard requiredPlan="premium">
-            <SchedulingPage />
-          </SubscriptionGuard>
-        } 
-      />
-      <Route path="produtos" element={<ProductsPage />} />
-      <Route path="categorias" element={<CategoriesPage />} />
-      <Route path="fornecedores" element={<SuppliersPage />} />
-      <Route path="configuracoes" element={<SettingsPage />} />
-      <Route path="empresa" element={<CompanyPage />} />
-      <Route path="perfil" element={<ProfilePage />} />
-      <Route path="assinatura" element={<SubscriptionPage />} />
-      <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
-      <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
-    </Route>
-  );
-};
-
-export default ProtectedRoutes;
+        <SubscriptionGuard requiredPlan="premium">
+          <SchedulingPage />
+        </SubscriptionGuard>
+      } 
+    />
+    <Route path="produtos" element={<ProductsPage />} />
+    <Route path="categorias" element={<CategoriesPage />} />
+    <Route path="fornecedores" element={<SuppliersPage />} />
+    <Route path="configuracoes" element={<SettingsPage />} />
+    <Route path="empresa" element={<CompanyPage />} />
+    <Route path="perfil" element={<ProfilePage />} />
+    <Route path="assinatura" element={<SubscriptionPage />} />
+    <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
+    <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
+  </Route>
+];
