@@ -15,6 +15,7 @@ export interface ParsedProduct {
   nome: string;
   quantidade: number;
   preco_unitario: number;
+  [key: string]: string | number; // Index signature para compatibilidade com Json
 }
 
 export interface XmlParseResult {

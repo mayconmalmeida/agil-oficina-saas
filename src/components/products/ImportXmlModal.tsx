@@ -32,6 +32,16 @@ interface ProcessResult {
   };
 }
 
+// Converter ParsedProduct para formato compatível com Json
+const convertProductsToJson = (products: ParsedProduct[]) => {
+  return products.map(product => ({
+    codigo: product.codigo,
+    nome: product.nome,
+    quantidade: product.quantidade,
+    preco_unitario: product.preco_unitario
+  }));
+};
+
 const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -138,10 +148,13 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
         }
       }
 
+      // Converter produtos para formato compatível com Json
+      const productsForRpc = convertProductsToJson(products);
+
       // Processar produtos
       const { data, error } = await supabase.rpc('process_nfce_xml', {
         p_user_id: user.id,
-        p_produtos: products
+        p_produtos: productsForRpc
       });
 
       if (error) throw error;
