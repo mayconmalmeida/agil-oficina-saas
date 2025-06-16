@@ -14,14 +14,12 @@ interface NotaFiscal {
   data_emissao: string;
   valor_total: number;
   status: string;
-  fornecedores?: {
-    nome: string;
-    cnpj: string;
-  };
-  clients?: {
-    nome: string;
-    documento: string;
-  };
+  fornecedor_id?: string;
+  cliente_id?: string;
+  fornecedor_nome?: string;
+  fornecedor_cnpj?: string;
+  cliente_nome?: string;
+  cliente_documento?: string;
 }
 
 interface Fornecedor {
@@ -46,41 +44,88 @@ const ContabilidadePage: React.FC = () => {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      // Carregar notas fiscais de entrada usando query SQL raw
-      const { data: notasEntradaData } = await supabase
-        .from('notas_fiscais' as any)
-        .select(`
-          *,
-          fornecedores(nome, cnpj)
-        `)
+      // Carregar notas fiscais de entrada
+      const { data: notasEntradaData, error: errorEntrada } = await supabase
+        .from('notas_fiscais')
+        .select('*')
         .eq('tipo', 'entrada')
         .order('created_at', { ascending: false });
 
+      if (errorEntrada) {
+        console.error('Erro ao carregar notas de entrada:', errorEntrada);
+      }
+
       // Carregar notas fiscais de saída
-      const { data: notasSaidaData } = await supabase
-        .from('notas_fiscais' as any)
-        .select(`
-          *,
-          clients(nome, documento)
-        `)
+      const { data: notasSaidaData, error: errorSaida } = await supabase
+        .from('notas_fiscais')
+        .select('*')
         .eq('tipo', 'saida')
         .order('created_at', { ascending: false });
 
+      if (errorSaida) {
+        console.error('Erro ao carregar notas de saída:', errorSaida);
+      }
+
       // Carregar fornecedores
-      const { data: fornecedoresData } = await supabase
-        .from('fornecedores' as any)
+      const { data: fornecedoresData, error: errorFornecedores } = await supabase
+        .from('fornecedores')
         .select('*')
         .order('nome');
 
-      setNotasEntrada(notasEntradaData || []);
-      setNotasSaida(notasSaidaData || []);
+      if (errorFornecedores) {
+        console.error('Erro ao carregar fornecedores:', errorFornecedores);
+      }
+
+      // Carregar dados dos fornecedores para as notas de entrada
+      const notasEntradaComFornecedores = await Promise.all(
+        (notasEntradaData || []).map(async (nota) => {
+          if (nota.fornecedor_id) {
+            const { data: fornecedor } = await supabase
+              .from('fornecedores')
+              .select('nome, cnpj')
+              .eq('id', nota.fornecedor_id)
+              .single();
+            
+            return {
+              ...nota,
+              fornecedor_nome: fornecedor?.nome,
+              fornecedor_cnpj: fornecedor?.cnpj
+            };
+          }
+          return nota;
+        })
+      );
+
+      // Carregar dados dos clientes para as notas de saída
+      const notasSaidaComClientes = await Promise.all(
+        (notasSaidaData || []).map(async (nota) => {
+          if (nota.cliente_id) {
+            const { data: cliente } = await supabase
+              .from('clients')
+              .select('nome, documento')
+              .eq('id', nota.cliente_id)
+              .single();
+            
+            return {
+              ...nota,
+              cliente_nome: cliente?.nome,
+              cliente_documento: cliente?.documento
+            };
+          }
+          return nota;
+        })
+      );
+
+      setNotasEntrada(notasEntradaComFornecedores || []);
+      setNotasSaida(notasSaidaComClientes || []);
       setFornecedores(fornecedoresData || []);
 
     } catch (error: any) {
+      console.error('Erro geral:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message
+        description: "Erro ao carregar dados da contabilidade"
       });
     } finally {
       setLoading(false);
@@ -208,8 +253,8 @@ const ContabilidadePage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <div>
-                              <div className="font-medium">{nota.fornecedores?.nome}</div>
-                              <div className="text-xs text-gray-400">{nota.fornecedores?.cnpj}</div>
+                              <div className="font-medium">{nota.fornecedor_nome}</div>
+                              <div className="text-xs text-gray-400">{nota.fornecedor_cnpj}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -294,8 +339,8 @@ const ContabilidadePage: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <div>
-                              <div className="font-medium">{nota.clients?.nome}</div>
-                              <div className="text-xs text-gray-400">{nota.clients?.documento}</div>
+                              <div className="font-medium">{nota.cliente_nome}</div>
+                              <div className="text-xs text-gray-400">{nota.cliente_documento}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
