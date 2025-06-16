@@ -1,27 +1,18 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  
   const handleLoginClick = () => {
     navigate('/login');
   };
-
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
+  return <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <a href="#" className="flex items-center">
-            <img 
-              src="/lovable-uploads/12c7617f-1eb1-4392-9617-845adb9c8efa.png" 
-              alt="OficinaGO"
-              className="h-10 w-auto"
-            />
+            <img alt="OficinaGO" src="/lovable-uploads/0e839f4d-0752-4628-84f5-9f410ef13996.png" className="h-[160px] w-[240px] object-contain mx-auto" />
           </a>
         </div>
 
@@ -35,11 +26,7 @@ export default function Navbar() {
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue">
               <Link to="/workshop-registration">Teste Grátis</Link>
             </Button>
-            <Button 
-              variant="outline" 
-              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors"
-              onClick={handleLoginClick}
-            >
+            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors" onClick={handleLoginClick}>
               <div className="flex items-center">
                 <LogIn className="mr-2 h-4 w-4" />
                 Login
@@ -50,70 +37,40 @@ export default function Navbar() {
 
         {/* Mobile menu button */}
         <div className="md:hidden">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-oficina-dark focus:outline-none"
-          >
-            {isMenuOpen ? (
-              <X size={24} />
-            ) : (
-              <Menu size={24} />
-            )}
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="text-oficina-dark focus:outline-none">
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white py-4 px-4 shadow-lg">
+      {isMenuOpen && <div className="md:hidden bg-white py-4 px-4 shadow-lg">
           <nav className="flex flex-col space-y-4">
-            <a
-              href="#funcionalidades"
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <a href="#funcionalidades" className="text-oficina-gray hover:text-oficina-dark transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
               Funcionalidades
             </a>
-            <a
-              href="#precos"
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <a href="#precos" className="text-oficina-gray hover:text-oficina-dark transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
               Planos
             </a>
-            <a
-              href="#faq"
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <a href="#faq" className="text-oficina-gray hover:text-oficina-dark transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
               FAQ
             </a>
-            <a
-              href="#contato"
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
+            <a href="#contato" className="text-oficina-gray hover:text-oficina-dark transition-colors py-2" onClick={() => setIsMenuOpen(false)}>
               Contato
             </a>
             <Button className="bg-oficina hover:bg-oficina-dark transition-colors w-full">
               <Link to="/workshop-registration">Teste Grátis</Link>
             </Button>
-            <Button 
-              variant="outline" 
-              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full"
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate('/login');
-              }}
-            >
+            <Button variant="outline" className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full" onClick={() => {
+          setIsMenuOpen(false);
+          navigate('/login');
+        }}>
               <div className="flex items-center justify-center">
                 <LogIn className="mr-2 h-4 w-4" />
                 Login
               </div>
             </Button>
           </nav>
-        </div>
-      )}
-    </header>
-  );
+        </div>}
+    </header>;
 }
