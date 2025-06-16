@@ -24,53 +24,91 @@ export const useDashboardCharts = () => {
     const fetchChartData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
 
-        // Dados simulados para demonstração
-        const monthlyRevenue = [
-          { month: 'Jan', value: 12500, services: 15 },
-          { month: 'Fev', value: 15800, services: 18 },
-          { month: 'Mar', value: 18200, services: 22 },
-          { month: 'Abr', value: 16900, services: 20 },
-          { month: 'Mai', value: 21300, services: 25 },
-          { month: 'Jun', value: 19800, services: 23 }
-        ];
+        // Buscar faturamento mensal dos últimos 6 meses
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-        const topClients = [
-          { name: 'João Silva', value: 5200 },
-          { name: 'Maria Santos', value: 4800 },
-          { name: 'Pedro Costa', value: 3900 },
-          { name: 'Ana Oliveira', value: 3200 },
-          { name: 'Carlos Lima', value: 2800 }
-        ];
+        const { data: budgets } = await supabase
+          .from('orcamentos')
+          .select('valor_total, created_at, cliente')
+          .eq('user_id', user.id)
+          .gte('created_at', sixMonthsAgo.toISOString())
+          .order('created_at', { ascending: true });
 
-        const topServices = [
-          { name: 'Troca de Óleo', value: 4500 },
-          { name: 'Alinhamento', value: 3200 },
-          { name: 'Freios', value: 2800 },
-          { name: 'Suspensão', value: 2100 },
-          { name: 'Revisão', value: 1900 }
-        ];
+        // Agrupar faturamento por mês
+        const monthlyRevenue: { [key: string]: { value: number; services: number } } = {};
+        const clientRevenue: { [key: string]: number } = {};
 
-        const serviceTypes = [
-          { name: 'Manutenção Preventiva', value: 45 },
-          { name: 'Reparos Gerais', value: 30 },
-          { name: 'Troca de Peças', value: 15 },
-          { name: 'Diagnóstico', value: 10 }
-        ];
+        if (budgets) {
+          budgets.forEach(budget => {
+            const date = new Date(budget.created_at);
+            const monthYear = date.toLocaleDateString('pt-BR', { month: 'short' });
+            
+            if (!monthlyRevenue[monthYear]) {
+              monthlyRevenue[monthYear] = { value: 0, services: 0 };
+            }
+            
+            monthlyRevenue[monthYear].value += Number(budget.valor_total);
+            monthlyRevenue[monthYear].services += 1;
 
+            // Agrupar por cliente para top clientes
+            clientRevenue[budget.cliente] = (clientRevenue[budget.cliente] || 0) + Number(budget.valor_total);
+          });
+        }
+
+        // Buscar serviços mais realizados
+        const { data: services } = await supabase
+          .from('services')
+          .select('nome, tipo')
+          .eq('user_id', user.id);
+
+        const serviceTypes: { [key: string]: number } = {};
+        const topServices: { [key: string]: number } = {};
+
+        if (services) {
+          services.forEach(service => {
+            serviceTypes[service.tipo] = (serviceTypes[service.tipo] || 0) + 1;
+            topServices[service.nome] = (topServices[service.nome] || 0) + 1;
+          });
+        }
+
+        // Converter para formato do gráfico
+        const monthlyRevenueData = Object.entries(monthlyRevenue).map(([month, data]) => ({
+          month,
+          value: data.value,
+          services: data.services
+        }));
+
+        const topClientsData = Object.entries(clientRevenue)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([name, value]) => ({ name, value }));
+
+        const topServicesData = Object.entries(topServices)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([name, value]) => ({ name, value }));
+
+        const serviceTypesData = Object.entries(serviceTypes)
+          .map(([name, value]) => ({ name, value }));
+
+        // Estoque crítico - dados simulados por enquanto (tabela de produtos não existe)
         const criticalStock = [
           { name: 'Óleo Motor 5W30', quantity: 3, minimum: 10 },
           { name: 'Filtro de Ar', quantity: 2, minimum: 8 },
-          { name: 'Pastilha de Freio', quantity: 1, minimum: 5 },
-          { name: 'Vela de Ignição', quantity: 4, minimum: 12 }
+          { name: 'Pastilha de Freio', quantity: 1, minimum: 5 }
         ];
 
         setChartData({
-          monthlyRevenue,
-          topClients,
-          topServices,
-          serviceTypes,
+          monthlyRevenue: monthlyRevenueData,
+          topClients: topClientsData,
+          topServices: topServicesData,
+          serviceTypes: serviceTypesData,
           criticalStock
         });
       } catch (error) {

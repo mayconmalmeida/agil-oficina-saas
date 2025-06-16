@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -59,6 +58,58 @@ export const useOnboardingProgress = (userId?: string) => {
         });
         return null;
       }
+
+      // Verificar se o usuário tem clientes cadastrados
+      if (data && !data.clients_added) {
+        const { count: clientsCount } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', uid);
+
+        if (clientsCount && clientsCount > 0) {
+          // Atualizar o status para clients_added = true
+          await supabase
+            .from('onboarding_status')
+            .update({ clients_added: true })
+            .eq('user_id', uid);
+          
+          data.clients_added = true;
+        }
+      }
+
+      // Verificar se o usuário tem serviços cadastrados
+      if (data && !data.services_added) {
+        const { count: servicesCount } = await supabase
+          .from('services')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', uid);
+
+        if (servicesCount && servicesCount > 0) {
+          await supabase
+            .from('onboarding_status')
+            .update({ services_added: true })
+            .eq('user_id', uid);
+          
+          data.services_added = true;
+        }
+      }
+
+      // Verificar se o usuário tem orçamentos cadastrados
+      if (data && !data.budget_created) {
+        const { count: budgetsCount } = await supabase
+          .from('orcamentos')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', uid);
+
+        if (budgetsCount && budgetsCount > 0) {
+          await supabase
+            .from('onboarding_status')
+            .update({ budget_created: true })
+            .eq('user_id', uid);
+          
+          data.budget_created = true;
+        }
+      }
       
       return data as OnboardingStatus;
     } catch (err) {
@@ -90,7 +141,6 @@ export const useOnboardingProgress = (userId?: string) => {
       
       setStatus(prev => prev ? { ...prev, [field]: value } : null);
       
-      // Show success toast
       const stepMessages = {
         profile_completed: "Perfil configurado com sucesso!",
         clients_added: "Cliente adicionado com sucesso!",
@@ -121,7 +171,6 @@ export const useOnboardingProgress = (userId?: string) => {
     return '/dashboard';
   }, []);
 
-  // Modified to return the path directly rather than a Promise
   const redirectToNextStep = useCallback(async () => {
     if (!userId) return '/dashboard';
     
@@ -134,7 +183,6 @@ export const useOnboardingProgress = (userId?: string) => {
     }
   }, [userId]);
 
-  // New function that handles both getting the next step and navigating to it
   const redirectToNextStepAndNavigate = useCallback(async () => {
     const nextStep = await redirectToNextStep();
     navigate(nextStep);

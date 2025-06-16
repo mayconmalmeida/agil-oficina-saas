@@ -2,18 +2,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-interface DashboardCounts {
-  clientsCount: number;
-  budgetsCount: number;
-  servicesCount: number;
-  appointmentsCount: number;
-}
-
 export const useDashboardCounts = () => {
-  const [counts, setCounts] = useState<DashboardCounts>({
+  const [counts, setCounts] = useState({
     clientsCount: 0,
-    budgetsCount: 0,
     servicesCount: 0,
+    budgetsCount: 0,
     appointmentsCount: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -22,30 +15,40 @@ export const useDashboardCounts = () => {
     const fetchCounts = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoading(false);
+          return;
+        }
 
-        // Buscar contagens reais do banco de dados (removendo agendamentos que não existe)
-        const [clientsResult, budgetsResult, servicesResult] = await Promise.all([
-          supabase.from('clients').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('orcamentos').select('id', { count: 'exact' }).eq('user_id', user.id),
-          supabase.from('services').select('id', { count: 'exact' }).eq('user_id', user.id)
-        ]);
+        // Buscar contagem de clientes
+        const { count: clientsCount } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Buscar contagem de serviços
+        const { count: servicesCount } = await supabase
+          .from('services')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Buscar contagem de orçamentos
+        const { count: budgetsCount } = await supabase
+          .from('orcamentos')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Para agendamentos, vamos assumir 0 por enquanto (tabela não existe ainda)
+        const appointmentsCount = 0;
 
         setCounts({
-          clientsCount: clientsResult.count || 0,
-          budgetsCount: budgetsResult.count || 0,
-          servicesCount: servicesResult.count || 0,
-          appointmentsCount: 0 // Zero pois a tabela agendamentos não existe
+          clientsCount: clientsCount || 0,
+          servicesCount: servicesCount || 0,
+          budgetsCount: budgetsCount || 0,
+          appointmentsCount
         });
       } catch (error) {
-        console.error('Erro ao buscar contadores:', error);
-        // Em caso de erro, manter zeros (dados reais)
-        setCounts({
-          clientsCount: 0,
-          budgetsCount: 0,
-          servicesCount: 0,
-          appointmentsCount: 0
-        });
+        console.error('Error fetching dashboard counts:', error);
       } finally {
         setIsLoading(false);
       }
