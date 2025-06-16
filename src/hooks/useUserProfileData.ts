@@ -37,7 +37,8 @@ export const useUserProfileData = (user: User | null) => {
             user_id: user.id,
             created_at: userProfile.subscription.created_at || new Date().toISOString(),
             updated_at: userProfile.subscription.updated_at || new Date().toISOString(),
-            plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type']
+            plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type'],
+            status: userProfile.subscription.status as UserSubscription['status']
           } : undefined,
           plano: userProfile.plano || 'Premium',
           trial_started_at: userProfile.trial_started_at
