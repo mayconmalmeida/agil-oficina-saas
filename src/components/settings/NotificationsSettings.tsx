@@ -40,10 +40,10 @@ const NotificationsSettings = () => {
   useEffect(() => {
     if (userProfile) {
       form.reset({
-        notify_new_client: userProfile.notify_new_client ?? true,
-        notify_approved_budget: userProfile.notify_approved_budget ?? true,
-        notify_by_email: userProfile.notify_by_email ?? false,
-        sound_enabled: userProfile.sound_enabled ?? false
+        notify_new_client: (userProfile as any).notify_new_client ?? true,
+        notify_approved_budget: (userProfile as any).notify_approved_budget ?? true,
+        notify_by_email: (userProfile as any).notify_by_email ?? false,
+        sound_enabled: (userProfile as any).sound_enabled ?? false
       });
     }
   }, [userProfile, form]);
@@ -68,7 +68,7 @@ const NotificationsSettings = () => {
           notify_approved_budget: values.notify_approved_budget,
           notify_by_email: values.notify_by_email,
           sound_enabled: values.sound_enabled
-        })
+        } as any)
         .eq('id', userId);
         
       if (error) throw error;

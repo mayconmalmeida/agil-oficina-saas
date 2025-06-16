@@ -178,7 +178,7 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
         description: error.message || "Ocorreu um erro ao remover o logo.",
       });
     } finally {
-      setIsLoading(false);
+      setIsUploading(false);
     }
   };
 
