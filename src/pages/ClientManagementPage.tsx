@@ -10,6 +10,7 @@ import ClientList from '@/components/clients/ClientList';
 import ClientDetailsPanel from '@/components/clients/ClientDetailsPanel';
 import EnhancedClientForm from '@/components/clients/EnhancedClientForm';
 import ClientSearchForm from '@/components/clients/ClientSearchForm';
+import ClientsPageHeader from '@/components/clients/ClientsPageHeader';
 
 const ClientManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
@@ -36,17 +37,23 @@ const ClientManagementPage: React.FC = () => {
     setSelectedClientId(clientId);
     setShowDetails(true);
     setEditMode(false);
+    setActiveTab('lista');
   };
   
   const handleEditClient = (clientId: string) => {
+    console.log('Edit client clicked:', clientId);
     setSelectedClientId(clientId);
     setEditMode(true);
     setActiveTab('editar');
+    setShowDetails(false);
   };
   
   const handleViewClient = (clientId: string) => {
+    console.log('View client clicked:', clientId);
     setSelectedClientId(clientId);
     setShowDetails(true);
+    setEditMode(false);
+    setActiveTab('lista');
   };
   
   const handleDeleteClient = (clientId: string) => {
@@ -104,7 +111,7 @@ const ClientManagementPage: React.FC = () => {
   };
   
   const handleViewVehicles = () => {
-    navigate('/veiculos');
+    navigate('/dashboard/veiculos');
   };
   
   return (
@@ -126,10 +133,15 @@ const ClientManagementPage: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Show welcome message only on the new client tab */}
+        {activeTab === 'novo' && (
+          <ClientsPageHeader showWelcomeMessage={true} />
+        )}
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className={`lg:col-span-${showDetails && !editMode ? '2' : '3'}`}>
-            <Card className="overflow-visible bg-white"> {/* Added bg-white to fix the white background issue */}
+            <Card className="overflow-visible bg-white">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
@@ -182,7 +194,7 @@ const ClientManagementPage: React.FC = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="novo" className="mt-0 overflow-visible"> {/* Added overflow-visible */}
+                  <TabsContent value="novo" className="mt-0 overflow-visible">
                     <EnhancedClientForm 
                       onSave={handleClientSaved}
                       isLoading={isLoading}
@@ -190,7 +202,7 @@ const ClientManagementPage: React.FC = () => {
                     />
                   </TabsContent>
                   
-                  <TabsContent value="editar" className="mt-0 overflow-visible"> {/* Added overflow-visible */}
+                  <TabsContent value="editar" className="mt-0 overflow-visible">
                     {editMode && selectedClientId && (
                       <>
                         <div className="flex justify-between items-center mb-4">
@@ -214,12 +226,12 @@ const ClientManagementPage: React.FC = () => {
             </Card>
           </div>
           
-          {showDetails && !editMode && (
+          {showDetails && !editMode && selectedClientId && (
             <div className="lg:col-span-1">
               <ClientDetailsPanel 
-                clientId={selectedClientId!} 
+                clientId={selectedClientId} 
                 onClose={handleCloseDetails}
-                onEdit={() => selectedClientId && handleEditClient(selectedClientId)}
+                onEdit={() => handleEditClient(selectedClientId)}
               />
             </div>
           )}

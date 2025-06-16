@@ -1,8 +1,48 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/lib/supabase';
 
-const ClientsPageHeader: React.FC = () => {
+interface ClientsPageHeaderProps {
+  showWelcomeMessage?: boolean;
+}
+
+const ClientsPageHeader: React.FC<ClientsPageHeaderProps> = ({ 
+  showWelcomeMessage = false 
+}) => {
+  const [hasClients, setHasClients] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    checkIfHasClients();
+  }, []);
+
+  const checkIfHasClients = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (error) throw error;
+
+      setHasClients((data || []).length > 0);
+    } catch (error) {
+      console.error('Error checking clients:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Don't show the welcome message if user already has clients or if explicitly disabled
+  if (isLoading || hasClients || !showWelcomeMessage) {
+    return null;
+  }
+
   return (
     <div className="text-center mb-6">
       <h1 className="text-2xl font-bold text-oficina-dark">
