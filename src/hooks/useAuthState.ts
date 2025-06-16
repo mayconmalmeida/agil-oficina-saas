@@ -9,14 +9,26 @@ import { useUserProfileData } from './useUserProfileData';
  * 3. expõe loading unificado.
  */
 export const useAuthState = () => {
-  const { session, user } = useAuthSessionListener();
-  const { profile, loading, role } = useUserProfileData(user);
+  const { session, user, initialLoad } = useAuthSessionListener();
+  const { profile, loading: profileLoading, role } = useUserProfileData(user);
 
-  // isLoadingAuth: loading perfil OU sessão indefinida OU perfil indefinido enquanto tem sessão
-  const isLoadingAuth =
-    loading ||
-    (typeof window !== 'undefined' && !session) ||
-    (session && !profile);
+  // Aguardar tanto o carregamento inicial da sessão quanto do perfil
+  const loading = initialLoad || profileLoading;
+  
+  // isLoadingAuth: se está carregando OU se tem sessão mas não tem perfil ainda
+  const isLoadingAuth = loading || (session && !profile);
+
+  console.log('useAuthState: Estado atual:', {
+    hasSession: !!session,
+    hasUser: !!user,
+    hasProfile: !!profile,
+    initialLoad,
+    profileLoading,
+    loading,
+    isLoadingAuth,
+    role,
+    userEmail: user?.email
+  });
 
   return {
     user: profile,

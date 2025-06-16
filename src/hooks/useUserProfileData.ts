@@ -12,7 +12,10 @@ export const useUserProfileData = (user: User | null) => {
 
   useEffect(() => {
     const loadUserProfile = async () => {
+      console.log('useUserProfileData: Iniciando carregamento de perfil para usuário:', user?.id);
+      
       if (!user) {
+        console.log('useUserProfileData: Usuário não encontrado, limpando estado');
         setProfile(null);
         setRole(null);
         setLoading(false);
@@ -20,8 +23,11 @@ export const useUserProfileData = (user: User | null) => {
       }
 
       try {
+        setLoading(true);
         console.log('useUserProfileData: Carregando perfil para usuário:', user.id);
         const userProfile = await fetchUserProfile(user.id);
+        
+        console.log('useUserProfileData: Perfil carregado:', userProfile);
         
         // Calcular se pode acessar funcionalidades
         const canAccessFeatures = calculateCanAccessFeatures(userProfile.subscription, userProfile.role);
@@ -47,13 +53,14 @@ export const useUserProfileData = (user: User | null) => {
           trial_started_at: userProfile.trial_started_at
         };
 
-        console.log('useUserProfileData: Perfil carregado:', {
+        console.log('useUserProfileData: AuthUser criado:', {
           userId: authUser.id,
           email: authUser.email,
           role: authUser.role,
           isAdmin: authUser.isAdmin,
           canAccessFeatures: authUser.canAccessFeatures,
-          plano: authUser.plano
+          plano: authUser.plano,
+          trial_started_at: authUser.trial_started_at
         });
 
         setProfile(authUser);
@@ -67,9 +74,11 @@ export const useUserProfileData = (user: User | null) => {
           role: 'user',
           isAdmin: false,
           canAccessFeatures: true, // Permitir acesso básico mesmo com erro
-          plano: 'Premium' // Premium durante trial
+          plano: 'Premium', // Premium durante trial
+          trial_started_at: new Date().toISOString() // Definir trial como começando agora
         };
         
+        console.log('useUserProfileData: Usando perfil de fallback:', fallbackProfile);
         setProfile(fallbackProfile);
         setRole('user');
       } finally {
@@ -79,6 +88,13 @@ export const useUserProfileData = (user: User | null) => {
 
     loadUserProfile();
   }, [user]);
+
+  console.log('useUserProfileData: Estado atual:', { 
+    hasProfile: !!profile, 
+    loading, 
+    role,
+    userId: user?.id 
+  });
 
   return { profile, loading, role };
 };

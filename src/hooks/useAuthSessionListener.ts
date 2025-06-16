@@ -10,30 +10,59 @@ import { supabase } from '@/lib/supabase';
 export function useAuthSessionListener() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+    
+    console.log('useAuthSessionListener: Iniciando listener de autenticação');
+    
     // Sempre registrar listener ANTES de buscar sessão inicial
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         if (!mounted) return;
+        
+        console.log('useAuthSessionListener: Evento de autenticação:', event, {
+          sessionExists: !!session,
+          userEmail: session?.user?.email,
+          userId: session?.user?.id
+        });
+        
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Marcar como carregado após o primeiro evento
+        if (initialLoad) {
+          setInitialLoad(false);
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
+    // Buscar sessão inicial
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!mounted) return;
+      
+      if (error) {
+        console.error('useAuthSessionListener: Erro ao buscar sessão inicial:', error);
+      } else {
+        console.log('useAuthSessionListener: Sessão inicial obtida:', {
+          sessionExists: !!session,
+          userEmail: session?.user?.email,
+          userId: session?.user?.id
+        });
       }
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      setInitialLoad(false);
     });
 
     return () => {
+      console.log('useAuthSessionListener: Limpando listener');
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  return { session, user };
+  return { session, user, initialLoad };
 }
