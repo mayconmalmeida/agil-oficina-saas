@@ -6,22 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Eye, Edit, Car } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Car, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface Vehicle {
   id: string;
-  nome: string;
-  marca?: string;
-  modelo?: string;
-  ano?: string;
-  placa?: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  ano: string;
   cor?: string;
   kilometragem?: string;
-  veiculo: string;
-  created_at?: string;
-  is_active?: boolean;
+  tipo_combustivel?: string;
+  created_at: string;
+  cliente: {
+    id: string;
+    nome: string;
+    telefone: string;
+  };
 }
 
 const VehiclesPage: React.FC = () => {
@@ -42,12 +45,25 @@ const VehiclesPage: React.FC = () => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('clients')
-        .select('*')
+        .from('veiculos')
+        .select(`
+          id,
+          placa,
+          marca,
+          modelo,
+          ano,
+          cor,
+          kilometragem,
+          tipo_combustivel,
+          created_at,
+          cliente:clients (
+            id,
+            nome,
+            telefone
+          )
+        `)
         .eq('user_id', user.id)
-        .not('marca', 'is', null)
-        .not('modelo', 'is', null)
-        .order('nome');
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -64,19 +80,42 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este veículo?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('veiculos')
+        .delete()
+        .eq('id', vehicleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Veículo excluído",
+        description: "Veículo foi excluído com sucesso.",
+      });
+
+      fetchVehicles();
+    } catch (error: any) {
+      console.error('Error deleting vehicle:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir veículo",
+        description: "Não foi possível excluir o veículo.",
+      });
+    }
+  };
+
   const filteredVehicles = vehicles.filter(vehicle =>
-    vehicle.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (vehicle.marca?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-    (vehicle.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-    (vehicle.placa?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+    vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    vehicle.cliente?.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatVehicleInfo = (vehicle: Vehicle) => {
-    const parts = [];
-    if (vehicle.marca) parts.push(vehicle.marca);
-    if (vehicle.modelo) parts.push(vehicle.modelo);
-    if (vehicle.ano) parts.push(`(${vehicle.ano})`);
-    return parts.join(' ');
+    return `${vehicle.marca} ${vehicle.modelo} (${vehicle.ano})`;
   };
 
   if (isLoading) {
@@ -126,16 +165,16 @@ const VehiclesPage: React.FC = () => {
                 <p className="text-gray-500 mt-2">
                   {searchTerm
                     ? `Nenhum resultado para "${searchTerm}"`
-                    : 'Os veículos são vinculados aos clientes no momento do cadastro'
+                    : 'Cadastre veículos para gerenciar sua frota'
                   }
                 </p>
                 {!searchTerm && (
                   <Button
-                    onClick={() => navigate('/dashboard/clientes/novo')}
+                    onClick={() => navigate('/dashboard/veiculos/novo')}
                     className="mt-4"
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Cadastrar Cliente com Veículo
+                    Cadastrar Primeiro Veículo
                   </Button>
                 )}
               </div>
@@ -154,14 +193,15 @@ const VehiclesPage: React.FC = () => {
                 <TableBody>
                   {filteredVehicles.map((vehicle) => (
                     <TableRow key={vehicle.id}>
-                      <TableCell className="font-medium">{vehicle.nome}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div>{vehicle.cliente?.nome}</div>
+                          <div className="text-sm text-gray-500">{vehicle.cliente?.telefone}</div>
+                        </div>
+                      </TableCell>
                       <TableCell>{formatVehicleInfo(vehicle)}</TableCell>
                       <TableCell>
-                        {vehicle.placa ? (
-                          <Badge variant="outline">{vehicle.placa}</Badge>
-                        ) : (
-                          '-'
-                        )}
+                        <Badge variant="outline">{vehicle.placa}</Badge>
                       </TableCell>
                       <TableCell>{vehicle.cor || '-'}</TableCell>
                       <TableCell>{vehicle.kilometragem || '-'}</TableCell>
@@ -178,10 +218,18 @@ const VehiclesPage: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/dashboard/clientes`)}
+                            onClick={() => navigate(`/dashboard/veiculos/${vehicle.id}/editar`)}
                             title="Editar veículo"
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteVehicle(vehicle.id)}
+                            title="Excluir veículo"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </TableCell>

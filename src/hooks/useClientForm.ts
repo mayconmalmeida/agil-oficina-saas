@@ -259,51 +259,98 @@ export const useClientForm = ({
             nome: values.nome,
             telefone: values.telefone,
             email: values.email || null,
-            veiculo: veiculoFormatado,
-            marca: values.veiculo.marca,
-            modelo: values.veiculo.modelo,
-            ano: values.veiculo.ano,
-            placa: values.veiculo.placa,
             endereco: enderecoCompleto,
             cidade: values.cidade || null,
             estado: values.estado || null,
             cep: values.cep || null,
             documento: values.documento || null,
             tipo: values.tipo,
-            cor: values.veiculo.cor || null,
-            kilometragem: values.veiculo.kilometragem || null,
             bairro: values.bairro || null,
             numero: values.numero || null
           })
           .eq('id', clientId);
           
         if (error) throw error;
+
+        // Update vehicle in new veiculos table
+        if (values.veiculo.marca && values.veiculo.modelo && values.veiculo.ano && values.veiculo.placa) {
+          // Check if vehicle already exists for this client
+          const { data: existingVehicle } = await supabase
+            .from('veiculos')
+            .select('id')
+            .eq('cliente_id', clientId)
+            .single();
+
+          if (existingVehicle) {
+            // Update existing vehicle
+            await supabase
+              .from('veiculos')
+              .update({
+                marca: values.veiculo.marca,
+                modelo: values.veiculo.modelo,
+                ano: values.veiculo.ano,
+                placa: values.veiculo.placa,
+                cor: values.veiculo.cor || null,
+                kilometragem: values.veiculo.kilometragem || null
+              })
+              .eq('id', existingVehicle.id);
+          } else {
+            // Create new vehicle
+            await supabase
+              .from('veiculos')
+              .insert({
+                cliente_id: clientId,
+                marca: values.veiculo.marca,
+                modelo: values.veiculo.modelo,
+                ano: values.veiculo.ano,
+                placa: values.veiculo.placa,
+                cor: values.veiculo.cor || null,
+                kilometragem: values.veiculo.kilometragem || null,
+                user_id: session.user.id
+              });
+          }
+        }
       } else {
         // Create new client
-        // Use the safeRpc function to ensure type safety
-        const { error } = await safeRpc('create_client', {
-          p_user_id: session.user.id,
-          p_nome: values.nome,
-          p_telefone: values.telefone,
-          p_email: values.email || null,
-          p_veiculo: veiculoFormatado,
-          p_marca: values.veiculo.marca,
-          p_modelo: values.veiculo.modelo, 
-          p_ano: values.veiculo.ano,
-          p_placa: values.veiculo.placa,
-          p_endereco: enderecoCompleto,
-          p_cidade: values.cidade || null,
-          p_estado: values.estado || null,
-          p_cep: values.cep || null,
-          p_documento: values.documento || null,
-          p_cor: values.veiculo.cor || null,
-          p_kilometragem: values.veiculo.kilometragem || null,
-          p_bairro: values.bairro || null,
-          p_numero: values.numero || null,
-          p_tipo: values.tipo
-        });
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert({
+            user_id: session.user.id,
+            nome: values.nome,
+            telefone: values.telefone,
+            email: values.email || null,
+            veiculo: veiculoFormatado,
+            endereco: enderecoCompleto,
+            cidade: values.cidade || null,
+            estado: values.estado || null,
+            cep: values.cep || null,
+            documento: values.documento || null,
+            tipo: values.tipo,
+            bairro: values.bairro || null,
+            numero: values.numero || null
+          })
+          .select()
+          .single();
         
-        if (error) throw error;
+        if (clientError) throw clientError;
+
+        // Create vehicle in new veiculos table
+        if (values.veiculo.marca && values.veiculo.modelo && values.veiculo.ano && values.veiculo.placa) {
+          const { error: vehicleError } = await supabase
+            .from('veiculos')
+            .insert({
+              cliente_id: newClient.id,
+              marca: values.veiculo.marca,
+              modelo: values.veiculo.modelo,
+              ano: values.veiculo.ano,
+              placa: values.veiculo.placa,
+              cor: values.veiculo.cor || null,
+              kilometragem: values.veiculo.kilometragem || null,
+              user_id: session.user.id
+            });
+
+          if (vehicleError) throw vehicleError;
+        }
       }
       
       setSaveSuccess(true);

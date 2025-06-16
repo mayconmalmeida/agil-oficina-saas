@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -6,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { validateLicensePlate } from '@/utils/validationUtils';
 import { formatLicensePlate } from '@/utils/formatUtils';
-import { Vehicle, Client } from '@/utils/supabaseTypes';
 
 // Schema with enhanced validations
 export const vehicleFormSchema = z.object({
@@ -19,7 +19,8 @@ export const vehicleFormSchema = z.object({
       message: 'Formato de placa inválido. Use ABC-1234 ou ABC1D23'
     }),
   cor: z.string().optional(),
-  kilometragem: z.string().optional()
+  kilometragem: z.string().optional(),
+  tipo_combustivel: z.string().optional()
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
@@ -42,7 +43,7 @@ export const useVehicleForm = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [showClientSelector, setShowClientSelector] = useState<boolean>(!isEditing || !defaultClientId);
   
   const form = useForm<VehicleFormValues>({
@@ -54,7 +55,8 @@ export const useVehicleForm = ({
       ano: initialData.ano || '',
       placa: initialData.placa || '',
       cor: initialData.cor || '',
-      kilometragem: initialData.kilometragem || ''
+      kilometragem: initialData.kilometragem || '',
+      tipo_combustivel: initialData.tipo_combustivel || ''
     },
   });
 
@@ -64,36 +66,30 @@ export const useVehicleForm = ({
       const fetchVehicle = async () => {
         setIsLoading(true);
         try {
-          // Get vehicle data
           const { data: vehicleData, error: vehicleError } = await supabase
-            .from('clients')  // We'll fetch from clients since vehicles table may not exist
-            .select('*')
+            .from('veiculos')
+            .select(`
+              *,
+              cliente:clients (*)
+            `)
             .eq('id', vehicleId)
             .single();
             
           if (vehicleError) throw vehicleError;
           
           if (vehicleData) {
-            // Create complete client data with default values for missing fields
-            const clientData: Client = {
-              ...vehicleData,
-              cor: (vehicleData as any).cor || '',
-              kilometragem: (vehicleData as any).kilometragem || '',
-              tipo: (vehicleData as any).tipo || 'pf'
-            };
-            
-            // Format data for the form
             form.reset({
-              clienteId: clientData.id, // Using the client id
-              marca: clientData.marca || '',
-              modelo: clientData.modelo || '',
-              ano: clientData.ano || '',
-              placa: clientData.placa || '',
-              cor: clientData.cor || '',
-              kilometragem: clientData.kilometragem || ''
+              clienteId: vehicleData.cliente_id,
+              marca: vehicleData.marca || '',
+              modelo: vehicleData.modelo || '',
+              ano: vehicleData.ano || '',
+              placa: vehicleData.placa || '',
+              cor: vehicleData.cor || '',
+              kilometragem: vehicleData.kilometragem || '',
+              tipo_combustivel: vehicleData.tipo_combustivel || ''
             });
             
-            setSelectedClient(clientData);
+            setSelectedClient(vehicleData.cliente);
           }
         } catch (error: any) {
           console.error('Error fetching vehicle:', error);
@@ -127,15 +123,7 @@ export const useVehicleForm = ({
           if (error) throw error;
           
           if (data) {
-            // Ensure we have the required fields
-            const clientWithDefaults: Client = {
-              ...data,
-              cor: (data as any).cor || '',
-              kilometragem: (data as any).kilometragem || '',
-              tipo: (data as any).tipo || 'pf'
-            };
-            
-            setSelectedClient(clientWithDefaults);
+            setSelectedClient(data);
           }
         } catch (error) {
           console.error('Error fetching client:', error);
@@ -176,53 +164,81 @@ export const useVehicleForm = ({
         });
         return;
       }
+
+      // Check if plate already exists (excluding current vehicle if editing)
+      let plateQuery = supabase
+        .from('veiculos')
+        .select('id')
+        .eq('placa', values.placa)
+        .eq('user_id', session.user.id);
+
+      if (isEditing && vehicleId) {
+        plateQuery = plateQuery.neq('id', vehicleId);
+      }
+
+      const { data: existingPlate, error: plateError } = await plateQuery;
+      
+      if (plateError) throw plateError;
+      
+      if (existingPlate && existingPlate.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Placa já cadastrada",
+          description: "Já existe um veículo cadastrado com esta placa."
+        });
+        return;
+      }
       
       if (isEditing && vehicleId) {
-        // Update existing vehicle in clients table
+        // Update existing vehicle
         const { error } = await supabase
-          .from('clients')
+          .from('veiculos')
           .update({
+            cliente_id: values.clienteId,
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
             placa: values.placa,
             cor: values.cor || null,
-            kilometragem: values.kilometragem || null
+            kilometragem: values.kilometragem || null,
+            tipo_combustivel: values.tipo_combustivel || null
           })
           .eq('id', vehicleId);
           
         if (error) throw error;
       } else {
-        // Create new vehicle by updating client
+        // Create new vehicle
         const { error } = await supabase
-          .from('clients')
-          .update({
+          .from('veiculos')
+          .insert({
+            cliente_id: values.clienteId,
             marca: values.marca,
             modelo: values.modelo,
             ano: values.ano,
             placa: values.placa,
             cor: values.cor || null,
-            kilometragem: values.kilometragem || null
-          })
-          .eq('id', values.clienteId);
+            kilometragem: values.kilometragem || null,
+            tipo_combustivel: values.tipo_combustivel || null,
+            user_id: session.user.id
+          });
         
         if (error) throw error;
       }
       
       setSaveSuccess(true);
       toast({
-        title: isEditing ? "Veículo atualizado" : "Veículo adicionado",
+        title: isEditing ? "Veículo atualizado" : "Veículo cadastrado",
         description: isEditing 
           ? "Veículo atualizado com sucesso!"
-          : "Veículo adicionado com sucesso!"
+          : "Veículo cadastrado com sucesso!"
       });
       onSave();
     } catch (error: any) {
       console.error('Erro ao salvar veículo:', error);
       toast({
         variant: "destructive",
-        title: isEditing ? "Erro ao atualizar veículo" : "Erro ao adicionar veículo",
-        description: error.message || `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'adicionar'} o veículo.`
+        title: isEditing ? "Erro ao atualizar veículo" : "Erro ao cadastrar veículo",
+        description: error.message || `Ocorreu um erro ao ${isEditing ? 'atualizar' : 'cadastrar'} o veículo.`
       });
     } finally {
       setIsLoading(false);

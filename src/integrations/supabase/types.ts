@@ -541,6 +541,59 @@ export type Database = {
         }
         Relationships: []
       }
+      veiculos: {
+        Row: {
+          ano: string
+          cliente_id: string
+          cor: string | null
+          created_at: string
+          id: string
+          kilometragem: string | null
+          marca: string
+          modelo: string
+          placa: string
+          tipo_combustivel: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ano: string
+          cliente_id: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          kilometragem?: string | null
+          marca: string
+          modelo: string
+          placa: string
+          tipo_combustivel?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ano?: string
+          cliente_id?: string
+          cor?: string | null
+          created_at?: string
+          id?: string
+          kilometragem?: string | null
+          marca?: string
+          modelo?: string
+          placa?: string
+          tipo_combustivel?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

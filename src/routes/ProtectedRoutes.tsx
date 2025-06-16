@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -25,6 +24,7 @@ import SubscriptionPage from '@/pages/SubscriptionPage';
 import VehiclesPage from '@/pages/VehiclesPage';
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
 import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
+import NewVehiclePage from '@/pages/NewVehiclePage';
 
 export const protectedRoutes = [
   <Route
@@ -40,6 +40,8 @@ export const protectedRoutes = [
     <Route path="clientes" element={<ClientsPage />} />
     <Route path="clientes/novo" element={<NewClientPage />} />
     <Route path="veiculos" element={<VehiclesPage />} />
+    <Route path="veiculos/novo" element={<NewVehiclePage />} />
+    <Route path="veiculos/:id/editar" element={<NewVehiclePage />} />
     <Route path="servicos" element={<ServicesListPage />} />
     <Route path="servicos/novo" element={<ServicesPage />} />
     <Route path="orcamentos" element={<BudgetsPage />} />
