@@ -21,6 +21,27 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
   form, 
   saveSuccess = false 
 }) => {
+  // Handle license plate formatting
+  const handlePlacaChange = (value: string) => {
+    // Remove non-alphanumeric characters and convert to uppercase
+    let formattedValue = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    
+    // Apply formatting based on Brazilian license plate patterns
+    if (formattedValue.length <= 7) {
+      // Old format: ABC1234
+      if (formattedValue.length > 3) {
+        formattedValue = formattedValue.slice(0, 3) + '-' + formattedValue.slice(3);
+      }
+    } else {
+      // New format: ABC1D23
+      if (formattedValue.length > 3) {
+        formattedValue = formattedValue.slice(0, 3) + formattedValue.slice(3, 4) + formattedValue.slice(4);
+      }
+    }
+    
+    return formattedValue;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
@@ -86,6 +107,16 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                   maxLength={4}
                   {...field}
                   className={saveSuccess ? "border-green-500" : ""}
+                  inputMode="numeric"
+                  onKeyDown={(e) => {
+                    // Allow only numbers and control keys
+                    if (
+                      !/^\d$/.test(e.key) && 
+                      !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -108,6 +139,11 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                   {...field}
                   className={saveSuccess ? "border-green-500" : ""}
                   style={{ textTransform: 'uppercase' }}
+                  maxLength={8}
+                  onChange={(e) => {
+                    const formattedValue = handlePlacaChange(e.target.value);
+                    field.onChange(formattedValue);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -150,6 +186,16 @@ const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                   placeholder="Ex: 50000" 
                   {...field}
                   className={saveSuccess ? "border-green-500" : ""}
+                  inputMode="numeric"
+                  onKeyDown={(e) => {
+                    // Allow only numbers and control keys
+                    if (
+                      !/^\d$/.test(e.key) && 
+                      !['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
               <FormMessage />
