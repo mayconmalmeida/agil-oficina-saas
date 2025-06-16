@@ -2,17 +2,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const useSessionPersistence = () => {
   const navigate = useNavigate();
-  const { user, isLoadingAuth } = useAuth();
 
   useEffect(() => {
     const restoreSession = async () => {
-      // Aguardar o carregamento da autenticação
-      if (isLoadingAuth) return;
-
       try {
         // Verificar se há uma sessão ativa
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -22,13 +17,8 @@ export const useSessionPersistence = () => {
           return;
         }
 
-        // Se há sessão mas usuário não está carregado ainda, aguardar
-        if (session && !user) {
-          return;
-        }
-
         // Se não há sessão e está em rota protegida, redirecionar para login
-        if (!session && !user) {
+        if (!session) {
           const currentPath = window.location.pathname;
           const protectedRoutes = ['/dashboard'];
           const isProtectedRoute = protectedRoutes.some(route => 
@@ -41,8 +31,8 @@ export const useSessionPersistence = () => {
           }
         }
 
-        // Se há sessão e usuário, restaurar última rota
-        if (session && user) {
+        // Se há sessão, restaurar última rota
+        if (session) {
           const lastRoute = localStorage.getItem('lastRoute');
           const currentPath = window.location.pathname;
           
@@ -56,6 +46,9 @@ export const useSessionPersistence = () => {
       }
     };
 
-    restoreSession();
-  }, [user, isLoadingAuth, navigate]);
+    // Executar após um pequeno delay para garantir que os contextos estejam carregados
+    const timer = setTimeout(restoreSession, 500);
+    
+    return () => clearTimeout(timer);
+  }, [navigate]);
 };

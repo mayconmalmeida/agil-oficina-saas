@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { useRoutePersistence } from '@/hooks/useRoutePersistence';
-import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 
 interface RouteManagerProps {
   children: React.ReactNode;
@@ -9,9 +8,6 @@ interface RouteManagerProps {
 
 const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
   const { restoreLastRoute } = useRoutePersistence();
-  
-  // Usar o hook de persistência de sessão
-  useSessionPersistence();
 
   // Tentar restaurar a última rota uma vez ao montar o componente
   useEffect(() => {
