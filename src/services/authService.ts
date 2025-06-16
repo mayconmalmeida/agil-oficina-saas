@@ -14,9 +14,11 @@ export interface UserProfile {
     starts_at: string;
     ends_at?: string;
     trial_ends_at?: string;
+    created_at?: string;
+    updated_at?: string;
   } | null;
   plano?: string;
-  trial_ends_at?: string;
+  trial_started_at?: string;
 }
 
 export const signOutUser = async () => {
@@ -64,7 +66,9 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         role: profileData.role,
         nome_oficina: profileData.nome_oficina,
         is_active: profileData.is_active ?? true,
-        subscription: null
+        subscription: null,
+        plano: profileData.plano,
+        trial_started_at: profileData.trial_started_at
       };
     }
 
@@ -87,7 +91,9 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       role: profileData.role || 'user',
       nome_oficina: profileData.nome_oficina,
       is_active: profileData.is_active ?? true,
-      subscription: subscriptionData || null
+      subscription: subscriptionData || null,
+      plano: profileData.plano,
+      trial_started_at: profileData.trial_started_at
     };
 
   } catch (error) {
