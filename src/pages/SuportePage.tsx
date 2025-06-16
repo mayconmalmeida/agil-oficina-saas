@@ -22,7 +22,7 @@ const SuportePage: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">< 2h</div>
+            <div className="text-3xl font-bold text-blue-600">&lt; 2h</div>
             <p className="text-gray-600">Média de resposta</p>
           </CardContent>
         </Card>
