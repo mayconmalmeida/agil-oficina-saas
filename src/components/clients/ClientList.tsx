@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -28,36 +29,49 @@ const ClientList: React.FC<ClientListProps> = ({
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [userChecked, setUserChecked] = useState(false);
   const { toast } = useToast();
 
-  // Wait for user authentication
+  // Memoize filters to prevent unnecessary re-renders
+  const memoizedFilters = useMemo(() => filters, [JSON.stringify(filters)]);
+
+  // Get user authentication only once
   useEffect(() => {
+    let mounted = true;
+    
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (mounted) {
+          setUser(user);
+          setUserChecked(true);
+        }
+      } catch (error) {
+        console.error('Erro ao obter usuário:', error);
+        if (mounted) {
+          setUserChecked(true);
+        }
+      }
     };
 
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+      if (mounted) {
+        setUser(session?.user || null);
+        setUserChecked(true);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    // Only fetch clients when user is authenticated
-    if (user) {
-      fetchClients();
-    } else {
-      setIsLoading(false);
-    }
-  }, [searchTerm, filters, user]);
-
-  const fetchClients = async () => {
-    if (!user) {
-      console.error('Usuário não autenticado');
+  // Fetch clients with proper dependency management
+  const fetchClients = useCallback(async () => {
+    if (!user || !userChecked) {
       setIsLoading(false);
       return;
     }
@@ -111,7 +125,14 @@ const ClientList: React.FC<ClientListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, userChecked, searchTerm, toast]);
+
+  // Effect to fetch clients when dependencies change
+  useEffect(() => {
+    if (userChecked) {
+      fetchClients();
+    }
+  }, [fetchClients, userChecked]);
 
   const formatVehicleInfo = (client: Client) => {
     if (!client.marca && !client.modelo && !client.ano && !client.placa) {
@@ -132,7 +153,7 @@ const ClientList: React.FC<ClientListProps> = ({
     return plate.toUpperCase();
   };
 
-  if (isLoading) {
+  if (!userChecked || isLoading) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
