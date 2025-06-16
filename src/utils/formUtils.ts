@@ -42,6 +42,7 @@ export function mapServiceToFormValues(data: any): ProductFormValues {
     descricao: data.descricao || '',
     codigo: '',
     fornecedor: '',
+    categorias: '',
     controlar_estoque: true,
   };
 }
@@ -57,5 +58,6 @@ export const defaultProductValues: ProductFormValues = {
   estoque_minimo: '5',
   descricao: '',
   fornecedor: '',
+  categorias: '',
   controlar_estoque: true,
 };

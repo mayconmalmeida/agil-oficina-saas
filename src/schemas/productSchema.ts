@@ -14,8 +14,8 @@ export const productSchema = z.object({
     .refine((val) => /^\d+([,.]\d{1,2})?$/.test(val), {
       message: 'Formato inválido. Use apenas números com até 2 casas decimais'
     }),
-  quantidade: z.string().min(1, 'Quantidade é obrigatória')
-    .refine((val) => /^\d+$/.test(val), {
+  quantidade: z.string()
+    .refine((val) => !val || /^\d+$/.test(val), {
       message: 'Apenas números inteiros são permitidos'
     }),
   estoque_minimo: z.string().optional()
