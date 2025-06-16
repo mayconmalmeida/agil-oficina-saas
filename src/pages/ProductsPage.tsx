@@ -13,7 +13,7 @@ import ImportXmlModal from '@/components/products/ImportXmlModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Service } from '@/utils/supabaseTypes';
+import { ServiceWithStock } from '@/utils/serviceTypes';
 
 const ProductsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('lista');
@@ -22,7 +22,7 @@ const ProductsPage: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [products, setProducts] = useState<Service[]>([]);
+  const [products, setProducts] = useState<ServiceWithStock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   
