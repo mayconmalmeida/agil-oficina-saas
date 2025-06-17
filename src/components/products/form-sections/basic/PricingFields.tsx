@@ -11,30 +11,28 @@ interface PricingFieldsProps {
 
 const PricingFields: React.FC<PricingFieldsProps> = ({ form }) => {
   const formatCurrency = (value: string) => {
-    // Remove tudo que não é número ou vírgula
-    const numbers = value.replace(/[^\d,]/g, '');
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
     
     // Se está vazio, retorna vazio
     if (!numbers) return '';
     
-    // Se tem vírgula, processa decimal
-    if (numbers.includes(',')) {
-      const parts = numbers.split(',');
-      const integerPart = parts[0].replace(/\D/g, '');
-      const decimalPart = parts[1] ? parts[1].slice(0, 2).replace(/\D/g, '') : '';
-      return decimalPart ? `${integerPart},${decimalPart}` : `${integerPart},`;
+    // Converte para número e formata
+    const numericValue = parseInt(numbers, 10);
+    
+    // Se for menor que 100, trata como centavos
+    if (numericValue < 100) {
+      return `0,${numbers.padStart(2, '0')}`;
     }
     
-    // Se não tem vírgula, formata como inteiro
-    const cleanNumbers = numbers.replace(/\D/g, '');
-    if (cleanNumbers.length <= 2) {
-      return cleanNumbers;
-    }
+    // Separa reais e centavos
+    const reais = Math.floor(numericValue / 100);
+    const centavos = numericValue % 100;
     
-    // Adiciona vírgula para decimais automaticamente
-    const integerPart = cleanNumbers.slice(0, -2) || '0';
-    const decimalPart = cleanNumbers.slice(-2);
-    return `${integerPart},${decimalPart}`;
+    // Formata com separador de milhares
+    const reaisFormatted = reais.toLocaleString('pt-BR');
+    
+    return `${reaisFormatted},${centavos.toString().padStart(2, '0')}`;
   };
 
   const handleCurrencyChange = (value: string, onChange: (value: string) => void) => {
@@ -43,11 +41,11 @@ const PricingFields: React.FC<PricingFieldsProps> = ({ form }) => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    // Permite apenas números, vírgula, backspace, delete, tab, escape, enter, setas
+    // Permite apenas números, backspace, delete, tab, escape, enter, setas
     const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-    const isNumberOrComma = /^[0-9,]$/.test(e.key);
+    const isNumber = /^[0-9]$/.test(e.key);
     
-    if (!allowedKeys.includes(e.key) && !isNumberOrComma) {
+    if (!allowedKeys.includes(e.key) && !isNumber) {
       e.preventDefault();
     }
   };

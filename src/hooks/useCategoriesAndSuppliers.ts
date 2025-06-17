@@ -43,12 +43,12 @@ export const useCategoriesAndSuppliers = () => {
           setCategories(categoriesData || []);
         }
         
-        // Buscar fornecedores do usuário
+        // Buscar fornecedores da tabela 'fornecedores' (não 'suppliers')
         const { data: suppliersData, error: suppliersError } = await supabase
-          .from('suppliers')
-          .select('id, name')
+          .from('fornecedores')
+          .select('id, nome as name')
           .eq('user_id', user.id)
-          .order('name');
+          .order('nome');
         
         if (suppliersError) {
           console.error('Error fetching suppliers:', suppliersError);

@@ -14,6 +14,14 @@ interface SupplierSelectFieldProps {
 const SupplierSelectField: React.FC<SupplierSelectFieldProps> = ({ form }) => {
   const { suppliers, isLoading } = useCategoriesAndSuppliers();
 
+  const handleValueChange = (value: string) => {
+    if (value === "clear-selection") {
+      form.setValue("fornecedor", "");
+    } else {
+      form.setValue("fornecedor", value);
+    }
+  };
+
   return (
     <FormField
       control={form.control}
@@ -22,7 +30,7 @@ const SupplierSelectField: React.FC<SupplierSelectFieldProps> = ({ form }) => {
         <FormItem>
           <FormLabel>Fornecedor (opcional)</FormLabel>
           <Select 
-            onValueChange={field.onChange} 
+            onValueChange={handleValueChange} 
             value={field.value || ''}
           >
             <FormControl>
