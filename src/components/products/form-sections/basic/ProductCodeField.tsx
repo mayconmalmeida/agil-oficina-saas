@@ -12,7 +12,7 @@ interface ProductCodeFieldProps {
 
 const ProductCodeField: React.FC<ProductCodeFieldProps> = ({ form, isEditing = false }) => {
   const codigoValue = form.watch('codigo');
-  const isReadonly = isEditing && codigoValue; // Readonly se está editando e já tem código
+  const isReadonly = isEditing && Boolean(codigoValue); // Fixed: Convert string to boolean
 
   return (
     <FormField
