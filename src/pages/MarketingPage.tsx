@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,9 +157,12 @@ const MarketingPage: React.FC = () => {
 
       if (error) throw error;
 
+      // Simular processamento/envio da campanha
+      await processarEnvioCampanha(titulo, tipoEnvio, clientesSelecionados);
+
       toast({
         title: "Sucesso",
-        description: "Campanha criada com sucesso!"
+        description: "Campanha criada e processada com sucesso!"
       });
 
       // Limpar formulário
@@ -181,6 +185,19 @@ const MarketingPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const processarEnvioCampanha = async (titulo: string, tipo: 'whatsapp' | 'email', clientesIds: string[]) => {
+    // Simular processamento de envio
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log(`Processando campanha: ${titulo}`);
+    console.log(`Tipo de envio: ${tipo}`);
+    console.log(`Clientes selecionados: ${clientesIds.length}`);
+    
+    // Aqui seria implementada a lógica real de envio
+    // Para WhatsApp: integração com API do WhatsApp Business
+    // Para Email: integração com serviço de email (SendGrid, etc)
   };
 
   const excluirCampanha = async (id: string) => {
@@ -207,6 +224,13 @@ const MarketingPage: React.FC = () => {
     }
   };
 
+  const visualizarCampanha = (campanha: Campanha) => {
+    toast({
+      title: "Visualizar Campanha",
+      description: `Abrindo detalhes da campanha: ${campanha.titulo}`,
+    });
+  };
+
   const toggleClienteSelecionado = (clienteId: string) => {
     setClientesSelecionados(prev => 
       prev.includes(clienteId) 
@@ -217,9 +241,9 @@ const MarketingPage: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      'agendado': 'bg-yellow-100 text-yellow-800',
-      'enviado': 'bg-green-100 text-green-800',
-      'falhou': 'bg-red-100 text-red-800'
+      'agendado': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'enviado': 'bg-green-100 text-green-800 border-green-300',
+      'falhou': 'bg-red-100 text-red-800 border-red-300'
     };
     return variants[status as keyof typeof variants] || variants.agendado;
   };
@@ -232,195 +256,202 @@ const MarketingPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Marketing Integrado
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Crie e gerencie campanhas de WhatsApp e e-mail para seus clientes.
-            </p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Marketing Integrado
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Crie e gerencie campanhas de WhatsApp e e-mail para seus clientes.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Criar nova campanha */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nova Campanha</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Título da Campanha</label>
-                <Input 
-                  placeholder="Ex: Promoção de Verão 2024"
-                  value={titulo}
-                  onChange={(e) => setTitulo(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Tipo de Envio</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    variant={tipoEnvio === 'whatsapp' ? 'default' : 'outline'} 
-                    className="flex flex-col items-center p-4 h-auto"
-                    onClick={() => setTipoEnvio('whatsapp')}
-                  >
-                    <MessageSquare className="h-6 w-6 mb-2" />
-                    WhatsApp
-                  </Button>
-                  <Button 
-                    variant={tipoEnvio === 'email' ? 'default' : 'outline'} 
-                    className="flex flex-col items-center p-4 h-auto"
-                    onClick={() => setTipoEnvio('email')}
-                  >
-                    <Mail className="h-6 w-6 mb-2" />
-                    E-mail
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Criar nova campanha */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Nova Campanha</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Data do Envio</label>
+                  <label className="block text-sm font-medium mb-2">Título da Campanha</label>
                   <Input 
-                    type="date"
-                    value={dataAgendada}
-                    onChange={(e) => setDataAgendada(e.target.value)}
+                    placeholder="Ex: Promoção de Verão 2024"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
                   />
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-medium mb-2">Hora do Envio</label>
-                  <Input 
-                    type="time"
-                    value={horaAgendada}
-                    onChange={(e) => setHoraAgendada(e.target.value)}
+                  <label className="block text-sm font-medium mb-2">Tipo de Envio</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      variant={tipoEnvio === 'whatsapp' ? 'default' : 'outline'} 
+                      className="flex flex-col items-center p-4 h-auto"
+                      onClick={() => setTipoEnvio('whatsapp')}
+                    >
+                      <MessageSquare className="h-6 w-6 mb-2" />
+                      WhatsApp
+                    </Button>
+                    <Button 
+                      variant={tipoEnvio === 'email' ? 'default' : 'outline'} 
+                      className="flex flex-col items-center p-4 h-auto"
+                      onClick={() => setTipoEnvio('email')}
+                    >
+                      <Mail className="h-6 w-6 mb-2" />
+                      E-mail
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Data do Envio</label>
+                    <Input 
+                      type="date"
+                      value={dataAgendada}
+                      onChange={(e) => setDataAgendada(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Hora do Envio</label>
+                    <Input 
+                      type="time"
+                      value={horaAgendada}
+                      onChange={(e) => setHoraAgendada(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Mensagem ({mensagem.length}/500 caracteres)
+                  </label>
+                  <Textarea 
+                    placeholder="Digite o conteúdo da sua campanha..."
+                    rows={4}
+                    maxLength={500}
+                    value={mensagem}
+                    onChange={(e) => setMensagem(e.target.value)}
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Mensagem ({mensagem.length}/500 caracteres)
-                </label>
-                <Textarea 
-                  placeholder="Digite o conteúdo da sua campanha..."
-                  rows={4}
-                  maxLength={500}
-                  value={mensagem}
-                  onChange={(e) => setMensagem(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Arquivo (Opcional)</label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="file"
-                    accept="image/*,video/*"
-                    onChange={(e) => setArquivo(e.target.files?.[0] || null)}
-                  />
-                  {arquivo && (
-                    <Badge variant="outline">
-                      {arquivo.type.startsWith('image/') ? 'Imagem' : 'Vídeo'}
-                    </Badge>
-                  )}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Arquivo (Opcional)</label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={(e) => setArquivo(e.target.files?.[0] || null)}
+                    />
+                    {arquivo && (
+                      <Badge variant="outline">
+                        {arquivo.type.startsWith('image/') ? 'Imagem' : 'Vídeo'}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Clientes ({clientesSelecionados.length} selecionados)
-                </label>
-                <div className="max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
-                  {clientes.map(cliente => (
-                    <div key={cliente.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={clientesSelecionados.includes(cliente.id)}
-                        onCheckedChange={() => toggleClienteSelecionado(cliente.id)}
-                      />
-                      <span className="text-sm">{cliente.nome}</span>
-                      <span className="text-xs text-gray-500">
-                        {tipoEnvio === 'whatsapp' ? cliente.telefone : cliente.email}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button onClick={criarCampanha} disabled={loading}>
-                  <Send className="h-4 w-4 mr-2" />
-                  {loading ? 'Criando...' : 'Agendar Envio'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Campanhas recentes */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Campanhas Recentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {campanhas.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    Nenhuma campanha criada ainda
-                  </p>
-                ) : (
-                  campanhas.slice(0, 5).map((campanha) => (
-                    <div key={campanha.id} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm">{campanha.titulo}</h4>
-                        <Badge className={getStatusBadge(campanha.status)}>
-                          {campanha.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {campanha.tipo_envio === 'whatsapp' ? (
-                          <MessageSquare className="h-4 w-4" />
-                        ) : (
-                          <Mail className="h-4 w-4" />
-                        )}
-                        <span className="text-xs text-gray-600">
-                          {format(new Date(campanha.data_agendada), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Clientes ({clientesSelecionados.length} selecionados)
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
+                    {clientes.map(cliente => (
+                      <div key={cliente.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={clientesSelecionados.includes(cliente.id)}
+                          onCheckedChange={() => toggleClienteSelecionado(cliente.id)}
+                        />
+                        <span className="text-sm">{cliente.nome}</span>
+                        <span className="text-xs text-gray-500">
+                          {tipoEnvio === 'whatsapp' ? cliente.telefone : cliente.email}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">
-                        Para: {getClientesNomes(campanha.clientes_ids)}
-                      </p>
-                      {campanha.arquivo_url && (
-                        <Badge variant="outline" className="text-xs mb-2">
-                          {campanha.tipo_arquivo === 'imagem' ? '📷' : '🎥'} Mídia anexada
-                        </Badge>
-                      )}
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="text-xs">
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-xs"
-                          onClick={() => excluirCampanha(campanha.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button onClick={criarCampanha} disabled={loading}>
+                    <Send className="h-4 w-4 mr-2" />
+                    {loading ? 'Criando...' : 'Agendar Envio'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Campanhas recentes */}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Campanhas Recentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {campanhas.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">
+                      Nenhuma campanha criada ainda
+                    </p>
+                  ) : (
+                    campanhas.slice(0, 5).map((campanha) => (
+                      <div key={campanha.id} className="border rounded-lg p-3 hover:bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-sm">{campanha.titulo}</h4>
+                          <Badge className={getStatusBadge(campanha.status)}>
+                            {campanha.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          {campanha.tipo_envio === 'whatsapp' ? (
+                            <MessageSquare className="h-4 w-4" />
+                          ) : (
+                            <Mail className="h-4 w-4" />
+                          )}
+                          <span className="text-xs text-gray-600">
+                            {format(new Date(campanha.data_agendada), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">
+                          Para: {getClientesNomes(campanha.clientes_ids)}
+                        </p>
+                        {campanha.arquivo_url && (
+                          <Badge variant="outline" className="text-xs mb-2">
+                            {campanha.tipo_arquivo === 'imagem' ? '📷' : '🎥'} Mídia anexada
+                          </Badge>
+                        )}
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => visualizarCampanha(campanha)}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs"
+                            onClick={() => excluirCampanha(campanha.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

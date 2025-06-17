@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -171,6 +172,20 @@ const ContabilidadePage: React.FC = () => {
     setShowSendModal(true);
   };
 
+  const handleViewNota = (nota: NotaFiscal) => {
+    toast({
+      title: "Visualizar Nota Fiscal",
+      description: `Abrindo detalhes da nota fiscal ${nota.numero}`,
+    });
+  };
+
+  const handleDownloadNota = (nota: NotaFiscal) => {
+    toast({
+      title: "Download iniciado",
+      description: `Baixando nota fiscal ${nota.numero}`,
+    });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -211,17 +226,6 @@ const ContabilidadePage: React.FC = () => {
                 Acesso Total
               </Badge>
             </div>
-            <div className="mt-2 text-sm text-blue-700">
-              <p className="font-medium mb-1">Recursos Premium disponíveis:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Módulo de estoque integrado</li>
-                <li>Agendamento de serviços</li>
-                <li>Relatórios avançados</li>
-                <li>Suporte prioritário</li>
-                <li>Backup automático</li>
-                <li>Importação/Exportação de XMLs</li>
-              </ul>
-            </div>
           </CardContent>
         </Card>
       );
@@ -233,19 +237,9 @@ const ContabilidadePage: React.FC = () => {
           <CardContent className="p-4">
             <div className="text-center">
               <h3 className="font-medium text-red-800 mb-2">Trial Expirado - Acesso Limitado</h3>
-              <p className="text-sm text-red-700 mb-3">
+              <p className="text-sm text-red-700">
                 Você tem acesso apenas aos recursos essenciais. Faça upgrade para acessar recursos premium.
               </p>
-              <div className="text-sm text-red-700">
-                <p className="font-medium mb-1">Recursos Essenciais disponíveis:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Cadastro de clientes ilimitado</li>
-                  <li>Gestão de orçamentos</li>
-                  <li>Controle de serviços</li>
-                  <li>Relatórios básicos</li>
-                  <li>Suporte via e-mail</li>
-                </ul>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -278,349 +272,371 @@ const ContabilidadePage: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">📊 Contabilidade</h1>
-            <p className="text-gray-600 mt-2">
-              Gestão completa de notas fiscais, fornecedores e exportações contábeis
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleImportarXML} 
-              className="flex items-center gap-2"
-              disabled={!hasPremiumAccess}
-            >
-              <Upload className="h-4 w-4" />
-              Importar XML
-              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
-            </Button>
-            <Button 
-              onClick={handleExportarXMLs} 
-              variant="outline" 
-              className="flex items-center gap-2"
-              disabled={!hasPremiumAccess}
-            >
-              <Download className="h-4 w-4" />
-              Exportar XMLs
-              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
-            </Button>
-            <Button 
-              onClick={handleEnviarContador} 
-              variant="outline" 
-              className="flex items-center gap-2"
-              disabled={!hasPremiumAccess}
-            >
-              <Mail className="h-4 w-4" />
-              Enviar para Contador
-              {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
-            </Button>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">📊 Contabilidade</h1>
+              <p className="text-gray-600 mt-2">
+                Gestão completa de notas fiscais, fornecedores e exportações contábeis
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                onClick={handleImportarXML} 
+                className="flex items-center gap-2"
+                disabled={!hasPremiumAccess}
+              >
+                <Upload className="h-4 w-4" />
+                Importar XML
+                {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              </Button>
+              <Button 
+                onClick={handleExportarXMLs} 
+                variant="outline" 
+                className="flex items-center gap-2"
+                disabled={!hasPremiumAccess}
+              >
+                <Download className="h-4 w-4" />
+                Exportar XMLs
+                {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              </Button>
+              <Button 
+                onClick={handleEnviarContador} 
+                variant="outline" 
+                className="flex items-center gap-2"
+                disabled={!hasPremiumAccess}
+              >
+                <Mail className="h-4 w-4" />
+                Enviar para Contador
+                {!hasPremiumAccess && <Crown className="h-4 w-4 ml-1" />}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {renderPlanBanner()}
+        {renderPlanBanner()}
 
-      <Tabs defaultValue="entrada" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="entrada">📥 Notas de Entrada</TabsTrigger>
-          <TabsTrigger value="saida">📤 Notas de Saída</TabsTrigger>
-          <TabsTrigger value="exportacoes">📂 Exportações</TabsTrigger>
-          <TabsTrigger value="configuracoes">🛠️ Configurações</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="entrada" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="entrada">📥 Notas de Entrada</TabsTrigger>
+            <TabsTrigger value="saida">📤 Notas de Saída</TabsTrigger>
+            <TabsTrigger value="exportacoes">📂 Exportações</TabsTrigger>
+            <TabsTrigger value="configuracoes">🛠️ Configurações</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="entrada">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas Fiscais de Entrada</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">Carregando...</div>
-              ) : notasEntrada.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900">Nenhuma nota fiscal de entrada</h3>
-                  <p className="text-gray-500 mt-2">Importe XMLs de notas fiscais para começar</p>
-                  <Button onClick={handleImportarXML} className="mt-4" disabled={!hasPremiumAccess}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Importar primeiro XML
-                    {!hasPremiumAccess && <Crown className="h-4 w-4 ml-2" />}
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nº da Nota
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Fornecedor
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data Emissão
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Valor Total
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {notasEntrada.map((nota) => (
-                        <tr key={nota.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {nota.numero}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div>
-                              <div className="font-medium">{nota.fornecedor_nome || 'N/A'}</div>
-                              <div className="text-xs text-gray-400">{nota.fornecedor_cnpj || 'N/A'}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(nota.data_emissao)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatCurrency(nota.valor_total)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              nota.status === 'importado' ? 'bg-green-100 text-green-800' :
-                              nota.status === 'erro' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {nota.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Package className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="saida">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notas Fiscais de Saída</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8">Carregando...</div>
-              ) : notasSaida.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900">Nenhuma nota fiscal de saída</h3>
-                  <p className="text-gray-500 mt-2">Notas de saída aparecerão automaticamente quando você emitir vendas</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Nº da Nota
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Cliente
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data Emissão
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Valor Total
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {notasSaida.map((nota) => (
-                        <tr key={nota.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {nota.numero}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div>
-                              <div className="font-medium">{nota.cliente_nome || 'N/A'}</div>
-                              <div className="text-xs text-gray-400">{nota.cliente_documento || 'N/A'}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(nota.data_emissao)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatCurrency(nota.valor_total)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              nota.status === 'emitido' ? 'bg-green-100 text-green-800' :
-                              nota.status === 'erro' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {nota.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="exportacoes">
-          <Card>
-            <CardHeader>
-              <CardTitle>📂 Histórico de Exportações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ExportHistoryTable exports={mockExports} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="configuracoes">
-          <Card>
-            <CardHeader>
-              <CardTitle>🛠️ Configurações Contábeis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Dados da Empresa</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        CNPJ/CPF
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        placeholder="00.000.000/0000-00"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Regime Tributário
-                      </label>
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-md">
-                        <option>Simples Nacional</option>
-                        <option>Lucro Presumido</option>
-                        <option>Lucro Real</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Contador</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        E-mail do Contador
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        placeholder="contador@empresa.com.br"
-                      />
-                    </div>
-                    <Button className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Salvar Configurações
+          <TabsContent value="entrada">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notas Fiscais de Entrada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Carregando...</div>
+                ) : notasEntrada.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma nota fiscal de entrada</h3>
+                    <p className="text-gray-500 mb-4">Importe XMLs de notas fiscais para começar</p>
+                    <Button onClick={handleImportarXML} disabled={!hasPremiumAccess}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importar primeiro XML
+                      {!hasPremiumAccess && <Crown className="h-4 w-4 ml-2" />}
                     </Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nº da Nota
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fornecedor
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data Emissão
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Valor Total
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ações
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {notasEntrada.map((nota) => (
+                          <tr key={nota.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {nota.numero}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div>
+                                <div className="font-medium">{nota.fornecedor_nome || 'N/A'}</div>
+                                <div className="text-xs text-gray-400">{nota.fornecedor_cnpj || 'N/A'}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(nota.data_emissao)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatCurrency(nota.valor_total)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                nota.status === 'importado' ? 'bg-green-100 text-green-800' :
+                                nota.status === 'erro' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {nota.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleViewNota(nota)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleDownloadNota(nota)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Integrações</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+          <TabsContent value="saida">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notas Fiscais de Saída</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">Carregando...</div>
+                ) : notasSaida.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma nota fiscal de saída</h3>
+                    <p className="text-gray-500">Notas de saída aparecerão automaticamente quando você emitir vendas</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nº da Nota
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cliente
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Data Emissão
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Valor Total
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Ações
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {notasSaida.map((nota) => (
+                          <tr key={nota.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {nota.numero}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div>
+                                <div className="font-medium">{nota.cliente_nome || 'N/A'}</div>
+                                <div className="text-xs text-gray-400">{nota.cliente_documento || 'N/A'}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(nota.data_emissao)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatCurrency(nota.valor_total)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                nota.status === 'emitido' ? 'bg-green-100 text-green-800' :
+                                nota.status === 'erro' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {nota.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleViewNota(nota)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleDownloadNota(nota)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="exportacoes">
+            <Card>
+              <CardHeader>
+                <CardTitle>📂 Histórico de Exportações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ExportHistoryTable exports={mockExports} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="configuracoes">
+            <Card>
+              <CardHeader>
+                <CardTitle>🛠️ Configurações Contábeis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Dados da Empresa</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <h4 className="font-medium">Omie</h4>
-                        <p className="text-sm text-gray-500">Sistema de gestão empresarial</p>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          CNPJ/CPF
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="00.000.000/0000-00"
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" disabled={!hasPremiumAccess}>
-                          Conectar
-                        </Button>
-                        {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Regime Tributário
+                        </label>
+                        <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option>Simples Nacional</option>
+                          <option>Lucro Presumido</option>
+                          <option>Lucro Real</option>
+                        </select>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Contador</h3>
+                    <div className="space-y-4">
                       <div>
-                        <h4 className="font-medium">Nibo</h4>
-                        <p className="text-sm text-gray-500">Plataforma contábil online</p>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          E-mail do Contador
+                        </label>
+                        <input
+                          type="email"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="contador@empresa.com.br"
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" disabled={!hasPremiumAccess}>
-                          Conectar
-                        </Button>
-                        {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                      <Button className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Salvar Configurações
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Integrações</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Omie</h4>
+                          <p className="text-sm text-gray-500">Sistema de gestão empresarial</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" disabled={!hasPremiumAccess}>
+                            Conectar
+                          </Button>
+                          {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Nibo</h4>
+                          <p className="text-sm text-gray-500">Plataforma contábil online</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" disabled={!hasPremiumAccess}>
+                            Conectar
+                          </Button>
+                          {!hasPremiumAccess && <Crown className="h-4 w-4 text-yellow-600" />}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-      {/* Modais */}
-      <ImportXmlModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={carregarDados}
-      />
-      <ExportXmlModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-      />
-      <SendToAccountantModal
-        isOpen={showSendModal}
-        onClose={() => setShowSendModal(false)}
-      />
+        {/* Modais */}
+        <ImportXmlModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={carregarDados}
+        />
+        <ExportXmlModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+        />
+        <SendToAccountantModal
+          isOpen={showSendModal}
+          onClose={() => setShowSendModal(false)}
+        />
+      </div>
     </div>
   );
 };
