@@ -1,12 +1,12 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { useLogin } from './useLogin';
+import { useLogin } from '../useLogin';
 import { testSupabaseConnection } from '@/lib/supabase';
-import type { FormValues } from './admin/types';
+import type { FormValues } from './types';
 import { UseFormReturn } from 'react-hook-form';
 
-export type { FormValues } from './admin/types';
+export type { FormValues } from './types';
 
 export const useAdminAuth = () => {
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error' | 'cors-error' | 'timeout'>('checking');
