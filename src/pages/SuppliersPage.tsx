@@ -1,372 +1,162 @@
 
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Search, Building2, Phone, Mail, MapPin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { formatCNPJ, formatCEP } from '@/utils/formatters';
+import { useToast } from '@/hooks/use-toast';
 
 interface Supplier {
   id: string;
-  name: string;
-  phone: string;
-  email: string;
-  cnpj: string;
-  address: string;
-  cep: string;
-  city: string;
-  state: string;
+  nome: string;
+  cnpj?: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
   created_at: string;
 }
 
 const SuppliersPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [newSupplier, setNewSupplier] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    cnpj: '',
-    address: '',
-    cep: '',
-    city: '',
-    state: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSuppliers();
+    loadSuppliers();
   }, []);
 
-  const fetchSuppliers = async () => {
+  useEffect(() => {
+    const filtered = suppliers.filter(supplier =>
+      supplier.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.cnpj?.includes(searchTerm) ||
+      supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredSuppliers(filtered);
+  }, [searchTerm, suppliers]);
+
+  const loadSuppliers = async () => {
     try {
       const { data, error } = await supabase
-        .from('suppliers')
+        .from('fornecedores')
         .select('*')
-        .order('name');
-
-      if (error) throw error;
-      
-      // Map the data to ensure all fields are present, with defaults for null values
-      const mappedSuppliers = (data || []).map(supplier => ({
-        id: supplier.id,
-        name: supplier.name || '',
-        phone: supplier.phone || '',
-        email: supplier.email || '',
-        cnpj: supplier.cnpj || '',
-        address: supplier.address || '',
-        cep: supplier.cep || '',
-        city: supplier.city || '',
-        state: supplier.state || '',
-        created_at: supplier.created_at
-      }));
-      
-      setSuppliers(mappedSuppliers);
-    } catch (error: any) {
-      console.error('Error fetching suppliers:', error);
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!newSupplier.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
-    }
-
-    if (!newSupplier.phone.trim()) {
-      newErrors.phone = 'Telefone é obrigatório';
-    }
-
-    if (!newSupplier.email.trim()) {
-      newErrors.email = 'Email é obrigatório';
-    } else if (!/\S+@\S+\.\S+/.test(newSupplier.email)) {
-      newErrors.email = 'Email inválido';
-    }
-
-    if (!newSupplier.cnpj.trim()) {
-      newErrors.cnpj = 'CNPJ é obrigatório';
-    }
-
-    if (!newSupplier.address.trim()) {
-      newErrors.address = 'Endereço é obrigatório';
-    }
-
-    if (!newSupplier.cep.trim()) {
-      newErrors.cep = 'CEP é obrigatório';
-    }
-
-    if (!newSupplier.city.trim()) {
-      newErrors.city = 'Cidade é obrigatória';
-    }
-
-    if (!newSupplier.state.trim()) {
-      newErrors.state = 'Estado é obrigatório';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const addSupplier = async () => {
-    if (!validateForm()) {
-      toast({
-        variant: "destructive",
-        title: "Erro de validação",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-      });
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('suppliers')
-        .insert({
-          name: newSupplier.name.trim(),
-          phone: newSupplier.phone.trim(),
-          email: newSupplier.email.trim(),
-          cnpj: newSupplier.cnpj.trim(),
-          address: newSupplier.address.trim(),
-          cep: newSupplier.cep.trim(),
-          city: newSupplier.city.trim(),
-          state: newSupplier.state.trim(),
-          user_id: user.id
-        });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      toast({
-        title: "Fornecedor adicionado",
-        description: `${newSupplier.name} foi adicionado com sucesso.`,
-      });
-
-      setNewSupplier({
-        name: '',
-        phone: '',
-        email: '',
-        cnpj: '',
-        address: '',
-        cep: '',
-        city: '',
-        state: ''
-      });
-      setErrors({});
-      fetchSuppliers();
+      setSuppliers(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao adicionar fornecedor",
-        description: error.message,
+        title: "Erro ao carregar fornecedores",
+        description: error.message
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const deleteSupplier = async (id: string, name: string) => {
-    try {
-      const { error } = await supabase
-        .from('suppliers')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Fornecedor removido",
-        description: `${name} foi removido com sucesso.`,
-      });
-
-      fetchSuppliers();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao remover fornecedor",
-        description: error.message,
-      });
-    }
+  const formatCNPJ = (cnpj?: string) => {
+    if (!cnpj) return 'N/A';
+    return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    let formattedValue = value;
-    
-    if (field === 'cnpj') {
-      formattedValue = formatCNPJ(value);
-    } else if (field === 'cep') {
-      formattedValue = formatCEP(value);
-    }
-    
-    setNewSupplier(prev => ({
-      ...prev,
-      [field]: formattedValue
-    }));
-    
-    // Limpa o erro do campo quando o usuário começa a digitar
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Carregando fornecedores...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Fornecedores</h1>
+        <Badge variant="outline">
+          {suppliers.length} fornecedores cadastrados
+        </Badge>
       </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Adicionar Novo Fornecedor</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Input
-                placeholder="Nome do fornecedor *"
-                value={newSupplier.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className={errors.name ? 'border-red-500' : ''}
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="Telefone *"
-                value={newSupplier.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={errors.phone ? 'border-red-500' : ''}
-              />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="Email *"
-                type="email"
-                value={newSupplier.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="CNPJ *"
-                value={newSupplier.cnpj}
-                onChange={(e) => handleInputChange('cnpj', e.target.value)}
-                className={errors.cnpj ? 'border-red-500' : ''}
-                maxLength={18}
-              />
-              {errors.cnpj && <p className="text-red-500 text-sm mt-1">{errors.cnpj}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="Endereço *"
-                value={newSupplier.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                className={errors.address ? 'border-red-500' : ''}
-              />
-              {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="CEP *"
-                value={newSupplier.cep}
-                onChange={(e) => handleInputChange('cep', e.target.value)}
-                className={errors.cep ? 'border-red-500' : ''}
-                maxLength={9}
-              />
-              {errors.cep && <p className="text-red-500 text-sm mt-1">{errors.cep}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="Cidade *"
-                value={newSupplier.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                className={errors.city ? 'border-red-500' : ''}
-              />
-              {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
-            </div>
-            
-            <div>
-              <Input
-                placeholder="Estado *"
-                value={newSupplier.state}
-                onChange={(e) => handleInputChange('state', e.target.value)}
-                className={errors.state ? 'border-red-500' : ''}
-                maxLength={2}
-              />
-              {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <Button onClick={addSupplier} className="bg-oficina hover:bg-blue-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Fornecedor
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Fornecedores ({suppliers.length})</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Search className="h-4 w-4" />
+            <Input
+              placeholder="Buscar por nome, CNPJ ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          {suppliers.length === 0 ? (
+          {filteredSuppliers.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum fornecedor cadastrado.</p>
+              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">
+                {searchTerm ? 'Nenhum fornecedor encontrado' : 'Nenhum fornecedor cadastrado'}
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>CNPJ</TableHead>
-                  <TableHead>Cidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {suppliers.map((supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.phone}</TableCell>
-                    <TableCell>{supplier.email}</TableCell>
-                    <TableCell>{supplier.cnpj}</TableCell>
-                    <TableCell>{supplier.city}/{supplier.state}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => deleteSupplier(supplier.id, supplier.name)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredSuppliers.map((supplier) => (
+                <Card key={supplier.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">{supplier.nome}</h3>
+                        <p className="text-sm text-gray-600">
+                          CNPJ: {formatCNPJ(supplier.cnpj)}
+                        </p>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+
+                      {supplier.email && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span>{supplier.email}</span>
+                        </div>
+                      )}
+
+                      {supplier.telefone && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span>{supplier.telefone}</span>
+                        </div>
+                      )}
+
+                      {(supplier.endereco || supplier.cidade) && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                          <div>
+                            {supplier.endereco && <p>{supplier.endereco}</p>}
+                            {supplier.cidade && (
+                              <p>{supplier.cidade}{supplier.estado && ` - ${supplier.estado}`}</p>
+                            )}
+                            {supplier.cep && <p>CEP: {supplier.cep}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-gray-500">
+                          Cadastrado em: {new Date(supplier.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>

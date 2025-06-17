@@ -1,7 +1,7 @@
 
 export interface ParsedSupplier {
-  cnpj: string;
   name: string;
+  cnpj: string;
   email?: string;
   phone?: string;
   address?: string;
@@ -15,66 +15,81 @@ export interface ParsedProduct {
   nome: string;
   quantidade: number;
   preco_unitario: number;
-  [key: string]: string | number; // Index signature para compatibilidade com Json
 }
 
 export interface XmlParseResult {
-  supplier: ParsedSupplier | null;
+  supplier?: ParsedSupplier;
   products: ParsedProduct[];
+  numeroNota: string;
 }
 
-export const parseXmlProducts = (xmlText: string): XmlParseResult => {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-  
-  // Extrair informações do fornecedor
-  let supplier: ParsedSupplier | null = null;
-  const emit = xmlDoc.getElementsByTagName('emit')[0];
-  
-  if (emit) {
-    const cnpj = emit.getElementsByTagName('CNPJ')[0]?.textContent || '';
-    const xNome = emit.getElementsByTagName('xNome')[0]?.textContent || '';
+export function parseXmlProducts(xmlText: string): XmlParseResult {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xmlText, 'text/xml');
     
-    if (cnpj && xNome) {
-      const enderEmit = emit.getElementsByTagName('enderEmit')[0];
-      
-      supplier = {
-        cnpj: cnpj,
-        name: xNome,
-        email: emit.getElementsByTagName('email')[0]?.textContent || undefined,
-        phone: emit.getElementsByTagName('fone')[0]?.textContent || undefined,
-        address: enderEmit?.getElementsByTagName('xLgr')[0]?.textContent || undefined,
-        city: enderEmit?.getElementsByTagName('xMun')[0]?.textContent || undefined,
-        state: enderEmit?.getElementsByTagName('UF')[0]?.textContent || undefined,
-        cep: enderEmit?.getElementsByTagName('CEP')[0]?.textContent || undefined
-      };
+    // Check for parsing errors
+    const parseError = doc.querySelector('parsererror');
+    if (parseError) {
+      throw new Error('XML inválido: ' + parseError.textContent);
     }
-  }
-  
-  // Extrair produtos (código existente)
-  const products: ParsedProduct[] = [];
-  const detElements = xmlDoc.getElementsByTagName('det');
-  
-  for (let i = 0; i < detElements.length; i++) {
-    const det = detElements[i];
-    const prod = det.getElementsByTagName('prod')[0];
-    
-    if (prod) {
-      const cProd = prod.getElementsByTagName('cProd')[0]?.textContent || '';
-      const xProd = prod.getElementsByTagName('xProd')[0]?.textContent || '';
-      const qCom = prod.getElementsByTagName('qCom')[0]?.textContent || '0';
-      const vUnCom = prod.getElementsByTagName('vUnCom')[0]?.textContent || '0';
+
+    // Extract invoice number
+    const numeroNota = doc.querySelector('ide nNF')?.textContent || 
+                      doc.querySelector('nNF')?.textContent || 
+                      `NFE-${Date.now()}`;
+
+    // Extract supplier info
+    let supplier: ParsedSupplier | undefined;
+    const emit = doc.querySelector('emit');
+    if (emit) {
+      const cnpjElement = emit.querySelector('CNPJ');
+      const nomeElement = emit.querySelector('xNome');
       
-      if (cProd && xProd) {
-        products.push({
-          codigo: cProd,
-          nome: xProd,
-          quantidade: parseInt(qCom) || 0,
-          preco_unitario: parseFloat(vUnCom) || 0
-        });
+      if (cnpjElement && nomeElement) {
+        supplier = {
+          name: nomeElement.textContent || '',
+          cnpj: cnpjElement.textContent || '',
+          email: emit.querySelector('email')?.textContent,
+          phone: emit.querySelector('fone')?.textContent,
+          address: emit.querySelector('enderEmit xLgr')?.textContent,
+          city: emit.querySelector('enderEmit xMun')?.textContent,
+          state: emit.querySelector('enderEmit UF')?.textContent,
+          cep: emit.querySelector('enderEmit CEP')?.textContent
+        };
       }
     }
+
+    // Extract products
+    const products: ParsedProduct[] = [];
+    const dets = doc.querySelectorAll('det');
+    
+    dets.forEach(det => {
+      const prod = det.querySelector('prod');
+      if (prod) {
+        const codigo = prod.querySelector('cProd')?.textContent || '';
+        const nome = prod.querySelector('xProd')?.textContent || '';
+        const quantidade = parseFloat(prod.querySelector('qCom')?.textContent || '1');
+        const preco = parseFloat(prod.querySelector('vUnCom')?.textContent || '0');
+
+        if (codigo && nome) {
+          products.push({
+            codigo,
+            nome,
+            quantidade,
+            preco_unitario: preco
+          });
+        }
+      }
+    });
+
+    return {
+      supplier,
+      products,
+      numeroNota
+    };
+  } catch (error) {
+    console.error('Erro ao fazer parse do XML:', error);
+    throw new Error('Falha ao processar XML: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
   }
-  
-  return { supplier, products };
-};
+}

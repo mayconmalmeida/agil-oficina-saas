@@ -41,17 +41,35 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Ler o arquivo XML
+      // Read XML file
       const xmlText = await file.text();
       
-      // Processar o XML e extrair dados
-      const { supplier, products } = parseXmlProducts(xmlText);
+      // Parse XML and extract data
+      const { supplier, products, numeroNota } = parseXmlProducts(xmlText);
+
+      // Check if invoice already exists
+      const { data: existingInvoice } = await supabase
+        .from('notas_fiscais')
+        .select('id')
+        .eq('numero', numeroNota)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingInvoice) {
+        toast({
+          variant: "destructive",
+          title: "Nota fiscal já importada",
+          description: `A nota fiscal número ${numeroNota} já foi importada anteriormente.`,
+        });
+        setIsProcessing(false);
+        return;
+      }
 
       let supplierId = null;
 
-      // Cadastrar fornecedor se existir
+      // Process supplier if exists
       if (supplier) {
-        // Verificar se fornecedor já existe pelo CNPJ
+        // Check if supplier already exists by CNPJ
         const { data: existingSupplier } = await supabase
           .from('fornecedores')
           .select('id')
@@ -66,7 +84,7 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
             description: `Fornecedor ${supplier.name} já cadastrado`,
           });
         } else {
-          // Criar novo fornecedor
+          // Create new supplier
           const { data: newSupplier, error: supplierError } = await supabase
             .from('fornecedores')
             .insert({
@@ -93,12 +111,12 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
         }
       }
 
-      // Processar produtos
+      // Process products
       let produtosCadastrados = 0;
       let produtosAtualizados = 0;
 
       for (const produto of products) {
-        // Verificar se produto já existe pelo código
+        // Check if product already exists by code
         const { data: existingProduct } = await supabase
           .from('services')
           .select('id, quantidade_estoque')
@@ -108,17 +126,18 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
           .single();
 
         if (existingProduct) {
-          // Atualizar estoque do produto existente
+          // Update existing product stock
           await supabase
             .from('services')
             .update({
-              quantidade_estoque: existingProduct.quantidade_estoque + produto.quantidade
+              quantidade_estoque: existingProduct.quantidade_estoque + produto.quantidade,
+              preco_custo: produto.preco_unitario // Update cost price from invoice
             })
             .eq('id', existingProduct.id);
           
           produtosAtualizados++;
         } else {
-          // Criar novo produto
+          // Create new product
           await supabase
             .from('services')
             .insert({
@@ -126,7 +145,7 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
               nome: produto.nome,
               codigo: produto.codigo,
               tipo: 'produto',
-              valor: produto.preco_unitario,
+              valor: produto.preco_unitario * 1.5, // Default markup
               quantidade_estoque: produto.quantidade,
               preco_custo: produto.preco_unitario,
               is_active: true
@@ -136,13 +155,13 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
         }
       }
 
-      // Criar registro da nota fiscal
+      // Create invoice record
       const { error: notaError } = await supabase
         .from('notas_fiscais')
         .insert({
           user_id: user.id,
           tipo: 'entrada',
-          numero: `NFE-${Date.now()}`,
+          numero: numeroNota,
           data_emissao: new Date().toISOString(),
           valor_total: products.reduce((total, p) => total + (p.preco_unitario * p.quantidade), 0),
           status: 'importado',
@@ -153,7 +172,7 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
 
       toast({
         title: "XML importado com sucesso",
-        description: `${produtosCadastrados} produtos cadastrados, ${produtosAtualizados} produtos atualizados${supplier ? `, fornecedor ${supplier.name} processado` : ''}`,
+        description: `${produtosCadastrados} produtos cadastrados, ${produtosAtualizados} produtos atualizados${supplier ? `, fornecedor processado` : ''}`,
       });
 
       onSuccess();

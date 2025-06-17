@@ -53,10 +53,36 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
     if (productId) {
       fetchProduct();
     }
-  }, [productId, toast, isEditing]);
+  }, [productId, toast]);
   
   const handleEdit = () => {
     setIsEditing(true);
+  };
+
+  const handleSaveSuccess = () => {
+    setIsEditing(false);
+    // Refresh product data
+    const fetchUpdatedProduct = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*')
+          .eq('id', productId)
+          .single();
+        
+        if (error) throw error;
+        setProduct(data);
+        
+        toast({
+          title: "Produto atualizado",
+          description: "O produto foi atualizado com sucesso."
+        });
+      } catch (error: any) {
+        console.error('Error refreshing product:', error);
+      }
+    };
+    
+    fetchUpdatedProduct();
   };
   
   const formatCurrency = (value: number) => {
@@ -78,13 +104,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
         <CardContent>
           <ProductForm 
             productId={productId}
-            onSaveSuccess={() => {
-              setIsEditing(false);
-              toast({
-                title: "Produto atualizado",
-                description: "O produto foi atualizado com sucesso."
-              });
-            }}
+            onSaveSuccess={handleSaveSuccess}
           />
         </CardContent>
       </Card>
@@ -150,22 +170,47 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
           </Badge>
           <span className="font-semibold text-lg">{formatCurrency(product.valor)}</span>
         </div>
+
+        {product.codigo && (
+          <div>
+            <h4 className="text-sm font-medium mb-1">Código</h4>
+            <p className="text-sm text-muted-foreground">{product.codigo}</p>
+          </div>
+        )}
         
         {product.descricao && (
-          <div className="mt-4">
+          <div>
             <h4 className="text-sm font-medium mb-1">Descrição</h4>
             <p className="text-sm text-muted-foreground">{product.descricao}</p>
+          </div>
+        )}
+
+        {product.tipo === 'produto' && (
+          <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg">
+            <div>
+              <h4 className="text-sm font-medium mb-1">Estoque Atual</h4>
+              <p className="text-sm">{product.quantidade_estoque || 0} unidades</p>
+            </div>
+            {product.preco_custo && (
+              <div>
+                <h4 className="text-sm font-medium mb-1">Preço de Custo</h4>
+                <p className="text-sm">{formatCurrency(product.preco_custo)}</p>
+              </div>
+            )}
           </div>
         )}
         
         <div className="border-t pt-4 mt-4">
           <h4 className="text-sm font-medium mb-2">Detalhes adicionais</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 gap-2 text-sm">
             <div>
               <span className="text-muted-foreground">Criado em:</span>
               <p>{new Date(product.created_at).toLocaleDateString('pt-BR')}</p>
             </div>
-            {/* Remove reference to codigo property */}
+            <div>
+              <span className="text-muted-foreground">Status:</span>
+              <p>{product.is_active ? 'Ativo' : 'Inativo'}</p>
+            </div>
           </div>
         </div>
       </CardContent>
