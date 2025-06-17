@@ -27,10 +27,7 @@ const DiagnosticoIA: React.FC = () => {
     setCausas([]);
 
     try {
-      console.log('Iniciando diagnóstico com sintomas:', sintomas);
-      
       const response = await callAI('diagnostico', sintomas);
-      console.log('Resposta da IA:', response);
 
       if (response.success && response.causes) {
         setCausas(response.causes);
@@ -39,7 +36,6 @@ const DiagnosticoIA: React.FC = () => {
           description: `${response.causes.length} possíveis causas identificadas.`,
         });
       } else {
-        console.error('Erro na resposta da IA:', response.error);
         toast({
           variant: "destructive",
           title: "Erro no diagnóstico",
@@ -47,7 +43,6 @@ const DiagnosticoIA: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao chamar IA:', error);
       toast({
         variant: "destructive",
         title: "Erro no diagnóstico",
