@@ -40,6 +40,7 @@ export function useClientSearch() {
     debounce(async (term: string) => {
       if (!term || term.length < 2) {
         setClients([]);
+        setIsLoading(false);
         return;
       }
 
@@ -47,10 +48,18 @@ export function useClientSearch() {
       console.log('Iniciando busca por clientes com termo:', term);
       
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No user found');
+          setIsLoading(false);
+          return;
+        }
+
         // Search clients by name, phone, plate, vehicle, brand, or model
         const { data, error } = await supabase
           .from('clients')
           .select('*')
+          .eq('user_id', user.id)
           .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,placa.ilike.%${term}%,veiculo.ilike.%${term}%,marca.ilike.%${term}%,modelo.ilike.%${term}%`)
           .eq('is_active', true)
           .order('nome')

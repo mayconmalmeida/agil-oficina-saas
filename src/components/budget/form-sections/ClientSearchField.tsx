@@ -50,21 +50,37 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     }
   };
   
-  // Format vehicle information with better error handling
+  // Format vehicle information with better error handling and complete data
   const formatVehicleInfo = (client: Client) => {
     if (!client) return '';
     
     try {
+      const parts = [];
+      
+      // Add marca and modelo if available
       if (client.marca && client.modelo) {
-        let vehicleInfo = `${client.marca} ${client.modelo}`;
-        if (client.ano) vehicleInfo += ` (${client.ano})`;
-        if (client.placa) vehicleInfo += ` - Placa: ${client.placa}`;
-        return vehicleInfo;
+        let vehicleName = `${client.marca} ${client.modelo}`;
+        if (client.ano) vehicleName += ` (${client.ano})`;
+        parts.push(vehicleName);
+      } else if (client.veiculo) {
+        // Use the generic vehicle field if marca/modelo are not available
+        parts.push(client.veiculo);
       }
-      return client.veiculo || '';
+      
+      // Add plate information if available
+      if (client.placa) {
+        parts.push(`Placa: ${client.placa}`);
+      }
+      
+      // Add color if available
+      if (client.cor) {
+        parts.push(`Cor: ${client.cor}`);
+      }
+      
+      return parts.join(' - ') || 'Informações do veículo não disponíveis';
     } catch (error) {
       console.error('Error formatting vehicle info:', error);
-      return client.veiculo || '';
+      return client.veiculo || 'Informações do veículo não disponíveis';
     }
   };
 
@@ -100,6 +116,16 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       console.error('Error clearing field:', error);
     }
   };
+
+  // Auto-trigger search when component mounts with existing value
+  useEffect(() => {
+    const currentValue = form.getValues('cliente');
+    if (currentValue && currentValue.length >= 2 && !selectedClient) {
+      console.log('Auto-triggering search for:', currentValue);
+      setSearchTerm(currentValue);
+      setClientSearchOpen(true);
+    }
+  }, [form, selectedClient, setSearchTerm]);
 
   // Close popover when clicking outside or when no search term
   useEffect(() => {
