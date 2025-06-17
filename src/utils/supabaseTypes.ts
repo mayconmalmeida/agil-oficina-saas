@@ -110,7 +110,8 @@ export interface SubscriptionWithProfile {
 export const safeRpc = async (functionName: string, params: any) => {
   try {
     const { supabase } = await import('@/lib/supabase');
-    return await supabase.rpc(functionName, params);
+    // Use type assertion to bypass strict typing for RPC calls
+    return await (supabase as any).rpc(functionName, params);
   } catch (error) {
     console.error(`Error calling RPC function ${functionName}:`, error);
     return { data: null, error };

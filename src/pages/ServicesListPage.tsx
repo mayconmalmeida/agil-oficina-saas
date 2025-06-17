@@ -49,7 +49,12 @@ const ServicesListPage: React.FC = () => {
 
       if (error) throw error;
 
-      setServices(data || []);
+      // Cast the data to ensure tipo is the correct union type
+      const typedServices = (data || []).map(item => ({
+        ...item,
+        tipo: item.tipo as 'produto' | 'servico'
+      }));
+      setServices(typedServices);
     } catch (error: any) {
       console.error('Error fetching services:', error);
       toast({

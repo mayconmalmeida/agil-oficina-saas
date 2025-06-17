@@ -41,7 +41,12 @@ const ProductsPage: React.FC = () => {
 
       if (error) throw error;
 
-      setProducts(data || []);
+      // Cast the data to ensure tipo is the correct union type
+      const typedProducts = (data || []).map(item => ({
+        ...item,
+        tipo: item.tipo as 'produto' | 'servico'
+      }));
+      setProducts(typedProducts);
     } catch (error: any) {
       console.error('Error fetching products:', error);
       toast({
