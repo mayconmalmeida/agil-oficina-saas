@@ -121,16 +121,16 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
               </SelectContent>
             </Select>
             <FormMessage />
+            
+            {field.value && (
+              <div className="p-3 bg-gray-50 rounded-lg border">
+                <p className="text-sm font-medium">Veículo Selecionado:</p>
+                <p className="text-sm text-gray-600">{field.value}</p>
+              </div>
+            )}
           </FormItem>
         )}
       />
-
-      {field.value && (
-        <div className="p-3 bg-gray-50 rounded-lg border">
-          <p className="text-sm font-medium">Veículo Selecionado:</p>
-          <p className="text-sm text-gray-600">{field.value}</p>
-        </div>
-      )}
     </div>
   );
 };

@@ -209,7 +209,7 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
             </div>
             <div>
               <span className="text-muted-foreground">Status:</span>
-              <p>{product.is_active ? 'Ativo' : 'Inativo'}</p>
+              <p>{product.is_active !== false ? 'Ativo' : 'Inativo'}</p>
             </div>
           </div>
         </div>
