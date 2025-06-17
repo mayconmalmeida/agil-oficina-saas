@@ -18,7 +18,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ productId, onSaveSuccess }) =
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <BasicInfoSection form={form} />
+        <BasicInfoSection form={form} isEditing={isEditing} />
         
         {productType === 'produto' && (
           <InventorySection form={form} controlStock={controlStock} />

@@ -21,7 +21,10 @@ const SupplierSelectField: React.FC<SupplierSelectFieldProps> = ({ form }) => {
       render={({ field }) => (
         <FormItem>
           <FormLabel>Fornecedor (opcional)</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value || ''}>
+          <Select 
+            onValueChange={field.onChange} 
+            value={field.value || ''}
+          >
             <FormControl>
               <SelectTrigger>
                 {isLoading ? (
@@ -35,6 +38,9 @@ const SupplierSelectField: React.FC<SupplierSelectFieldProps> = ({ form }) => {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
+              <SelectItem value="clear-selection">
+                Limpar seleção
+              </SelectItem>
               {suppliers.map((supplier) => (
                 <SelectItem key={supplier.id} value={supplier.name}>
                   {supplier.name}

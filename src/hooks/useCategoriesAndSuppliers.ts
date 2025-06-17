@@ -24,10 +24,17 @@ export const useCategoriesAndSuppliers = () => {
       try {
         setIsLoading(true);
         
-        // Buscar categorias
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log('No user found');
+          return;
+        }
+        
+        // Buscar categorias do usuário
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('categories')
           .select('id, name')
+          .eq('user_id', user.id)
           .order('name');
         
         if (categoriesError) {
@@ -36,10 +43,11 @@ export const useCategoriesAndSuppliers = () => {
           setCategories(categoriesData || []);
         }
         
-        // Buscar fornecedores
+        // Buscar fornecedores do usuário
         const { data: suppliersData, error: suppliersError } = await supabase
           .from('suppliers')
           .select('id, name')
+          .eq('user_id', user.id)
           .order('name');
         
         if (suppliersError) {

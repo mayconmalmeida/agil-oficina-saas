@@ -1,3 +1,4 @@
+
 /**
  * Funções utilitárias de sanitização e validação para formulários.
  */
@@ -35,15 +36,15 @@ export function mapServiceToFormValues(data: any): ProductFormValues {
   return {
     nome: data.nome || '',
     tipo: data.tipo as 'produto' | 'servico',
-    preco_venda: data.valor?.toString() || '',
-    preco_custo: data.valor ? (parseFloat(data.valor.toString()) * 0.7).toString() : '',
-    quantidade: '0',
+    preco_venda: data.valor ? data.valor.toString().replace('.', ',') : '0,00',
+    preco_custo: data.preco_custo ? data.preco_custo.toString().replace('.', ',') : '0,00',
+    quantidade: data.quantidade_estoque?.toString() || '0',
     estoque_minimo: '5',
     descricao: data.descricao || '',
-    codigo: '',
-    fornecedor: '',
+    codigo: data.codigo || '',
+    fornecedor: data.fornecedor || '',
     categorias: '',
-    controlar_estoque: true,
+    controlar_estoque: data.tipo === 'produto',
   };
 }
 
@@ -52,8 +53,8 @@ export const defaultProductValues: ProductFormValues = {
   nome: '',
   codigo: '',
   tipo: 'produto',
-  preco_custo: '',
-  preco_venda: '',
+  preco_custo: '0,00',
+  preco_venda: '0,00',
   quantidade: '0',
   estoque_minimo: '5',
   descricao: '',
