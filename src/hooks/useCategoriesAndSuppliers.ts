@@ -43,17 +43,22 @@ export const useCategoriesAndSuppliers = () => {
           setCategories(categoriesData || []);
         }
         
-        // Buscar fornecedores da tabela 'fornecedores' (não 'suppliers')
+        // Buscar fornecedores da tabela 'fornecedores'
         const { data: suppliersData, error: suppliersError } = await supabase
           .from('fornecedores')
-          .select('id, nome as name')
+          .select('id, nome')
           .eq('user_id', user.id)
           .order('nome');
         
         if (suppliersError) {
           console.error('Error fetching suppliers:', suppliersError);
         } else {
-          setSuppliers(suppliersData || []);
+          // Map the data to match the Supplier interface
+          const mappedSuppliers = (suppliersData || []).map(supplier => ({
+            id: supplier.id,
+            name: supplier.nome
+          }));
+          setSuppliers(mappedSuppliers);
         }
         
       } catch (error: any) {
