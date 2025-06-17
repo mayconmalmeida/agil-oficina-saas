@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,11 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
         }
         
         console.log('Product data fetched successfully:', data);
-        setProduct(data);
+        // Cast the data to ensure tipo is the correct union type
+        setProduct({
+          ...data,
+          tipo: data.tipo as 'produto' | 'servico'
+        });
       } catch (error: any) {
         console.error('Failed to fetch product details:', error);
         toast({
@@ -71,7 +74,11 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
           .single();
         
         if (error) throw error;
-        setProduct(data);
+        // Cast the data to ensure tipo is the correct union type
+        setProduct({
+          ...data,
+          tipo: data.tipo as 'produto' | 'servico'
+        });
         
         toast({
           title: "Produto atualizado",

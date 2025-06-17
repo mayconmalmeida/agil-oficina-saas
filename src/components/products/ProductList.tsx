@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,12 @@ const ProductList: React.FC<ProductListProps> = ({
         }
         
         console.log('Products fetched:', data);
-        setProducts(data || []);
+        // Cast the data to ensure tipo is the correct union type
+        const typedProducts = (data || []).map(item => ({
+          ...item,
+          tipo: item.tipo as 'produto' | 'servico'
+        }));
+        setProducts(typedProducts);
       } catch (error: any) {
         console.error('Error fetching products:', error);
         toast({

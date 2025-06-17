@@ -67,6 +67,7 @@ export interface Profile {
   is_active?: boolean;
   role?: string;
   created_at: string;
+  whatsapp_suporte?: string;
 }
 
 export interface Supplier {
@@ -89,3 +90,46 @@ export interface Category {
   name: string;
   created_at: string;
 }
+
+export interface SubscriptionWithProfile {
+  id: string;
+  user_id: string;
+  plan: string;
+  status: string;
+  started_at: string;
+  created_at: string;
+  ends_at: string | null;
+  expires_at: string | null;
+  payment_method: string;
+  amount: number;
+  email: string;
+  nome_oficina: string;
+}
+
+// Utility functions
+export const safeRpc = async (functionName: string, params: any) => {
+  try {
+    const { supabase } = await import('@/lib/supabase');
+    return await supabase.rpc(functionName, params);
+  } catch (error) {
+    console.error(`Error calling RPC function ${functionName}:`, error);
+    return { data: null, error };
+  }
+};
+
+export const formatPhone = (phone: string): string => {
+  const cleanPhone = phone.replace(/\D/g, '');
+  if (cleanPhone.length === 11) {
+    return cleanPhone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  } else if (cleanPhone.length === 10) {
+    return cleanPhone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  return phone;
+};
+
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
