@@ -41,7 +41,7 @@ const CategoriesSelectField: React.FC<CategoriesSelectFieldProps> = ({ form }) =
                 </SelectItem>
               ))}
               {categories.length === 0 && !isLoading && (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-categories" disabled>
                   Nenhuma categoria encontrada
                 </SelectItem>
               )}

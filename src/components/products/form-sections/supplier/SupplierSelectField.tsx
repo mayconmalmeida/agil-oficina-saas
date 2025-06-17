@@ -41,7 +41,7 @@ const SupplierSelectField: React.FC<SupplierSelectFieldProps> = ({ form }) => {
                 </SelectItem>
               ))}
               {suppliers.length === 0 && !isLoading && (
-                <SelectItem value="" disabled>
+                <SelectItem value="no-suppliers" disabled>
                   Nenhum fornecedor encontrado
                 </SelectItem>
               )}
