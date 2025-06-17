@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import CampanhaDetailsModal from '@/components/marketing/CampanhaDetailsModal';
+import { useCampanhaScheduler } from '@/hooks/useCampanhaScheduler';
 
 interface Cliente {
   id: string;
@@ -120,6 +121,9 @@ const MarketingPage: React.FC = () => {
     }
   };
 
+  // Usar o scheduler de campanhas
+  useCampanhaScheduler();
+
   const criarCampanha = async () => {
     if (!titulo || !mensagem || !dataAgendada || !horaAgendada || clientesSelecionados.length === 0) {
       toast({
@@ -160,12 +164,9 @@ const MarketingPage: React.FC = () => {
 
       if (error) throw error;
 
-      // Simular processamento/envio da campanha
-      await processarEnvioCampanha(titulo, tipoEnvio, clientesSelecionados);
-
       toast({
         title: "Sucesso",
-        description: "Campanha criada e agendada com sucesso!"
+        description: "Campanha criada e agendada com sucesso! Será enviada automaticamente no horário programado."
       });
 
       // Limpar formulário
@@ -187,31 +188,6 @@ const MarketingPage: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const processarEnvioCampanha = async (titulo: string, tipo: 'whatsapp' | 'email', clientesIds: string[]) => {
-    // Simular processamento de envio
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    console.log(`Processando campanha: ${titulo}`);
-    console.log(`Tipo de envio: ${tipo}`);
-    console.log(`Clientes selecionados: ${clientesIds.length}`);
-    
-    // Marcar campanha como enviada
-    try {
-      await supabase
-        .from('campanhas_marketing')
-        .update({ status: 'enviado' })
-        .eq('titulo', titulo)
-        .eq('status', 'agendado');
-      
-      toast({
-        title: "Campanha enviada!",
-        description: `Mensagens enviadas via ${tipo === 'whatsapp' ? 'WhatsApp' : 'E-mail'} para ${clientesIds.length} cliente(s)`
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar status da campanha:', error);
     }
   };
 

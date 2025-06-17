@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, FileText, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { parseXmlProducts } from '@/components/products/import/xmlParser';
 
 interface ImportXmlModalProps {
   isOpen: boolean;
@@ -40,32 +41,126 @@ const ImportXmlModal: React.FC<ImportXmlModalProps> = ({ isOpen, onClose, onSucc
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Simular processamento do XML
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Ler o arquivo XML
+      const xmlText = await file.text();
+      
+      // Processar o XML e extrair dados
+      const { supplier, products } = parseXmlProducts(xmlText);
 
-      // Aqui seria implementada a lógica real de processamento do XML
-      // Por enquanto, vamos simular a criação de uma nota fiscal
-      const { error } = await supabase
+      let supplierId = null;
+
+      // Cadastrar fornecedor se existir
+      if (supplier) {
+        // Verificar se fornecedor já existe pelo CNPJ
+        const { data: existingSupplier } = await supabase
+          .from('fornecedores')
+          .select('id')
+          .eq('cnpj', supplier.cnpj)
+          .eq('user_id', user.id)
+          .single();
+
+        if (existingSupplier) {
+          supplierId = existingSupplier.id;
+          toast({
+            title: "Fornecedor existente",
+            description: `Fornecedor ${supplier.name} já cadastrado`,
+          });
+        } else {
+          // Criar novo fornecedor
+          const { data: newSupplier, error: supplierError } = await supabase
+            .from('fornecedores')
+            .insert({
+              user_id: user.id,
+              nome: supplier.name,
+              cnpj: supplier.cnpj,
+              email: supplier.email,
+              telefone: supplier.phone,
+              endereco: supplier.address,
+              cidade: supplier.city,
+              estado: supplier.state,
+              cep: supplier.cep
+            })
+            .select('id')
+            .single();
+
+          if (supplierError) throw supplierError;
+          supplierId = newSupplier.id;
+
+          toast({
+            title: "Fornecedor cadastrado",
+            description: `Fornecedor ${supplier.name} cadastrado com sucesso`,
+          });
+        }
+      }
+
+      // Processar produtos
+      let produtosCadastrados = 0;
+      let produtosAtualizados = 0;
+
+      for (const produto of products) {
+        // Verificar se produto já existe pelo código
+        const { data: existingProduct } = await supabase
+          .from('services')
+          .select('id, quantidade_estoque')
+          .eq('codigo', produto.codigo)
+          .eq('user_id', user.id)
+          .eq('tipo', 'produto')
+          .single();
+
+        if (existingProduct) {
+          // Atualizar estoque do produto existente
+          await supabase
+            .from('services')
+            .update({
+              quantidade_estoque: existingProduct.quantidade_estoque + produto.quantidade
+            })
+            .eq('id', existingProduct.id);
+          
+          produtosAtualizados++;
+        } else {
+          // Criar novo produto
+          await supabase
+            .from('services')
+            .insert({
+              user_id: user.id,
+              nome: produto.nome,
+              codigo: produto.codigo,
+              tipo: 'produto',
+              valor: produto.preco_unitario,
+              quantidade_estoque: produto.quantidade,
+              preco_custo: produto.preco_unitario,
+              is_active: true
+            });
+          
+          produtosCadastrados++;
+        }
+      }
+
+      // Criar registro da nota fiscal
+      const { error: notaError } = await supabase
         .from('notas_fiscais')
         .insert({
           user_id: user.id,
           tipo: 'entrada',
           numero: `NFE-${Date.now()}`,
           data_emissao: new Date().toISOString(),
-          valor_total: Math.random() * 1000,
-          status: 'importado'
+          valor_total: products.reduce((total, p) => total + (p.preco_unitario * p.quantidade), 0),
+          status: 'importado',
+          fornecedor_id: supplierId
         });
 
-      if (error) throw error;
+      if (notaError) throw notaError;
 
       toast({
         title: "XML importado com sucesso",
-        description: "A nota fiscal foi processada e adicionada ao sistema",
+        description: `${produtosCadastrados} produtos cadastrados, ${produtosAtualizados} produtos atualizados${supplier ? `, fornecedor ${supplier.name} processado` : ''}`,
       });
 
       onSuccess();
       onClose();
+      setFile(null);
     } catch (error: any) {
+      console.error('Erro ao processar XML:', error);
       toast({
         variant: "destructive",
         title: "Erro ao importar XML",
