@@ -833,10 +833,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_admin_permission: {
-        Args: { user_email: string; required_level: string }
-        Returns: boolean
-      }
       create_agendamento: {
         Args: {
           p_user_id: string
