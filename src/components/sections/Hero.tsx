@@ -19,7 +19,7 @@ const Hero = () => {
             </h1>
             
             <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-xl">
-              O OficinaÁgil é o sistema completo que sua oficina precisa para 
+              O OficinaGO é o sistema completo que sua oficina precisa para 
               gerenciar clientes, orçamentos e serviços com facilidade. 
               Menos burocracia, mais resultados.
             </p>

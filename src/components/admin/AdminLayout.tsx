@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,7 +50,7 @@ const AdminLayout: React.FC = () => {
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg border-r">
         <div className="p-6 border-b">
-          <h1 className="text-xl font-bold text-gray-800">Oficina Ágil</h1>
+          <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
           <p className="text-sm text-gray-600">Painel Admin</p>
         </div>
         

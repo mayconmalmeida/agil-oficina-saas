@@ -33,8 +33,6 @@ export function useClientSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  console.log('useClientSearch - searchTerm:', searchTerm, 'clients count:', clients.length);
-
   // Debounce search function
   const debouncedSearch = useCallback(
     debounce(async (term: string) => {
@@ -45,12 +43,10 @@ export function useClientSearch() {
       }
 
       setIsLoading(true);
-      console.log('Iniciando busca por clientes com termo:', term);
       
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          console.log('No user found');
           setIsLoading(false);
           return;
         }
@@ -75,9 +71,6 @@ export function useClientSearch() {
           setClients([]);
           return;
         }
-
-        console.log('Resultados da busca encontrados:', data?.length || 0, 'clientes');
-        console.log('Dados dos clientes:', data);
         
         // Format clients data with proper null checks
         const formattedClients = (data || [])
@@ -112,7 +105,6 @@ export function useClientSearch() {
           })
           .filter((client): client is Client => client !== null);
         
-        console.log('Clientes formatados:', formattedClients);
         setClients(formattedClients);
       } catch (error) {
         console.error('Unexpected error during client search:', error);
@@ -130,7 +122,6 @@ export function useClientSearch() {
   );
 
   useEffect(() => {
-    console.log('useEffect triggered with searchTerm:', searchTerm);
     debouncedSearch(searchTerm);
   }, [searchTerm, debouncedSearch]);
 
@@ -140,13 +131,11 @@ export function useClientSearch() {
       return;
     }
     
-    console.log('Cliente selecionado:', client);
     setSelectedClient(client);
     setSearchTerm(client.nome || '');
   }, []);
 
   const clearSelection = useCallback(() => {
-    console.log('Limpando seleção de cliente');
     setSelectedClient(null);
     setSearchTerm('');
     setClients([]);

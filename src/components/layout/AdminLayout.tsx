@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,7 +54,7 @@ const AdminLayout: React.FC = () => {
       <div className="hidden md:flex md:w-64 md:flex-col">
         <div className="flex flex-col flex-grow bg-white shadow-lg border-r">
           <div className="p-6 border-b">
-            <h1 className="text-xl font-bold text-gray-800">Oficina Ágil</h1>
+            <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
             <p className="text-sm text-gray-600">Painel Admin</p>
           </div>
           
@@ -114,7 +113,7 @@ const AdminLayout: React.FC = () => {
             </div>
             <div className="pt-5 pb-4">
               <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-xl font-bold text-gray-800">Oficina Ágil</h1>
+                <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {menuItems.map((item) => (
@@ -174,7 +173,7 @@ const AdminLayout: React.FC = () => {
             </button>
             
             <div>
-              <h1 className="text-lg font-bold text-gray-800">Admin Panel</h1>
+              <h1 className="text-lg font-bold text-gray-800">OficinaGO Admin</h1>
             </div>
             
             <Button

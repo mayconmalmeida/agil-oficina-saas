@@ -121,7 +121,6 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
   useEffect(() => {
     const currentValue = form.getValues('cliente');
     if (currentValue && currentValue.length >= 2 && !selectedClient) {
-      console.log('Auto-triggering search for:', currentValue);
       setSearchTerm(currentValue);
       setClientSearchOpen(true);
     }
