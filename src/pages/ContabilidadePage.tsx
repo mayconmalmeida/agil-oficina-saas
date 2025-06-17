@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,8 @@ import ImportXmlModal from '@/components/contabilidade/ImportXmlModal';
 import ExportXmlModal from '@/components/contabilidade/ExportXmlModal';
 import SendToAccountantModal from '@/components/contabilidade/SendToAccountantModal';
 import ExportHistoryTable from '@/components/contabilidade/ExportHistoryTable';
+import NotaFiscalDetailsModal from '@/components/contabilidade/NotaFiscalDetailsModal';
+import ExportDetailsModal from '@/components/contabilidade/ExportDetailsModal';
 
 interface NotaFiscal {
   id: string;
@@ -37,6 +38,16 @@ interface Fornecedor {
   email?: string;
 }
 
+interface ExportRecord {
+  id: string;
+  tipo: string;
+  periodo: string;
+  formato: string;
+  status: 'concluido' | 'erro' | 'processando';
+  data_criacao: string;
+  tamanho: string;
+}
+
 const ContabilidadePage: React.FC = () => {
   const [notasEntrada, setNotasEntrada] = useState<NotaFiscal[]>([]);
   const [notasSaida, setNotasSaida] = useState<NotaFiscal[]>([]);
@@ -45,6 +56,10 @@ const ContabilidadePage: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showNotaDetailsModal, setShowNotaDetailsModal] = useState(false);
+  const [showExportDetailsModal, setShowExportDetailsModal] = useState(false);
+  const [selectedNota, setSelectedNota] = useState<NotaFiscal | null>(null);
+  const [selectedExport, setSelectedExport] = useState<ExportRecord | null>(null);
   const { toast } = useToast();
   const { diasRestantes, isPremiumTrial, isExpired } = useDaysRemaining();
   const { user } = useAuth();
@@ -173,16 +188,94 @@ const ContabilidadePage: React.FC = () => {
   };
 
   const handleViewNota = (nota: NotaFiscal) => {
-    toast({
-      title: "Visualizar Nota Fiscal",
-      description: `Abrindo detalhes da nota fiscal ${nota.numero}`,
-    });
+    setSelectedNota(nota);
+    setShowNotaDetailsModal(true);
   };
 
   const handleDownloadNota = (nota: NotaFiscal) => {
+    // Simular download de XML da nota fiscal
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<nfe>
+  <infNFe>
+    <ide>
+      <nNF>${nota.numero}</nNF>
+      <dhEmi>${nota.data_emissao}</dhEmi>
+    </ide>
+    <emit>
+      <xNome>${nota.fornecedor_nome || nota.cliente_nome || 'N/A'}</xNome>
+      <CNPJ>${nota.fornecedor_cnpj || nota.cliente_documento || 'N/A'}</CNPJ>
+    </emit>
+    <total>
+      <ICMSTot>
+        <vNF>${nota.valor_total.toFixed(2)}</vNF>
+      </ICMSTot>
+    </total>
+  </infNFe>
+</nfe>`;
+
+    const blob = new Blob([xmlContent], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nota_fiscal_${nota.numero}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
     toast({
-      title: "Download iniciado",
-      description: `Baixando nota fiscal ${nota.numero}`,
+      title: "Download concluído",
+      description: `Nota fiscal ${nota.numero} baixada com sucesso!`,
+    });
+  };
+
+  const handleViewExport = (exportRecord: ExportRecord) => {
+    setSelectedExport(exportRecord);
+    setShowExportDetailsModal(true);
+  };
+
+  const handleDownloadExport = (exportRecord: ExportRecord) => {
+    // Simular download do arquivo de exportação
+    let content = '';
+    let fileName = '';
+    let mimeType = '';
+
+    switch (exportRecord.formato) {
+      case 'xml':
+        content = `<?xml version="1.0" encoding="UTF-8"?>
+<exportacao tipo="${exportRecord.tipo}" periodo="${exportRecord.periodo}">
+  <resumo>
+    <total_registros>10</total_registros>
+    <data_exportacao>${exportRecord.data_criacao}</data_exportacao>
+  </resumo>
+</exportacao>`;
+        fileName = `${exportRecord.tipo.toLowerCase().replace(' ', '_')}_${exportRecord.periodo}.xml`;
+        mimeType = 'application/xml';
+        break;
+      case 'excel':
+        content = `Tipo,Período,Data Exportação\n${exportRecord.tipo},${exportRecord.periodo},${exportRecord.data_criacao}`;
+        fileName = `${exportRecord.tipo.toLowerCase().replace(' ', '_')}_${exportRecord.periodo}.csv`;
+        mimeType = 'text/csv';
+        break;
+      default:
+        content = `Exportação: ${exportRecord.tipo}\nPeríodo: ${exportRecord.periodo}\nData: ${exportRecord.data_criacao}`;
+        fileName = `${exportRecord.tipo.toLowerCase().replace(' ', '_')}_${exportRecord.periodo}.txt`;
+        mimeType = 'text/plain';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download concluído",
+      description: `Arquivo ${fileName} baixado com sucesso!`,
     });
   };
 
@@ -250,7 +343,7 @@ const ContabilidadePage: React.FC = () => {
   };
 
   // Mock data para histórico de exportações
-  const mockExports = [
+  const mockExports: ExportRecord[] = [
     {
       id: '1',
       tipo: 'Notas de Entrada',
@@ -529,7 +622,11 @@ const ContabilidadePage: React.FC = () => {
                 <CardTitle>📂 Histórico de Exportações</CardTitle>
               </CardHeader>
               <CardContent>
-                <ExportHistoryTable exports={mockExports} />
+                <ExportHistoryTable 
+                  exports={mockExports} 
+                  onView={handleViewExport}
+                  onDownload={handleDownloadExport}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -635,6 +732,18 @@ const ContabilidadePage: React.FC = () => {
         <SendToAccountantModal
           isOpen={showSendModal}
           onClose={() => setShowSendModal(false)}
+        />
+        <NotaFiscalDetailsModal
+          isOpen={showNotaDetailsModal}
+          onClose={() => setShowNotaDetailsModal(false)}
+          nota={selectedNota}
+          onDownload={handleDownloadNota}
+        />
+        <ExportDetailsModal
+          isOpen={showExportDetailsModal}
+          onClose={() => setShowExportDetailsModal(false)}
+          exportRecord={selectedExport}
+          onDownload={handleDownloadExport}
         />
       </div>
     </div>

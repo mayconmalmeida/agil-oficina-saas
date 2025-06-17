@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Eye, Calendar } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface ExportRecord {
   id: string;
@@ -18,11 +17,15 @@ interface ExportRecord {
 
 interface ExportHistoryTableProps {
   exports: ExportRecord[];
+  onView?: (exportRecord: ExportRecord) => void;
+  onDownload?: (exportRecord: ExportRecord) => void;
 }
 
-const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({ exports }) => {
-  const { toast } = useToast();
-
+const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({ 
+  exports, 
+  onView, 
+  onDownload 
+}) => {
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR');
   };
@@ -38,31 +41,6 @@ const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({ exports }) => {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  const handleView = (exportRecord: ExportRecord) => {
-    toast({
-      title: "Visualizar Exportação",
-      description: `Abrindo detalhes da exportação: ${exportRecord.tipo} - ${exportRecord.periodo}`,
-    });
-  };
-
-  const handleDownload = (exportRecord: ExportRecord) => {
-    if (exportRecord.status !== 'concluido') {
-      toast({
-        variant: "destructive",
-        title: "Download não disponível",
-        description: "Este arquivo não está disponível para download",
-      });
-      return;
-    }
-
-    // Simular download
-    const fileName = `${exportRecord.tipo.toLowerCase().replace(' ', '_')}_${exportRecord.periodo}.${exportRecord.formato}`;
-    toast({
-      title: "Download iniciado",
-      description: `Baixando arquivo: ${fileName}`,
-    });
   };
 
   if (exports.length === 0) {
@@ -107,7 +85,7 @@ const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({ exports }) => {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleView(exportRecord)}
+                    onClick={() => onView?.(exportRecord)}
                     className="h-8 w-8 p-0"
                   >
                     <Eye className="h-4 w-4" />
@@ -116,7 +94,7 @@ const ExportHistoryTable: React.FC<ExportHistoryTableProps> = ({ exports }) => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => handleDownload(exportRecord)}
+                      onClick={() => onDownload?.(exportRecord)}
                       className="h-8 w-8 p-0"
                     >
                       <Download className="h-4 w-4" />

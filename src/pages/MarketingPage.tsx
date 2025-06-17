@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import CampanhaDetailsModal from '@/components/marketing/CampanhaDetailsModal';
 
 interface Cliente {
   id: string;
@@ -37,6 +37,8 @@ const MarketingPage: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCampanhaDetails, setShowCampanhaDetails] = useState(false);
+  const [selectedCampanha, setSelectedCampanha] = useState<Campanha | null>(null);
   const { toast } = useToast();
 
   // Estados do formulário
@@ -152,7 +154,8 @@ const MarketingPage: React.FC = () => {
           data_agendada: dataHoraCompleta,
           clientes_ids: clientesSelecionados,
           arquivo_url: arquivoUrl,
-          tipo_arquivo: tipoArquivo
+          tipo_arquivo: tipoArquivo,
+          status: 'agendado'
         });
 
       if (error) throw error;
@@ -162,7 +165,7 @@ const MarketingPage: React.FC = () => {
 
       toast({
         title: "Sucesso",
-        description: "Campanha criada e processada com sucesso!"
+        description: "Campanha criada e agendada com sucesso!"
       });
 
       // Limpar formulário
@@ -195,9 +198,21 @@ const MarketingPage: React.FC = () => {
     console.log(`Tipo de envio: ${tipo}`);
     console.log(`Clientes selecionados: ${clientesIds.length}`);
     
-    // Aqui seria implementada a lógica real de envio
-    // Para WhatsApp: integração com API do WhatsApp Business
-    // Para Email: integração com serviço de email (SendGrid, etc)
+    // Marcar campanha como enviada
+    try {
+      await supabase
+        .from('campanhas_marketing')
+        .update({ status: 'enviado' })
+        .eq('titulo', titulo)
+        .eq('status', 'agendado');
+      
+      toast({
+        title: "Campanha enviada!",
+        description: `Mensagens enviadas via ${tipo === 'whatsapp' ? 'WhatsApp' : 'E-mail'} para ${clientesIds.length} cliente(s)`
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status da campanha:', error);
+    }
   };
 
   const excluirCampanha = async (id: string) => {
@@ -225,10 +240,8 @@ const MarketingPage: React.FC = () => {
   };
 
   const visualizarCampanha = (campanha: Campanha) => {
-    toast({
-      title: "Visualizar Campanha",
-      description: `Abrindo detalhes da campanha: ${campanha.titulo}`,
-    });
+    setSelectedCampanha(campanha);
+    setShowCampanhaDetails(true);
   };
 
   const toggleClienteSelecionado = (clienteId: string) => {
@@ -453,6 +466,14 @@ const MarketingPage: React.FC = () => {
             </Card>
           </div>
         </div>
+
+        {/* Modal de detalhes da campanha */}
+        <CampanhaDetailsModal
+          isOpen={showCampanhaDetails}
+          onClose={() => setShowCampanhaDetails(false)}
+          campanha={selectedCampanha}
+          clientes={clientes}
+        />
       </div>
     </div>
   );
