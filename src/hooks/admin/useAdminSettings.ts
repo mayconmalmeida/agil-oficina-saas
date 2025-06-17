@@ -38,57 +38,74 @@ export function useAdminSettings() {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   }, [theme]);
 
-  // Salvar o nome de exibição (modo fictício, pode ser estendido)
+  // Salvar o nome de exibição (atualiza o perfil na tabela profiles)
   const onUpdateProfile = async (values: AdminProfile) => {
     setIsLoading(true);
     setError(null);
-    // Suportado apenas atualizar nome em nível de frontend, pois admin está apenas na tabela "admins"
-    setAdminProfile(values);
-    setIsLoading(false);
-    toast({
-      title: "Perfil atualizado",
-      description: "Nome alterado com sucesso (apenas local/visual).",
-    });
+    
+    try {
+      if (user?.id) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            full_name: values.name,
+            email: values.email 
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        setAdminProfile(values);
+        toast({
+          title: "Perfil atualizado",
+          description: "Informações do perfil atualizadas com sucesso.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      setError("Erro ao atualizar perfil");
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível atualizar o perfil.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Simples troca de senha do admin (padrão: atualiza admins, mas requer backend real para produção)
+  // Troca de senha agora usa o sistema de autenticação do Supabase
   const onChangePassword = async (values: { currentPassword: string; newPassword: string }) => {
     setIsLoading(true);
     setError(null);
 
-    // Busca admin pelo e-mail (não há autenticação real de senha nesse mockup, necessário backend customizado para produção)
-    const { data, error: adminError } = await supabase
-      .from("admins")
-      .select("*")
-      .eq("email", adminProfile.email)
-      .maybeSingle();
+    try {
+      // Usar o sistema de autenticação seguro do Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: values.newPassword
+      });
 
-    if (adminError || !data) {
-      setError("Não foi possível encontrar o administrador.");
-      setIsLoading(false);
-      return;
-    }
+      if (error) {
+        throw error;
+      }
 
-    if (values.currentPassword !== data.password) {
-      setError("Senha atual incorreta.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Atualiza senha
-    const { error: updateError } = await supabase
-      .from("admins")
-      .update({ password: values.newPassword })
-      .eq("email", adminProfile.email);
-
-    if (updateError) {
+      toast({ 
+        title: "Senha alterada", 
+        description: "Sua senha foi atualizada com sucesso." 
+      });
+    } catch (error) {
+      console.error("Erro ao alterar senha:", error);
       setError("Erro ao alterar senha.");
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível alterar a senha.",
+      });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    toast({ title: "Senha alterada", description: "Sua senha foi atualizada com sucesso." });
-    setIsLoading(false);
   };
 
   const onLogout = useCallback(() => {

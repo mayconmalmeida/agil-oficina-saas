@@ -39,11 +39,51 @@ export const checkAdminStatus = async (session: any) => {
 };
 
 /**
- * NOTA: As funções createAdminUser, setUserAsAdmin e updateAdminPermission
- * foram removidas porque agora gerenciamos roles apenas através da tabela profiles.
- * Para criar um admin, use a função RPC set_user_role diretamente no Supabase
- * ou através do SQL Editor.
- * 
- * Exemplo de como definir um usuário como admin:
- * UPDATE profiles SET role = 'admin' WHERE email = 'usuario@email.com';
+ * Função para verificar se o usuário é super admin
  */
+export const checkSuperAdminStatus = async (userId: string) => {
+  try {
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (profileError) {
+      console.error("Erro ao verificar role do usuário:", profileError);
+      return false;
+    }
+      
+    return profileData?.role === 'superadmin';
+  } catch (error) {
+    console.error("Erro ao verificar status de super admin:", error);
+    return false;
+  }
+};
+
+/**
+ * Função para promover um usuário a admin (apenas super admins podem fazer isso)
+ */
+export const promoteToAdmin = async (userId: string, requesterUserId: string) => {
+  try {
+    // Verificar se o solicitante é super admin
+    const isSuperAdmin = await checkSuperAdminStatus(requesterUserId);
+    if (!isSuperAdmin) {
+      throw new Error("Apenas super administradores podem promover usuários a admin");
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: 'admin' })
+      .eq('id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao promover usuário a admin:", error);
+    return { success: false, error: error.message };
+  }
+};

@@ -19,3 +19,29 @@ export const createPredefinedAdmin = async () => {
   
   throw new Error("Função desativada - use a tabela profiles para gerenciar roles");
 };
+
+/**
+ * Função segura para verificar se um usuário é admin
+ */
+export const isUserAdmin = async (userId: string): Promise<boolean> => {
+  try {
+    // Esta verificação agora usa apenas a tabela profiles
+    const response = await fetch('/api/check-admin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+    
+    if (!response.ok) {
+      return false;
+    }
+    
+    const data = await response.json();
+    return data.isAdmin || false;
+  } catch (error) {
+    console.error("Erro ao verificar status de admin:", error);
+    return false;
+  }
+};

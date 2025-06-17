@@ -1,182 +1,82 @@
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AdminStats } from '@/types/admin';
-import { useToast } from '@/hooks/use-toast';
 
-interface UseAdminDataReturn {
-  stats: AdminStats;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
-
-export const useOptimizedAdminData = (): UseAdminDataReturn => {
+export const useOptimizedAdminData = () => {
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeSubscriptions: 0,
     trialingUsers: 0,
     totalRevenue: 0,
-    newUsersThisMonth: 0
+    newUsersThisMonth: 0,
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  const isLoadingRef = useRef(false);
-  const cacheRef = useRef<{ data: AdminStats; timestamp: number } | null>(null);
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-  const fetchWithRetry = useCallback(async (query: any, description: string, maxRetries = 2) => {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        console.log(`Buscando ${description} - tentativa ${attempt + 1}`);
-        const result = await query();
-        
-        if (result.error && attempt === maxRetries - 1) {
-          console.error(`Erro final em ${description}:`, result.error);
-          return { count: 0, hasData: false };
-        }
-        
-        if (result.error) {
-          console.warn(`Erro em ${description}, tentativa ${attempt + 1}:`, result.error);
-          continue;
-        }
-        
-        return { 
-          count: result.count || 0, 
-          hasData: result.data && result.data.length > 0 
-        };
-      } catch (error) {
-        console.error(`Erro inesperado em ${description}:`, error);
-        if (attempt === maxRetries - 1) {
-          return { count: 0, hasData: false };
-        }
-      }
-    }
-    return { count: 0, hasData: false };
-  }, []);
-
-  const fetchStats = useCallback(async (): Promise<void> => {
-    // Verificar cache
-    if (cacheRef.current && Date.now() - cacheRef.current.timestamp < CACHE_DURATION) {
-      console.log('Usando dados do cache');
-      setStats(cacheRef.current.data);
-      return;
-    }
-
-    // Evitar múltiplas chamadas simultâneas
-    if (isLoadingRef.current) {
-      console.log('Já existe uma busca em andamento, ignorando...');
-      return;
-    }
-
-    isLoadingRef.current = true;
-    setIsLoading(true);
-    setError(null);
-
+  const fetchStats = useCallback(async () => {
     try {
-      console.log('Iniciando busca de estatísticas admin...');
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      setIsLoading(true);
+      setError(null);
 
-      // Executar todas as consultas em paralelo
+      // Verificar se o usuário atual é admin antes de buscar dados
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        throw new Error('Acesso negado: usuário não é administrador');
+      }
+
+      // Buscar estatísticas de forma segura
       const [
-        totalUsersResult,
-        activeSubscriptionsResult,
-        trialingUsersResult,
-        newUsersResult
+        { count: totalUsers },
+        { count: activeSubscriptions },
+        { count: trialingUsers },
+        { count: newUsersThisMonth }
       ] = await Promise.all([
-        fetchWithRetry(
-          () => supabase.from('profiles').select('*', { count: 'exact', head: true }),
-          'total de usuários'
-        ),
-        fetchWithRetry(
-          () => supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-          'assinaturas ativas'
-        ),
-        fetchWithRetry(
-          () => supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing'),
-          'usuários em teste'
-        ),
-        fetchWithRetry(
-          () => supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth.toISOString()),
-          'novos usuários do mês'
-        )
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
       ]);
 
-      // Calcular receita total das assinaturas ativas
-      const { data: subscriptionsData } = await supabase
-        .from('user_subscriptions')
-        .select('plan_type')
-        .eq('status', 'active');
+      // Calcular receita estimada (baseada em assinaturas ativas)
+      const estimatedRevenue = (activeSubscriptions || 0) * 49.90;
 
-      let totalRevenue = 0;
-      if (subscriptionsData) {
-        // Buscar preços dos planos
-        const { data: plansData } = await supabase
-          .from('plan_configurations')
-          .select('plan_type, billing_cycle, price');
-
-        if (plansData) {
-          subscriptionsData.forEach(sub => {
-            const plan = plansData.find(p => 
-              p.plan_type === sub.plan_type.replace('_anual', '').replace('_mensal', '')
-            );
-            if (plan) {
-              totalRevenue += plan.price;
-            }
-          });
-        }
-      }
-
-      const newStats: AdminStats = {
-        totalUsers: totalUsersResult.count,
-        activeSubscriptions: activeSubscriptionsResult.count,
-        trialingUsers: trialingUsersResult.count,
-        totalRevenue,
-        newUsersThisMonth: newUsersResult.count
-      };
-
-      setStats(newStats);
-      
-      // Atualizar cache
-      cacheRef.current = {
-        data: newStats,
-        timestamp: Date.now()
-      };
-      
-      console.log('Estatísticas admin carregadas com sucesso:', newStats);
-      
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas admin:', error);
-      setError('Erro ao carregar estatísticas administrativas');
-      
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar as estatísticas administrativas"
+      setStats({
+        totalUsers: totalUsers || 0,
+        activeSubscriptions: activeSubscriptions || 0,
+        trialingUsers: trialingUsers || 0,
+        totalRevenue: estimatedRevenue,
+        newUsersThisMonth: newUsersThisMonth || 0,
       });
+
+    } catch (err: any) {
+      console.error('Erro ao buscar estatísticas:', err);
+      setError(err.message || 'Erro ao carregar estatísticas');
     } finally {
       setIsLoading(false);
-      isLoadingRef.current = false;
     }
-  }, [fetchWithRetry, toast]);
+  }, []);
 
-  // Auto-refresh a cada 5 minutos
-  useEffect(() => {
+  const refetch = useCallback(() => {
     fetchStats();
-    
-    const interval = setInterval(fetchStats, 5 * 60 * 1000);
-    return () => clearInterval(interval);
   }, [fetchStats]);
 
   return {
     stats,
     isLoading,
     error,
-    refetch: fetchStats
+    fetchStats,
+    refetch,
   };
 };

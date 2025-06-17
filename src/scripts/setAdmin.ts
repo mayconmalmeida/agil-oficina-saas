@@ -1,55 +1,55 @@
 
 import { supabase } from "../lib/supabase";
 
-// Set admin email function
-const setAdminEmail = async (email: string) => {
+// SEGURANÇA: Esta função foi refatorada para usar apenas a tabela profiles
+// A tabela admins foi removida por questões de segurança (senhas em texto plano)
+
+const setAdminRole = async (email: string) => {
   try {
-    // Verificar se já existe na tabela admin
-    const { data: existingAdmin } = await supabase
-      .from('admins')
+    console.log("Tentando definir role de admin para:", email);
+    
+    // Verificar se o usuário existe na tabela profiles
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
       .select('*')
       .eq('email', email)
       .single();
       
-    if (existingAdmin) {
-      console.log("Este email já é um administrador:", email);
-      return { success: true };
+    if (profileError) {
+      console.error("Erro ao buscar perfil:", profileError);
+      return { success: false, error: "Usuário não encontrado na tabela profiles" };
     }
     
-    // Generate a temporary password - in a real application, you might want to
-    // generate a more secure password or have the user set it
-    const tempPassword = Math.random().toString(36).substring(2, 15);
+    if (!existingProfile) {
+      console.log("Perfil não encontrado para o email:", email);
+      return { success: false, error: "Perfil não encontrado" };
+    }
     
-    // Inserir na tabela admin with required password field
-    const { error } = await supabase
-      .from('admins')
-      .insert([
-        { 
-          email: email,
-          password: tempPassword, // Adding the required password field
-          is_superadmin: true // Setting as superadmin by default
-        }
-      ]);
+    // Atualizar a role para admin
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ role: 'admin' })
+      .eq('email', email);
       
-    if (error) {
-      console.error("Erro ao definir admin:", error);
-      return { success: false, error };
+    if (updateError) {
+      console.error("Erro ao atualizar role:", updateError);
+      return { success: false, error: updateError.message };
     }
     
-    console.log("Administrador definido com sucesso:", email);
+    console.log("Role de administrador definida com sucesso para:", email);
     return { success: true };
   } catch (error) {
     console.error("Erro ao configurar administrador:", error);
-    return { success: false, error };
+    return { success: false, error: error.message };
   }
 };
 
 // Este código é executado diretamente no browser console
 (async () => {
   const adminEmail = "mayconintermediacao@gmail.com";
-  const result = await setAdminEmail(adminEmail);
+  const result = await setAdminRole(adminEmail);
   console.log("Resultado da operação:", result);
 })();
 
 // Exportando a função para uso externo se necessário
-export { setAdminEmail };
+export { setAdminRole };
