@@ -12,13 +12,14 @@ const AppContent: React.FC = () => {
   // Timeout de segurança para evitar loading infinito
   useEffect(() => {
     const timeout = setTimeout(() => {
+      console.log('Timeout de loading atingido, forçando carregamento do app');
       setForceLoad(true);
-    }, 3000); // 3 segundos máximo de loading
+    }, 2000); // Reduzido para 2 segundos
 
     return () => clearTimeout(timeout);
   }, []);
 
-  // Se passou do timeout ou não está mais carregando, mostrar app
+  // Mostrar app se não está carregando ou se passou do timeout
   if (!isLoadingAuth || forceLoad) {
     return (
       <RouteManager>
@@ -27,7 +28,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return <Loading fullscreen text="Inicializando aplicação..." />;
+  return <Loading fullscreen text="Carregando aplicação..." />;
 };
 
 export default AppContent;

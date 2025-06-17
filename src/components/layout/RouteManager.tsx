@@ -13,23 +13,22 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
   const hasTriedRestore = useRef(false);
 
   useEffect(() => {
-    // Se ainda está carregando ou não há usuário, não fazer nada
-    if (isLoadingAuth || !user) {
-      return;
-    }
-
-    // Se já tentou restaurar, não tentar novamente
-    if (hasTriedRestore.current) {
-      return;
-    }
-
-    hasTriedRestore.current = true;
-    
-    // Restaurar rota imediatamente sem delay desnecessário
-    try {
-      restoreLastRoute();
-    } catch (error) {
-      console.error('Erro ao restaurar rota:', error);
+    // Só tentar restaurar se:
+    // 1. Não está carregando autenticação
+    // 2. Usuário está logado
+    // 3. Ainda não tentou restaurar
+    // 4. Está na rota raiz (/)
+    if (!isLoadingAuth && user && !hasTriedRestore.current && window.location.pathname === '/') {
+      hasTriedRestore.current = true;
+      
+      // Pequeno delay para garantir que o contexto está totalmente carregado
+      setTimeout(() => {
+        try {
+          restoreLastRoute();
+        } catch (error) {
+          console.error('Erro ao restaurar rota:', error);
+        }
+      }, 100);
     }
   }, [isLoadingAuth, user, restoreLastRoute]);
 

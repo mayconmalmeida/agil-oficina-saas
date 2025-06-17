@@ -5,59 +5,49 @@ import { useLocation, useNavigate } from 'react-router-dom';
 export const useRoutePersistence = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const hasNavigated = useRef(false);
-  const isNavigating = useRef(false);
+  const hasRestored = useRef(false);
 
-  // Salvar a rota atual - com throttling para evitar muitas escritas
+  // Salvar a rota atual automaticamente
   useEffect(() => {
     const currentPath = location.pathname;
     
-    // Não salvar certas rotas
-    const routesToIgnore = ['/login', '/register', '/', '/admin/login'];
+    // Não salvar certas rotas específicas
+    const routesToIgnore = ['/login', '/register', '/admin/login'];
     
-    if (!routesToIgnore.includes(currentPath) && !isNavigating.current) {
-      // Throttle para evitar muitas escritas no localStorage
-      const timer = setTimeout(() => {
-        localStorage.setItem('lastRoute', currentPath);
-        console.log('Rota salva:', currentPath);
-      }, 500);
-      
-      return () => clearTimeout(timer);
+    if (!routesToIgnore.includes(currentPath)) {
+      localStorage.setItem('lastRoute', currentPath);
+      console.log('Rota salva:', currentPath);
     }
   }, [location.pathname]);
 
-  // Recuperar rota com proteção contra loops
+  // Restaurar rota apenas se necessário (quando está na home e há rota salva)
   const restoreLastRoute = () => {
-    // Múltiplas proteções contra loops
-    if (hasNavigated.current || isNavigating.current) {
-      console.log('Restauração de rota cancelada - já navegou ou está navegando');
+    // Evitar múltiplas execuções
+    if (hasRestored.current) {
+      console.log('Rota já foi restaurada anteriormente');
       return;
     }
     
     const lastRoute = localStorage.getItem('lastRoute');
     const currentPath = window.location.pathname;
     
-    console.log('Tentando restaurar rota:', { lastRoute, currentPath });
+    console.log('Verificando restauração:', { lastRoute, currentPath });
     
-    // Verificações adicionais para evitar loops
+    // Só restaurar se estiver na home (/) e houver uma rota válida salva
     if (lastRoute && 
-        (currentPath === '/' || currentPath === '') &&
-        lastRoute !== currentPath &&
+        currentPath === '/' && 
+        lastRoute !== '/' &&
         !lastRoute.includes('/login') &&
-        !lastRoute.includes('/register')) {
+        !lastRoute.includes('/register') &&
+        !lastRoute.includes('/admin/login')) {
       
-      hasNavigated.current = true;
-      isNavigating.current = true;
+      hasRestored.current = true;
+      console.log('Restaurando rota para:', lastRoute);
       
-      console.log('Navegando para:', lastRoute);
-      
-      // Timeout para evitar interferência com outros sistemas de navegação
-      setTimeout(() => {
-        navigate(lastRoute, { replace: true });
-        setTimeout(() => {
-          isNavigating.current = false;
-        }, 1000);
-      }, 100);
+      // Usar replace para não adicionar à história
+      navigate(lastRoute, { replace: true });
+    } else {
+      console.log('Não é necessário restaurar rota');
     }
   };
 
