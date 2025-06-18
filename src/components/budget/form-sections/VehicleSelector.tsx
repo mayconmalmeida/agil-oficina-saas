@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { UseFormReturn } from 'react-hook-form';
 import { BudgetFormValues } from '../budgetSchema';
 import { supabase } from '@/lib/supabase';
-import { Car } from 'lucide-react';
+import { Car, Edit3, Save, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Vehicle {
   id: string;
@@ -25,6 +28,10 @@ interface VehicleSelectorProps {
 const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [editingKm, setEditingKm] = useState(false);
+  const [newKm, setNewKm] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (clientId) {
@@ -55,15 +62,60 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
   };
 
   const formatVehicleDisplay = (vehicle: Vehicle) => {
-    return `${vehicle.marca} ${vehicle.modelo} (${vehicle.ano}) - ${vehicle.placa}`;
+    const kmText = vehicle.kilometragem ? ` - ${vehicle.kilometragem} km` : '';
+    const corText = vehicle.cor ? ` - ${vehicle.cor}` : '';
+    return `${vehicle.marca} ${vehicle.modelo} (${vehicle.ano}) - ${vehicle.placa}${corText}${kmText}`;
   };
 
   const handleVehicleSelect = (vehicleId: string) => {
-    const selectedVehicle = vehicles.find(v => v.id === vehicleId);
-    if (selectedVehicle) {
-      const vehicleInfo = formatVehicleDisplay(selectedVehicle);
+    const selected = vehicles.find(v => v.id === vehicleId);
+    if (selected) {
+      setSelectedVehicle(selected);
+      const vehicleInfo = formatVehicleDisplay(selected);
       form.setValue('veiculo', vehicleInfo);
+      setNewKm(selected.kilometragem || '');
     }
+  };
+
+  const handleUpdateKilometragem = async () => {
+    if (!selectedVehicle || !newKm) return;
+
+    try {
+      const { error } = await supabase
+        .from('veiculos')
+        .update({ kilometragem: newKm })
+        .eq('id', selectedVehicle.id);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedVehicle = { ...selectedVehicle, kilometragem: newKm };
+      setSelectedVehicle(updatedVehicle);
+      setVehicles(vehicles.map(v => v.id === selectedVehicle.id ? updatedVehicle : v));
+      
+      // Update form value
+      const vehicleInfo = formatVehicleDisplay(updatedVehicle);
+      form.setValue('veiculo', vehicleInfo);
+      
+      setEditingKm(false);
+      
+      toast({
+        title: "Quilometragem atualizada",
+        description: `Quilometragem do veículo atualizada para ${newKm} km.`,
+      });
+    } catch (error) {
+      console.error('Error updating vehicle kilometragem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar a quilometragem do veículo.",
+      });
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingKm(false);
+    setNewKm(selectedVehicle?.kilometragem || '');
   };
 
   if (!clientId) {
@@ -75,10 +127,10 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
           <FormItem>
             <FormLabel>Informações do Veículo</FormLabel>
             <FormControl>
-              <input 
+              <Input 
                 {...field}
                 placeholder="Selecione um cliente primeiro"
-                className="w-full p-2 border rounded-md bg-gray-100"
+                className="bg-gray-100"
                 readOnly
               />
             </FormControl>
@@ -121,16 +173,80 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
               </SelectContent>
             </Select>
             <FormMessage />
-            
-            {field.value && (
-              <div className="p-3 bg-gray-50 rounded-lg border">
-                <p className="text-sm font-medium">Veículo Selecionado:</p>
-                <p className="text-sm text-gray-600">{field.value}</p>
-              </div>
-            )}
           </FormItem>
         )}
       />
+
+      {selectedVehicle && (
+        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-medium text-blue-900">Veículo Selecionado</h4>
+            {!editingKm && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingKm(true)}
+                className="text-blue-700 hover:text-blue-900"
+              >
+                <Edit3 className="h-4 w-4 mr-1" />
+                Editar KM
+              </Button>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <p className="text-sm text-blue-700">
+              <strong>Veículo:</strong> {selectedVehicle.marca} {selectedVehicle.modelo} ({selectedVehicle.ano})
+            </p>
+            <p className="text-sm text-blue-700">
+              <strong>Placa:</strong> {selectedVehicle.placa}
+            </p>
+            {selectedVehicle.cor && (
+              <p className="text-sm text-blue-700">
+                <strong>Cor:</strong> {selectedVehicle.cor}
+              </p>
+            )}
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-blue-700 font-medium">Quilometragem:</span>
+              {editingKm ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="text"
+                    value={newKm}
+                    onChange={(e) => setNewKm(e.target.value)}
+                    placeholder="Ex: 150000"
+                    className="w-32 h-8"
+                  />
+                  <span className="text-sm text-blue-700">km</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleUpdateKilometragem}
+                    className="h-8 px-2"
+                  >
+                    <Save className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={cancelEdit}
+                    className="h-8 px-2"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-sm text-blue-700">
+                  {selectedVehicle.kilometragem || 'Não informada'} km
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

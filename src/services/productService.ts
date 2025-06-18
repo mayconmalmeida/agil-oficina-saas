@@ -24,8 +24,7 @@ export async function saveProduct(values: ProductFormValues, productId?: string,
     tipo: values.tipo,
     preco_custo: parseFloat(values.preco_custo.replace(/[^\d,]/g, '').replace(',', '.')),
     preco_venda: parseFloat(values.preco_venda.replace(/[^\d,]/g, '').replace(',', '.')),
-    quantidade_estoque: parseInt(values.quantidade) || 0,
-    estoque_minimo: values.estoque_minimo ? parseInt(values.estoque_minimo) : null,
+    quantidade: parseInt(values.quantidade) || 0,
     descricao: values.descricao || null,
     fornecedor: values.fornecedor || null,
     controlar_estoque: values.controlar_estoque,
@@ -44,8 +43,7 @@ export async function saveProduct(values: ProductFormValues, productId?: string,
 
     // Only update quantidade_estoque if controlar_estoque is enabled
     if (productData.controlar_estoque) {
-      updateData.quantidade_estoque = productData.quantidade_estoque;
-      updateData.estoque_minimo = productData.estoque_minimo;
+      updateData.quantidade_estoque = productData.quantidade;
     }
 
     // Only update codigo if it's not already set (preserve XML imported codes)
@@ -81,7 +79,7 @@ export async function saveProduct(values: ProductFormValues, productId?: string,
         preco_custo: productData.preco_custo,
         descricao: productData.descricao,
         fornecedor: productData.fornecedor,
-        quantidade_estoque: productData.controlar_estoque ? productData.quantidade_estoque : 0,
+        quantidade_estoque: productData.controlar_estoque ? productData.quantidade : 0,
         user_id: userId,
       });
     
