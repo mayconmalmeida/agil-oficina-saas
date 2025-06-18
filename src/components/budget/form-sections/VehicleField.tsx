@@ -19,6 +19,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
     if (selectedClient) {
       // Clear previous vehicle selection when client changes
       form.setValue('veiculo', '');
+      console.log('Cliente selecionado para veículos:', selectedClient);
     }
   }, [selectedClient, form]);
 
@@ -48,14 +49,6 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
             </FormItem>
           )}
         />
-      )}
-
-      {selectedClient && (
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Cliente Selecionado</h4>
-          <p className="text-sm text-blue-700">{selectedClient.nome}</p>
-          <p className="text-xs text-blue-600">{selectedClient.telefone}</p>
-        </div>
       )}
     </div>
   );

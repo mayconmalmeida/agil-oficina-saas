@@ -36,12 +36,16 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
   useEffect(() => {
     if (clientId) {
       loadClientVehicles();
+    } else {
+      setVehicles([]);
+      setSelectedVehicle(null);
     }
   }, [clientId]);
 
   const loadClientVehicles = async () => {
     if (!clientId) return;
     
+    console.log('Carregando veículos para cliente:', clientId);
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -50,11 +54,20 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
         .eq('cliente_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar veículos:', error);
+        throw error;
+      }
       
+      console.log('Veículos carregados:', data?.length || 0);
       setVehicles(data || []);
     } catch (error) {
-      console.error('Error loading vehicles:', error);
+      console.error('Erro ao carregar veículos:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar veículos",
+        description: "Não foi possível carregar os veículos do cliente.",
+      });
       setVehicles([]);
     } finally {
       setLoading(false);
@@ -68,12 +81,14 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
   };
 
   const handleVehicleSelect = (vehicleId: string) => {
+    console.log('Selecionando veículo:', vehicleId);
     const selected = vehicles.find(v => v.id === vehicleId);
     if (selected) {
       setSelectedVehicle(selected);
       const vehicleInfo = formatVehicleDisplay(selected);
       form.setValue('veiculo', vehicleInfo);
       setNewKm(selected.kilometragem || '');
+      console.log('Veículo selecionado:', selected);
     }
   };
 
@@ -104,7 +119,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
         description: `Quilometragem do veículo atualizada para ${newKm} km.`,
       });
     } catch (error) {
-      console.error('Error updating vehicle kilometragem:', error);
+      console.error('Erro ao atualizar quilometragem:', error);
       toast({
         variant: "destructive",
         title: "Erro ao atualizar",
@@ -152,13 +167,13 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
             <Select onValueChange={handleVehicleSelect} disabled={loading}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={loading ? "Carregando veículos..." : "Selecione um veículo"} />
+                  <SelectValue placeholder={loading ? "Carregando veículos..." : vehicles.length === 0 ? "Nenhum veículo cadastrado" : "Selecione um veículo"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 {vehicles.length === 0 ? (
                   <SelectItem value="no-vehicles" disabled>
-                    Nenhum veículo cadastrado
+                    {loading ? "Carregando..." : "Nenhum veículo cadastrado"}
                   </SelectItem>
                 ) : (
                   vehicles.map((vehicle) => (

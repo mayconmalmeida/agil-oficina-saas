@@ -31,8 +31,9 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
 
   // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
+    console.log('Selecionando cliente no formulário:', client);
     if (!client || !client.nome) {
-      console.error('Invalid client selected:', client);
+      console.error('Cliente inválido selecionado:', client);
       return;
     }
 
@@ -41,13 +42,13 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       form.setValue('cliente', client.nome);
       setClientSearchOpen(false);
     } catch (error) {
-      console.error('Error selecting client:', error);
+      console.error('Erro ao selecionar cliente:', error);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (value: string) => {
+    console.log('Mudança no input de cliente:', value);
     try {
-      const value = e.target.value || '';
       form.setValue('cliente', value);
       setSearchTerm(value);
       
@@ -63,7 +64,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
         setClientSearchOpen(false);
       }
     } catch (error) {
-      console.error('Error handling input change:', error);
+      console.error('Erro ao alterar input:', error);
     }
   };
 
@@ -74,7 +75,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       clearSelection();
       setClientSearchOpen(false);
     } catch (error) {
-      console.error('Error clearing field:', error);
+      console.error('Erro ao limpar campo:', error);
     }
   };
 
@@ -108,7 +109,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                     {...field} 
                     placeholder="Digite o nome do cliente..." 
                     className="pr-20"
-                    onChange={handleInputChange}
+                    onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => {
                       if (field.value && field.value.length >= 2) {
                         setClientSearchOpen(true);
@@ -148,8 +149,10 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Carregando...
                       </div>
-                    ) : (
+                    ) : searchTerm.length >= 2 ? (
                       'Nenhum cliente encontrado'
+                    ) : (
+                      'Digite pelo menos 2 caracteres para buscar'
                     )}
                   </CommandEmpty>
                   <CommandGroup>
@@ -160,7 +163,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                         return (
                           <CommandItem
                             key={client.id}
-                            value={client.nome || ''}
+                            value={client.id}
                             onSelect={() => handleSelectClient(client)}
                             className="cursor-pointer hover:bg-gray-50"
                           >
@@ -181,6 +184,17 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
             </PopoverContent>
           </Popover>
           <FormMessage />
+          
+          {selectedClient && (
+            <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-medium text-blue-900">Cliente Selecionado</h4>
+              <p className="text-sm text-blue-700">{selectedClient.nome}</p>
+              <p className="text-xs text-blue-600">{selectedClient.telefone}</p>
+              {selectedClient.email && (
+                <p className="text-xs text-blue-600">{selectedClient.email}</p>
+              )}
+            </div>
+          )}
         </FormItem>
       )}
     />

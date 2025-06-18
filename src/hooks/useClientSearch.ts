@@ -34,6 +34,8 @@ export function useClientSearch() {
   const { toast } = useToast();
 
   const searchClients = useCallback(async (term: string) => {
+    console.log('Iniciando busca por clientes com termo:', term);
+    
     if (!term || term.length < 2) {
       setClients([]);
       setIsLoading(false);
@@ -45,9 +47,12 @@ export function useClientSearch() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('Usuário não autenticado');
         setIsLoading(false);
         return;
       }
+
+      console.log('Buscando clientes para usuário:', user.id);
 
       // Search clients by name, phone, plate, vehicle, brand, or model
       const { data, error } = await supabase
@@ -60,7 +65,7 @@ export function useClientSearch() {
         .limit(20);
 
       if (error) {
-        console.error('Error searching clients:', error);
+        console.error('Erro ao buscar clientes:', error);
         toast({
           variant: "destructive",
           title: "Erro na busca",
@@ -69,6 +74,8 @@ export function useClientSearch() {
         setClients([]);
         return;
       }
+      
+      console.log('Clientes encontrados:', data?.length || 0);
       
       // Format clients data with proper null checks
       const formattedClients = (data || [])
@@ -97,15 +104,16 @@ export function useClientSearch() {
               numero: client.numero || ''
             } as Client;
           } catch (error) {
-            console.error('Error formatting client data:', error, client);
+            console.error('Erro ao formatar dados do cliente:', error, client);
             return null;
           }
         })
         .filter((client): client is Client => client !== null);
       
+      console.log('Clientes formatados:', formattedClients.length);
       setClients(formattedClients);
     } catch (error) {
-      console.error('Unexpected error during client search:', error);
+      console.error('Erro inesperado durante busca de clientes:', error);
       toast({
         variant: "destructive",
         title: "Erro na busca",
@@ -124,17 +132,23 @@ export function useClientSearch() {
   );
 
   useEffect(() => {
-    debouncedSearch(searchTerm);
+    if (searchTerm) {
+      debouncedSearch(searchTerm);
+    } else {
+      setClients([]);
+    }
   }, [searchTerm, debouncedSearch]);
 
   const selectClient = useCallback((client: Client) => {
+    console.log('Cliente selecionado:', client);
     if (!client || !client.id) {
-      console.error('Invalid client selected:', client);
+      console.error('Cliente inválido selecionado:', client);
       return;
     }
     
     setSelectedClient(client);
     setSearchTerm(client.nome || '');
+    setClients([]); // Limpar lista após seleção
   }, []);
 
   const clearSelection = useCallback(() => {
