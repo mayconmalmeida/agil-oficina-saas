@@ -1,3 +1,4 @@
+
 import { User, Session } from '@supabase/supabase-js';
 import { UserSubscription } from './subscription';
 
@@ -9,6 +10,9 @@ export interface AuthUser extends User {
   trial_ends_at?: string;
   plano?: string;
   trial_started_at?: string;
+  nome_oficina?: string;
+  telefone?: string;
+  is_active?: boolean;
 }
 
 export interface AuthState {
