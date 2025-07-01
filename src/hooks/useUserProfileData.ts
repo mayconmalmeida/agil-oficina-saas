@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { fetchUserProfile } from '@/services/authService';
 import { AuthUser } from '@/types/auth';
@@ -9,15 +9,26 @@ export function useUserProfileData(user: User | null) {
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('useUserProfileData: Iniciando com usuário:', user?.email || 'nenhum');
+    
+    // Timeout de segurança para evitar loading infinito
+    timeoutRef.current = setTimeout(() => {
+      console.log('useUserProfileData: Timeout atingido, forçando fim do loading');
+      setLoading(false);
+    }, 2000);
     
     if (!user) {
       console.log('useUserProfileData: Usuário não encontrado, limpando estado');
       setProfile(null);
       setRole(null);
       setLoading(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       return;
     }
 
@@ -62,7 +73,7 @@ export function useUserProfileData(user: User | null) {
           trial_started_at: userProfile.trial_started_at,
           // Adicionar propriedades do perfil
           nome_oficina: userProfile.nome_oficina,
-          telefone: userProfile.telefone || undefined, // Usar telefone do userProfile, não do user
+          telefone: userProfile.telefone || undefined,
           is_active: userProfile.is_active
         };
 
@@ -86,6 +97,10 @@ export function useUserProfileData(user: User | null) {
       } finally {
         if (isMounted) {
           setLoading(false);
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
         }
       }
     };
@@ -94,8 +109,12 @@ export function useUserProfileData(user: User | null) {
 
     return () => {
       isMounted = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [user]);
+  }, [user?.id]); // Usar user.id em vez de user completo para evitar re-renders desnecessários
 
   return { profile, loading, role };
 }

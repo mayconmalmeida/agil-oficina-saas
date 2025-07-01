@@ -12,6 +12,7 @@ export function useAuthSessionListener() {
   const [initialLoad, setInitialLoad] = useState(true);
   const isInitialized = useRef(false);
   const subscriptionRef = useRef<any>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Evitar múltiplas inicializações
@@ -21,6 +22,14 @@ export function useAuthSessionListener() {
     console.log('useAuthSessionListener: Inicializando listener único');
     
     let isMounted = true;
+
+    // Timeout de segurança para forçar carregamento
+    timeoutRef.current = setTimeout(() => {
+      if (isMounted && initialLoad) {
+        console.log('useAuthSessionListener: Timeout atingido, forçando fim do loading');
+        setInitialLoad(false);
+      }
+    }, 3000);
 
     const handleAuthStateChange = (event: string, session: Session | null) => {
       if (!isMounted) return;
@@ -33,9 +42,13 @@ export function useAuthSessionListener() {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Marcar como carregado apenas na primeira vez
+      // Marcar como carregado quando receber qualquer evento
       if (initialLoad) {
         setInitialLoad(false);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
       }
     };
 
@@ -59,6 +72,11 @@ export function useAuthSessionListener() {
       setSession(session);
       setUser(session?.user ?? null);
       setInitialLoad(false);
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     });
 
     return () => {
@@ -67,6 +85,10 @@ export function useAuthSessionListener() {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, []); // Array vazio - executar apenas uma vez

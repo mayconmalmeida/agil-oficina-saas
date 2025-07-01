@@ -9,12 +9,12 @@ const AppContent: React.FC = () => {
   const { isLoadingAuth } = useAuth();
   const [forceLoad, setForceLoad] = useState(false);
 
-  // Timeout de segurança para evitar loading infinito
+  // Timeout de segurança mais agressivo para evitar loading infinito
   useEffect(() => {
     const timeout = setTimeout(() => {
-      console.log('Timeout de loading atingido, forçando carregamento do app');
+      console.log('AppContent: Timeout de loading atingido, forçando carregamento do app');
       setForceLoad(true);
-    }, 2000); // Reduzido para 2 segundos
+    }, 1500); // Reduzido para 1.5 segundos
 
     return () => clearTimeout(timeout);
   }, []);
