@@ -49,7 +49,8 @@ export function useUserProfileData(user: User | null) {
             ...userProfile.subscription,
             user_id: userProfile.id,
             plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type'],
-            status: userProfile.subscription.status as UserSubscription['status']
+            status: userProfile.subscription.status as UserSubscription['status'],
+            ends_at: userProfile.subscription.ends_at || null
           } : undefined,
           trial_ends_at: userProfile.trial_started_at ? 
             new Date(new Date(userProfile.trial_started_at).getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString() : 
