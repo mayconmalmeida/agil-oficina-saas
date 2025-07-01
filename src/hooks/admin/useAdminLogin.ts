@@ -17,11 +17,11 @@ export const useAdminLogin = () => {
     
     try {
       // Verificar a conexão com o Supabase antes de tentar o login
-      console.log("Verificando conexão antes do login admin...");
+      console.log("🔍 Verificando conexão antes do login admin...");
       const isConnected = await testSupabaseConnection();
       
       if (!isConnected) {
-        console.error("Não foi possível conectar ao Supabase para login admin");
+        console.error("❌ Não foi possível conectar ao Supabase para login admin");
         setErrorMessage("Não foi possível conectar ao servidor de autenticação. Verifique sua conexão.");
         toast({
           variant: "destructive",
@@ -32,7 +32,52 @@ export const useAdminLogin = () => {
         return;
       }
       
-      console.log("Iniciando login admin com:", values.email);
+      console.log("✅ Conexão estabelecida, tentando login admin com email:", values.email);
+      
+      // Verificar primeiro se o usuário existe na tabela profiles como admin
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('role, email')
+        .eq('email', values.email)
+        .maybeSingle();
+
+      if (profileCheckError) {
+        console.error("❌ Erro ao verificar perfil do admin:", profileCheckError);
+        setErrorMessage('Erro ao verificar perfil de administrador: ' + profileCheckError.message);
+        toast({
+          variant: "destructive",
+          title: "Erro ao verificar perfil",
+          description: "Não foi possível verificar se o usuário é administrador.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!existingProfile) {
+        console.error("❌ Usuário não encontrado na tabela profiles:", values.email);
+        setErrorMessage("Usuário não encontrado. Verifique o email digitado.");
+        toast({
+          variant: "destructive",
+          title: "Usuário não encontrado",
+          description: "Este email não está cadastrado no sistema.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (existingProfile.role !== 'admin' && existingProfile.role !== 'superadmin') {
+        console.error("❌ Usuário não tem permissão de admin. Role atual:", existingProfile.role);
+        setErrorMessage("Este usuário não tem permissão de administrador.");
+        toast({
+          variant: "destructive",
+          title: "Acesso negado",
+          description: "Você não tem permissão de administrador.",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("✅ Perfil de admin encontrado, tentando autenticação...");
       
       // Tentar login com supabase.auth.signInWithPassword
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -41,14 +86,14 @@ export const useAdminLogin = () => {
       });
 
       if (error) {
-        console.error("Erro de autenticação:", error);
+        console.error("❌ Erro de autenticação:", error);
         
         if (error.message.includes('Invalid login credentials')) {
           setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
           toast({
             variant: "destructive",
             title: "Credenciais inválidas",
-            description: "Verifique seu email e senha.",
+            description: "Verifique seu email e senha. Lembre-se que administradores devem ser criados via auth do Supabase.",
           });
         } else {
           setErrorMessage(error.message || 'Erro desconhecido durante o login');
@@ -74,56 +119,18 @@ export const useAdminLogin = () => {
         return;
       }
 
-      console.log("Login bem-sucedido, verificando se é admin através da tabela profiles");
-      
-      // Verificar se o usuário é um administrador através da role na tabela profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Erro ao verificar role do usuário:", profileError);
-        setErrorMessage('Erro ao verificar permissões: ' + profileError.message);
-        
-        await supabase.auth.signOut();
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao verificar permissões",
-          description: "Ocorreu um erro ao verificar suas permissões.",
-        });
-        
-        setIsLoading(false);
-        return;
-      }
-
-      if (!profileData || (profileData.role !== 'admin' && profileData.role !== 'superadmin')) {
-        console.error("Usuário não é administrador, role:", profileData?.role);
-        await supabase.auth.signOut();
-        
-        toast({
-          variant: "destructive",
-          title: "Acesso negado",
-          description: "Você não tem permissão de administrador.",
-        });
-        
-        setErrorMessage("Este usuário não tem permissão de administrador.");
-        setIsLoading(false);
-        return;
-      }
+      console.log("✅ Login de admin bem-sucedido!");
 
       toast({
         title: "Login bem-sucedido",
         description: "Bem-vindo ao painel de administração.",
       });
 
-      console.log("Redirecionando para dashboard admin");
+      console.log("➡️ Redirecionando para dashboard admin");
       setIsLoading(false);
       navigate("/admin");
     } catch (error: any) {
-      console.error("Erro inesperado:", error);
+      console.error("💥 Erro inesperado:", error);
       setErrorMessage('Ocorreu um erro durante o login. ' + (error.message || ''));
       toast({
         variant: "destructive",

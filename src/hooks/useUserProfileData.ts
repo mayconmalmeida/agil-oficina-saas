@@ -1,67 +1,59 @@
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { fetchUserProfile, calculateCanAccessFeatures } from '@/services/authService';
+import { fetchUserProfile } from '@/services/authService';
 import { AuthUser } from '@/types/auth';
-import { UserSubscription } from '@/types/subscription';
 
-export const useUserProfileData = (user: User | null) => {
+export function useUserProfileData(user: User | null) {
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const isLoadingRef = useRef(false);
-  const lastUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Evitar execuções desnecessárias se o user ID não mudou
-    if (lastUserIdRef.current === user?.id) return;
+    console.log('useUserProfileData: Iniciando com usuário:', user?.email || 'nenhum');
     
-    // Evitar múltiplas execuções simultâneas
-    if (isLoadingRef.current) return;
+    if (!user) {
+      console.log('useUserProfileData: Usuário não encontrado, limpando estado');
+      setProfile(null);
+      setRole(null);
+      setLoading(false);
+      return;
+    }
 
-    const loadUserProfile = async () => {
-      console.log('useUserProfileData: Carregando perfil para:', user?.id);
-      
-      if (!user) {
-        console.log('useUserProfileData: Usuário não encontrado, limpando estado');
-        setProfile(null);
-        setRole(null);
-        setLoading(false);
-        lastUserIdRef.current = null;
-        return;
-      }
+    let isMounted = true;
 
-      // Verificar se já estamos carregando
-      if (isLoadingRef.current) return;
-
+    const loadProfile = async () => {
       try {
-        isLoadingRef.current = true;
+        console.log('useUserProfileData: Carregando perfil para:', user.id);
         setLoading(true);
-        lastUserIdRef.current = user.id;
         
         const userProfile = await fetchUserProfile(user.id);
-        console.log('useUserProfileData: Perfil carregado:', userProfile);
         
-        const canAccessFeatures = calculateCanAccessFeatures(userProfile.subscription, userProfile.role);
+        if (!isMounted) return;
+
+        console.log('useUserProfileData: Perfil carregado:', {
+          id: userProfile.id,
+          email: userProfile.email,
+          role: userProfile.role,
+          isActive: userProfile.is_active
+        });
         
+        // Criar o objeto AuthUser com todas as propriedades necessárias
         const authUser: AuthUser = {
           ...user,
           role: userProfile.role,
           isAdmin: userProfile.role === 'admin' || userProfile.role === 'superadmin',
-          canAccessFeatures,
-          subscription: userProfile.subscription ? {
-            id: userProfile.subscription.id,
-            user_id: user.id,
-            created_at: userProfile.subscription.created_at || new Date().toISOString(),
-            updated_at: userProfile.subscription.updated_at || new Date().toISOString(),
-            plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type'],
-            status: userProfile.subscription.status as UserSubscription['status'],
-            starts_at: userProfile.subscription.starts_at,
-            ends_at: userProfile.subscription.ends_at || null,
-            trial_ends_at: userProfile.subscription.trial_ends_at || null
-          } : undefined,
-          plano: userProfile.plano || 'Premium',
-          trial_started_at: userProfile.trial_started_at
+          canAccessFeatures: true, // Será calculado no useOptimizedAuth
+          subscription: userProfile.subscription,
+          trial_ends_at: userProfile.trial_started_at ? 
+            new Date(new Date(userProfile.trial_started_at).getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString() : 
+            undefined,
+          plano: userProfile.plano,
+          trial_started_at: userProfile.trial_started_at,
+          // Adicionar propriedades do perfil
+          nome_oficina: userProfile.nome_oficina,
+          telefone: userProfile.telefone || undefined,
+          is_active: userProfile.is_active
         };
 
         setProfile(authUser);
@@ -69,29 +61,31 @@ export const useUserProfileData = (user: User | null) => {
         
       } catch (error) {
         console.error('useUserProfileData: Erro ao carregar perfil:', error);
+        if (!isMounted) return;
         
-        // Criar perfil de fallback para evitar loops
-        if (user) {
-          const fallbackProfile: AuthUser = {
-            ...user,
-            role: 'user',
-            isAdmin: false,
-            canAccessFeatures: true,
-            plano: 'Premium',
-            trial_started_at: new Date().toISOString()
-          };
-          
-          setProfile(fallbackProfile);
-          setRole('user');
-        }
+        // Em caso de erro, criar um perfil básico
+        const basicAuthUser: AuthUser = {
+          ...user,
+          role: 'user',
+          isAdmin: false,
+          canAccessFeatures: true
+        };
+        
+        setProfile(basicAuthUser);
+        setRole('user');
       } finally {
-        setLoading(false);
-        isLoadingRef.current = false;
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    loadUserProfile();
-  }, [user?.id]); // Apenas user.id como dependência
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   return { profile, loading, role };
-};
+}
