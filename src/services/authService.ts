@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -6,9 +7,11 @@ export interface UserProfile {
   email: string;
   role: string;
   nome_oficina?: string;
+  telefone?: string; // Adicionar telefone ao tipo UserProfile
   is_active: boolean;
   subscription?: {
     id: string;
+    user_id: string; // Garantir que user_id está presente
     plan_type: string;
     status: string;
     starts_at: string;
@@ -65,6 +68,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         email: profileData.email || 'admin@system.com',
         role: profileData.role,
         nome_oficina: profileData.nome_oficina,
+        telefone: profileData.telefone, // Incluir telefone do perfil
         is_active: profileData.is_active ?? true,
         subscription: null,
         plano: profileData.plano,
@@ -90,8 +94,12 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       email: profileData.email || 'user@system.com',
       role: profileData.role || 'user',
       nome_oficina: profileData.nome_oficina,
+      telefone: profileData.telefone, // Incluir telefone do perfil
       is_active: profileData.is_active ?? true,
-      subscription: subscriptionData || null,
+      subscription: subscriptionData ? {
+        ...subscriptionData,
+        user_id: subscriptionData.user_id // Garantir que user_id está presente
+      } : null,
       plano: profileData.plano,
       trial_started_at: profileData.trial_started_at
     };

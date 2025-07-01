@@ -35,7 +35,7 @@ export function useUserProfileData(user: User | null) {
           id: userProfile.id,
           email: userProfile.email,
           role: userProfile.role,
-          isActive: userProfile.is_active
+          is_active: userProfile.is_active
         });
         
         // Criar o objeto AuthUser com todas as propriedades necessárias
@@ -44,7 +44,10 @@ export function useUserProfileData(user: User | null) {
           role: userProfile.role,
           isAdmin: userProfile.role === 'admin' || userProfile.role === 'superadmin',
           canAccessFeatures: true, // Será calculado no useOptimizedAuth
-          subscription: userProfile.subscription,
+          subscription: userProfile.subscription ? {
+            ...userProfile.subscription,
+            user_id: userProfile.id // Adicionar user_id que estava faltando
+          } : undefined,
           trial_ends_at: userProfile.trial_started_at ? 
             new Date(new Date(userProfile.trial_started_at).getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString() : 
             undefined,
@@ -52,7 +55,7 @@ export function useUserProfileData(user: User | null) {
           trial_started_at: userProfile.trial_started_at,
           // Adicionar propriedades do perfil
           nome_oficina: userProfile.nome_oficina,
-          telefone: userProfile.telefone || undefined,
+          telefone: userProfile.telefone || undefined, // Usar telefone do userProfile, não do user
           is_active: userProfile.is_active
         };
 
