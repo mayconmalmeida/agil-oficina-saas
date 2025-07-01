@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { fetchUserProfile } from '@/services/authService';
 import { AuthUser } from '@/types/auth';
+import { UserSubscription } from '@/types/subscription';
 
 export function useUserProfileData(user: User | null) {
   const [profile, setProfile] = useState<AuthUser | null>(null);
@@ -46,7 +47,8 @@ export function useUserProfileData(user: User | null) {
           canAccessFeatures: true, // Será calculado no useOptimizedAuth
           subscription: userProfile.subscription ? {
             ...userProfile.subscription,
-            user_id: userProfile.id // Adicionar user_id que estava faltando
+            user_id: userProfile.id,
+            plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type']
           } : undefined,
           trial_ends_at: userProfile.trial_started_at ? 
             new Date(new Date(userProfile.trial_started_at).getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString() : 
