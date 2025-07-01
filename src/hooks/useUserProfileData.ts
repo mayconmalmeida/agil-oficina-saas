@@ -51,7 +51,9 @@ export function useUserProfileData(user: User | null) {
             plan_type: userProfile.subscription.plan_type as UserSubscription['plan_type'],
             status: userProfile.subscription.status as UserSubscription['status'],
             ends_at: userProfile.subscription.ends_at || null,
-            trial_ends_at: userProfile.subscription.trial_ends_at || null
+            trial_ends_at: userProfile.subscription.trial_ends_at || null,
+            created_at: userProfile.subscription.created_at || new Date().toISOString(),
+            updated_at: userProfile.subscription.updated_at || new Date().toISOString()
           } : undefined,
           trial_ends_at: userProfile.trial_started_at ? 
             new Date(new Date(userProfile.trial_started_at).getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString() : 
