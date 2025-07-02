@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AdminStats } from '@/types/admin';
 
@@ -13,6 +13,11 @@ export const useOptimizedAdminData = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Inicializar automaticamente quando o hook for chamado
+  React.useEffect(() => {
+    fetchStats();
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {

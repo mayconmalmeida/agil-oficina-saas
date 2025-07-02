@@ -16,9 +16,12 @@ interface Oficina {
   cnpj: string | null;
   telefone: string | null;
   email: string | null;
+  responsavel: string | null;
   is_active: boolean | null;
   ativo: boolean | null;
   created_at: string | null;
+  trial_ends_at: string | null;
+  plano: string | null;
 }
 
 const AdminUsers = () => {
@@ -54,8 +57,22 @@ const AdminUsers = () => {
     setError(null);
 
     const { data, error } = await supabase
-      .from("oficinas")
-      .select("*")
+      .from("profiles")
+      .select(`
+        id,
+        email,
+        nome_oficina,
+        cnpj,
+        telefone,
+        responsavel,
+        is_active,
+        created_at,
+        trial_ends_at,
+        plano,
+        role
+      `)
+      .neq("role", "admin")
+      .neq("role", "superadmin")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -64,7 +81,24 @@ const AdminUsers = () => {
       setIsLoading(false);
       return;
     }
-    setOficinas(data || []);
+    
+    // Mapear dados para o formato esperado
+    const mappedData = (data || []).map(profile => ({
+      id: profile.id,
+      user_id: profile.id,
+      nome_oficina: profile.nome_oficina,
+      cnpj: profile.cnpj,
+      telefone: profile.telefone,
+      email: profile.email,
+      responsavel: profile.responsavel,
+      is_active: profile.is_active,
+      ativo: profile.is_active,
+      created_at: profile.created_at,
+      trial_ends_at: profile.trial_ends_at,
+      plano: profile.plano
+    }));
+    
+    setOficinas(mappedData);
     setIsLoading(false);
   };
 
@@ -72,13 +106,14 @@ const AdminUsers = () => {
     fetchOficinas();
   }, []);
 
+  const [editingExpiry, setEditingExpiry] = useState<string | null>(null);
+  const [newExpiryDate, setNewExpiryDate] = useState("");
+
   const toggleStatus = async (id: string, currentStatus: boolean | null | undefined) => {
-    // Atualiza ambos os campos, por segurança de legados
     const { error } = await supabase
-      .from("oficinas")
+      .from("profiles")
       .update({
         is_active: !currentStatus,
-        ativo: !currentStatus,
       })
       .eq("id", id);
 
@@ -91,6 +126,54 @@ const AdminUsers = () => {
     } else {
       toast({
         title: "Status atualizado!",
+        variant: "default"
+      });
+      fetchOficinas();
+    }
+  };
+
+  const updateExpiryDate = async (id: string, newDate: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        trial_ends_at: new Date(newDate).toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Erro ao atualizar data de expiração",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Data de expiração atualizada!",
+        variant: "default"
+      });
+      setEditingExpiry(null);
+      setNewExpiryDate("");
+      fetchOficinas();
+    }
+  };
+
+  const updatePlan = async (id: string, newPlan: string) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        plano: newPlan,
+      })
+      .eq("id", id);
+
+    if (error) {
+      toast({
+        title: "Erro ao atualizar plano",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Plano atualizado!",
         variant: "default"
       });
       fetchOficinas();
@@ -147,33 +230,77 @@ const AdminUsers = () => {
           <table className="min-w-full border">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-4 py-2">ID</th>
                 <th className="border px-4 py-2">Oficina</th>
                 <th className="border px-4 py-2">CNPJ</th>
-                <th className="border px-4 py-2">Telefone</th>
                 <th className="border px-4 py-2">Email</th>
+                <th className="border px-4 py-2">Plano</th>
+                <th className="border px-4 py-2">Vencimento</th>
                 <th className="border px-4 py-2">Status</th>
-                <th className="border px-4 py-2">Criada em</th>
                 <th className="border px-4 py-2">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredOficinas.map((o) => (
                 <tr key={o.id}>
-                  <td className="border px-4 py-2">{o.id}</td>
-                  <td className="border px-4 py-2">{o.nome_oficina || "-"}</td>
+                  <td className="border px-4 py-2">
+                    <div>
+                      <p className="font-medium">{o.nome_oficina || "Não definido"}</p>
+                      <p className="text-sm text-gray-500">{o.responsavel || ""}</p>
+                    </div>
+                  </td>
                   <td className="border px-4 py-2">{o.cnpj || "-"}</td>
-                  <td className="border px-4 py-2">{o.telefone || "-"}</td>
                   <td className="border px-4 py-2">{o.email || "-"}</td>
                   <td className="border px-4 py-2">
-                    {o.is_active === false || o.ativo === false ? (
+                    <select 
+                      value={o.plano || "Essencial"} 
+                      onChange={(e) => updatePlan(o.id, e.target.value)}
+                      className="px-2 py-1 border rounded text-sm"
+                    >
+                      <option value="Essencial">Essencial</option>
+                      <option value="Premium">Premium</option>
+                    </select>
+                  </td>
+                  <td className="border px-4 py-2">
+                    {editingExpiry === o.id ? (
+                      <div className="flex gap-1">
+                        <Input
+                          type="date"
+                          value={newExpiryDate}
+                          onChange={(e) => setNewExpiryDate(e.target.value)}
+                          className="w-32 text-xs"
+                        />
+                        <Button size="sm" variant="outline" onClick={() => updateExpiryDate(o.id, newExpiryDate)}>
+                          ✓
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingExpiry(null)}>
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">
+                          {o.trial_ends_at ? new Date(o.trial_ends_at).toLocaleDateString("pt-BR") : "Sem data"}
+                        </span>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => {
+                            setEditingExpiry(o.id);
+                            setNewExpiryDate(o.trial_ends_at ? o.trial_ends_at.split('T')[0] : "");
+                          }}
+                          className="p-1 h-6"
+                        >
+                          ✏️
+                        </Button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="border px-4 py-2">
+                    {o.is_active === false ? (
                       <Badge variant="destructive">Inativa</Badge>
                     ) : (
                       <Badge variant="default">Ativa</Badge>
                     )}
-                  </td>
-                  <td className="border px-4 py-2">
-                    {o.created_at ? new Date(o.created_at).toLocaleDateString("pt-BR") : "-"}
                   </td>
                   <td className="border px-4 py-2">
                     <Button
@@ -188,7 +315,7 @@ const AdminUsers = () => {
               ))}
               {filteredOficinas.length === 0 && (
                 <tr>
-                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={8}>
+                  <td className="border px-4 py-2 text-center text-gray-400" colSpan={7}>
                     Nenhuma oficina encontrada.
                   </td>
                 </tr>
