@@ -409,35 +409,59 @@ export type Database = {
       oficinas: {
         Row: {
           ativo: boolean | null
+          cep: string | null
+          cidade: string | null
           cnpj: string | null
           created_at: string | null
           email: string | null
+          endereco: string | null
+          estado: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           nome_oficina: string | null
+          plano: string | null
+          responsavel: string | null
           telefone: string | null
+          trial_ends_at: string | null
           user_id: string
         }
         Insert: {
           ativo?: boolean | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           created_at?: string | null
           email?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           nome_oficina?: string | null
+          plano?: string | null
+          responsavel?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
           user_id: string
         }
         Update: {
           ativo?: boolean | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           created_at?: string | null
           email?: string | null
+          endereco?: string | null
+          estado?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           nome_oficina?: string | null
+          plano?: string | null
+          responsavel?: string | null
           telefone?: string | null
+          trial_ends_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -929,6 +953,10 @@ export type Database = {
       ensure_whatsapp_suporte_column: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      get_user_oficina_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_user_subscription: {
         Args: Record<PropertyKey, never>
