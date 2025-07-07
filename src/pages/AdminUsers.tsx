@@ -57,9 +57,10 @@ const AdminUsers = () => {
     setError(null);
 
     const { data, error } = await supabase
-      .from("profiles")
+      .from("oficinas")
       .select(`
         id,
+        user_id,
         email,
         nome_oficina,
         cnpj,
@@ -68,11 +69,8 @@ const AdminUsers = () => {
         is_active,
         created_at,
         trial_ends_at,
-        plano,
-        role
+        plano
       `)
-      .neq("role", "admin")
-      .neq("role", "superadmin")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -83,19 +81,19 @@ const AdminUsers = () => {
     }
     
     // Mapear dados para o formato esperado
-    const mappedData = (data || []).map(profile => ({
-      id: profile.id,
-      user_id: profile.id,
-      nome_oficina: profile.nome_oficina,
-      cnpj: profile.cnpj,
-      telefone: profile.telefone,
-      email: profile.email,
-      responsavel: profile.responsavel,
-      is_active: profile.is_active,
-      ativo: profile.is_active,
-      created_at: profile.created_at,
-      trial_ends_at: profile.trial_ends_at,
-      plano: profile.plano
+    const mappedData = (data || []).map(oficina => ({
+      id: oficina.id,
+      user_id: oficina.user_id,
+      nome_oficina: oficina.nome_oficina,
+      cnpj: oficina.cnpj,
+      telefone: oficina.telefone,
+      email: oficina.email,
+      responsavel: oficina.responsavel,
+      is_active: oficina.is_active,
+      ativo: oficina.is_active,
+      created_at: oficina.created_at,
+      trial_ends_at: oficina.trial_ends_at,
+      plano: oficina.plano
     }));
     
     setOficinas(mappedData);
@@ -111,9 +109,10 @@ const AdminUsers = () => {
 
   const toggleStatus = async (id: string, currentStatus: boolean | null | undefined) => {
     const { error } = await supabase
-      .from("profiles")
+      .from("oficinas")
       .update({
         is_active: !currentStatus,
+        ativo: !currentStatus,
       })
       .eq("id", id);
 
@@ -134,7 +133,7 @@ const AdminUsers = () => {
 
   const updateExpiryDate = async (id: string, newDate: string) => {
     const { error } = await supabase
-      .from("profiles")
+      .from("oficinas")
       .update({
         trial_ends_at: new Date(newDate).toISOString(),
       })
@@ -159,7 +158,7 @@ const AdminUsers = () => {
 
   const updatePlan = async (id: string, newPlan: string) => {
     const { error } = await supabase
-      .from("profiles")
+      .from("oficinas")
       .update({
         plano: newPlan,
       })
