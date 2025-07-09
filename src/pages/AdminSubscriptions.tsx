@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import SubscriptionHeader from "@/components/admin/SubscriptionHeader";
+import { Button } from '@/components/ui/button';
+import { Plus, RefreshCw } from 'lucide-react';
 import SubscriptionsTable from "@/components/admin/SubscriptionsTable";
+import EditSubscriptionModal from '@/components/admin/subscriptions/EditSubscriptionModal';
 import Loading from '@/components/ui/loading';
 
 interface SubscriptionWithProfile {
@@ -26,6 +28,9 @@ const AdminSubscriptions = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [debugData, setDebugData] = useState<any>(null);
+  const [editingSubscription, setEditingSubscription] = useState<any>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [oficinas, setOficinas] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -112,12 +117,45 @@ const AdminSubscriptions = () => {
     }
   };
 
+  const fetchOficinas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('oficinas')
+        .select('id, nome_oficina, user_id')
+        .order('nome_oficina');
+
+      if (error) throw error;
+      setOficinas(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar oficinas:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSubscriptions();
+    fetchOficinas();
   }, []);
 
   const handleBack = () => {
     navigate('/admin');
+  };
+
+  const handleCreateNew = () => {
+    setIsCreating(true);
+  };
+
+  const handleEdit = (subscription: any) => {
+    setEditingSubscription(subscription);
+  };
+
+  const handleModalClose = () => {
+    setEditingSubscription(null);
+    setIsCreating(false);
+  };
+
+  const handleModalSuccess = () => {
+    fetchSubscriptions();
+    handleModalClose();
   };
 
   if (isLoading) {
@@ -127,7 +165,6 @@ const AdminSubscriptions = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <SubscriptionHeader onBack={handleBack} />
         <div className="bg-white shadow rounded-lg p-6 max-w-xl w-full">
           <h2 className="text-lg font-bold mb-2 text-red-700">Erro ao carregar assinaturas:</h2>
           <p className="mb-3 text-gray-700">{error}</p>
@@ -144,16 +181,50 @@ const AdminSubscriptions = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SubscriptionHeader onBack={handleBack} />
+      <div className="bg-white shadow-sm border-b border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={handleBack}>
+              ← Voltar
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900">Gerenciar Assinaturas</h1>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchSubscriptions}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+            <Button onClick={handleCreateNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Assinatura
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white shadow rounded-lg p-6">
           <SubscriptionsTable
             subscriptions={subscriptions}
             isLoading={isLoading}
+            onEdit={handleEdit}
           />
         </div>
       </main>
+
+      <EditSubscriptionModal
+        subscription={editingSubscription}
+        isOpen={isCreating || !!editingSubscription}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        isCreating={isCreating}
+        oficinas={oficinas}
+      />
     </div>
   );
 };

@@ -66,7 +66,7 @@ const OptimizedAdminLayout: React.FC = () => {
       icon: LayoutDashboard
     },
     {
-      title: 'Usuários',
+      title: 'Oficinas',
       href: '/admin/users',
       icon: Users
     },

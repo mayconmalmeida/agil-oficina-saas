@@ -16,7 +16,7 @@ const Index: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen font-sans">
       <Navbar />
-      <main className="flex-grow">
+      <main className="flex-grow pt-16 sm:pt-20 md:pt-24">
         <Hero />
         <Features />
         <AIFeatures />

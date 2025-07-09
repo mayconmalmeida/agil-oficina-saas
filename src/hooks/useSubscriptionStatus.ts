@@ -72,19 +72,29 @@ export const useSubscriptionStatus = () => {
 
       if (user.subscription) {
         const subscription = user.subscription;
-        const daysRemaining = calculateDaysRemaining(subscription);
+        const now = new Date();
         
         const isTrialActive = subscription.status === 'trialing' && 
           subscription.trial_ends_at && 
-          new Date(subscription.trial_ends_at) > new Date();
+          new Date(subscription.trial_ends_at) > now;
         
         const isPaidActive = subscription.status === 'active' && 
-          (!subscription.ends_at || new Date(subscription.ends_at) > new Date());
+          (!subscription.ends_at || new Date(subscription.ends_at) > now);
         
-        const canAccessFeatures = user.canAccessFeatures || false;
+        // Verificar se ainda está dentro do período válido (trial ou pago)
+        const canAccessFeatures = isTrialActive || isPaidActive;
+        
         const isPremium = subscription.plan_type?.includes('premium') || false;
         const isEssencial = subscription.plan_type?.includes('essencial') || false;
         const planDetails = getPlanDetails(subscription.plan_type || '');
+        
+        // Calcular dias restantes considerando trial e paid
+        let daysRemaining = 0;
+        if (isTrialActive && subscription.trial_ends_at) {
+          daysRemaining = Math.ceil((new Date(subscription.trial_ends_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (isPaidActive && subscription.ends_at) {
+          daysRemaining = Math.ceil((new Date(subscription.ends_at).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
 
         setSubscriptionStatus({
           hasSubscription: true,
@@ -94,7 +104,7 @@ export const useSubscriptionStatus = () => {
           canAccessFeatures,
           isPremium,
           isEssencial,
-          daysRemaining,
+          daysRemaining: Math.max(0, daysRemaining),
           planDetails
         });
       } else {

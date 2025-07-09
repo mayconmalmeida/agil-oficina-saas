@@ -9,6 +9,8 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
@@ -16,9 +18,10 @@ import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
 type SubscriptionsTableProps = {
   subscriptions: SubscriptionWithProfile[];
   isLoading?: boolean;
+  onEdit?: (subscription: any) => void;
 };
 
-const SubscriptionsTable = ({ subscriptions, isLoading = false }: SubscriptionsTableProps) => {
+const SubscriptionsTable = ({ subscriptions, isLoading = false, onEdit }: SubscriptionsTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -44,12 +47,13 @@ const SubscriptionsTable = ({ subscriptions, isLoading = false }: SubscriptionsT
           <TableHead>Expira em</TableHead>
           <TableHead>Método de Pagamento</TableHead>
           <TableHead className="text-center">Status</TableHead>
+          <TableHead className="text-center">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {isLoading ? (
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8">
+            <TableCell colSpan={8} className="text-center py-8">
               Carregando assinaturas...
             </TableCell>
           </TableRow>
@@ -68,11 +72,22 @@ const SubscriptionsTable = ({ subscriptions, isLoading = false }: SubscriptionsT
                 <TableCell className="text-center">
                   {getStatusBadge(sub.status || 'unknown')}
                 </TableCell>
+                <TableCell className="text-center">
+                  {onEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(sub)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
             {subscriptions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   Nenhuma assinatura encontrada
                 </TableCell>
               </TableRow>

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { 
   FileText, 
   Users, 
@@ -69,20 +70,28 @@ export default function Features() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {features.map((feature, index) => (
-            <div 
-              key={index} 
-              className="bg-white rounded-lg p-6 sm:p-8 shadow-md hover:shadow-xl transition-shadow border border-gray-100 group"
+            <motion.div 
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              viewport={{ once: true }}
+              className="bg-white rounded-lg p-6 sm:p-8 shadow-md hover:shadow-xl transition-all border border-gray-100 group hover:scale-105"
             >
-              <div className="rounded-xl bg-oficina/5 p-3 sm:p-4 inline-flex mb-4 sm:mb-6 group-hover:bg-oficina/10 transition-colors">
+              <motion.div 
+                className="rounded-xl bg-oficina/5 p-3 sm:p-4 inline-flex mb-4 sm:mb-6 group-hover:bg-oficina/10 transition-colors"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ duration: 0.2 }}
+              >
                 {feature.icon}
-              </div>
+              </motion.div>
               <h3 className="text-lg sm:text-xl font-semibold text-oficina mb-2 sm:mb-3">
                 {feature.title}
               </h3>
               <p className="text-sm sm:text-base text-oficina-gray">
                 {feature.description}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

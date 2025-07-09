@@ -134,7 +134,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
 
         console.log('AdminContext: Auth state change:', event);
@@ -147,7 +147,12 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         }
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await initializeAdmin();
+          // Use setTimeout para evitar loop infinito
+          setTimeout(() => {
+            if (mounted) {
+              initializeAdmin();
+            }
+          }, 100);
         }
       }
     );
