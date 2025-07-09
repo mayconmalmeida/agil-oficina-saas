@@ -9,7 +9,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -77,7 +78,7 @@ const OptimizedAdminLayout: React.FC = () => {
     {
       title: 'Planos',
       href: '/admin/plans',
-      icon: Settings
+      icon: CreditCard
     },
     {
       title: 'Configurações',

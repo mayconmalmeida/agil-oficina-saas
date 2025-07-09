@@ -12,6 +12,7 @@ interface PlanConfiguration {
   features: string[];
   is_active: boolean;
   display_order: number;
+  affiliate_link?: string;
 }
 
 export const usePlanConfigurations = () => {

@@ -26,45 +26,33 @@ const Pricing = () => {
   console.log('Premium plans:', premiumPlans);
 
   const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
-    // 🚨 Checagem mais robusta da sessão atual
-    const { data: { session } } = await supabase.auth.getSession();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || !session) {
-      toast({
-        variant: "destructive",
-        title: "Você precisa estar logado!",
-        description: "Faça login ou crie uma conta para iniciar o teste gratuito.",
-      });
-      navigate(`/register?plan=${planType}`);
-      return;
-    }
-
-    // Usuário já tem acesso?
-    if (subscriptionStatus.canAccessFeatures) {
-      toast({
-        title: "Você já tem acesso!",
-        description: "Você já possui uma assinatura ativa ou teste em andamento."
-      });
-      navigate('/dashboard');
-      return;
-    }
-
-    const result = await startFreeTrial(planType);
-    if (result.success) {
-      navigate('/dashboard');
-    }
+    // Usar links diretos da Cackto para teste gratuito
+    const trialLinks = {
+      essencial: 'https://checkout.cackto.com.br/essencial/teste',
+      premium: 'https://checkout.cackto.com.br/premium/teste'
+    };
+    
+    window.open(trialLinks[planType], '_blank');
   };
 
   const handlePaidPlan = async (planType: 'essencial' | 'premium', billingCycle: 'mensal' | 'anual') => {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Buscar o link de pagamento configurado no banco
+    const plan = plans.find(p => p.plan_type === planType && p.billing_cycle === billingCycle);
     
-    if (!user) {
-      navigate(`/register?plan=${planType}`);
-      return;
+    if (plan?.affiliate_link) {
+      window.open(plan.affiliate_link, '_blank');
+    } else {
+      // Fallback para links padrão da Cackto
+      const paymentLinks = {
+        'essencial-mensal': 'https://checkout.cackto.com.br/essencial/mensal',
+        'essencial-anual': 'https://checkout.cackto.com.br/essencial/anual',
+        'premium-mensal': 'https://checkout.cackto.com.br/premium/mensal',
+        'premium-anual': 'https://checkout.cackto.com.br/premium/anual'
+      };
+      
+      const linkKey = `${planType}-${billingCycle}` as keyof typeof paymentLinks;
+      window.open(paymentLinks[linkKey], '_blank');
     }
-
-    await createCheckoutSession(planType, billingCycle);
   };
 
   // Função debug da sessão Supabase
