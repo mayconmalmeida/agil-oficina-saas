@@ -56,13 +56,36 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     trial_started_at: authUser.trial_started_at
   });
 
-  // Se é usuário comum
-  if (authUser.role === 'user' || !authUser.role) {
-    // Verificar se tem trial_started_at
-    if (authUser.trial_started_at) {
-      const trialStarted = new Date(authUser.trial_started_at);
-      const now = new Date();
-      const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
+  // Verificar se tem assinatura ativa via user_subscriptions
+  if (authUser.subscription) {
+    const subscription = authUser.subscription;
+    const now = new Date();
+    
+    console.log('SubscriptionGuard: Verificando assinatura:', {
+      subscription,
+      now: now.toISOString()
+    });
+    
+    // Verificar trial ativo
+    const isTrialActive = subscription.status === 'trialing' && 
+      subscription.trial_ends_at && 
+      new Date(subscription.trial_ends_at) > now;
+    
+    // Verificar assinatura paga ativa
+    const isPaidActive = subscription.status === 'active' && 
+      (!subscription.ends_at || new Date(subscription.ends_at) > now);
+    
+    if (isTrialActive || isPaidActive) {
+      console.log('SubscriptionGuard: Assinatura válida - ACESSO LIBERADO');
+      return <>{children}</>;
+    }
+  }
+  
+  // Fallback: verificar trial_started_at para compatibilidade
+  if ((authUser.role === 'user' || !authUser.role) && authUser.trial_started_at) {
+    const trialStarted = new Date(authUser.trial_started_at);
+    const now = new Date();
+    const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
       
       console.log('SubscriptionGuard: Verificação detalhada do trial:', {
         trialStarted: trialStarted.toISOString(),
@@ -74,7 +97,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
       });
       
       // Se trial ainda está ativo (dentro dos 7 dias)
-      if (now <= trialEnd && diasRestantes > 0) {
+      if (now <= trialEnd) {
         console.log('SubscriptionGuard: Trial ativo - ACESSO PREMIUM LIBERADO');
         
         // Durante o trial de 7 dias, o usuário tem acesso total premium
@@ -95,16 +118,15 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           />
         );
       }
-    } else {
-      // Se não tem trial_started_at, bloquear
-      console.log('SubscriptionGuard: Usuário sem trial configurado, bloqueando acesso');
-      return (
-        <SubscriptionExpiredCard 
-          hasSubscription={false}
-          onLogout={handleLogout} 
-        />
-      );
-    }
+  } else {
+    // Se não tem trial_started_at, bloquear
+    console.log('SubscriptionGuard: Usuário sem trial configurado, bloqueando acesso');
+    return (
+      <SubscriptionExpiredCard 
+        hasSubscription={false}
+        onLogout={handleLogout} 
+      />
+    );
   }
 
   // Para outros tipos de usuário, permitir acesso

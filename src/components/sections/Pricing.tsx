@@ -7,6 +7,7 @@ import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -135,7 +136,13 @@ const Pricing = () => {
   return (
     <div id="precos" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
             Planos Simples e Acessíveis
           </h2>
@@ -152,12 +159,16 @@ const Pricing = () => {
               Usando configuração padrão de planos
             </p>
           )}
-        </div>
+        </motion.div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {tiers.map((tier) => (
-            <div
+          {tiers.map((tier, index) => (
+            <motion.div
               key={tier.id}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+              viewport={{ once: true }}
               className={`bg-white rounded-lg shadow-lg overflow-hidden ${
                 tier.most_popular ? 'ring-2 ring-blue-600' : ''
               }`}
@@ -227,7 +238,7 @@ const Pricing = () => {
                   ))}
                 </ul>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
         
