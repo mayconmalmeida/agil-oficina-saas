@@ -119,19 +119,34 @@ const AdminSubscriptions = () => {
 
   const fetchOficinas = async () => {
     try {
-      // Buscar oficinas que tenham usuários válidos no auth.users
-      const { data, error } = await supabase
+      // First get all profiles (which have valid user_ids)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, nome_oficina');
+
+      if (profilesError) throw profilesError;
+
+      // Then get oficinas that match these user_ids
+      const validUserIds = profilesData.map(p => p.id);
+      
+      const { data: oficinasData, error: oficinasError } = await supabase
         .from('oficinas')
-        .select(`
-          id, 
-          nome_oficina, 
-          user_id,
-          profiles!inner(id)
-        `)
+        .select('id, nome_oficina, user_id')
+        .in('user_id', validUserIds)
         .order('nome_oficina');
 
-      if (error) throw error;
-      setOficinas(data || []);
+      if (oficinasError) throw oficinasError;
+
+      // Combine the data
+      const oficinasWithProfiles = oficinasData.map(oficina => {
+        const profile = profilesData.find(p => p.id === oficina.user_id);
+        return {
+          ...oficina,
+          nome_oficina: oficina.nome_oficina || profile?.nome_oficina || profile?.email || 'Nome não definido'
+        };
+      });
+
+      setOficinas(oficinasWithProfiles);
     } catch (error) {
       console.error('Erro ao buscar oficinas:', error);
     }
