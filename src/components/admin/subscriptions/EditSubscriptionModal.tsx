@@ -53,13 +53,26 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
   useEffect(() => {
     if (subscription && !isCreating) {
+      // Função para validar e converter datas
+      const parseDate = (dateString: string | null): Date => {
+        if (!dateString) return new Date();
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? new Date() : date;
+      };
+
+      const parseOptionalDate = (dateString: string | null): Date | null => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? null : date;
+      };
+
       setFormData({
         user_id: subscription.user_id,
         plan_type: subscription.plan_type,
         status: subscription.status,
-        starts_at: new Date(subscription.starts_at),
-        ends_at: subscription.ends_at ? new Date(subscription.ends_at) : new Date(),
-        trial_ends_at: subscription.trial_ends_at ? new Date(subscription.trial_ends_at) : null
+        starts_at: parseDate(subscription.starts_at),
+        ends_at: parseDate(subscription.ends_at),
+        trial_ends_at: parseOptionalDate(subscription.trial_ends_at)
       });
     } else if (isCreating) {
       const nextMonth = new Date();
@@ -208,15 +221,19 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(formData.starts_at, "dd/MM/yyyy", { locale: ptBR })}
+                  {formData.starts_at && !isNaN(formData.starts_at.getTime()) 
+                    ? format(formData.starts_at, "dd/MM/yyyy", { locale: ptBR })
+                    : "Selecione uma data"
+                  }
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.starts_at}
+                  selected={formData.starts_at && !isNaN(formData.starts_at.getTime()) ? formData.starts_at : undefined}
                   onSelect={(date) => date && setFormData(prev => ({ ...prev, starts_at: date }))}
                   locale={ptBR}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -228,21 +245,25 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {format(formData.ends_at, "dd/MM/yyyy", { locale: ptBR })}
+                  {formData.ends_at && !isNaN(formData.ends_at.getTime()) 
+                    ? format(formData.ends_at, "dd/MM/yyyy", { locale: ptBR })
+                    : "Selecione uma data"
+                  }
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.ends_at}
+                  selected={formData.ends_at && !isNaN(formData.ends_at.getTime()) ? formData.ends_at : undefined}
                   onSelect={(date) => date && setFormData(prev => ({ ...prev, ends_at: date }))}
                   locale={ptBR}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          {formData.trial_ends_at && (
+          {formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) && (
             <div>
               <Label>Data de Fim do Teste</Label>
               <Popover>
@@ -255,9 +276,10 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.trial_ends_at}
+                    selected={formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) ? formData.trial_ends_at : undefined}
                     onSelect={(date) => setFormData(prev => ({ ...prev, trial_ends_at: date }))}
                     locale={ptBR}
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
