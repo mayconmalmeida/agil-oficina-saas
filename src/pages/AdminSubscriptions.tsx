@@ -119,9 +119,15 @@ const AdminSubscriptions = () => {
 
   const fetchOficinas = async () => {
     try {
+      // Buscar oficinas que tenham usuários válidos no auth.users
       const { data, error } = await supabase
         .from('oficinas')
-        .select('id, nome_oficina, user_id')
+        .select(`
+          id, 
+          nome_oficina, 
+          user_id,
+          profiles!inner(id)
+        `)
         .order('nome_oficina');
 
       if (error) throw error;
