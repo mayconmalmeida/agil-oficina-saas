@@ -22,6 +22,8 @@ interface Oficina {
   created_at: string | null;
   trial_ends_at: string | null;
   plano: string | null;
+  subscription_plan?: string;
+  subscription_status?: string;
 }
 
 const AdminUsers = () => {
@@ -56,47 +58,88 @@ const AdminUsers = () => {
     setIsLoading(true);
     setError(null);
 
-    const { data, error } = await supabase
-      .from("oficinas")
-      .select(`
-        id,
-        user_id,
-        email,
-        nome_oficina,
-        cnpj,
-        telefone,
-        responsavel,
-        is_active,
-        created_at,
-        trial_ends_at,
-        plano
-      `)
-      .order("created_at", { ascending: false });
+    try {
+      // Buscar oficinas
+      const { data: oficinasData, error: oficinasError } = await supabase
+        .from("oficinas")
+        .select(`
+          id,
+          user_id,
+          email,
+          nome_oficina,
+          cnpj,
+          telefone,
+          responsavel,
+          is_active,
+          created_at,
+          trial_ends_at,
+          plano
+        `)
+        .order("created_at", { ascending: false });
 
-    if (error) {
+      if (oficinasError) throw oficinasError;
+
+      // Buscar assinaturas mais recentes para cada usuário
+      const userIds = oficinasData?.map(o => o.user_id) || [];
+      const { data: subscriptionsData, error: subscriptionsError } = await supabase
+        .from("user_subscriptions")
+        .select("user_id, plan_type, status, created_at")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false });
+
+      if (subscriptionsError) {
+        console.error("Erro ao buscar assinaturas:", subscriptionsError);
+      }
+
+      // Criar mapa de assinaturas mais recentes por usuário
+      const subscriptionMap = new Map();
+      subscriptionsData?.forEach(sub => {
+        if (!subscriptionMap.has(sub.user_id)) {
+          subscriptionMap.set(sub.user_id, sub);
+        }
+      });
+
+      // Mapear dados para o formato esperado com plano baseado na assinatura
+      const mappedData = (oficinasData || []).map(oficina => {
+        const subscription = subscriptionMap.get(oficina.user_id);
+        let planDisplayName = "Inativo";
+        
+        if (subscription) {
+          if (subscription.status === 'trialing') {
+            planDisplayName = "Trial";
+          } else if (subscription.status === 'active') {
+            if (subscription.plan_type.includes('premium')) {
+              planDisplayName = "Premium";
+            } else if (subscription.plan_type.includes('essencial')) {
+              planDisplayName = "Essencial";
+            }
+          }
+        }
+
+        return {
+          id: oficina.id,
+          user_id: oficina.user_id,
+          nome_oficina: oficina.nome_oficina,
+          cnpj: oficina.cnpj,
+          telefone: oficina.telefone,
+          email: oficina.email,
+          responsavel: oficina.responsavel,
+          is_active: oficina.is_active,
+          ativo: oficina.is_active,
+          created_at: oficina.created_at,
+          trial_ends_at: oficina.trial_ends_at,
+          plano: oficina.plano,
+          subscription_plan: planDisplayName,
+          subscription_status: subscription?.status || 'inactive'
+        };
+      });
+      
+      setOficinas(mappedData);
+    } catch (error: any) {
       setError("Erro ao buscar oficinas: " + error.message);
       setOficinas([]);
-      setIsLoading(false);
-      return;
     }
     
-    // Mapear dados para o formato esperado
-    const mappedData = (data || []).map(oficina => ({
-      id: oficina.id,
-      user_id: oficina.user_id,
-      nome_oficina: oficina.nome_oficina,
-      cnpj: oficina.cnpj,
-      telefone: oficina.telefone,
-      email: oficina.email,
-      responsavel: oficina.responsavel,
-      is_active: oficina.is_active,
-      ativo: oficina.is_active,
-      created_at: oficina.created_at,
-      trial_ends_at: oficina.trial_ends_at,
-      plano: oficina.plano
-    }));
-    
-    setOficinas(mappedData);
     setIsLoading(false);
   };
 
@@ -250,14 +293,15 @@ const AdminUsers = () => {
                   <td className="border px-4 py-2">{o.cnpj || "-"}</td>
                   <td className="border px-4 py-2">{o.email || "-"}</td>
                   <td className="border px-4 py-2">
-                    <select 
-                      value={o.plano || "Essencial"} 
-                      onChange={(e) => updatePlan(o.id, e.target.value)}
-                      className="px-2 py-1 border rounded text-sm"
-                    >
-                      <option value="Essencial">Essencial</option>
-                      <option value="Premium">Premium</option>
-                    </select>
+                    <div className="flex flex-col gap-1">
+                      <div className="text-sm font-semibold">
+                        {o.subscription_plan || "Inativo"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Status: {o.subscription_status === 'active' ? 'Ativo' : 
+                                o.subscription_status === 'trialing' ? 'Trial' : 'Inativo'}
+                      </div>
+                    </div>
                   </td>
                   <td className="border px-4 py-2">
                     {editingExpiry === o.id ? (

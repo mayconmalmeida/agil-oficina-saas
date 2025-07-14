@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SubscriptionStatus } from '@/types/subscription';
 import { getPlanDetails, calculateDaysRemaining } from '@/utils/planUtils';
+import { supabase } from '@/lib/supabase';
 
 export const useSubscriptionStatus = () => {
   const { user, isLoadingAuth } = useAuth();
@@ -20,7 +21,7 @@ export const useSubscriptionStatus = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const calculateSubscriptionStatus = () => {
+  const calculateSubscriptionStatus = async () => {
     // Aguarda o carregamento da autenticação
     if (isLoadingAuth) {
       return;
@@ -70,8 +71,22 @@ export const useSubscriptionStatus = () => {
         return;
       }
 
-      if (user.subscription) {
-        const subscription = user.subscription;
+      // Buscar assinatura mais recente da tabela user_subscriptions
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error('Erro ao buscar assinatura:', subscriptionError);
+      }
+
+      const subscription = subscriptionData || user.subscription;
+
+      if (subscription) {
         const now = new Date();
         
         const isTrialActive = subscription.status === 'trialing' && 
@@ -98,7 +113,7 @@ export const useSubscriptionStatus = () => {
 
         setSubscriptionStatus({
           hasSubscription: true,
-          subscription,
+          subscription: subscription as any, // Cast necessário para compatibilidade
           isTrialActive,
           isPaidActive,
           canAccessFeatures,

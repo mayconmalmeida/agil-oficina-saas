@@ -117,9 +117,34 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
         if (error) throw error;
 
+        // Atualizar a oficina com os dados da assinatura
+        const planTypeSimple = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
+        const isTrialing = formData.status === 'trialing';
+        
+        const oficinaUpdates: any = {
+          plano: planTypeSimple,
+          is_active: true
+        };
+
+        if (isTrialing && formData.trial_ends_at) {
+          oficinaUpdates.trial_ends_at = formData.trial_ends_at.toISOString();
+        } else if (formData.status === 'active') {
+          oficinaUpdates.trial_ends_at = null; // Limpar trial se for assinatura ativa
+        }
+
+        const { error: oficinaError } = await supabase
+          .from('oficinas')
+          .update(oficinaUpdates)
+          .eq('user_id', formData.user_id);
+
+        if (oficinaError) {
+          console.error('Erro ao atualizar oficina:', oficinaError);
+          // Não falhar todo o processo se erro na oficina
+        }
+
         toast({
           title: "Sucesso",
-          description: "Assinatura criada com sucesso!"
+          description: "Assinatura criada e oficina atualizada com sucesso!"
         });
       } else {
         const { error } = await supabase
@@ -201,7 +226,23 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
             <Label>Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              onValueChange={(value) => {
+                setFormData(prev => {
+                  const newData = { ...prev, status: value };
+                  
+                  // Se for trialing, automaticamente definir data de fim do trial (+7 dias)
+                  if (value === 'trialing') {
+                    const trialEnd = new Date();
+                    trialEnd.setDate(trialEnd.getDate() + 7);
+                    newData.trial_ends_at = trialEnd;
+                  } else if (value === 'active') {
+                    // Se for ativo, limpar trial_ends_at
+                    newData.trial_ends_at = null;
+                  }
+                  
+                  return newData;
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -263,14 +304,17 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
             </Popover>
           </div>
 
-          {formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) && (
+          {formData.status === 'trialing' && (
             <div>
               <Label>Data de Fim do Teste</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(formData.trial_ends_at, "dd/MM/yyyy", { locale: ptBR })}
+                    {formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) 
+                      ? format(formData.trial_ends_at, "dd/MM/yyyy", { locale: ptBR })
+                      : "Selecione uma data"
+                    }
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
