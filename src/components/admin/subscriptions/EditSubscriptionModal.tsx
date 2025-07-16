@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -53,7 +53,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
   useEffect(() => {
     if (subscription && !isCreating) {
-      // Função para validar e converter datas
       const parseDate = (dateString: string | null): Date => {
         if (!dateString) return new Date();
         const date = new Date(dateString);
@@ -117,7 +116,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
         if (error) throw error;
 
-        // Atualizar a oficina com os dados da assinatura
         const planTypeSimple = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
         const isTrialing = formData.status === 'trialing';
         
@@ -139,7 +137,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
         if (oficinaError) {
           console.error('Erro ao atualizar oficina:', oficinaError);
-          // Não falhar todo o processo se erro na oficina
         }
 
         toast({
@@ -174,6 +171,8 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     }
   };
 
+  const hasOficinas = oficinas && oficinas.length > 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -185,23 +184,32 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
         <div className="space-y-4">
           <div>
-            <Label>Oficina</Label>
-            <Select
-              value={formData.user_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, user_id: value }))}
-              disabled={!isCreating}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma oficina" />
-              </SelectTrigger>
-              <SelectContent>
-                {oficinas.map((oficina) => (
-                  <SelectItem key={oficina.user_id} value={oficina.user_id}>
-                    {oficina.nome_oficina || 'Nome não definido'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Oficina *</Label>
+            {!hasOficinas ? (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">
+                  Nenhuma oficina cadastrada. Cadastre uma oficina antes de atribuir uma assinatura.
+                </span>
+              </div>
+            ) : (
+              <Select
+                value={formData.user_id}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, user_id: value }))}
+                disabled={!isCreating}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma oficina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {oficinas.map((oficina) => (
+                    <SelectItem key={oficina.user_id} value={oficina.user_id}>
+                      {oficina.nome_oficina || 'Nome não definido'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div>
@@ -230,13 +238,11 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                 setFormData(prev => {
                   const newData = { ...prev, status: value };
                   
-                  // Se for trialing, automaticamente definir data de fim do trial (+7 dias)
                   if (value === 'trialing') {
                     const trialEnd = new Date();
                     trialEnd.setDate(trialEnd.getDate() + 7);
                     newData.trial_ends_at = trialEnd;
                   } else if (value === 'active') {
-                    // Se for ativo, limpar trial_ends_at
                     newData.trial_ends_at = null;
                   }
                   
@@ -335,7 +341,11 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           <Button variant="outline" onClick={onClose} className="flex-1">
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={loading} className="flex-1">
+          <Button 
+            onClick={handleSave} 
+            disabled={loading || !hasOficinas || !formData.user_id} 
+            className="flex-1"
+          >
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>

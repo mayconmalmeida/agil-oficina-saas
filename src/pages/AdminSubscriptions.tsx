@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SubscriptionsTable from "@/components/admin/SubscriptionsTable";
@@ -14,7 +15,12 @@ const AdminSubscriptions = () => {
   const navigate = useNavigate();
 
   const { subscriptions, isLoading, error, fetchSubscriptions } = useSubscriptionsData();
-  const { oficinas, fetchOficinas } = useOficinasData();
+  const { 
+    oficinas, 
+    isLoading: oficinasLoading, 
+    error: oficinasError, 
+    fetchOficinas 
+  } = useOficinasData();
 
   useEffect(() => {
     fetchSubscriptions();
