@@ -8,117 +8,105 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper logging function for debugging
-const logStep = (step: string, details?: any) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    logStep("Function started");
+    const { plan_type, user_id } = await req.json();
+    
+    if (!plan_type || !user_id) {
+      throw new Error("plan_type e user_id são obrigatórios");
+    }
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2023-10-16",
+    });
 
-    // Create Supabase client using the anon key for user authentication
-    const supabaseClient = createClient(
+    // Buscar configuração do plano
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
+    const planTypeOnly = plan_type.replace('_anual', '').replace('_mensal', '');
+    const billingCycle = plan_type.includes('_anual') ? 'anual' : 'mensal';
+    
+    const { data: planConfig, error: planError } = await supabase
+      .from('plan_configurations')
+      .select('*')
+      .eq('plan_type', planTypeOnly)
+      .eq('billing_cycle', billingCycle)
+      .eq('is_active', true)
+      .single();
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
-    // Get request body
-    const { planType, billingCycle } = await req.json();
-    if (!planType || !billingCycle) {
-      throw new Error("planType and billingCycle are required");
+    if (planError || !planConfig) {
+      throw new Error(`Configuração do plano não encontrada: ${plan_type}`);
     }
-    logStep("Plan details received", { planType, billingCycle });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    // Buscar dados do usuário
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email, nome_oficina')
+      .eq('id', user_id)
+      .single();
 
-    // Check if customer exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    if (profileError || !profile?.email) {
+      throw new Error("Usuário não encontrado ou sem email");
+    }
+
+    // Verificar se já existe customer no Stripe
+    const customers = await stripe.customers.list({
+      email: profile.email,
+      limit: 1,
+    });
+
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
     } else {
-      logStep("No existing customer found, will create during checkout");
+      const customer = await stripe.customers.create({
+        email: profile.email,
+        name: profile.nome_oficina || profile.email,
+      });
+      customerId = customer.id;
     }
 
-    // Define pricing based on plan type and billing cycle
-    const pricing = {
-      essencial: {
-        mensal: { amount: 8990, name: "OficinaÁgil Essencial - Mensal" },
-        anual: { amount: 89900, name: "OficinaÁgil Essencial - Anual" }
-      },
-      premium: {
-        mensal: { amount: 17990, name: "OficinaÁgil Premium - Mensal" },
-        anual: { amount: 179900, name: "OficinaÁgil Premium - Anual" }
-      }
-    };
-
-    const planPricing = pricing[planType as keyof typeof pricing]?.[billingCycle as keyof typeof pricing.essencial];
-    if (!planPricing) {
-      throw new Error("Invalid plan type or billing cycle");
-    }
-
-    const interval = billingCycle === 'anual' ? 'year' : 'month';
-    logStep("Pricing determined", { planPricing, interval });
-
-    // Create checkout session
+    // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
-            currency: "brl",
-            product_data: { 
-              name: planPricing.name,
-              description: `Plano ${planType} - cobrança ${billingCycle}`
+            currency: planConfig.currency || 'brl',
+            product_data: {
+              name: planConfig.name,
             },
-            unit_amount: planPricing.amount,
-            recurring: { interval },
+            unit_amount: Math.round(planConfig.price * 100), // Converter para centavos
+            recurring: {
+              interval: billingCycle === 'anual' ? 'year' : 'month',
+            },
           },
           quantity: 1,
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/`,
+      success_url: `${req.headers.get("origin")}/admin/subscriptions?success=true`,
+      cancel_url: `${req.headers.get("origin")}/admin/subscriptions?canceled=true`,
       metadata: {
-        user_id: user.id,
-        plan_type: `${planType}_${billingCycle}`,
+        user_id: user_id,
+        plan_type: plan_type,
       },
     });
-
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in create-checkout", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error("Erro ao criar checkout:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

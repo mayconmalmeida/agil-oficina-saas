@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
+import StripeCheckoutButton from './StripeCheckoutButton';
 
 interface EditSubscriptionModalProps {
   subscription?: any;
@@ -57,7 +58,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         payment_method: subscription.payment_method || 'manual'
       });
     } else if (isCreating) {
-      // Reset form for new subscription
       setFormData({
         oficina_id: '',
         user_id: '',
@@ -97,7 +97,7 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     }
   }, [formData.oficina_id, oficinas]);
 
-  const handleSave = async () => {
+  const handleManualSave = async () => {
     try {
       setLoading(true);
 
@@ -120,12 +120,11 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
-      // Use the RPC function to create/update subscription
-      const { data, error } = await supabase.rpc('update_subscription_after_payment', {
+      // Use the RPC function for manual subscriptions
+      const { data, error } = await supabase.rpc('create_manual_subscription', {
         p_user_id: formData.user_id,
         p_plan_type: formData.plan_type,
-        p_stripe_customer_id: formData.payment_method === 'stripe' ? 'manual_stripe_id' : null,
-        p_stripe_subscription_id: formData.payment_method === 'stripe' ? 'manual_stripe_sub_id' : null
+        p_amount: formData.amount
       });
 
       if (error) {
@@ -149,16 +148,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const getPlanDisplayName = (planType: string) => {
-    const planMap: { [key: string]: string } = {
-      'essencial_mensal': 'Essencial Mensal',
-      'essencial_anual': 'Essencial Anual',
-      'premium_mensal': 'Premium Mensal',
-      'premium_anual': 'Premium Anual'
-    };
-    return planMap[planType] || planType;
   };
 
   if (oficinas.length === 0) {
@@ -245,24 +234,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="payment_method">Método de Pagamento</Label>
-            <Select
-              value={formData.payment_method}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="stripe">Stripe</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="boleto">Boleto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
             <Label>Data de Início</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -315,13 +286,25 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? 'Salvando...' : 'Salvar'}
-          </Button>
+        <DialogFooter className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button onClick={handleManualSave} disabled={loading}>
+              {loading ? 'Salvando...' : 'Salvar Manual'}
+            </Button>
+          </div>
+          
+          {formData.user_id && (
+            <div className="w-full">
+              <StripeCheckoutButton
+                userId={formData.user_id}
+                planType={formData.plan_type}
+                disabled={!formData.oficina_id}
+              />
+            </div>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

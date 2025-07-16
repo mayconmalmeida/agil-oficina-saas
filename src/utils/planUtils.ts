@@ -1,109 +1,59 @@
 
-import { PlanDetails } from '@/types/subscription';
-
-export const getPlanDetails = (planType: string): PlanDetails | null => {
-  const planMap: Record<string, PlanDetails> = {
+export const getPlanDetails = (planType: string) => {
+  const planMap: { [key: string]: any } = {
     'essencial_mensal': {
       name: 'Essencial Mensal',
       type: 'essencial',
       billing: 'mensal',
-      price: 'R$ 89,90/mês',
-      features: [
-        'Cadastro de clientes ilimitado',
-        'Gestão de orçamentos',
-        'Controle de serviços',
-        'Relatórios básicos',
-        'Suporte via e-mail'
-      ]
+      price: 'R$ 49,90',
+      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
     },
     'essencial_anual': {
       name: 'Essencial Anual',
       type: 'essencial',
       billing: 'anual',
-      price: 'R$ 899,00/ano',
-      features: [
-        'Cadastro de clientes ilimitado',
-        'Gestão de orçamentos',
-        'Controle de serviços',
-        'Relatórios básicos',
-        'Suporte via e-mail'
-      ]
+      price: 'R$ 499,00',
+      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
     },
     'premium_mensal': {
       name: 'Premium Mensal',
       type: 'premium',
       billing: 'mensal',
-      price: 'R$ 179,90/mês',
-      features: [
-        'Todos os recursos do plano Essencial',
-        'Módulo de estoque integrado',
-        'Agendamento de serviços',
-        'Relatórios avançados',
-        'Suporte prioritário',
-        'Backup automático'
-      ]
+      price: 'R$ 99,90',
+      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
     },
     'premium_anual': {
       name: 'Premium Anual',
       type: 'premium',
       billing: 'anual',
-      price: 'R$ 1.799,00/ano',
-      features: [
-        'Todos os recursos do plano Essencial',
-        'Módulo de estoque integrado',
-        'Agendamento de serviços',
-        'Relatórios avançados',
-        'Suporte prioritário',
-        'Backup automático'
-      ]
+      price: 'R$ 999,00',
+      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
     },
     'free_trial_essencial': {
-      name: 'Teste Grátis - Essencial',
+      name: 'Trial Essencial',
       type: 'essencial',
       billing: 'trial',
-      price: 'Grátis por 7 dias',
-      features: [
-        'Cadastro de clientes ilimitado',
-        'Gestão de orçamentos',
-        'Controle de serviços',
-        'Relatórios básicos',
-        'Suporte via e-mail'
-      ]
+      price: 'Grátis',
+      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
     },
     'free_trial_premium': {
-      name: 'Teste Grátis - Premium',
+      name: 'Trial Premium',
       type: 'premium',
       billing: 'trial',
-      price: 'Grátis por 7 dias',
-      features: [
-        'Todos os recursos do plano Essencial',
-        'Módulo de estoque integrado',
-        'Agendamento de serviços',
-        'Relatórios avançados',
-        'Suporte prioritário',
-        'Backup automático'
-      ]
+      price: 'Grátis',
+      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
     }
   };
 
   return planMap[planType] || null;
 };
 
-export const calculateDaysRemaining = (subscription: any): number => {
-  if (!subscription) return 0;
+export const calculateDaysRemaining = (endDate: string): number => {
+  if (!endDate) return 0;
   
   const now = new Date();
-  let endDate: Date | null = null;
-
-  if (subscription.status === 'trialing' && subscription.trial_ends_at) {
-    endDate = new Date(subscription.trial_ends_at);
-  } else if (subscription.status === 'active' && subscription.ends_at) {
-    endDate = new Date(subscription.ends_at);
-  }
-
-  if (!endDate) return 0;
-
-  const diffTime = endDate.getTime() - now.getTime();
+  const end = new Date(endDate);
+  const diffTime = end.getTime() - now.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   return Math.max(0, diffDays);
