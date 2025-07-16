@@ -1,35 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-
-interface Subscription {
-  id: string;
-  user_id: string;
-  plan_type: string;
-  status: string;
-  starts_at: string;
-  ends_at: string | null;
-  trial_ends_at: string | null;
-  oficina_nome?: string;
-}
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { ptBR } from 'date-fns/locale';
 
 interface EditSubscriptionModalProps {
-  subscription: Subscription | null;
+  subscription?: any;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  isCreating?: boolean;
-  oficinas?: Array<{ id: string; nome_oficina: string; user_id: string }>;
+  isCreating: boolean;
+  oficinas: any[];
 }
 
 const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
@@ -37,141 +28,156 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  isCreating = false,
-  oficinas = []
+  isCreating,
+  oficinas
 }) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    oficina_id: '',
     user_id: '',
     plan_type: 'essencial_mensal',
     status: 'active',
     starts_at: new Date(),
-    ends_at: new Date(),
-    trial_ends_at: null as Date | null
+    ends_at: null as Date | null,
+    amount: 0,
+    payment_method: 'manual'
   });
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     if (subscription && !isCreating) {
-      const parseDate = (dateString: string | null): Date => {
-        if (!dateString) return new Date();
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? new Date() : date;
-      };
-
-      const parseOptionalDate = (dateString: string | null): Date | null => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? null : date;
-      };
-
       setFormData({
-        user_id: subscription.user_id,
-        plan_type: subscription.plan_type,
-        status: subscription.status,
-        starts_at: parseDate(subscription.starts_at),
-        ends_at: parseDate(subscription.ends_at),
-        trial_ends_at: parseOptionalDate(subscription.trial_ends_at)
+        oficina_id: subscription.oficina_id || '',
+        user_id: subscription.user_id || '',
+        plan_type: subscription.plan || 'essencial_mensal',
+        status: subscription.status || 'active',
+        starts_at: subscription.started_at ? new Date(subscription.started_at) : new Date(),
+        ends_at: subscription.ends_at ? new Date(subscription.ends_at) : null,
+        amount: subscription.amount || 0,
+        payment_method: subscription.payment_method || 'manual'
       });
     } else if (isCreating) {
-      const nextMonth = new Date();
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      
+      // Reset form for new subscription
       setFormData({
+        oficina_id: '',
         user_id: '',
         plan_type: 'essencial_mensal',
         status: 'active',
         starts_at: new Date(),
-        ends_at: nextMonth,
-        trial_ends_at: null
+        ends_at: null,
+        amount: 0,
+        payment_method: 'manual'
       });
     }
   }, [subscription, isCreating]);
 
-  const handleSave = async () => {
-    if (!formData.user_id) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Selecione uma oficina"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const subscriptionData = {
-        user_id: formData.user_id,
-        plan_type: formData.plan_type,
-        status: formData.status,
-        starts_at: formData.starts_at.toISOString(),
-        ends_at: formData.ends_at.toISOString(),
-        trial_ends_at: formData.trial_ends_at?.toISOString() || null
-      };
-
-      if (isCreating) {
-        const { error } = await supabase
-          .from('user_subscriptions')
-          .insert(subscriptionData);
-
-        if (error) throw error;
-
-        const planTypeSimple = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
-        const isTrialing = formData.status === 'trialing';
-        
-        const oficinaUpdates: any = {
-          plano: planTypeSimple,
-          is_active: true
-        };
-
-        if (isTrialing && formData.trial_ends_at) {
-          oficinaUpdates.trial_ends_at = formData.trial_ends_at.toISOString();
-        } else if (formData.status === 'active') {
-          oficinaUpdates.trial_ends_at = null; // Limpar trial se for assinatura ativa
-        }
-
-        const { error: oficinaError } = await supabase
-          .from('oficinas')
-          .update(oficinaUpdates)
-          .eq('user_id', formData.user_id);
-
-        if (oficinaError) {
-          console.error('Erro ao atualizar oficina:', oficinaError);
-        }
-
-        toast({
-          title: "Sucesso",
-          description: "Assinatura criada e oficina atualizada com sucesso!"
-        });
+  // Auto-calculate end date based on plan type
+  useEffect(() => {
+    if (formData.starts_at) {
+      const startDate = new Date(formData.starts_at);
+      let endDate = new Date(startDate);
+      
+      if (formData.plan_type.includes('anual')) {
+        endDate.setFullYear(endDate.getFullYear() + 1);
       } else {
-        const { error } = await supabase
-          .from('user_subscriptions')
-          .update(subscriptionData)
-          .eq('id', subscription!.id);
+        endDate.setMonth(endDate.getMonth() + 1);
+      }
+      
+      setFormData(prev => ({ ...prev, ends_at: endDate }));
+    }
+  }, [formData.plan_type, formData.starts_at]);
 
-        if (error) throw error;
+  // Auto-set user_id when oficina is selected
+  useEffect(() => {
+    if (formData.oficina_id) {
+      const selectedOficina = oficinas.find(o => o.id === formData.oficina_id);
+      if (selectedOficina) {
+        setFormData(prev => ({ ...prev, user_id: selectedOficina.user_id }));
+      }
+    }
+  }, [formData.oficina_id, oficinas]);
 
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      // Validation
+      if (!formData.oficina_id) {
         toast({
-          title: "Sucesso",
-          description: "Assinatura atualizada com sucesso!"
+          variant: "destructive",
+          title: "Erro",
+          description: "Selecione uma oficina"
         });
+        return;
       }
 
+      if (!formData.user_id) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "User ID é obrigatório"
+        });
+        return;
+      }
+
+      // Use the RPC function to create/update subscription
+      const { data, error } = await supabase.rpc('update_subscription_after_payment', {
+        p_user_id: formData.user_id,
+        p_plan_type: formData.plan_type,
+        p_stripe_customer_id: formData.payment_method === 'stripe' ? 'manual_stripe_id' : null,
+        p_stripe_subscription_id: formData.payment_method === 'stripe' ? 'manual_stripe_sub_id' : null
+      });
+
+      if (error) {
+        console.error('Erro ao salvar assinatura:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: isCreating ? "Assinatura criada com sucesso!" : "Assinatura atualizada com sucesso!"
+      });
+
       onSuccess();
-      onClose();
     } catch (error: any) {
       console.error('Erro ao salvar assinatura:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message || "Erro ao salvar assinatura"
+        description: error.message || "Não foi possível salvar a assinatura"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const hasOficinas = oficinas && oficinas.length > 0;
+  const getPlanDisplayName = (planType: string) => {
+    const planMap: { [key: string]: string } = {
+      'essencial_mensal': 'Essencial Mensal',
+      'essencial_anual': 'Essencial Anual',
+      'premium_mensal': 'Premium Mensal',
+      'premium_anual': 'Premium Anual'
+    };
+    return planMap[planType] || planType;
+  };
+
+  if (oficinas.length === 0) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nenhuma oficina encontrada</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Nenhuma oficina cadastrada. Cadastre uma oficina antes de atribuir uma assinatura.</p>
+          </div>
+          <DialogFooter>
+            <Button onClick={onClose}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -184,36 +190,26 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
         <div className="space-y-4">
           <div>
-            <Label>Oficina *</Label>
-            {!hasOficinas ? (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm">
-                  Nenhuma oficina cadastrada. Cadastre uma oficina antes de atribuir uma assinatura.
-                </span>
-              </div>
-            ) : (
-              <Select
-                value={formData.user_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, user_id: value }))}
-                disabled={!isCreating}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma oficina" />
-                </SelectTrigger>
-                <SelectContent>
-                  {oficinas.map((oficina) => (
-                    <SelectItem key={oficina.user_id} value={oficina.user_id}>
-                      {oficina.nome_oficina || 'Nome não definido'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <Label htmlFor="oficina">Oficina *</Label>
+            <Select
+              value={formData.oficina_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, oficina_id: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma oficina" />
+              </SelectTrigger>
+              <SelectContent>
+                {oficinas.map((oficina) => (
+                  <SelectItem key={oficina.id} value={oficina.id}>
+                    {oficina.nome_oficina}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <Label>Tipo de Plano</Label>
+            <Label htmlFor="plan_type">Plano</Label>
             <Select
               value={formData.plan_type}
               onValueChange={(value) => setFormData(prev => ({ ...prev, plan_type: value }))}
@@ -231,33 +227,37 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           </div>
 
           <div>
-            <Label>Status</Label>
+            <Label htmlFor="status">Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => {
-                setFormData(prev => {
-                  const newData = { ...prev, status: value };
-                  
-                  if (value === 'trialing') {
-                    const trialEnd = new Date();
-                    trialEnd.setDate(trialEnd.getDate() + 7);
-                    newData.trial_ends_at = trialEnd;
-                  } else if (value === 'active') {
-                    newData.trial_ends_at = null;
-                  }
-                  
-                  return newData;
-                });
-              }}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="trialing">Em teste</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
-                <SelectItem value="expired">Expirado</SelectItem>
+                <SelectItem value="active">Ativa</SelectItem>
+                <SelectItem value="trialing">Trial</SelectItem>
+                <SelectItem value="cancelled">Cancelada</SelectItem>
+                <SelectItem value="expired">Expirada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="payment_method">Método de Pagamento</Label>
+            <Select
+              value={formData.payment_method}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, payment_method: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="stripe">Stripe</SelectItem>
+                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="boleto">Boleto</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -266,89 +266,63 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
             <Label>Data de Início</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.starts_at && "text-muted-foreground"
+                  )}
+                >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.starts_at && !isNaN(formData.starts_at.getTime()) 
-                    ? format(formData.starts_at, "dd/MM/yyyy", { locale: ptBR })
-                    : "Selecione uma data"
-                  }
+                  {formData.starts_at ? (
+                    format(formData.starts_at, "dd/MM/yyyy", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.starts_at && !isNaN(formData.starts_at.getTime()) ? formData.starts_at : undefined}
-                  onSelect={(date) => date && setFormData(prev => ({ ...prev, starts_at: date }))}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
+                  selected={formData.starts_at}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, starts_at: date || new Date() }))}
+                  initialFocus
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          <div>
-            <Label>Data de Expiração</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.ends_at && !isNaN(formData.ends_at.getTime()) 
-                    ? format(formData.ends_at, "dd/MM/yyyy", { locale: ptBR })
-                    : "Selecione uma data"
-                  }
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.ends_at && !isNaN(formData.ends_at.getTime()) ? formData.ends_at : undefined}
-                  onSelect={(date) => date && setFormData(prev => ({ ...prev, ends_at: date }))}
-                  locale={ptBR}
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {formData.status === 'trialing' && (
+          {formData.ends_at && (
             <div>
-              <Label>Data de Fim do Teste</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) 
-                      ? format(formData.trial_ends_at, "dd/MM/yyyy", { locale: ptBR })
-                      : "Selecione uma data"
-                    }
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.trial_ends_at && !isNaN(formData.trial_ends_at.getTime()) ? formData.trial_ends_at : undefined}
-                    onSelect={(date) => setFormData(prev => ({ ...prev, trial_ends_at: date }))}
-                    locale={ptBR}
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label>Data de Término (Calculada Automaticamente)</Label>
+              <Input
+                value={format(formData.ends_at, "dd/MM/yyyy", { locale: ptBR })}
+                disabled
+                className="bg-gray-100"
+              />
             </div>
           )}
+
+          <div>
+            <Label htmlFor="amount">Valor (R$)</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              value={formData.amount}
+              onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+            />
+          </div>
         </div>
 
-        <div className="flex gap-2 pt-4">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={loading || !hasOficinas || !formData.user_id} 
-            className="flex-1"
-          >
+          <Button onClick={handleSave} disabled={loading}>
             {loading ? 'Salvando...' : 'Salvar'}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

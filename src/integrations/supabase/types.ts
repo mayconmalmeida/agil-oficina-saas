@@ -773,9 +773,12 @@ export type Database = {
           created_at: string
           ends_at: string | null
           id: string
+          is_manual: boolean | null
           plan_type: string
           starts_at: string
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           trial_ends_at: string | null
           updated_at: string
           user_id: string
@@ -784,9 +787,12 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           id?: string
+          is_manual?: boolean | null
           plan_type: string
           starts_at?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
@@ -795,9 +801,12 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           id?: string
+          is_manual?: boolean | null
           plan_type?: string
           starts_at?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
@@ -979,7 +988,14 @@ export type Database = {
         Returns: undefined
       }
       update_subscription_after_payment: {
-        Args: { p_user_id: string; p_plan_type: string }
+        Args:
+          | { p_user_id: string; p_plan_type: string }
+          | {
+              p_user_id: string
+              p_plan_type: string
+              p_stripe_customer_id?: string
+              p_stripe_subscription_id?: string
+            }
         Returns: Json
       }
       update_user_plan: {

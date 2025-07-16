@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +15,7 @@ export const useSubscriptionsData = () => {
       setIsLoading(true);
       setError(null);
 
-      // Buscar todas as assinaturas
+      // Buscar todas as assinaturas da nova tabela user_subscriptions
       const { data: subscriptionsData, error: subscriptionsError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -43,12 +44,15 @@ export const useSubscriptionsData = () => {
             }
             profile = profileData || {};
 
-            // Buscar preço do plano se disponível
+            // Buscar preço do plano da tabela plan_configurations
+            const planType = subscription.plan_type.replace('_anual', '').replace('_mensal', '');
+            const billingCycle = subscription.plan_type.includes('_anual') ? 'anual' : 'mensal';
+            
             const { data: planDatum, error: planError } = await supabase
               .from('plan_configurations')
               .select('price')
-              .eq('plan_type', subscription.plan_type.replace('_anual', '').replace('_mensal', ''))
-              .eq('billing_cycle', subscription.plan_type.includes('_anual') ? 'anual' : 'mensal')
+              .eq('plan_type', planType)
+              .eq('billing_cycle', billingCycle)
               .maybeSingle();
 
             if (planError) {
@@ -68,8 +72,8 @@ export const useSubscriptionsData = () => {
             created_at: subscription.created_at,
             ends_at: subscription.ends_at,
             expires_at: subscription.trial_ends_at || subscription.ends_at,
-            payment_method: 'Cartão de Crédito', // Assumindo cartão como padrão
-            amount: planData?.price || 0,
+            payment_method: subscription.is_manual ? 'Manual' : 'Stripe',
+            amount: (planData?.price || 0) * 100, // Converter para centavos para manter compatibilidade
             email: profile?.email || 'Email não encontrado',
             nome_oficina: profile?.nome_oficina || 'Nome não encontrado',
           };
