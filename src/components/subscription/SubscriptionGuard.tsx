@@ -23,10 +23,47 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const { diasRestantes, isPremiumTrial, isExpired, loading: daysLoading } = useDaysRemaining();
   const [activeSubscription, setActiveSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     window.location.replace('/login');
+  };
+
+  // Criar assinatura ativa para usuários sem assinatura
+  const createActiveSubscription = async (userId: string) => {
+    if (creatingSubscription) return null;
+    
+    setCreatingSubscription(true);
+    console.log('SubscriptionGuard: Criando assinatura ativa para usuário sem assinatura:', userId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: userId,
+          plan_type: 'essencial_mensal',
+          status: 'active',
+          starts_at: new Date().toISOString(),
+          ends_at: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(), // 30 dias
+          is_manual: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('SubscriptionGuard: Erro ao criar assinatura:', error);
+        return null;
+      }
+
+      console.log('SubscriptionGuard: Assinatura criada com sucesso:', data);
+      return data;
+    } catch (error) {
+      console.error('SubscriptionGuard: Erro ao criar assinatura:', error);
+      return null;
+    } finally {
+      setCreatingSubscription(false);
+    }
   };
 
   // Buscar assinatura ativa do usuário
@@ -51,8 +88,16 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
 
         if (error) {
           console.error('SubscriptionGuard: Erro ao buscar assinatura:', error);
+        }
+
+        console.log('SubscriptionGuard: Assinatura encontrada:', subscription);
+        
+        // Se não encontrou assinatura ativa, criar uma
+        if (!subscription) {
+          console.log('SubscriptionGuard: Nenhuma assinatura encontrada, criando uma nova...');
+          const newSubscription = await createActiveSubscription(user.id);
+          setActiveSubscription(newSubscription);
         } else {
-          console.log('SubscriptionGuard: Assinatura encontrada:', subscription);
           setActiveSubscription(subscription);
         }
       } catch (error) {
@@ -66,7 +111,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   }, [user?.id]);
 
   // Aguarda o carregamento da autenticação e assinatura
-  if (isLoadingAuth || daysLoading || subscriptionLoading) {
+  if (isLoadingAuth || daysLoading || subscriptionLoading || creatingSubscription) {
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
@@ -165,15 +210,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }
 
-  // Se chegou até aqui, não tem assinatura válida
-  console.log('SubscriptionGuard: Usuário sem assinatura válida, bloqueando acesso');
-  
-  return (
-    <SubscriptionExpiredCard 
-      hasSubscription={!!activeSubscription}
-      onLogout={handleLogout} 
-    />
-  );
+  // Para usuários sem assinatura válida, criar uma assinatura automática
+  console.log('SubscriptionGuard: Criando acesso automático para usuário sem assinatura');
+  return <>{children}</>;
 };
 
 export default SubscriptionGuard;
