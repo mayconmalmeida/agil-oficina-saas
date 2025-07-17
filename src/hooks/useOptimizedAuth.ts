@@ -47,7 +47,11 @@ export const useOptimizedAuth = (): AuthContextValue => {
     nome_oficina: user.nome_oficina,
     telefone: user.telefone,
     is_active: user.is_active,
-    subscription: user.subscription,
+    // Fix subscription type compatibility
+    subscription: user.subscription ? {
+      ...user.subscription,
+      plan_type: user.subscription.plan_type as 'essencial_mensal' | 'essencial_anual' | 'premium_mensal' | 'premium_anual' | 'free_trial_essencial' | 'free_trial_premium'
+    } : undefined,
     trial_ends_at: user.trial_ends_at,
     plano: user.plano,
     trial_started_at: user.trial_started_at

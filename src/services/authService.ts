@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -11,6 +10,7 @@ export interface UserProfile {
   telefone?: string;
   plano?: string;
   trial_started_at?: string;
+  trial_ends_at?: string;
   subscription?: {
     id: string;
     user_id: string;
@@ -86,6 +86,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       telefone: profile.telefone,
       plano: profile.plano,
       trial_started_at: profile.trial_started_at,
+      trial_ends_at: profile.trial_ends_at,
       subscription: subscription || undefined
     };
 
