@@ -95,3 +95,58 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     throw error;
   }
 };
+
+export const signOutUser = async (): Promise<void> => {
+  console.log('signOutUser: Iniciando logout');
+  
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('signOutUser: Erro no logout:', error);
+      throw error;
+    }
+    console.log('signOutUser: Logout realizado com sucesso');
+  } catch (error) {
+    console.error('signOutUser: Erro geral:', error);
+    throw error;
+  }
+};
+
+export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
+  console.log('calculateCanAccessFeatures: Calculando acesso:', {
+    subscription: !!subscription,
+    role,
+    subscriptionStatus: subscription?.status
+  });
+
+  // Admins sempre têm acesso
+  if (role === 'admin' || role === 'superadmin') {
+    return true;
+  }
+
+  // Se não há assinatura, acesso limitado
+  if (!subscription) {
+    return false;
+  }
+
+  // Verificar se a assinatura está ativa ou em trial
+  const hasActiveSubscription = subscription.status === 'active' || subscription.status === 'trialing';
+  
+  // Verificar se o trial não expirou (se aplicável)
+  if (subscription.status === 'trialing' && subscription.trial_ends_at) {
+    const trialEndDate = new Date(subscription.trial_ends_at);
+    const now = new Date();
+    const trialActive = now <= trialEndDate;
+    
+    console.log('calculateCanAccessFeatures: Verificação de trial:', {
+      trialEndDate: trialEndDate.toISOString(),
+      now: now.toISOString(),
+      trialActive
+    });
+    
+    return trialActive;
+  }
+
+  console.log('calculateCanAccessFeatures: Resultado:', hasActiveSubscription);
+  return hasActiveSubscription;
+};
