@@ -1,17 +1,16 @@
-
 export interface UserSubscription {
   id: string;
   user_id: string;
   plan_type: 'essencial_mensal' | 'essencial_anual' | 'premium_mensal' | 'premium_anual' | 'free_trial_essencial' | 'free_trial_premium';
   status: 'active' | 'trialing' | 'cancelled' | 'expired';
   starts_at: string;
-  ends_at: string | null;
-  trial_ends_at: string | null;
-  is_manual: boolean | null;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  created_at: string;
-  updated_at: string;
+  ends_at?: string | null;
+  trial_ends_at?: string | null;
+  is_manual?: boolean | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SubscriptionRPCResponse {

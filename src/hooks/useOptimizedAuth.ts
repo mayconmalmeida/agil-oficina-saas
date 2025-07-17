@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useAuthState } from './useAuthState';
 import { signOutUser, validatePlanAccess } from '@/services/authService';
 import { AuthContextValue } from '@/types/auth';
+import { UserSubscription } from '@/types/subscription';
 
 export const useOptimizedAuth = (): AuthContextValue => {
   const { user, session, loading, isLoadingAuth, role } = useAuthState();
@@ -47,12 +48,21 @@ export const useOptimizedAuth = (): AuthContextValue => {
     nome_oficina: user.nome_oficina,
     telefone: user.telefone,
     is_active: user.is_active,
-    // Fix subscription type compatibility - cast both plan_type and status
+    // Fix subscription type compatibility - ensure all required fields are present
     subscription: user.subscription ? {
-      ...user.subscription,
+      id: user.subscription.id,
+      user_id: user.subscription.user_id,
       plan_type: user.subscription.plan_type as 'essencial_mensal' | 'essencial_anual' | 'premium_mensal' | 'premium_anual' | 'free_trial_essencial' | 'free_trial_premium',
-      status: user.subscription.status as 'active' | 'trialing' | 'cancelled' | 'expired'
-    } : undefined,
+      status: user.subscription.status as 'active' | 'trialing' | 'cancelled' | 'expired',
+      starts_at: user.subscription.starts_at,
+      ends_at: user.subscription.ends_at || null,
+      trial_ends_at: user.subscription.trial_ends_at || null,
+      is_manual: user.subscription.is_manual || null,
+      stripe_customer_id: user.subscription.stripe_customer_id || null,
+      stripe_subscription_id: user.subscription.stripe_subscription_id || null,
+      created_at: user.subscription.created_at,
+      updated_at: user.subscription.updated_at
+    } as UserSubscription : undefined,
     trial_ends_at: user.trial_ends_at,
     plano: user.plano,
     trial_started_at: user.trial_started_at
