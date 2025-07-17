@@ -20,10 +20,10 @@ export const usePermissions = () => {
       return true;
     }
     
-    // Se o plano não está ativo, nenhuma permissão
+    // Se o plano não está ativo, só permite recursos básicos
     if (!planActive) {
-      console.log('usePermissions: Plano inativo, negando acesso');
-      return false;
+      console.log('usePermissions: Plano inativo, verificando recursos básicos');
+      return ['clientes', 'orcamentos'].includes(feature);
     }
 
     // Verificar se tem a permissão específica
@@ -52,7 +52,7 @@ export const usePermissions = () => {
 
   const getAvailableFeatures = () => {
     if (!planActive) {
-      return [];
+      return ['clientes', 'orcamentos']; // Recursos básicos
     }
     return permissions;
   };

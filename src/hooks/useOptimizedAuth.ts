@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useAuthState } from './useAuthState';
-import { signOutUser, validatePlanAccess } from '@/services/authService';
+import { signOutUser, validatePlanAccessFromProfile } from '@/services/authService';
 import { AuthContextValue } from '@/types/auth';
 import { UserSubscription } from '@/types/subscription';
 
@@ -17,7 +17,8 @@ export const useOptimizedAuth = (): AuthContextValue => {
     userEmail: user?.email || 'não logado',
     subscription: !!user?.subscription,
     subscriptionStatus: user?.subscription?.status,
-    subscriptionPlanType: user?.subscription?.plan_type
+    subscriptionPlanType: user?.subscription?.plan_type,
+    oficinaId: user?.oficina_id
   });
 
   const signOut = useCallback(async () => {
@@ -28,8 +29,8 @@ export const useOptimizedAuth = (): AuthContextValue => {
     }
   }, []);
 
-  // ✅ Validar acesso e permissões do plano usando a nova lógica corrigida
-  const planValidation = user ? validatePlanAccess(user.subscription, user.role || 'user') : {
+  // ✅ Validar acesso e permissões do plano usando a nova lógica centralizada
+  const planValidation = user ? validatePlanAccessFromProfile(user.subscription, user.role || 'user') : {
     isActive: false,
     plan: 'Free' as const,
     permissions: []
@@ -60,7 +61,8 @@ export const useOptimizedAuth = (): AuthContextValue => {
     nome_oficina: user.nome_oficina,
     telefone: user.telefone,
     is_active: user.is_active,
-    // Fix subscription type compatibility - ensure all required fields are present
+    oficina_id: user.oficina_id,
+    // Fix subscription type compatibility
     subscription: user.subscription ? {
       id: user.subscription.id,
       user_id: user.subscription.user_id,
@@ -88,7 +90,8 @@ export const useOptimizedAuth = (): AuthContextValue => {
     planActive: authUser?.planActive,
     canAccessFeatures: authUser?.canAccessFeatures,
     permissionsCount: authUser?.permissions?.length || 0,
-    permissions: authUser?.permissions || []
+    permissions: authUser?.permissions || [],
+    oficinaId: authUser?.oficina_id
   });
 
   return {

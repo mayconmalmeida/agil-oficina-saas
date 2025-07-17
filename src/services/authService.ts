@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
+import { validatePlanAccess, PlanType } from './planValidation';
 
 export interface UserProfile {
   id: string;
@@ -26,6 +27,7 @@ export interface UserProfile {
     created_at?: string;
     updated_at?: string;
   };
+  oficina_id?: string;
 }
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
@@ -50,34 +52,52 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 
     console.log('fetchUserProfile: Profile encontrado:', profile);
 
-    // Buscar assinatura ativa do usuário
-    const { data: subscriptionData, error: subscriptionError } = await supabase
-      .from('user_subscriptions')
-      .select(`
-        id,
-        user_id,
-        plan_type,
-        status,
-        starts_at,
-        ends_at,
-        trial_ends_at,
-        is_manual,
-        stripe_customer_id,
-        stripe_subscription_id,
-        created_at,
-        updated_at
-      `)
+    // ✅ Buscar oficina vinculada ao usuário
+    const { data: oficina, error: oficinaError } = await supabase
+      .from('oficinas')
+      .select('id')
       .eq('user_id', userId)
-      .in('status', ['active', 'trialing'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .single();
 
-    if (subscriptionError) {
-      console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
+    if (oficinaError) {
+      console.error('fetchUserProfile: Erro ao buscar oficina:', oficinaError);
     }
 
-    console.log('fetchUserProfile: Subscription encontrada:', subscriptionData);
+    let subscriptionData = null;
+    
+    if (oficina) {
+      console.log('fetchUserProfile: Oficina encontrada:', oficina.id);
+      
+      // ✅ Buscar assinatura mais recente da oficina
+      const { data: subscription, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          id,
+          user_id,
+          plan_type,
+          status,
+          starts_at,
+          ends_at,
+          trial_ends_at,
+          is_manual,
+          stripe_customer_id,
+          stripe_subscription_id,
+          created_at,
+          updated_at
+        `)
+        .eq('user_id', userId)
+        .in('status', ['active', 'trialing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
+      } else {
+        subscriptionData = subscription;
+        console.log('fetchUserProfile: Subscription encontrada:', subscriptionData);
+      }
+    }
 
     const userProfile: UserProfile = {
       id: profile.id,
@@ -89,7 +109,8 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       plano: profile.plano,
       trial_started_at: profile.trial_started_at,
       trial_ends_at: profile.trial_ends_at,
-      subscription: subscriptionData || undefined
+      subscription: subscriptionData || undefined,
+      oficina_id: oficina?.id
     };
 
     console.log('fetchUserProfile: Perfil completo retornado:', userProfile);
@@ -117,42 +138,22 @@ export const signOutUser = async (): Promise<void> => {
   }
 };
 
-// ✅ Corrigindo a lógica de validação conforme solicitado
-type PlanType = 'Free' | 'Essencial' | 'Premium';
-
-// Permissões por plano
-const planPermissions: Record<PlanType, string[]> = {
-  Free: ['clientes', 'orcamentos'], // Básico após trial expirar
-  Essencial: [
-    'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
-    'relatorios_basicos', 'configuracoes', 'suporte_email'
-  ],
-  Premium: [
-    'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
-    'relatorios_basicos', 'relatorios_avancados', 'agendamentos',
-    'marketing', 'estoque', 'backup', 'diagnostico_ia', 'suporte_prioritario',
-    'integracao_contabil', 'configuracoes'
-  ]
-};
-
-export const validatePlanAccess = (subscription: any, role: string): {
+// ✅ Nova função usando validatePlanAccess centralizada
+export const validatePlanAccessFromProfile = (subscription: any, role: string): {
   isActive: boolean;
   plan: PlanType;
   permissions: string[];
 } => {
-  console.log('validatePlanAccess: Validando acesso ao plano:', {
+  console.log('validatePlanAccessFromProfile: Validando acesso ao plano:', {
     subscription: !!subscription,
     role,
     subscriptionStatus: subscription?.status,
-    planType: subscription?.plan_type,
-    isManual: subscription?.is_manual,
-    endsAt: subscription?.ends_at,
-    trialEndsAt: subscription?.trial_ends_at
+    planType: subscription?.plan_type
   });
 
   // Admin sempre tem acesso total
   if (role === 'admin' || role === 'superadmin') {
-    console.log('validatePlanAccess: Admin detectado, retornando acesso total');
+    console.log('validatePlanAccessFromProfile: Admin detectado, retornando acesso total');
     return {
       isActive: true,
       plan: 'Premium',
@@ -160,76 +161,12 @@ export const validatePlanAccess = (subscription: any, role: string): {
     };
   }
 
-  const now = new Date();
-  let plan: PlanType = 'Free';
-  let isActive = false;
-
-  // Caso não exista assinatura → Free
-  if (!subscription) {
-    console.log('validatePlanAccess: Nenhuma assinatura encontrada → Free');
-    return { 
-      isActive: false, 
-      plan: 'Free', 
-      permissions: planPermissions.Free
-    };
-  }
-
-  const { status, trial_ends_at, ends_at, plan_type } = subscription;
-
-  console.log('validatePlanAccess: Verificando status da assinatura:', {
-    status,
-    ends_at,
-    trial_ends_at,
-    plan_type,
-    now: now.toISOString()
-  });
-
-  // ✅ REGRA 1: Trial sempre Premium
-  if (status === 'trialing' && trial_ends_at && new Date(trial_ends_at) > now) {
-    isActive = true;
-    plan = 'Premium';
-    console.log('validatePlanAccess: Trial ativo detectado → Premium completo');
-  }
-  
-  // ✅ REGRA 2: Assinatura ativa - verificar tipo do plano
-  else if (status === 'active' && (!ends_at || new Date(ends_at) > now)) {
-    isActive = true;
-    
-    const planTypeLower = plan_type?.toLowerCase() || '';
-    if (planTypeLower.includes('premium')) {
-      plan = 'Premium';
-      console.log('validatePlanAccess: Plano Premium ativo detectado');
-    } else if (planTypeLower.includes('essencial')) {
-      plan = 'Essencial';
-      console.log('validatePlanAccess: Plano Essencial ativo detectado');
-    } else {
-      // Fallback para assinaturas ativas sem tipo específico
-      plan = 'Premium';
-      console.log('validatePlanAccess: Assinatura ativa sem tipo específico, assumindo Premium');
-    }
-  } else {
-    console.log('validatePlanAccess: Assinatura expirada ou inválida');
-  }
-
-  const permissions = isActive ? planPermissions[plan] : planPermissions.Free;
-
-  console.log('validatePlanAccess: Resultado da validação:', {
-    isActive,
-    plan,
-    permissions: permissions.length,
-    permissionsList: permissions,
-    hasIADiagnostico: permissions.includes('diagnostico_ia')
-  });
-
-  return {
-    isActive,
-    plan,
-    permissions
-  };
+  // Usar a função centralizada
+  return validatePlanAccess(subscription);
 };
 
 export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
-  const { isActive } = validatePlanAccess(subscription, role);
+  const { isActive } = validatePlanAccessFromProfile(subscription, role);
   console.log('calculateCanAccessFeatures: Calculando acesso:', {
     subscription: !!subscription,
     role,

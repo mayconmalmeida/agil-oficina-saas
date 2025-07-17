@@ -48,7 +48,7 @@ const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan,
   let expiryDate = null;
   let displayPlan = plan;
 
-  // ✅ Corrigir lógica de exibição do plano
+  // ✅ Lógica corrigida de exibição do plano
   if (isTrialing && subscriptionData.trial_ends_at) {
     expiryDate = new Date(subscriptionData.trial_ends_at);
     const isExpired = expiryDate <= now;
