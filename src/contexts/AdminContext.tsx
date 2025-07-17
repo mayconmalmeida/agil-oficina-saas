@@ -62,6 +62,8 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     const initializeAdmin = async () => {
       try {
         console.log('AdminContext: Inicializando verificação de admin...');
+        setIsLoading(true);
+        setError(null);
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
@@ -74,6 +76,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           console.log('AdminContext: Nenhum usuário autenticado');
           if (mounted) {
             setUser(null);
+            setError(null);
             setIsLoading(false);
           }
           return;
@@ -94,7 +97,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         }
 
         if (!profile) {
-          console.log('AdminContext: Perfil não encontrado');
+          console.log('AdminContext: Perfil não encontrado para usuário:', session.user.id);
           throw new Error('Perfil não encontrado');
         }
 
@@ -114,7 +117,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
             canAccessFeatures: true
           };
 
-          console.log('AdminContext: Admin autenticado com sucesso:', adminUser);
+          console.log('AdminContext: Admin autenticado com sucesso:', adminUser.email, 'role:', adminUser.role);
           setUser(adminUser);
           setError(null);
         }
@@ -132,6 +135,18 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
     };
 
+    // Timeout de segurança mais agressivo para admin
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.log('AdminContext: Timeout de segurança atingido');
+        setIsLoading(false);
+        setError('Timeout ao verificar permissões administrativas');
+      }
+    }, 3000); // 3 segundos para admin
+
+    // Inicializar verificação imediatamente
+    initializeAdmin();
+
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -147,7 +162,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         }
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Use setTimeout para evitar loop infinito
+          // Pequeno delay para evitar conflitos
           setTimeout(() => {
             if (mounted) {
               initializeAdmin();
@@ -157,11 +172,9 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
     );
 
-    // Inicializar verificação
-    initializeAdmin();
-
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, [navigate, toast]);
