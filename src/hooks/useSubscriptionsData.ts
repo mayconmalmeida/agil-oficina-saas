@@ -32,29 +32,50 @@ export const useSubscriptionsData = () => {
           let planPrice = 0;
 
           try {
-            // Buscar perfil do usuário
+            // Primeiro, buscar perfil do usuário na tabela profiles
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('email, nome_oficina')
+              .select('email, nome_oficina, id')
               .eq('id', subscription.user_id)
               .maybeSingle();
 
-            if (profileError) {
-              console.error('[DEBUG] Erro ao buscar perfil:', profileError);
-            } else if (profileData) {
-              profile = profileData;
-            }
+            console.log('[DEBUG] Profile data for user', subscription.user_id, ':', profileData);
 
-            // Se não encontrou nome_oficina no profiles, buscar na tabela oficinas
-            if (!profile.nome_oficina) {
+            if (!profileError && profileData) {
+              profile = {
+                email: profileData.email || 'Email não encontrado',
+                nome_oficina: profileData.nome_oficina || 'Nome não definido'
+              };
+            } else {
+              // Se não encontrou no profiles, tentar na tabela oficinas
               const { data: oficinaData, error: oficinaError } = await supabase
                 .from('oficinas')
-                .select('nome_oficina')
+                .select('email, nome_oficina, user_id')
                 .eq('user_id', subscription.user_id)
                 .maybeSingle();
 
               if (!oficinaError && oficinaData) {
-                profile.nome_oficina = oficinaData.nome_oficina;
+                profile = {
+                  email: oficinaData.email || 'Email não encontrado',
+                  nome_oficina: oficinaData.nome_oficina || 'Nome não definido'
+                };
+              } else {
+                // Último recurso: buscar na tabela auth.users através de uma função RPC
+                try {
+                  const { data: userData } = await supabase.auth.admin.getUserById(subscription.user_id);
+                  if (userData.user) {
+                    profile = {
+                      email: userData.user.email || 'Email não encontrado',
+                      nome_oficina: userData.user.user_metadata?.nome_oficina || 'Nome não definido'
+                    };
+                  }
+                } catch (authError) {
+                  console.error('[DEBUG] Erro ao buscar dados do auth:', authError);
+                  profile = {
+                    email: 'Email não encontrado',
+                    nome_oficina: 'Nome não definido'
+                  };
+                }
               }
             }
 
@@ -85,6 +106,10 @@ export const useSubscriptionsData = () => {
 
           } catch (err: any) {
             console.error('[DEBUG] Erro ao buscar dados adicionais:', err);
+            profile = {
+              email: 'Erro ao carregar email',
+              nome_oficina: 'Erro ao carregar nome'
+            };
           }
 
           return {
@@ -98,8 +123,8 @@ export const useSubscriptionsData = () => {
             expires_at: subscription.trial_ends_at || subscription.ends_at,
             payment_method: subscription.is_manual ? 'Manual' : 'Stripe',
             amount: planPrice * 100, // Converter para centavos para manter compatibilidade
-            email: profile?.email || 'Email não encontrado',
-            nome_oficina: profile?.nome_oficina || 'Nome não encontrado',
+            email: profile.email,
+            nome_oficina: profile.nome_oficina,
           };
         })
       );

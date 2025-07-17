@@ -216,6 +216,19 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         description: isCreating ? "Assinatura criada com sucesso!" : "Assinatura atualizada com sucesso!"
       });
 
+      // Forçar atualização da sessão do usuário se necessário
+      if (formData.user_id) {
+        try {
+          // Tentar forçar refresh dos dados do usuário
+          const { data: userData } = await supabase.auth.admin.getUserById(formData.user_id);
+          if (userData.user) {
+            console.log('Assinatura salva para usuário:', userData.user.email);
+          }
+        } catch (error) {
+          console.log('Não foi possível atualizar dados do usuário:', error);
+        }
+      }
+
       onSuccess();
     } catch (error: any) {
       console.error('Erro ao salvar assinatura:', error);

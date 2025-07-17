@@ -127,6 +127,34 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }
 
+  // VERIFICAÇÃO FORÇADA DE ASSINATURA ATIVA NO BANCO
+  // Buscar diretamente no banco para garantir que não é cache
+  React.useEffect(() => {
+    const recheckSubscription = async () => {
+      if (!authUser?.id) return;
+      
+      try {
+        const { data: freshSubscription } = await import('@/lib/supabase').then(mod => 
+          mod.supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', authUser.id)
+            .eq('status', 'active')
+            .maybeSingle()
+        );
+        
+        if (freshSubscription) {
+          console.log('SubscriptionGuard: Assinatura ativa encontrada no recheck, recarregando página');
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error('SubscriptionGuard: Erro no recheck:', error);
+      }
+    };
+    
+    recheckSubscription();
+  }, [authUser?.id]);
+
   // Se chegou até aqui, não tem assinatura válida
   console.log('SubscriptionGuard: Usuário sem assinatura válida, bloqueando acesso');
   return (
