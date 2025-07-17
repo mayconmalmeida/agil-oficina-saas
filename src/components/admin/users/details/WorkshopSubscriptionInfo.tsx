@@ -9,6 +9,72 @@ interface WorkshopSubscriptionInfoProps {
 }
 
 const WorkshopSubscriptionInfo = ({ workshop }: WorkshopSubscriptionInfoProps) => {
+  // Função para determinar o status da assinatura
+  const getSubscriptionStatus = () => {
+    if (!workshop.subscription) {
+      return { text: 'Sem assinatura', color: 'text-gray-600' };
+    }
+
+    const now = new Date();
+    const subscription = workshop.subscription;
+
+    if (subscription.status === 'active') {
+      if (subscription.ends_at) {
+        const endsAt = new Date(subscription.ends_at);
+        if (endsAt > now) {
+          return { text: 'Ativo', color: 'text-green-600' };
+        } else {
+          return { text: 'Expirado', color: 'text-red-600' };
+        }
+      } else {
+        return { text: 'Ativo (Indefinido)', color: 'text-green-600' };
+      }
+    } else if (subscription.status === 'trialing') {
+      if (subscription.trial_ends_at) {
+        const trialEndsAt = new Date(subscription.trial_ends_at);
+        if (trialEndsAt > now) {
+          return { text: 'Em Teste', color: 'text-blue-600' };
+        } else {
+          return { text: 'Teste Expirado', color: 'text-red-600' };
+        }
+      }
+    }
+
+    return { text: 'Inativo', color: 'text-red-600' };
+  };
+
+  // Função para obter a data de vencimento correta
+  const getExpirationDate = () => {
+    if (!workshop.subscription) return null;
+
+    const subscription = workshop.subscription;
+    
+    if (subscription.status === 'trialing' && subscription.trial_ends_at) {
+      return subscription.trial_ends_at;
+    } else if (subscription.status === 'active' && subscription.ends_at) {
+      return subscription.ends_at;
+    }
+    
+    return null;
+  };
+
+  // Função para obter o nome do plano
+  const getPlanName = () => {
+    if (!workshop.subscription) return 'Nenhum';
+    
+    const planType = workshop.subscription.plan_type;
+    if (planType.includes('premium')) {
+      return 'Premium';
+    } else if (planType.includes('essencial')) {
+      return 'Essencial';
+    }
+    
+    return 'Desconhecido';
+  };
+
+  const subscriptionStatus = getSubscriptionStatus();
+  const expirationDate = getExpirationDate();
+
   return (
     <div className="space-y-2">
       <h3 className="font-medium">Status da assinatura</h3>
@@ -16,14 +82,14 @@ const WorkshopSubscriptionInfo = ({ workshop }: WorkshopSubscriptionInfoProps) =
         <div>
           <div className="text-sm text-gray-500">Plano</div>
           <div className="font-medium">
-            {workshop.plano === 'premium' ? 'Premium' : 'Essencial'}
+            {getPlanName()}
           </div>
         </div>
         
         <div>
           <div className="text-sm text-gray-500">Status</div>
-          <div className={`font-medium ${workshop.is_active ? 'text-green-600' : 'text-red-600'}`}>
-            {workshop.is_active ? 'Ativo' : 'Desativado'}
+          <div className={`font-medium ${subscriptionStatus.color}`}>
+            {subscriptionStatus.text}
           </div>
         </div>
         
@@ -39,9 +105,9 @@ const WorkshopSubscriptionInfo = ({ workshop }: WorkshopSubscriptionInfoProps) =
         <div>
           <div className="text-sm text-gray-500">Vencimento</div>
           <div>
-            {workshop.trial_ends_at 
-              ? format(new Date(workshop.trial_ends_at), 'dd/MM/yyyy', { locale: ptBR }) 
-              : 'N/A'}
+            {expirationDate 
+              ? format(new Date(expirationDate), 'dd/MM/yyyy', { locale: ptBR }) 
+              : 'Sem vencimento'}
           </div>
         </div>
       </div>

@@ -29,6 +29,14 @@ export type Workshop = {
   trial_ends_at: string | null;
   subscription_status: string;
   quote_count: number;
+  subscription?: {
+    id: string;
+    plan_type: string;
+    status: string;
+    starts_at: string;
+    ends_at: string | null;
+    trial_ends_at: string | null;
+  } | null;
 };
 
 export type UsersTableProps = {
@@ -55,18 +63,33 @@ const UsersTable = ({
   onGeneratePDF 
 }: UsersTableProps) => {
   
-  const getSubscriptionStatusText = (status: string, trialEndsAt: string | null) => {
-    if (status === 'active') return 'Assinatura Ativa';
+  // Função para obter o nome do plano baseado na assinatura
+  const getPlanName = (user: Workshop) => {
+    if (!user.subscription) return 'Sem plano';
     
-    if (trialEndsAt) {
-      const trialDate = new Date(trialEndsAt);
-      if (trialDate > new Date()) {
-        return `Em teste até ${format(trialDate, 'dd/MM/yyyy')}`;
-      }
-      return 'Teste expirado';
+    const planType = user.subscription.plan_type;
+    if (planType.includes('premium')) {
+      return 'Premium';
+    } else if (planType.includes('essencial')) {
+      return 'Essencial';
     }
     
-    return 'Sem assinatura';
+    return 'Desconhecido';
+  };
+
+  // Função para obter a data de vencimento baseada na assinatura
+  const getExpirationDate = (user: Workshop) => {
+    if (!user.subscription) return null;
+
+    const subscription = user.subscription;
+    
+    if (subscription.status === 'trialing' && subscription.trial_ends_at) {
+      return subscription.trial_ends_at;
+    } else if (subscription.status === 'active' && subscription.ends_at) {
+      return subscription.ends_at;
+    }
+    
+    return null;
   };
 
   return (
@@ -91,41 +114,46 @@ const UsersTable = ({
           <EmptyTable colSpan={10} message="Carregando oficinas..." />
         ) : (
           <>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.nome_oficina || 'Não definido'}</TableCell>
-                <TableCell>{user.cnpj || '-'}</TableCell>
-                <TableCell>{user.responsavel || '-'}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.telefone || '-'}</TableCell>
-                <TableCell>
-                  <Badge variant={user.plano === 'premium' ? 'default' : 'secondary'}>
-                    {user.plano === 'premium' ? 'Premium' : 'Essencial'}
-                  </Badge>
-                </TableCell>
-                <TableCell>{user.created_at ? format(new Date(user.created_at), 'dd/MM/yyyy') : 'N/A'}</TableCell>
-                <TableCell>
-                  {user.trial_ends_at ? format(new Date(user.trial_ends_at), 'dd/MM/yyyy') : 'N/A'}
-                </TableCell>
-                <TableCell className="text-center">
-                  <TableStatusBadge 
-                    status={user.subscription_status} 
-                    trialEndsAt={user.trial_ends_at} 
-                  />
-                </TableCell>
-                <TableCell>
-                  <TableRowActions 
-                    user={user}
-                    onToggleStatus={onToggleStatus}
-                    onViewDetails={onViewDetails}
-                    onEditUser={onEditUser}
-                    onChangePlan={onChangePlan}
-                    onRenewSubscription={onRenewSubscription}
-                    onGeneratePDF={onGeneratePDF}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {users.map((user) => {
+              const planName = getPlanName(user);
+              const expirationDate = getExpirationDate(user);
+              
+              return (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.nome_oficina || 'Não definido'}</TableCell>
+                  <TableCell>{user.cnpj || '-'}</TableCell>
+                  <TableCell>{user.responsavel || '-'}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.telefone || '-'}</TableCell>
+                  <TableCell>
+                    <Badge variant={planName === 'Premium' ? 'default' : 'secondary'}>
+                      {planName}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{user.created_at ? format(new Date(user.created_at), 'dd/MM/yyyy') : 'N/A'}</TableCell>
+                  <TableCell>
+                    {expirationDate ? format(new Date(expirationDate), 'dd/MM/yyyy') : 'Sem vencimento'}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <TableStatusBadge 
+                      status={user.subscription_status} 
+                      trialEndsAt={expirationDate} 
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TableRowActions 
+                      user={user}
+                      onToggleStatus={onToggleStatus}
+                      onViewDetails={onViewDetails}
+                      onEditUser={onEditUser}
+                      onChangePlan={onChangePlan}
+                      onRenewSubscription={onRenewSubscription}
+                      onGeneratePDF={onGeneratePDF}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {users.length === 0 && <EmptyTable colSpan={10} />}
           </>
         )}
