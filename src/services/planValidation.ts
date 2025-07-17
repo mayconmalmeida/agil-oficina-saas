@@ -2,7 +2,7 @@
 export type PlanType = 'Free' | 'Essencial' | 'Premium';
 
 interface Subscription {
-  status: 'trialing' | 'active' | 'cancelled' | 'expired';
+  status: string; // Changed from union type to string to accept any status
   plan_type: string | null;
   ends_at?: string | null;
   trial_ends_at?: string | null;
