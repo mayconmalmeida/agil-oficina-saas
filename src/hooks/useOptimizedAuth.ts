@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useAuthState } from './useAuthState';
-import { signOutUser, calculateCanAccessFeatures } from '@/services/authService';
+import { signOutUser, validatePlanAccess } from '@/services/authService';
 import { AuthContextValue } from '@/types/auth';
 
 export const useOptimizedAuth = (): AuthContextValue => {
@@ -13,7 +13,8 @@ export const useOptimizedAuth = (): AuthContextValue => {
     loading,
     isLoadingAuth,
     role,
-    userEmail: user?.email || 'não logado'
+    userEmail: user?.email || 'não logado',
+    subscription: !!user?.subscription
   });
 
   const signOut = useCallback(async () => {
@@ -24,19 +25,32 @@ export const useOptimizedAuth = (): AuthContextValue => {
     }
   }, []);
 
+  // Validar acesso e permissões do plano
+  const planValidation = user ? validatePlanAccess(user.subscription, user.role || 'user') : {
+    isActive: false,
+    plan: 'Free' as const,
+    permissions: []
+  };
+
   // Calcular propriedades do usuário baseado no perfil
   const authUser = user ? {
     ...user,
     role: user.role || 'user',
     isAdmin: user.role === 'admin' || user.role === 'superadmin',
-    canAccessFeatures: calculateCanAccessFeatures(user.subscription, user.role || 'user')
+    canAccessFeatures: planValidation.isActive,
+    plan: planValidation.plan,
+    planActive: planValidation.isActive,
+    permissions: planValidation.permissions
   } : null;
 
-  console.log('useOptimizedAuth: Usuário final:', {
+  console.log('useOptimizedAuth: Validação de plano:', {
     hasAuthUser: !!authUser,
     role: authUser?.role,
     isAdmin: authUser?.isAdmin,
-    canAccessFeatures: authUser?.canAccessFeatures
+    plan: authUser?.plan,
+    planActive: authUser?.planActive,
+    canAccessFeatures: authUser?.canAccessFeatures,
+    permissionsCount: authUser?.permissions?.length || 0
   });
 
   return {
@@ -46,6 +60,9 @@ export const useOptimizedAuth = (): AuthContextValue => {
     isLoadingAuth,
     role: role || null,
     isAdmin: authUser?.isAdmin || false,
+    plan: authUser?.plan || null,
+    planActive: authUser?.planActive || false,
+    permissions: authUser?.permissions || [],
     signOut
   };
 };

@@ -112,41 +112,93 @@ export const signOutUser = async (): Promise<void> => {
   }
 };
 
-export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
-  console.log('calculateCanAccessFeatures: Calculando acesso:', {
+export const validatePlanAccess = (subscription: any, role: string): {
+  isActive: boolean;
+  plan: 'Essencial' | 'Premium' | 'Free';
+  permissions: string[];
+} => {
+  console.log('validatePlanAccess: Validando acesso ao plano:', {
     subscription: !!subscription,
     role,
-    subscriptionStatus: subscription?.status
+    subscriptionStatus: subscription?.status,
+    planType: subscription?.plan_type
   });
 
-  // Admins sempre têm acesso
+  // Admin sempre tem acesso total
   if (role === 'admin' || role === 'superadmin') {
-    return true;
+    return {
+      isActive: true,
+      plan: 'Premium',
+      permissions: ['*'] // Todas as permissões
+    };
   }
 
   // Se não há assinatura, acesso limitado
   if (!subscription) {
-    return false;
+    return {
+      isActive: false,
+      plan: 'Free',
+      permissions: ['clientes', 'orcamentos']
+    };
   }
 
-  // Verificar se a assinatura está ativa ou em trial
-  const hasActiveSubscription = subscription.status === 'active' || subscription.status === 'trialing';
-  
-  // Verificar se o trial não expirou (se aplicável)
-  if (subscription.status === 'trialing' && subscription.trial_ends_at) {
-    const trialEndDate = new Date(subscription.trial_ends_at);
-    const now = new Date();
-    const trialActive = now <= trialEndDate;
-    
-    console.log('calculateCanAccessFeatures: Verificação de trial:', {
-      trialEndDate: trialEndDate.toISOString(),
-      now: now.toISOString(),
-      trialActive
-    });
-    
-    return trialActive;
+  // Verificar se a assinatura está ativa
+  const now = new Date();
+  let isActive = false;
+
+  if (subscription.status === 'active') {
+    // Verificar se não expirou
+    if (!subscription.ends_at || new Date(subscription.ends_at) > now) {
+      isActive = true;
+    }
+  } else if (subscription.status === 'trialing') {
+    // Verificar se o trial não expirou
+    if (subscription.trial_ends_at && new Date(subscription.trial_ends_at) > now) {
+      isActive = true;
+    }
   }
 
-  console.log('calculateCanAccessFeatures: Resultado:', hasActiveSubscription);
-  return hasActiveSubscription;
+  // Determinar o plano
+  let plan: 'Essencial' | 'Premium' | 'Free' = 'Free';
+  if (isActive) {
+    if (subscription.plan_type?.includes('premium')) {
+      plan = 'Premium';
+    } else if (subscription.plan_type?.includes('essencial')) {
+      plan = 'Essencial';
+    }
+  }
+
+  // Definir permissões por plano
+  const planPermissions = {
+    Free: ['clientes', 'orcamentos'],
+    Essencial: [
+      'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
+      'relatorios_basicos', 'configuracoes', 'suporte_email'
+    ],
+    Premium: [
+      'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
+      'relatorios_basicos', 'relatorios_avancados', 'agendamentos',
+      'marketing', 'estoque', 'backup', 'diagnostico_ia', 'suporte_prioritario',
+      'integracao_contabil', 'configuracoes'
+    ]
+  };
+
+  const permissions = planPermissions[plan];
+
+  console.log('validatePlanAccess: Resultado da validação:', {
+    isActive,
+    plan,
+    permissions: permissions.length
+  });
+
+  return {
+    isActive,
+    plan,
+    permissions
+  };
+};
+
+export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
+  const { isActive } = validatePlanAccess(subscription, role);
+  return isActive;
 };

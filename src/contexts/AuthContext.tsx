@@ -13,7 +13,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user: authValue.user?.email || 'não logado',
     loading: authValue.loading,
     isLoadingAuth: authValue.isLoadingAuth,
-    role: authValue.role
+    role: authValue.role,
+    plan: authValue.plan,
+    planActive: authValue.planActive,
+    permissionsCount: authValue.permissions.length
   });
 
   return (
