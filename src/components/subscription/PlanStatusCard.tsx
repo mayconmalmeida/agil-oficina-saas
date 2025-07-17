@@ -13,6 +13,14 @@ interface PlanStatusCardProps {
 }
 
 const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan, planActive }) => {
+  console.log('PlanStatusCard: Renderizando com dados:', {
+    subscriptionData: !!subscriptionData,
+    plan,
+    planActive,
+    subscriptionStatus: subscriptionData?.status,
+    subscriptionPlanType: subscriptionData?.plan_type
+  });
+
   if (!subscriptionData) {
     return (
       <Card className="mb-6 border-gray-200">
@@ -40,12 +48,13 @@ const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan,
   let expiryDate = null;
   let displayPlan = plan;
 
+  // ✅ Corrigir lógica de exibição do plano
   if (isTrialing && subscriptionData.trial_ends_at) {
     expiryDate = new Date(subscriptionData.trial_ends_at);
     const isExpired = expiryDate <= now;
     statusText = isExpired ? 'Trial Expirado' : 'Trial Premium Ativo';
     statusColor = isExpired ? 'text-red-600' : 'text-blue-600';
-    displayPlan = 'Premium (Trial)'; // Trial sempre mostra Premium
+    displayPlan = 'Premium (Trial)'; // ✅ Trial sempre mostra Premium
   } else if (isActive) {
     if (subscriptionData.ends_at) {
       expiryDate = new Date(subscriptionData.ends_at);
@@ -56,7 +65,23 @@ const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan,
       statusText = 'Plano Ativo';
       statusColor = 'text-green-600';
     }
+    
+    // ✅ Garantir que o plano seja exibido corretamente baseado no plan_type
+    const planTypeLower = subscriptionData.plan_type?.toLowerCase() || '';
+    if (planTypeLower.includes('premium')) {
+      displayPlan = 'Premium';
+    } else if (planTypeLower.includes('essencial')) {
+      displayPlan = 'Essencial';
+    }
   }
+
+  console.log('PlanStatusCard: Status calculado:', {
+    isTrialing,
+    isActive,
+    statusText,
+    displayPlan,
+    expiryDate: expiryDate?.toISOString()
+  });
 
   return (
     <Card className="mb-6 border-blue-200 bg-blue-50">
@@ -75,7 +100,7 @@ const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan,
                 Plano: <span className="font-medium">{displayPlan}</span>
                 {isTrialing && (
                   <span className="text-xs text-blue-600 ml-2">
-                    (Acesso completo ao Premium)
+                    (Acesso completo ao Premium por 7 dias)
                   </span>
                 )}
                 {expiryDate && (

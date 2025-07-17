@@ -117,10 +117,27 @@ export const signOutUser = async (): Promise<void> => {
   }
 };
 
-// ✅ Nova lógica de validação conforme solicitado
+// ✅ Corrigindo a lógica de validação conforme solicitado
+type PlanType = 'Free' | 'Essencial' | 'Premium';
+
+// Permissões por plano
+const planPermissions: Record<PlanType, string[]> = {
+  Free: ['clientes', 'orcamentos'], // Básico após trial expirar
+  Essencial: [
+    'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
+    'relatorios_basicos', 'configuracoes', 'suporte_email'
+  ],
+  Premium: [
+    'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
+    'relatorios_basicos', 'relatorios_avancados', 'agendamentos',
+    'marketing', 'estoque', 'backup', 'diagnostico_ia', 'suporte_prioritario',
+    'integracao_contabil', 'configuracoes'
+  ]
+};
+
 export const validatePlanAccess = (subscription: any, role: string): {
   isActive: boolean;
-  plan: 'Essencial' | 'Premium' | 'Free';
+  plan: PlanType;
   permissions: string[];
 } => {
   console.log('validatePlanAccess: Validando acesso ao plano:', {
@@ -144,21 +161,20 @@ export const validatePlanAccess = (subscription: any, role: string): {
   }
 
   const now = new Date();
+  let plan: PlanType = 'Free';
   let isActive = false;
-  let currentPlan: 'Free' | 'Essencial' | 'Premium' = 'Free';
 
-  // Caso não exista assinatura → Free bloqueado
+  // Caso não exista assinatura → Free
   if (!subscription) {
-    console.log('validatePlanAccess: Sem assinatura, retornando Free bloqueado');
+    console.log('validatePlanAccess: Nenhuma assinatura encontrada → Free');
     return { 
       isActive: false, 
       plan: 'Free', 
-      permissions: [] 
+      permissions: planPermissions.Free
     };
   }
 
-  // **1) Validar Status**
-  const { status, ends_at, trial_ends_at, plan_type } = subscription;
+  const { status, trial_ends_at, ends_at, plan_type } = subscription;
 
   console.log('validatePlanAccess: Verificando status da assinatura:', {
     status,
@@ -168,59 +184,38 @@ export const validatePlanAccess = (subscription: any, role: string): {
     now: now.toISOString()
   });
 
-  // ✅ CORREÇÃO: Trial sempre Premium e ativo se dentro do período
-  if (status === 'trialing') {
-    if (trial_ends_at && new Date(trial_ends_at) > now) {
-      isActive = true;
-      currentPlan = 'Premium'; // Trial sempre Premium
-      console.log('validatePlanAccess: Trial ativo detectado, definindo Premium');
+  // ✅ REGRA 1: Trial sempre Premium
+  if (status === 'trialing' && trial_ends_at && new Date(trial_ends_at) > now) {
+    isActive = true;
+    plan = 'Premium';
+    console.log('validatePlanAccess: Trial ativo detectado → Premium completo');
+  }
+  
+  // ✅ REGRA 2: Assinatura ativa - verificar tipo do plano
+  else if (status === 'active' && (!ends_at || new Date(ends_at) > now)) {
+    isActive = true;
+    
+    const planTypeLower = plan_type?.toLowerCase() || '';
+    if (planTypeLower.includes('premium')) {
+      plan = 'Premium';
+      console.log('validatePlanAccess: Plano Premium ativo detectado');
+    } else if (planTypeLower.includes('essencial')) {
+      plan = 'Essencial';
+      console.log('validatePlanAccess: Plano Essencial ativo detectado');
     } else {
-      console.log('validatePlanAccess: Trial expirado');
+      // Fallback para assinaturas ativas sem tipo específico
+      plan = 'Premium';
+      console.log('validatePlanAccess: Assinatura ativa sem tipo específico, assumindo Premium');
     }
-  } 
-  // ✅ CORREÇÃO: Assinatura ativa - verificar plano corretamente
-  else if (status === 'active') {
-    if (!ends_at || new Date(ends_at) > now) {
-      isActive = true;
-      
-      // Verificar tipo de plano com case insensitive
-      const planTypeLower = plan_type?.toLowerCase() || '';
-      if (planTypeLower.includes('premium')) {
-        currentPlan = 'Premium';
-        console.log('validatePlanAccess: Plano Premium ativo detectado');
-      } else if (planTypeLower.includes('essencial')) {
-        currentPlan = 'Essencial';
-        console.log('validatePlanAccess: Plano Essencial ativo detectado');
-      } else {
-        // Fallback para assinaturas ativas sem tipo específico
-        currentPlan = 'Premium';
-        console.log('validatePlanAccess: Assinatura ativa sem tipo, assumindo Premium');
-      }
-    } else {
-      console.log('validatePlanAccess: Assinatura expirada');
-    }
+  } else {
+    console.log('validatePlanAccess: Assinatura expirada ou inválida');
   }
 
-  // **2) Permissões por Plano**
-  const permissionsMap = {
-    Free: [], // Bloqueado após trial
-    Essencial: [
-      'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
-      'relatorios_basicos', 'configuracoes', 'suporte_email'
-    ],
-    Premium: [
-      'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
-      'relatorios_basicos', 'relatorios_avancados', 'agendamentos',
-      'marketing', 'estoque', 'backup', 'diagnostico_ia', 'suporte_prioritario',
-      'integracao_contabil', 'configuracoes'
-    ]
-  };
-
-  const permissions = isActive ? permissionsMap[currentPlan] : [];
+  const permissions = isActive ? planPermissions[plan] : planPermissions.Free;
 
   console.log('validatePlanAccess: Resultado da validação:', {
     isActive,
-    plan: currentPlan,
+    plan,
     permissions: permissions.length,
     permissionsList: permissions,
     hasIADiagnostico: permissions.includes('diagnostico_ia')
@@ -228,7 +223,7 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
   return {
     isActive,
-    plan: currentPlan,
+    plan,
     permissions
   };
 };
