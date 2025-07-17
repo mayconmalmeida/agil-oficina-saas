@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
 import { AuthContextValue } from '@/types/auth';
 import { supabase } from '@/lib/supabase';
-import { validatePlanAccess, PlanType } from '@/services/planValidation';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -75,7 +74,7 @@ export const useAuth = (): AuthContextValue => {
 };
 
 // ✅ Debug UI para validar plano em tempo real
-const PlanDebugUI: React.FC<{ plan: PlanType | null; active: boolean; permissions: string[] }> = ({ 
+const PlanDebugUI: React.FC<{ plan: any; active: boolean; permissions: string[] }> = ({ 
   plan, 
   active, 
   permissions 

@@ -1,9 +1,10 @@
 
 import { useCallback } from 'react';
 import { useAuthState } from './useAuthState';
-import { signOutUser, validatePlanAccessFromProfile } from '@/services/authService';
+import { signOutUser } from '@/services/authService';
 import { AuthContextValue } from '@/types/auth';
 import { UserSubscription } from '@/types/subscription';
+import { validatePlanAccess } from '@/services/planValidation';
 
 export const useOptimizedAuth = (): AuthContextValue => {
   const { user, session, loading, isLoadingAuth, role } = useAuthState();
@@ -30,7 +31,7 @@ export const useOptimizedAuth = (): AuthContextValue => {
   }, []);
 
   // ✅ Validar acesso e permissões do plano usando a nova lógica centralizada
-  const planValidation = user ? validatePlanAccessFromProfile(user.subscription, user.role || 'user') : {
+  const planValidation = user ? validatePlanAccess(user.subscription) : {
     isActive: false,
     plan: 'Free' as const,
     permissions: []
