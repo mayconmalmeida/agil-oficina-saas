@@ -20,17 +20,14 @@ export const usePermissions = () => {
       return true;
     }
     
-    // Se o plano não está ativo, apenas permissões básicas
+    // Se o plano não está ativo, nenhuma permissão
     if (!planActive) {
-      const basicPermissions = ['clientes', 'orcamentos'];
-      const hasBasicAccess = basicPermissions.includes(feature);
-      console.log('usePermissions: Plano inativo, verificando acesso básico:', hasBasicAccess);
-      return hasBasicAccess;
+      console.log('usePermissions: Plano inativo, negando acesso');
+      return false;
     }
 
-    // Verificar se tem a permissão específica - incluindo diagnostico_ia para premium
-    const hasAccess = permissions.includes(feature) || permissions.includes('*') || 
-      (feature === 'diagnostico_ia' && permissions.includes('diagnostico_ia'));
+    // Verificar se tem a permissão específica
+    const hasAccess = permissions.includes(feature) || permissions.includes('*');
     console.log('usePermissions: Verificação final de permissão:', hasAccess);
     return hasAccess;
   };
@@ -55,7 +52,7 @@ export const usePermissions = () => {
 
   const getAvailableFeatures = () => {
     if (!planActive) {
-      return ['clientes', 'orcamentos'];
+      return [];
     }
     return permissions;
   };

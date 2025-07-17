@@ -117,6 +117,7 @@ export const signOutUser = async (): Promise<void> => {
   }
 };
 
+// ✅ Nova lógica de validação conforme solicitado
 export const validatePlanAccess = (subscription: any, role: string): {
   isActive: boolean;
   plan: 'Essencial' | 'Premium' | 'Free';
@@ -142,63 +143,52 @@ export const validatePlanAccess = (subscription: any, role: string): {
     };
   }
 
-  // Se não há assinatura, acesso limitado
+  const now = new Date();
+  let isActive = false;
+  let currentPlan: 'Free' | 'Essencial' | 'Premium' = 'Free';
+
+  // Caso não exista assinatura → Free bloqueado
   if (!subscription) {
-    console.log('validatePlanAccess: Sem assinatura, retornando acesso básico');
-    return {
-      isActive: false,
-      plan: 'Free',
-      permissions: ['clientes', 'orcamentos']
+    console.log('validatePlanAccess: Sem assinatura, retornando Free bloqueado');
+    return { 
+      isActive: false, 
+      plan: 'Free', 
+      permissions: [] 
     };
   }
 
-  // Verificar se a assinatura está ativa
-  const now = new Date();
-  let isActive = false;
+  // **1) Validar Status**
+  const { status, ends_at, trial_ends_at, plan_type } = subscription;
 
   console.log('validatePlanAccess: Verificando status da assinatura:', {
-    status: subscription.status,
-    ends_at: subscription.ends_at,
-    trial_ends_at: subscription.trial_ends_at,
-    is_manual: subscription.is_manual,
+    status,
+    ends_at,
+    trial_ends_at,
+    plan_type,
     now: now.toISOString()
   });
 
-  if (subscription.status === 'active') {
-    if (subscription.is_manual) {
-      // Assinatura manual sempre ativa (ou verificar ends_at se existir)
-      isActive = !subscription.ends_at || new Date(subscription.ends_at) > now;
-      console.log('validatePlanAccess: Assinatura manual, ativa:', isActive);
-    } else if (!subscription.ends_at) {
-      // Sem data de fim, considerar ativa
+  if (status === 'trialing') {
+    isActive = trial_ends_at && new Date(trial_ends_at) > now;
+    currentPlan = 'Premium'; // Trial sempre Premium
+    console.log('validatePlanAccess: Trial detectado, ativo:', isActive);
+  } else if (status === 'active') {
+    if (!ends_at || new Date(ends_at) > now) {
       isActive = true;
-      console.log('validatePlanAccess: Assinatura sem data de fim, considerando ativa');
+      if (plan_type.includes('premium')) {
+        currentPlan = 'Premium';
+      } else if (plan_type.includes('essencial')) {
+        currentPlan = 'Essencial';
+      }
+      console.log('validatePlanAccess: Assinatura ativa, plano:', currentPlan);
     } else {
-      // Verificar se não expirou
-      isActive = new Date(subscription.ends_at) > now;
-      console.log('validatePlanAccess: Assinatura paga, ativa:', isActive);
-    }
-  } else if (subscription.status === 'trialing') {
-    // Verificar se o trial não expirou
-    if (subscription.trial_ends_at && new Date(subscription.trial_ends_at) > now) {
-      isActive = true;
-      console.log('validatePlanAccess: Trial ativo confirmado');
+      console.log('validatePlanAccess: Assinatura expirada');
     }
   }
 
-  // Determinar o plano
-  let plan: 'Essencial' | 'Premium' | 'Free' = 'Free';
-  if (isActive && subscription.plan_type) {
-    if (subscription.plan_type.includes('premium')) {
-      plan = 'Premium';
-    } else if (subscription.plan_type.includes('essencial')) {
-      plan = 'Essencial';
-    }
-  }
-
-  // Definir permissões por plano - incluindo diagnostico_ia para Premium
-  const planPermissions = {
-    Free: ['clientes', 'orcamentos'],
+  // **2) Permissões por Plano**
+  const permissionsMap = {
+    Free: [], // Bloqueado após trial
     Essencial: [
       'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
       'relatorios_basicos', 'configuracoes', 'suporte_email'
@@ -211,11 +201,11 @@ export const validatePlanAccess = (subscription: any, role: string): {
     ]
   };
 
-  const permissions = planPermissions[plan];
+  const permissions = isActive ? permissionsMap[currentPlan] : [];
 
   console.log('validatePlanAccess: Resultado da validação:', {
     isActive,
-    plan,
+    plan: currentPlan,
     permissions: permissions.length,
     permissionsList: permissions,
     hasIADiagnostico: permissions.includes('diagnostico_ia')
@@ -223,7 +213,7 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
   return {
     isActive,
-    plan,
+    plan: currentPlan,
     permissions
   };
 };

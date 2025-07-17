@@ -27,47 +27,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const { diasRestantes, isPremiumTrial, isExpired, loading: daysLoading } = useDaysRemaining();
   const [activeSubscription, setActiveSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const [creatingSubscription, setCreatingSubscription] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     window.location.replace('/login');
-  };
-
-  // Criar assinatura ativa para usuários sem assinatura
-  const createActiveSubscription = async (userId: string) => {
-    if (creatingSubscription) return null;
-    
-    setCreatingSubscription(true);
-    console.log('SubscriptionGuard: Criando assinatura ativa para usuário sem assinatura:', userId);
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .insert({
-          user_id: userId,
-          plan_type: 'premium_mensal',
-          status: 'active',
-          starts_at: new Date().toISOString(),
-          ends_at: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(), // 30 dias
-          is_manual: true
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('SubscriptionGuard: Erro ao criar assinatura:', error);
-        return null;
-      }
-
-      console.log('SubscriptionGuard: Assinatura Premium criada com sucesso:', data);
-      return data;
-    } catch (error) {
-      console.error('SubscriptionGuard: Erro ao criar assinatura:', error);
-      return null;
-    } finally {
-      setCreatingSubscription(false);
-    }
   };
 
   // Buscar assinatura ativa do usuário
@@ -95,15 +58,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
         }
 
         console.log('SubscriptionGuard: Assinatura encontrada:', subscription);
-        
-        // Se não encontrou assinatura ativa, criar uma premium
-        if (!subscription) {
-          console.log('SubscriptionGuard: Nenhuma assinatura encontrada, criando uma Premium...');
-          const newSubscription = await createActiveSubscription(user.id);
-          setActiveSubscription(newSubscription);
-        } else {
-          setActiveSubscription(subscription);
-        }
+        setActiveSubscription(subscription);
       } catch (error) {
         console.error('SubscriptionGuard: Erro ao verificar assinatura:', error);
       } finally {
@@ -115,7 +70,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   }, [user?.id]);
 
   // Aguarda o carregamento da autenticação e assinatura
-  if (isLoadingAuth || daysLoading || subscriptionLoading || creatingSubscription) {
+  if (isLoadingAuth || daysLoading || subscriptionLoading) {
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
@@ -152,22 +107,19 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     );
   }
 
-  // Verificar se o plano está ativo
-  if (!planActive && plan !== 'Premium') {
+  // Verificar se o plano está ativo (nova lógica)
+  if (!planActive) {
     console.log('SubscriptionGuard: Plano não está ativo:', { plan, planActive });
     
-    // Permitir acesso básico mesmo sem plano ativo
-    if (!requiredPlan && !requiredFeature) {
-      console.log('SubscriptionGuard: Permitindo acesso básico');
-      return <>{children}</>;
+    // Se não requer um plano específico e não tem feature específica, bloquear acesso
+    if (requiredPlan || requiredFeature) {
+      return (
+        <SubscriptionExpiredCard 
+          hasSubscription={!!activeSubscription}
+          onLogout={handleLogout} 
+        />
+      );
     }
-
-    return (
-      <SubscriptionExpiredCard 
-        hasSubscription={!!activeSubscription}
-        onLogout={handleLogout} 
-      />
-    );
   }
 
   console.log('SubscriptionGuard: Acesso liberado para usuário com plano ativo:', {
