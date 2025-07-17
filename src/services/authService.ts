@@ -50,45 +50,34 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 
     console.log('fetchUserProfile: Profile encontrado:', profile);
 
-    // Buscar assinatura do usuário - primeiro buscar a oficina
-    const { data: oficina } = await supabase
-      .from('oficinas')
-      .select('id')
+    // Buscar assinatura ativa do usuário
+    const { data: subscriptionData, error: subscriptionError } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        id,
+        user_id,
+        plan_type,
+        status,
+        starts_at,
+        ends_at,
+        trial_ends_at,
+        is_manual,
+        stripe_customer_id,
+        stripe_subscription_id,
+        created_at,
+        updated_at
+      `)
       .eq('user_id', userId)
-      .single();
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    let subscription = null;
-    if (oficina) {
-      // Buscar assinatura vinculada à oficina
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          id,
-          user_id,
-          plan_type,
-          status,
-          starts_at,
-          ends_at,
-          trial_ends_at,
-          is_manual,
-          stripe_customer_id,
-          stripe_subscription_id,
-          created_at,
-          updated_at
-        `)
-        .eq('user_id', userId)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
-        .maybeSingle();
-
-      if (subscriptionError) {
-        console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
-      } else {
-        subscription = subscriptionData;
-      }
+    if (subscriptionError) {
+      console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
     }
 
-    console.log('fetchUserProfile: Subscription encontrada:', subscription);
+    console.log('fetchUserProfile: Subscription encontrada:', subscriptionData);
 
     const userProfile: UserProfile = {
       id: profile.id,
@@ -100,7 +89,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       plano: profile.plano,
       trial_started_at: profile.trial_started_at,
       trial_ends_at: profile.trial_ends_at,
-      subscription: subscription || undefined
+      subscription: subscriptionData || undefined
     };
 
     console.log('fetchUserProfile: Perfil completo retornado:', userProfile);
@@ -137,7 +126,10 @@ export const validatePlanAccess = (subscription: any, role: string): {
     subscription: !!subscription,
     role,
     subscriptionStatus: subscription?.status,
-    planType: subscription?.plan_type
+    planType: subscription?.plan_type,
+    isManual: subscription?.is_manual,
+    endsAt: subscription?.ends_at,
+    trialEndsAt: subscription?.trial_ends_at
   });
 
   // Admin sempre tem acesso total
@@ -168,14 +160,23 @@ export const validatePlanAccess = (subscription: any, role: string): {
     status: subscription.status,
     ends_at: subscription.ends_at,
     trial_ends_at: subscription.trial_ends_at,
+    is_manual: subscription.is_manual,
     now: now.toISOString()
   });
 
   if (subscription.status === 'active') {
-    // Verificar se não expirou
-    if (!subscription.ends_at || new Date(subscription.ends_at) > now) {
+    if (subscription.is_manual) {
+      // Assinatura manual sempre ativa (ou verificar ends_at se existir)
+      isActive = !subscription.ends_at || new Date(subscription.ends_at) > now;
+      console.log('validatePlanAccess: Assinatura manual, ativa:', isActive);
+    } else if (!subscription.ends_at) {
+      // Sem data de fim, considerar ativa
       isActive = true;
-      console.log('validatePlanAccess: Assinatura ativa confirmada');
+      console.log('validatePlanAccess: Assinatura sem data de fim, considerando ativa');
+    } else {
+      // Verificar se não expirou
+      isActive = new Date(subscription.ends_at) > now;
+      console.log('validatePlanAccess: Assinatura paga, ativa:', isActive);
     }
   } else if (subscription.status === 'trialing') {
     // Verificar se o trial não expirou
@@ -187,10 +188,10 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
   // Determinar o plano
   let plan: 'Essencial' | 'Premium' | 'Free' = 'Free';
-  if (isActive) {
-    if (subscription.plan_type?.includes('premium')) {
+  if (isActive && subscription.plan_type) {
+    if (subscription.plan_type.includes('premium')) {
       plan = 'Premium';
-    } else if (subscription.plan_type?.includes('essencial')) {
+    } else if (subscription.plan_type.includes('essencial')) {
       plan = 'Essencial';
     }
   }

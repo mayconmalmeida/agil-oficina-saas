@@ -29,7 +29,9 @@ export const useUserProfileData = (user: User | null) => {
           email: userProfile.email,
           role: userProfile.role,
           is_active: userProfile.is_active,
-          subscription: !!userProfile.subscription
+          subscription: !!userProfile.subscription,
+          subscriptionStatus: userProfile.subscription?.status,
+          planType: userProfile.subscription?.plan_type
         });
 
         setProfile(userProfile);
