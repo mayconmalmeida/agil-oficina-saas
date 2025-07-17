@@ -1,7 +1,7 @@
 
 {
-  "name": "OficinaGO - Sistema de Gestão para Oficinas",
-  "short_name": "OficinaGO",
+  "name": "Oficina Go - Sistema de Gestão para Oficinas",
+  "short_name": "Oficina Go",
   "description": "Sistema completo para gestão de oficinas mecânicas",
   "start_url": "/",
   "display": "standalone",

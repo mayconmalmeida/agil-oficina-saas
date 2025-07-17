@@ -12,9 +12,9 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
+                <span className="text-white font-bold text-lg">O</span>
               </div>
-              <span className="text-xl font-bold">AutoFlow</span>
+              <span className="text-xl font-bold">Oficina Go</span>
             </div>
             <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
               Sistema completo de gestão para oficinas mecânicas com tecnologia de ponta e IA integrada.
@@ -67,8 +67,8 @@ export default function Footer() {
                 <Mail className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-gray-400 text-sm">Email</p>
-                  <a href="mailto:contato@autoflow.com.br" className="text-white hover:text-blue-400 transition-colors text-sm sm:text-base">
-                    contato@autoflow.com.br
+                  <a href="mailto:contato@oficinago.com.br" className="text-white hover:text-blue-400 transition-colors text-sm sm:text-base">
+                    contato@oficinago.com.br
                   </a>
                 </div>
               </li>
@@ -98,7 +98,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             <p className="text-gray-400 text-sm text-center sm:text-left">
-              © 2024 AutoFlow. Todos os direitos reservados.
+              © 2024 Oficina Go. Todos os direitos reservados.
             </p>
             <div className="flex flex-wrap justify-center sm:justify-end space-x-6 text-sm">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">

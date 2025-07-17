@@ -15,7 +15,7 @@ export default function Hero() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
                 Transforme sua oficina com 
                 <span className="block bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  AutoFlow
+                  Oficina Go
                 </span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">

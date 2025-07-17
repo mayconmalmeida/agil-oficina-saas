@@ -142,9 +142,9 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
       <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
         <Link to="/dashboard" className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">A</span>
+            <span className="text-white font-bold text-lg">O</span>
           </div>
-          <span className="hidden lg:block text-xl font-bold text-gray-900">AutoFlow</span>
+          <span className="hidden lg:block text-xl font-bold text-gray-900">Oficina Go</span>
         </Link>
       </div>
 

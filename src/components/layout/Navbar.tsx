@@ -19,10 +19,10 @@ export default function Navbar() {
           <Link to="/" className="flex items-center">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg sm:text-xl">A</span>
+                <span className="text-white font-bold text-lg sm:text-xl">O</span>
               </div>
               <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                AutoFlow
+                Oficina Go
               </span>
             </div>
           </Link>

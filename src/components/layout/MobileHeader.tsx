@@ -26,9 +26,9 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         <div className="flex-1 flex justify-center">
           <Link to="/dashboard" className="flex items-center space-x-2">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg sm:text-xl">A</span>
+              <span className="text-white font-bold text-lg sm:text-xl">O</span>
             </div>
-            <span className="text-lg sm:text-xl font-bold text-gray-900">AutoFlow</span>
+            <span className="text-lg sm:text-xl font-bold text-gray-900">Oficina Go</span>
           </Link>
         </div>
         
