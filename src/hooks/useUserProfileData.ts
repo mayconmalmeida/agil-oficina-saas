@@ -63,6 +63,9 @@ export function useUserProfileData(user: User | null) {
             status: userProfile.subscription.status as UserSubscription['status'],
             ends_at: userProfile.subscription.ends_at || null,
             trial_ends_at: userProfile.subscription.trial_ends_at || null,
+            is_manual: userProfile.subscription.is_manual || null,
+            stripe_customer_id: userProfile.subscription.stripe_customer_id || null,
+            stripe_subscription_id: userProfile.subscription.stripe_subscription_id || null,
             created_at: userProfile.subscription.created_at || new Date().toISOString(),
             updated_at: userProfile.subscription.updated_at || new Date().toISOString()
           } : undefined,
