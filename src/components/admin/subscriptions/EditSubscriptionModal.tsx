@@ -34,6 +34,7 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [planPrices, setPlanPrices] = useState<{ [key: string]: number }>({});
   const [formData, setFormData] = useState({
     oficina_id: '',
     user_id: '',
@@ -44,6 +45,40 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     amount: 0,
     payment_method: 'manual'
   });
+
+  // Carregar preços dos planos
+  useEffect(() => {
+    const fetchPlanPrices = async () => {
+      try {
+        const { data: plansData, error } = await supabase
+          .from('plan_configurations')
+          .select('plan_type, billing_cycle, price');
+
+        if (error) {
+          console.error('Erro ao buscar preços dos planos:', error);
+          return;
+        }
+
+        const pricesMap: { [key: string]: number } = {};
+        (plansData || []).forEach(plan => {
+          const key = `${plan.plan_type}_${plan.billing_cycle}`;
+          pricesMap[key] = plan.price;
+        });
+
+        // Valores padrão se não encontrar na configuração
+        pricesMap['essencial_mensal'] = pricesMap['essencial_mensal'] || 49.90;
+        pricesMap['essencial_anual'] = pricesMap['essencial_anual'] || 499.00;
+        pricesMap['premium_mensal'] = pricesMap['premium_mensal'] || 99.90;
+        pricesMap['premium_anual'] = pricesMap['premium_anual'] || 999.00;
+
+        setPlanPrices(pricesMap);
+      } catch (error) {
+        console.error('Erro ao carregar preços:', error);
+      }
+    };
+
+    fetchPlanPrices();
+  }, []);
 
   useEffect(() => {
     if (subscription && !isCreating) {
@@ -59,7 +94,7 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
             status: subscription.status || 'active',
             starts_at: subscription.started_at ? new Date(subscription.started_at) : new Date(),
             ends_at: subscription.ends_at ? new Date(subscription.ends_at) : null,
-            amount: subscription.amount || 0,
+            amount: planPrices[subscription.plan] || subscription.amount || 0,
             payment_method: subscription.payment_method || 'manual'
           });
         }
@@ -74,15 +109,15 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         status: 'active',
         starts_at: new Date(),
         ends_at: null,
-        amount: 0,
+        amount: planPrices['essencial_mensal'] || 49.90,
         payment_method: 'manual'
       });
     }
-  }, [subscription, isCreating, oficinas]);
+  }, [subscription, isCreating, oficinas, planPrices]);
 
-  // Auto-calculate end date based on plan type
+  // Auto-calculate end date and amount based on plan type
   useEffect(() => {
-    if (formData.starts_at) {
+    if (formData.starts_at && formData.plan_type) {
       const startDate = new Date(formData.starts_at);
       let endDate = new Date(startDate);
       
@@ -92,9 +127,15 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         endDate.setMonth(endDate.getMonth() + 1);
       }
       
-      setFormData(prev => ({ ...prev, ends_at: endDate }));
+      const planPrice = planPrices[formData.plan_type] || 0;
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        ends_at: endDate,
+        amount: planPrice
+      }));
     }
-  }, [formData.plan_type, formData.starts_at]);
+  }, [formData.plan_type, formData.starts_at, planPrices]);
 
   // Auto-set user_id when oficina is selected
   useEffect(() => {
@@ -140,23 +181,34 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
       }
 
       // Use direct database query to create/update subscription
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .upsert({
-          user_id: formData.user_id,
-          plan_type: formData.plan_type,
-          status: 'active',
-          starts_at: startDate.toISOString(),
-          ends_at: endDate.toISOString(),
-          is_manual: true
-        }, {
-          onConflict: 'user_id'
-        })
-        .select();
+      const subscriptionData = {
+        user_id: formData.user_id,
+        plan_type: formData.plan_type,
+        status: 'active',
+        starts_at: startDate.toISOString(),
+        ends_at: endDate.toISOString(),
+        is_manual: true
+      };
 
-      if (error) {
-        console.error('Erro ao salvar assinatura:', error);
-        throw error;
+      let result;
+      if (isCreating) {
+        const { data, error } = await supabase
+          .from('user_subscriptions')
+          .insert(subscriptionData)
+          .select();
+        result = { data, error };
+      } else {
+        const { data, error } = await supabase
+          .from('user_subscriptions')
+          .update(subscriptionData)
+          .eq('id', subscription.id)
+          .select();
+        result = { data, error };
+      }
+
+      if (result.error) {
+        console.error('Erro ao salvar assinatura:', result.error);
+        throw result.error;
       }
 
       toast({
@@ -308,8 +360,12 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               type="number"
               step="0.01"
               value={formData.amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+              disabled
+              className="bg-gray-100"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              Valor calculado automaticamente baseado no plano selecionado
+            </p>
           </div>
         </div>
 

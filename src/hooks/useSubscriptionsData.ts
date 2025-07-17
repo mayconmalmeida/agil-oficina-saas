@@ -25,14 +25,14 @@ export const useSubscriptionsData = () => {
 
       if (subscriptionsError) throw subscriptionsError;
 
-      // Para cada assinatura, buscar dados do perfil do usuário
+      // Para cada assinatura, buscar dados do perfil do usuário e preço do plano
       const subscriptionsWithProfiles = await Promise.all(
         (subscriptionsData || []).map(async (subscription) => {
           let profile: any = {};
-          let planData: any = { price: 0 };
+          let planPrice = 0;
 
           try {
-            // Buscar perfil
+            // Buscar perfil do usuário
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('email, nome_oficina')
@@ -41,8 +41,9 @@ export const useSubscriptionsData = () => {
 
             if (profileError) {
               console.error('[DEBUG] Erro ao buscar perfil:', profileError);
+            } else if (profileData) {
+              profile = profileData;
             }
-            profile = profileData || {};
 
             // Se não encontrou nome_oficina no profiles, buscar na tabela oficinas
             if (!profile.nome_oficina) {
@@ -53,7 +54,7 @@ export const useSubscriptionsData = () => {
                 .maybeSingle();
 
               if (!oficinaError && oficinaData) {
-                profile.nome_oficina = oficinaData.nome_oficina; // Corrigido: era nome_olicina
+                profile.nome_oficina = oficinaData.nome_oficina;
               }
             }
 
@@ -61,7 +62,7 @@ export const useSubscriptionsData = () => {
             const planType = subscription.plan_type.replace('_anual', '').replace('_mensal', '');
             const billingCycle = subscription.plan_type.includes('_anual') ? 'anual' : 'mensal';
             
-            const { data: planDatum, error: planError } = await supabase
+            const { data: planData, error: planError } = await supabase
               .from('plan_configurations')
               .select('price')
               .eq('plan_type', planType)
@@ -70,10 +71,20 @@ export const useSubscriptionsData = () => {
 
             if (planError) {
               console.error('[DEBUG] Erro ao buscar plan_configurations:', planError);
+            } else if (planData) {
+              planPrice = planData.price || 0;
             }
-            planData = planDatum || { price: 0 };
+
+            // Se não encontrou preço nas configurações, usar valores padrão
+            if (planPrice === 0) {
+              if (subscription.plan_type === 'essencial_mensal') planPrice = 49.90;
+              else if (subscription.plan_type === 'essencial_anual') planPrice = 499.00;
+              else if (subscription.plan_type === 'premium_mensal') planPrice = 99.90;
+              else if (subscription.plan_type === 'premium_anual') planPrice = 999.00;
+            }
+
           } catch (err: any) {
-            console.error('[DEBUG] Erro ao buscar perfil/plan_data:', err);
+            console.error('[DEBUG] Erro ao buscar dados adicionais:', err);
           }
 
           return {
@@ -86,7 +97,7 @@ export const useSubscriptionsData = () => {
             ends_at: subscription.ends_at,
             expires_at: subscription.trial_ends_at || subscription.ends_at,
             payment_method: subscription.is_manual ? 'Manual' : 'Stripe',
-            amount: (planData?.price || 0) * 100, // Converter para centavos para manter compatibilidade
+            amount: planPrice * 100, // Converter para centavos para manter compatibilidade
             email: profile?.email || 'Email não encontrado',
             nome_oficina: profile?.nome_oficina || 'Nome não encontrado',
           };
