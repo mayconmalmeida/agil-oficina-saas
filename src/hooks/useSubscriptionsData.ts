@@ -53,7 +53,7 @@ export const useSubscriptionsData = () => {
                 .maybeSingle();
 
               if (!oficinaError && oficinaData) {
-                profile.nome_oficina = oficinaData.nome_olicina;
+                profile.nome_oficina = oficinaData.nome_oficina; // Corrigido: era nome_olicina
               }
             }
 

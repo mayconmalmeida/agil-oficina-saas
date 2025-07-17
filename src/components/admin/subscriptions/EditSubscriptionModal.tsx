@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -46,16 +47,25 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
   useEffect(() => {
     if (subscription && !isCreating) {
-      setFormData({
-        oficina_id: subscription.oficina_id || '',
-        user_id: subscription.user_id || '',
-        plan_type: subscription.plan || 'essencial_mensal',
-        status: subscription.status || 'active',
-        starts_at: subscription.started_at ? new Date(subscription.started_at) : new Date(),
-        ends_at: subscription.ends_at ? new Date(subscription.ends_at) : null,
-        amount: subscription.amount || 0,
-        payment_method: subscription.payment_method || 'manual'
-      });
+      // Ao editar, buscar a oficina do usuário
+      const findOficinaByUserId = async () => {
+        if (subscription.user_id) {
+          const oficinaEncontrada = oficinas.find(o => o.user_id === subscription.user_id);
+          
+          setFormData({
+            oficina_id: oficinaEncontrada?.id || '',
+            user_id: subscription.user_id || '',
+            plan_type: subscription.plan || 'essencial_mensal',
+            status: subscription.status || 'active',
+            starts_at: subscription.started_at ? new Date(subscription.started_at) : new Date(),
+            ends_at: subscription.ends_at ? new Date(subscription.ends_at) : null,
+            amount: subscription.amount || 0,
+            payment_method: subscription.payment_method || 'manual'
+          });
+        }
+      };
+      
+      findOficinaByUserId();
     } else if (isCreating) {
       setFormData({
         oficina_id: '',
@@ -68,7 +78,7 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         payment_method: 'manual'
       });
     }
-  }, [subscription, isCreating]);
+  }, [subscription, isCreating, oficinas]);
 
   // Auto-calculate end date based on plan type
   useEffect(() => {
