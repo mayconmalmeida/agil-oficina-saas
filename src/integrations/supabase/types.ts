@@ -920,6 +920,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      create_manual_subscription: {
+        Args: { p_user_id: string; p_plan_type: string; p_amount?: number }
+        Returns: Json
+      }
       create_profile: {
         Args: { user_id: string; user_email: string; user_full_name: string }
         Returns: undefined

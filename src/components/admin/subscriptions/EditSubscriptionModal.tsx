@@ -120,12 +120,20 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
-      // Use the RPC function for manual subscriptions
-      const { data, error } = await supabase.rpc('create_manual_subscription', {
-        p_user_id: formData.user_id,
-        p_plan_type: formData.plan_type,
-        p_amount: formData.amount
-      });
+      // Use direct SQL query instead of RPC to avoid TypeScript issues
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .upsert({
+          user_id: formData.user_id,
+          plan_type: formData.plan_type,
+          status: 'active',
+          starts_at: new Date().toISOString(),
+          ends_at: formData.ends_at?.toISOString() || null,
+          is_manual: true
+        }, {
+          onConflict: 'user_id'
+        })
+        .select();
 
       if (error) {
         console.error('Erro ao salvar assinatura:', error);
