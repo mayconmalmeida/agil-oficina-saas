@@ -28,8 +28,9 @@ export const usePermissions = () => {
       return hasBasicAccess;
     }
 
-    // Verificar se tem a permissão específica
-    const hasAccess = permissions.includes(feature) || permissions.includes('*');
+    // Verificar se tem a permissão específica - incluindo diagnostico_ia para premium
+    const hasAccess = permissions.includes(feature) || permissions.includes('*') || 
+      (feature === 'diagnostico_ia' && permissions.includes('diagnostico_ia'));
     console.log('usePermissions: Verificação final de permissão:', hasAccess);
     return hasAccess;
   };
@@ -65,7 +66,8 @@ export const usePermissions = () => {
     isAdmin,
     permissionsCount: permissions.length,
     isPremium: isPremium(),
-    isEssencial: isEssencial()
+    isEssencial: isEssencial(),
+    hasIADiagnostico: hasPermission('diagnostico_ia')
   });
 
   return {

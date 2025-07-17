@@ -1,128 +1,94 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Clock, BarChart3 } from 'lucide-react';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Bot, Calendar, BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
 
-const Hero = () => {
+export default function Hero() {
   return (
-    <div className="relative bg-oficina pt-16 sm:pt-20 pb-12 sm:pb-16 lg:pb-24 overflow-hidden">
-      <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:16px_16px]"></div>
-      <div className="absolute inset-0 bg-gradient-to-r from-oficina to-oficina/80"></div>
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
-          <div className="text-left space-y-4 sm:space-y-6 animate-slide-up">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-poppins tracking-tight text-white">
-              <span className="block">Software de gestão</span>
-              <span className="block text-oficina-accent mt-2">para sua oficina</span>
-            </h1>
-            
-            <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-xl">
-              O OficinaGO é o sistema completo que sua oficina precisa para 
-              gerenciar clientes, orçamentos e serviços com facilidade. 
-              Menos burocracia, mais resultados.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-2">
-              <Button 
-                asChild
-                size="lg"
-                className="bg-oficina-accent text-oficina hover:bg-oficina-accent/90 font-medium shadow-accent w-full sm:w-auto"
-              >
-                <Link to="/workshop-registration" className="flex items-center justify-center">
-                  Começar agora
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          
+          {/* Content */}
+          <div className="text-center lg:text-left space-y-6 lg:space-y-8">
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
+                Transforme sua oficina com 
+                <span className="block bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  AutoFlow
+                </span>
+              </h1>
+              <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                Sistema completo de gestão para oficinas mecânicas com IA integrada, 
+                relatórios avançados e controle total do seu negócio.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                <Link to="/workshop-registration" className="flex items-center">
+                  Começar Agora
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              
-              <Button 
-                asChild
-                variant="outline"
-                size="lg"
-                className="bg-white/10 text-white border-white/20 hover:bg-white/20 w-full sm:w-auto"
-              >
-                <a href="#funcionalidades" className="flex items-center justify-center">
-                  Ver funcionalidades
-                </a>
+              <Button variant="outline" size="lg" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300">
+                Ver Demonstração
               </Button>
             </div>
-            
-            <div className="text-white/80 text-xs sm:text-sm pt-2">
-              <span className="italic">Experimente grátis por 7 dias, sem compromisso.</span>
+
+            {/* Features highlights */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 pt-6 lg:pt-8">
+              <div className="flex items-center justify-center lg:justify-start space-x-3 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <Bot className="h-6 w-6 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">IA Diagnóstico</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start space-x-3 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <Calendar className="h-6 w-6 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">Agendamentos</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start space-x-3 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+                <BarChart3 className="h-6 w-6 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">Relatórios</span>
+              </div>
             </div>
           </div>
-          
-          <div className="relative lg:mt-0 mt-6 sm:mt-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <div className="bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 shadow-xl overflow-hidden">
-              <div className="p-1">
-                <div className="bg-oficina/80 rounded-md p-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></div>
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full"></div>
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
+
+          {/* Image/Visual */}
+          <div className="relative mt-8 lg:mt-0">
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 rounded-3xl transform rotate-6 scale-105 opacity-20"></div>
+              <div className="relative bg-white p-6 sm:p-8 rounded-3xl shadow-2xl">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-blue-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <div className="h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                        <Bot className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
+                        <BarChart3 className="h-8 w-8 text-green-600" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <AspectRatio ratio={16/9} className="mt-1">
-                  <img
-                    src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1400&q=80"
-                    alt="Oficina mecânica moderna com ferramentas organizadas"
-                    className="object-cover w-full h-full rounded-md"
-                  />
-                </AspectRatio>
-              </div>
-            </div>
-            
-            {/* Cards flutuantes decorativos - apenas em telas maiores */}
-            <div className="absolute -bottom-4 sm:-bottom-6 -left-6 sm:-left-10 bg-white rounded-lg p-2 sm:p-3 shadow-xl animate-float transform rotate-6 hidden md:block">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <div className="bg-green-100 p-1 sm:p-2 rounded-full">
-                  <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                </div>
-                <div className="text-xs font-medium">+28% novos clientes</div>
-              </div>
-            </div>
-            
-            <div className="absolute top-6 sm:top-10 -right-4 sm:-right-6 bg-white rounded-lg p-2 sm:p-3 shadow-xl animate-float transform -rotate-3 hidden md:block" style={{ animationDelay: '2s' }}>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <div className="bg-blue-100 p-1 sm:p-2 rounded-full">
-                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                </div>
-                <div className="text-xs font-medium">Economize 12h/semana</div>
-              </div>
-            </div>
-            
-            <div className="absolute top-1/2 -right-8 sm:-right-12 bg-white rounded-lg p-2 sm:p-3 shadow-xl animate-float transform rotate-3 hidden md:block" style={{ animationDelay: '1s' }}>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <div className="bg-purple-100 p-1 sm:p-2 rounded-full">
-                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                </div>
-                <div className="text-xs font-medium">Dados seguros</div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <div className="relative mt-12 sm:mt-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 sm:p-6 text-center">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">+3500</div>
-            <p className="text-white/80 text-sm sm:text-base">Orçamentos criados</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 sm:p-6 text-center">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">+100</div>
-            <p className="text-white/80 text-sm sm:text-base">Oficinas ativas</p>
-          </div>
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 sm:p-6 text-center">
-            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1">95%</div>
-            <p className="text-white/80 text-sm sm:text-base">Satisfação dos clientes</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
-export default Hero;
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      </div>
+    </section>
+  );
+}

@@ -1,268 +1,165 @@
-import React from 'react';
-import { Check } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useSubscription } from '@/hooks/useSubscription';
-import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
-import { useStripeSubscription } from '@/hooks/useStripeSubscription';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 
-const Pricing = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { startFreeTrial, subscriptionStatus } = useSubscription();
-  const { plans, loading, error, getPlansByType } = usePlanConfigurations();
-  const { createCheckoutSession, loading: stripeLoading } = useStripeSubscription();
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
-  console.log('Pricing component - Plans loaded:', plans);
-  console.log('Pricing component - Loading:', loading);
-  console.log('Pricing component - Error:', error);
-
-  const essencialPlans = getPlansByType('essencial');
-  const premiumPlans = getPlansByType('premium');
-
-  console.log('Essencial plans:', essencialPlans);
-  console.log('Premium plans:', premiumPlans);
-
-  const handleFreeTrial = async (planType: 'essencial' | 'premium') => {
-    // Usar links diretos da Cackto para teste gratuito
-    const trialLinks = {
-      essencial: 'https://checkout.cackto.com.br/essencial/teste',
-      premium: 'https://checkout.cackto.com.br/premium/teste'
-    };
-    
-    window.open(trialLinks[planType], '_blank');
-  };
-
-  const handlePaidPlan = async (planType: 'essencial' | 'premium', billingCycle: 'mensal' | 'anual') => {
-    // Buscar o link de pagamento configurado no banco
-    const plan = plans.find(p => p.plan_type === planType && p.billing_cycle === billingCycle);
-    
-    if (plan?.affiliate_link) {
-      window.open(plan.affiliate_link, '_blank');
-    } else {
-      // Fallback para links padrão da Cackto
-      const paymentLinks = {
-        'essencial-mensal': 'https://checkout.cackto.com.br/essencial/mensal',
-        'essencial-anual': 'https://checkout.cackto.com.br/essencial/anual',
-        'premium-mensal': 'https://checkout.cackto.com.br/premium/mensal',
-        'premium-anual': 'https://checkout.cackto.com.br/premium/anual'
-      };
-      
-      const linkKey = `${planType}-${billingCycle}` as keyof typeof paymentLinks;
-      window.open(paymentLinks[linkKey], '_blank');
-    }
-  };
-
-  // Função debug da sessão Supabase
-  const handleDebugSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log('=== [DEBUG SESSÃO SUPABASE] ===');
-    console.log('session:', session);
-    console.log('user:', user);
-    if (!user) {
-      console.warn('Nenhum usuário autenticado!');
-    }
-    if (!session) {
-      console.warn('Nenhuma sessão ativa!');
-    }
-    if (user && session) {
-      console.log('Usuário autenticado e sessão válida.');
-    }
-  };
-
-  // Fallback para planos quando não conseguimos carregar do banco ou está carregando
-  const fallbackTiers = [
+export default function Pricing() {
+  const plans = [
     {
-      name: 'Essencial',
-      id: 'essencial',
-      price: 89.90,
-      yearlyPrice: 899.00,
-      description: 'Ideal para oficinas de pequeno porte.',
+      name: "Essencial",
+      price: "97",
+      period: "/mês",
+      description: "Perfeito para oficinas pequenas",
+      popular: false,
       features: [
-        'Cadastro de clientes ilimitado',
-        'Gestão de orçamentos',
-        'Controle de serviços',
-        'Relatórios básicos',
-        'Suporte via e-mail'
-      ],
-      most_popular: false
+        "Gestão de clientes",
+        "Orçamentos digitais",
+        "Controle de serviços",
+        "Relatórios básicos",
+        "Suporte por email",
+        "Backup automático"
+      ]
     },
     {
-      name: 'Premium',
-      id: 'premium',
-      price: 179.90,
-      yearlyPrice: 1799.00,
-      description: 'Recomendado para oficinas em crescimento.',
+      name: "Premium",
+      price: "197",
+      period: "/mês",
+      description: "Ideal para oficinas em crescimento",
+      popular: true,
       features: [
-        'Todos os recursos do plano Essencial',
-        'Módulo de estoque integrado',
-        'Agendamento de serviços',
-        'Relatórios avançados',
-        'Suporte prioritário',
-        'Backup automático'
-      ],
-      most_popular: true
+        "Tudo do plano Essencial",
+        "IA para diagnóstico",
+        "Agendamentos inteligentes",
+        "Relatórios avançados",
+        "Marketing automático",
+        "Suporte prioritário",
+        "Integração contábil",
+        "App mobile"
+      ]
     },
+    {
+      name: "Enterprise",
+      price: "Personalizado",
+      period: "",
+      description: "Para redes de oficinas",
+      popular: false,
+      features: [
+        "Tudo do plano Premium",
+        "Multi-filiais",
+        "API personalizada",
+        "Treinamento dedicado",
+        "Gerente de conta",
+        "SLA garantido",
+        "Customizações"
+      ]
+    }
   ];
 
-  // Use dados do banco se disponíveis, senão use fallback
-  const tiers = !loading && plans.length > 0 ? [
-    {
-      name: 'Essencial',
-      id: 'essencial',
-      price: essencialPlans.find(p => p.billing_cycle === 'mensal')?.price || 89.90,
-      yearlyPrice: essencialPlans.find(p => p.billing_cycle === 'anual')?.price || 899.00,
-      description: 'Ideal para oficinas de pequeno porte.',
-      features: essencialPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[0].features,
-      most_popular: false
-    },
-    {
-      name: 'Premium',
-      id: 'premium',
-      price: premiumPlans.find(p => p.billing_cycle === 'mensal')?.price || 179.90,
-      yearlyPrice: premiumPlans.find(p => p.billing_cycle === 'anual')?.price || 1799.00,
-      description: 'Recomendado para oficinas em crescimento.',
-      features: premiumPlans.find(p => p.billing_cycle === 'mensal')?.features || fallbackTiers[1].features,
-      most_popular: true
-    },
-  ] : fallbackTiers;
-
-  console.log('Final tiers to render:', tiers);
-
   return (
-    <div id="precos" className="py-20 bg-gray-50">
-      <div className="container mx-auto px-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Planos Simples e Acessíveis
+    <section id="precos" className="py-16 lg:py-24 bg-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12 lg:mb-16">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+            Planos que <span className="text-blue-600">Cabem no seu Bolso</span>
           </h2>
-          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-            Escolha o plano ideal para sua oficina e aproveite 7 dias de teste grátis. Sem compromisso.
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            Escolha o plano ideal para sua oficina. Comece grátis e evolua conforme seu negócio cresce.
           </p>
-          {loading && (
-            <p className="mt-2 text-sm text-blue-600">
-              Carregando configurações dos planos...
-            </p>
-          )}
-          {error && (
-            <p className="mt-2 text-sm text-orange-600">
-              Usando configuração padrão de planos
-            </p>
-          )}
-        </motion.div>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {tiers.map((tier, index) => (
-            <motion.div
-              key={tier.id}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.2 }}
-              viewport={{ once: true }}
-              className={`bg-white rounded-lg shadow-lg overflow-hidden ${
-                tier.most_popular ? 'ring-2 ring-blue-600' : ''
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto">
+          {plans.map((plan, index) => (
+            <Card 
+              key={index} 
+              className={`relative overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 ${
+                plan.popular 
+                  ? 'border-2 border-blue-500 shadow-xl scale-105' 
+                  : 'border border-gray-200 shadow-lg hover:border-blue-300'
               }`}
             >
-              {tier.most_popular && (
-                <div className="bg-blue-600 text-white text-center py-2 text-sm font-semibold">
-                  Mais Popular
+              {plan.popular && (
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center py-2">
+                  <div className="flex items-center justify-center space-x-1">
+                    <Star className="h-4 w-4 fill-current" />
+                    <span className="text-sm font-semibold">MAIS POPULAR</span>
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
                 </div>
               )}
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900">{tier.name}</h3>
-                <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl font-bold tracking-tight text-gray-900">
-                    R$ {tier.price.toFixed(2)}
+              
+              <CardHeader className={`text-center ${plan.popular ? 'pt-12' : 'pt-6'} pb-4`}>
+                <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {plan.name}
+                </CardTitle>
+                <CardDescription className="text-gray-600 text-base sm:text-lg">
+                  {plan.description}
+                </CardDescription>
+                <div className="flex items-center justify-center space-x-1 mt-4">
+                  <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+                    R$ {plan.price}
                   </span>
-                  <span className="ml-1 text-xl font-semibold text-gray-500">/mês</span>
+                  <span className="text-lg text-gray-600">{plan.period}</span>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  ou R$ {tier.yearlyPrice.toFixed(2)}/ano (2 meses grátis)
-                </p>
-                <p className="mt-2 text-sm text-gray-500">{tier.description}</p>
-                
-                <Button
-                  onClick={() => handleFreeTrial(tier.id as 'essencial' | 'premium')}
-                  className={`mt-6 w-full py-3 px-6 text-center font-medium rounded-md ${
-                    tier.most_popular
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  }`}
-                >
-                  Iniciar teste grátis (7 dias)
-                </Button>
-                
-                <div className="mt-3 space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handlePaidPlan(tier.id as 'essencial' | 'premium', 'mensal')}
-                    disabled={stripeLoading}
-                  >
-                    {stripeLoading ? 'Processando...' : `Assinar Mensal - R$ ${tier.price.toFixed(2)}`}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handlePaidPlan(tier.id as 'essencial' | 'premium', 'anual')}
-                    disabled={stripeLoading}
-                  >
-                    {stripeLoading ? 'Processando...' : `Assinar Anual - R$ ${tier.yearlyPrice.toFixed(2)}`}
-                  </Button>
-                </div>
-              </div>
-              <div className="px-6 pt-6 pb-8">
-                <h4 className="text-sm font-semibold text-gray-900 tracking-wide uppercase">
-                  O que está incluído
-                </h4>
-                <ul className="mt-6 space-y-4">
-                  {tier.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <Check className="h-5 w-5 text-green-500" />
-                      </div>
-                      <p className="ml-3 text-sm text-gray-500">{feature}</p>
+              </CardHeader>
+              
+              <CardContent className="px-6 pb-8">
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-center space-x-3">
+                      <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                      <span className="text-sm sm:text-base text-gray-700">{feature}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-            </motion.div>
+                
+                <Button 
+                  className={`w-full py-3 text-base font-semibold transition-all duration-300 ${
+                    plan.popular
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                      : 'bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border border-gray-300 hover:border-blue-600'
+                  }`}
+                  size="lg"
+                >
+                  {plan.name === "Enterprise" ? (
+                    "Falar com Vendas"
+                  ) : (
+                    <Link to="/workshop-registration">
+                      Começar Teste Grátis
+                    </Link>
+                  )}
+                </Button>
+                
+                {plan.name !== "Enterprise" && (
+                  <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
+                    7 dias grátis • Sem cartão de crédito
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
-        
-        <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm font-semibold text-gray-700 shadow border border-gray-300"
-            onClick={handleDebugSession}
-          >
-            Debug Sessão Supabase
-          </button>
-        </div>
 
-        <div className="mt-10 text-center">
-          <p className="text-gray-600">
-            Precisa de um plano personalizado para sua rede de oficinas?{' '}
-            <a href="#contato" className="text-blue-600 font-medium hover:underline">
-              Entre em contato
-            </a>
+        <div className="text-center mt-12 lg:mt-16">
+          <p className="text-base sm:text-lg text-gray-600 mb-6">
+            Todas as assinaturas incluem suporte técnico e atualizações gratuitas
           </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8">
+            <div className="flex items-center space-x-2">
+              <Check className="h-5 w-5 text-green-500" />
+              <span className="text-sm sm:text-base text-gray-700">30 dias de garantia</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Check className="h-5 w-5 text-green-500" />
+              <span className="text-sm sm:text-base text-gray-700">Cancele quando quiser</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Check className="h-5 w-5 text-green-500" />
+              <span className="text-sm sm:text-base text-gray-700">Migração gratuita</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
-};
-
-export default Pricing;
+}

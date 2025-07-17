@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Users, 
@@ -11,19 +11,15 @@ import {
   FileText, 
   Settings,
   LogOut,
+  Bot,
   BarChart3,
-  Building2,
-  Crown,
+  CreditCard,
+  MessageCircle,
   Shield,
-  Megaphone,
-  Calculator,
-  Archive,
-  Mail,
-  User
+  Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { useDaysRemaining } from '@/hooks/useDaysRemaining';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
 
 interface SidebarNavigationProps {
@@ -32,269 +28,170 @@ interface SidebarNavigationProps {
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { diasRestantes, isPremiumTrial, isExpired } = useDaysRemaining();
-  
-  // Verificar se tem acesso premium (admin ou trial ativo)
-  const hasPremiumAccess = user?.role === 'admin' || user?.role === 'superadmin' || (isPremiumTrial && diasRestantes > 0);
+  const { hasPermission, canAccessPremiumFeatures, isPremium } = usePermissions();
 
-  const essentialMenuItems = [
-    { 
-      name: 'Dashboard', 
-      href: '/dashboard', 
-      icon: Home, 
-      current: location.pathname === '/dashboard',
-      premium: false
+  const navigationItems = [
+    {
+      href: '/dashboard',
+      icon: Home,
+      label: 'Dashboard',
+      permission: null
     },
-    { 
-      name: 'Clientes', 
-      href: '/dashboard/clientes', 
-      icon: Users, 
-      current: location.pathname.startsWith('/dashboard/clientes'),
-      premium: false
+    {
+      href: '/dashboard/clientes',
+      icon: Users,
+      label: 'Clientes',
+      permission: 'clientes'
     },
-    { 
-      name: 'Veículos', 
-      href: '/dashboard/veiculos', 
-      icon: Car, 
-      current: location.pathname.startsWith('/dashboard/veiculos'),
-      premium: false
+    {
+      href: '/dashboard/orcamentos',
+      icon: FileText,
+      label: 'Orçamentos',
+      permission: 'orcamentos'
     },
-    { 
-      name: 'Produtos', 
-      href: '/dashboard/produtos', 
-      icon: Package, 
-      current: location.pathname.startsWith('/dashboard/produtos'),
-      premium: false
+    {
+      href: '/dashboard/servicos',
+      icon: Wrench,
+      label: 'Serviços',
+      permission: 'servicos'
     },
-    { 
-      name: 'Serviços', 
-      href: '/dashboard/servicos', 
-      icon: Wrench, 
-      current: location.pathname.startsWith('/dashboard/servicos'),
-      premium: false
+    {
+      href: '/dashboard/produtos',
+      icon: Package,
+      label: 'Produtos',
+      permission: 'produtos'
     },
-    { 
-      name: 'Orçamentos', 
-      href: '/dashboard/orcamentos', 
-      icon: FileText, 
-      current: location.pathname.startsWith('/dashboard/orcamentos'),
-      premium: false
+    {
+      href: '/dashboard/veiculos',
+      icon: Car,
+      label: 'Veículos',
+      permission: 'veiculos'
     },
-    { 
-      name: 'Categorias', 
-      href: '/dashboard/categorias', 
-      icon: Archive, 
-      current: location.pathname.startsWith('/dashboard/categorias'),
-      premium: false
+    {
+      href: '/dashboard/agendamentos',
+      icon: Calendar,
+      label: 'Agendamentos',
+      permission: 'agendamentos',
+      isPremium: true
     },
-    { 
-      name: 'Fornecedores', 
-      href: '/dashboard/fornecedores', 
-      icon: Building2, 
-      current: location.pathname.startsWith('/dashboard/fornecedores'),
-      premium: false
+    {
+      href: '/dashboard/ia-diagnostico',
+      icon: Bot,
+      label: 'IA Diagnóstico',
+      permission: 'diagnostico_ia',
+      isPremium: true
     },
-    { 
-      name: 'Relatórios Básicos', 
-      href: '/dashboard/relatorios-basicos', 
-      icon: BarChart3, 
-      current: location.pathname.startsWith('/dashboard/relatorios-basicos'),
-      premium: false
+    {
+      href: '/dashboard/ia-suporte-inteligente',
+      icon: MessageCircle,
+      label: 'IA Suporte',
+      permission: 'suporte_prioritario',
+      isPremium: true
+    },
+    {
+      href: '/dashboard/relatorios',
+      icon: BarChart3,
+      label: 'Relatórios',
+      permission: 'relatorios_avancados',
+      isPremium: true
+    },
+    {
+      href: '/dashboard/integracao-contabil',
+      icon: Database,
+      label: 'Integração Contábil',
+      permission: 'integracao_contabil',
+      isPremium: true
+    },
+    {
+      href: '/dashboard/backup',
+      icon: Shield,
+      label: 'Backup',
+      permission: 'backup',
+      isPremium: true
+    },
+    {
+      href: '/dashboard/assinatura',
+      icon: CreditCard,
+      label: 'Assinatura',
+      permission: null
+    },
+    {
+      href: '/dashboard/configuracoes',
+      icon: Settings,
+      label: 'Configurações',
+      permission: 'configuracoes'
     }
   ];
 
-  const premiumMenuItems = [
-    { 
-      name: 'Agendamentos', 
-      href: '/dashboard/agendamentos', 
-      icon: Calendar, 
-      current: location.pathname.startsWith('/dashboard/agendamentos'),
-      premium: true
-    },
-    { 
-      name: 'Marketing', 
-      href: '/dashboard/marketing', 
-      icon: Megaphone, 
-      current: location.pathname.startsWith('/dashboard/marketing'),
-      premium: true
-    },
-    { 
-      name: 'Contabilidade', 
-      href: '/dashboard/contabilidade', 
-      icon: Calculator, 
-      current: location.pathname.startsWith('/dashboard/contabilidade'),
-      premium: true
-    },
-    { 
-      name: 'Relatórios Avançados', 
-      href: '/dashboard/relatorios-avancados', 
-      icon: BarChart3, 
-      current: location.pathname.startsWith('/dashboard/relatorios-avancados'),
-      premium: true
-    },
-    { 
-      name: 'IA Suporte', 
-      href: '/dashboard/ia-suporte', 
-      icon: Shield, 
-      current: location.pathname.startsWith('/dashboard/ia-suporte'),
-      premium: true
-    },
-    { 
-      name: 'Backup', 
-      href: '/dashboard/backup', 
-      icon: Archive, 
-      current: location.pathname.startsWith('/dashboard/backup'),
-      premium: true
+  const isCurrentPath = (path: string) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
     }
-  ];
-
-  const configMenuItems = [
-    { 
-      name: 'Empresa', 
-      href: '/dashboard/empresa', 
-      icon: Building2, 
-      current: location.pathname.startsWith('/dashboard/empresa'),
-      premium: false
-    },
-    { 
-      name: 'Configurações', 
-      href: '/dashboard/configuracoes', 
-      icon: Settings, 
-      current: location.pathname.startsWith('/dashboard/configuracoes'),
-      premium: false
-    }
-  ];
-
-  const handleMenuClick = (href: string, isPremium: boolean) => {
-    if (isPremium && !hasPremiumAccess) {
-      // Não navegar se for premium e usuário não tem acesso
-      return;
-    }
-    navigate(href);
+    return location.pathname.startsWith(path);
   };
 
-  const renderMenuItem = (item: any) => {
-    const canAccess = !item.premium || hasPremiumAccess;
-    
-    return (
-      <li key={item.name}>
-        <button
-          onClick={() => handleMenuClick(item.href, item.premium)}
-          disabled={item.premium && !hasPremiumAccess}
-          className={`
-            group flex w-full items-center rounded-md px-2 py-2 text-sm font-medium text-left
-            ${item.current 
-              ? 'bg-gray-100 text-gray-900' 
-              : canAccess 
-                ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                : 'text-gray-400 cursor-not-allowed opacity-60'
-            }
-          `}
-        >
-          <item.icon
-            className={`mr-3 h-5 w-5 flex-shrink-0 ${
-              item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
-            }`}
-          />
-          <span className="flex-1">{item.name}</span>
-          {item.premium && !hasPremiumAccess && (
-            <Crown className="h-4 w-4 text-yellow-600 ml-2" />
-          )}
-        </button>
-      </li>
-    );
+  const canAccessItem = (item: any) => {
+    if (!item.permission) return true;
+    if (item.isPremium && !canAccessPremiumFeatures()) return false;
+    return hasPermission(item.permission);
   };
 
   return (
-    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+    <div className="flex flex-col h-full bg-white border-r border-gray-200">
       {/* Logo */}
-      <div className="flex h-16 items-center px-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">AutoFlow</h1>
-      </div>
-
-      {/* Plan Status */}
-      <div className="p-4 border-b border-gray-200">
-        {user?.role === 'admin' || user?.role === 'superadmin' ? (
-          <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
-            <Crown className="h-4 w-4 text-purple-600" />
-            <span className="text-sm font-medium text-purple-800">Admin</span>
+      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+        <Link to="/dashboard" className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-lg">A</span>
           </div>
-        ) : isPremiumTrial && diasRestantes > 0 ? (
-          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-            <Crown className="h-4 w-4 text-blue-600" />
-            <div className="flex-1">
-              <span className="text-sm font-medium text-blue-800">Trial Premium</span>
-              <p className="text-xs text-blue-600">{diasRestantes} dias restantes</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-            <User className="h-4 w-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-800">Plano Essencial</span>
-          </div>
-        )}
+          <span className="hidden lg:block text-xl font-bold text-gray-900">AutoFlow</span>
+        </Link>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <nav className="space-y-6">
-          {/* Essential Features */}
-          <div>
-            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Recursos Essenciais
-            </h3>
-            <ul className="space-y-1">
-              {essentialMenuItems.map(renderMenuItem)}
-            </ul>
-          </div>
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {navigationItems.map((item) => {
+          const isActive = isCurrentPath(item.href);
+          const canAccess = canAccessItem(item);
+          const Icon = item.icon;
 
-          {/* Premium Features */}
-          <div>
-            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-              Recursos Premium
-              {!hasPremiumAccess && <Crown className="h-3 w-3 text-yellow-600" />}
-            </h3>
-            <ul className="space-y-1">
-              {premiumMenuItems.map(renderMenuItem)}
-            </ul>
-          </div>
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={`
+                flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                ${isActive 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : canAccess
+                    ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    : 'text-gray-400 cursor-not-allowed opacity-60'
+                }
+                ${!canAccess ? 'pointer-events-none' : ''}
+              `}
+            >
+              <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-blue-700' : ''}`} />
+              <span className="truncate">{item.label}</span>
+              {item.isPremium && !isPremium() && (
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  Premium
+                </Badge>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-          {/* Configuration */}
-          <div>
-            <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Configurações
-            </h3>
-            <ul className="space-y-1">
-              {configMenuItems.map(renderMenuItem)}
-            </ul>
-          </div>
-        </nav>
-      </div>
-
-      {/* User section */}
-      <div className="border-t border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <User className="h-4 w-4 text-gray-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
-                {user?.email}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onLogout}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Logout */}
+      <div className="p-4 border-t border-gray-200">
+        <Button
+          onClick={onLogout}
+          variant="ghost"
+          className="w-full justify-start text-gray-700 hover:text-red-600 hover:bg-red-50"
+        >
+          <LogOut className="mr-3 h-5 w-5" />
+          <span>Sair</span>
+        </Button>
       </div>
     </div>
   );

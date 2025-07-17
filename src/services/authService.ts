@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -49,30 +50,42 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 
     console.log('fetchUserProfile: Profile encontrado:', profile);
 
-    // Buscar assinatura do usuário
-    const { data: subscription, error: subscriptionError } = await supabase
-      .from('user_subscriptions')
-      .select(`
-        id,
-        user_id,
-        plan_type,
-        status,
-        starts_at,
-        ends_at,
-        trial_ends_at,
-        is_manual,
-        stripe_customer_id,
-        stripe_subscription_id,
-        created_at,
-        updated_at
-      `)
+    // Buscar assinatura do usuário - primeiro buscar a oficina
+    const { data: oficina } = await supabase
+      .from('oficinas')
+      .select('id')
       .eq('user_id', userId)
-      .in('status', ['active', 'trialing'])
-      .order('created_at', { ascending: false })
-      .maybeSingle();
+      .single();
 
-    if (subscriptionError) {
-      console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
+    let subscription = null;
+    if (oficina) {
+      // Buscar assinatura vinculada à oficina
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          id,
+          user_id,
+          plan_type,
+          status,
+          starts_at,
+          ends_at,
+          trial_ends_at,
+          is_manual,
+          stripe_customer_id,
+          stripe_subscription_id,
+          created_at,
+          updated_at
+        `)
+        .eq('user_id', userId)
+        .in('status', ['active', 'trialing'])
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
+      } else {
+        subscription = subscriptionData;
+      }
     }
 
     console.log('fetchUserProfile: Subscription encontrada:', subscription);
@@ -182,7 +195,7 @@ export const validatePlanAccess = (subscription: any, role: string): {
     }
   }
 
-  // Definir permissões por plano
+  // Definir permissões por plano - incluindo diagnostico_ia para Premium
   const planPermissions = {
     Free: ['clientes', 'orcamentos'],
     Essencial: [
@@ -203,7 +216,8 @@ export const validatePlanAccess = (subscription: any, role: string): {
     isActive,
     plan,
     permissions: permissions.length,
-    permissionsList: permissions
+    permissionsList: permissions,
+    hasIADiagnostico: permissions.includes('diagnostico_ia')
   });
 
   return {

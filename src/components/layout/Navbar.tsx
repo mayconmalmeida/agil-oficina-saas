@@ -17,36 +17,39 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
-            <img 
-              alt="OficinaGO" 
-              src="/lovable-uploads/0e839f4d-0752-4628-84f5-9f410ef13996.png" 
-              className="h-12 w-auto sm:h-16 md:h-20 object-contain max-w-[150px] sm:max-w-[180px] md:max-w-[200px]" 
-            />
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg sm:text-xl">A</span>
+              </div>
+              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                AutoFlow
+              </span>
+            </div>
           </Link>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-          <a href="#funcionalidades" className="text-oficina-gray hover:text-oficina-dark transition-colors text-sm xl:text-base">
+          <a href="#funcionalidades" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
             Funcionalidades
           </a>
-          <a href="#precos" className="text-oficina-gray hover:text-oficina-dark transition-colors text-sm xl:text-base">
+          <a href="#precos" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
             Planos
           </a>
-          <a href="#faq" className="text-oficina-gray hover:text-oficina-dark transition-colors text-sm xl:text-base">
+          <a href="#faq" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
             FAQ
           </a>
-          <a href="#contato" className="text-oficina-gray hover:text-oficina-dark transition-colors text-sm xl:text-base">
+          <a href="#contato" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
             Contato
           </a>
           <div className="flex space-x-2 xl:space-x-3">
-            <Button size="sm" className="bg-oficina hover:bg-oficina-dark transition-colors shadow-blue text-xs xl:text-sm px-3 xl:px-4">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-lg text-xs xl:text-sm px-4 xl:px-6">
               <Link to="/workshop-registration">Teste Grátis</Link>
             </Button>
             <Button 
               variant="outline" 
               size="sm"
-              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors text-xs xl:text-sm px-3 xl:px-4" 
+              className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors text-xs xl:text-sm px-4 xl:px-6" 
               onClick={handleLoginClick}
             >
               <div className="flex items-center">
@@ -61,61 +64,63 @@ export default function Navbar() {
         <div className="lg:hidden">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className="text-oficina-dark focus:outline-none p-2"
+            className="text-blue-800 focus:outline-none p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="lg:hidden bg-white py-4 px-4 shadow-lg border-t">
-          <nav className="flex flex-col space-y-4">
+        <div className="lg:hidden bg-white border-t shadow-lg">
+          <nav className="flex flex-col px-4 py-4 space-y-4">
             <a 
               href="#funcionalidades" 
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2 text-base" 
+              className="text-gray-600 hover:text-blue-800 transition-colors py-3 text-base font-medium border-b border-gray-100" 
               onClick={() => setIsMenuOpen(false)}
             >
               Funcionalidades
             </a>
             <a 
               href="#precos" 
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2 text-base" 
+              className="text-gray-600 hover:text-blue-800 transition-colors py-3 text-base font-medium border-b border-gray-100" 
               onClick={() => setIsMenuOpen(false)}
             >
               Planos
             </a>
             <a 
               href="#faq" 
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2 text-base" 
+              className="text-gray-600 hover:text-blue-800 transition-colors py-3 text-base font-medium border-b border-gray-100" 
               onClick={() => setIsMenuOpen(false)}
             >
               FAQ
             </a>
             <a 
               href="#contato" 
-              className="text-oficina-gray hover:text-oficina-dark transition-colors py-2 text-base" 
+              className="text-gray-600 hover:text-blue-800 transition-colors py-3 text-base font-medium border-b border-gray-100" 
               onClick={() => setIsMenuOpen(false)}
             >
               Contato
             </a>
-            <Button className="bg-oficina hover:bg-oficina-dark transition-colors w-full mt-4">
-              <Link to="/workshop-registration">Teste Grátis</Link>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-oficina text-oficina hover:bg-oficina hover:text-white transition-colors w-full" 
-              onClick={() => {
-                setIsMenuOpen(false);
-                navigate('/login');
-              }}
-            >
-              <div className="flex items-center justify-center">
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
-              </div>
-            </Button>
+            <div className="pt-4 space-y-3">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white transition-colors w-full py-3 text-base font-medium">
+                <Link to="/workshop-registration">Teste Grátis</Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors w-full py-3 text-base font-medium" 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate('/login');
+                }}
+              >
+                <div className="flex items-center justify-center">
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Login
+                </div>
+              </Button>
+            </div>
           </nav>
         </div>
       )}

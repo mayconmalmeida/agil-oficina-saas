@@ -47,10 +47,11 @@ export const useOptimizedAuth = (): AuthContextValue => {
     nome_oficina: user.nome_oficina,
     telefone: user.telefone,
     is_active: user.is_active,
-    // Fix subscription type compatibility
+    // Fix subscription type compatibility - cast both plan_type and status
     subscription: user.subscription ? {
       ...user.subscription,
-      plan_type: user.subscription.plan_type as 'essencial_mensal' | 'essencial_anual' | 'premium_mensal' | 'premium_anual' | 'free_trial_essencial' | 'free_trial_premium'
+      plan_type: user.subscription.plan_type as 'essencial_mensal' | 'essencial_anual' | 'premium_mensal' | 'premium_anual' | 'free_trial_essencial' | 'free_trial_premium',
+      status: user.subscription.status as 'active' | 'trialing' | 'cancelled' | 'expired'
     } : undefined,
     trial_ends_at: user.trial_ends_at,
     plano: user.plano,
