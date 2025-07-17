@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppContent from "@/components/app/AppContent";
+import DebugInfo from "@/components/debug/DebugInfo";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AppContent />
+          <DebugInfo />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

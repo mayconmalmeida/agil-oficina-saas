@@ -5,29 +5,51 @@ export const usePermissions = () => {
   const { permissions, plan, planActive, isAdmin } = useAuth();
 
   const hasPermission = (feature: string): boolean => {
+    console.log('usePermissions: Verificando permissão:', {
+      feature,
+      isAdmin,
+      plan,
+      planActive,
+      permissions: permissions.length,
+      hasFeature: permissions.includes(feature)
+    });
+
     // Admin tem todas as permissões
-    if (isAdmin) return true;
+    if (isAdmin) {
+      console.log('usePermissions: Admin detectado, permitindo acesso');
+      return true;
+    }
     
     // Se o plano não está ativo, apenas permissões básicas
     if (!planActive) {
       const basicPermissions = ['clientes', 'orcamentos'];
-      return basicPermissions.includes(feature);
+      const hasBasicAccess = basicPermissions.includes(feature);
+      console.log('usePermissions: Plano inativo, verificando acesso básico:', hasBasicAccess);
+      return hasBasicAccess;
     }
 
     // Verificar se tem a permissão específica
-    return permissions.includes(feature) || permissions.includes('*');
+    const hasAccess = permissions.includes(feature) || permissions.includes('*');
+    console.log('usePermissions: Verificação final de permissão:', hasAccess);
+    return hasAccess;
   };
 
   const isPremium = (): boolean => {
-    return plan === 'Premium' && planActive;
+    const result = plan === 'Premium' && planActive;
+    console.log('usePermissions: isPremium check:', { plan, planActive, result });
+    return result;
   };
 
   const isEssencial = (): boolean => {
-    return plan === 'Essencial' && planActive;
+    const result = plan === 'Essencial' && planActive;
+    console.log('usePermissions: isEssencial check:', { plan, planActive, result });
+    return result;
   };
 
   const canAccessPremiumFeatures = (): boolean => {
-    return isAdmin || isPremium();
+    const result = isAdmin || isPremium();
+    console.log('usePermissions: canAccessPremiumFeatures check:', { isAdmin, isPremium: isPremium(), result });
+    return result;
   };
 
   const getAvailableFeatures = () => {

@@ -67,6 +67,8 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         updated_at
       `)
       .eq('user_id', userId)
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
       .maybeSingle();
 
     if (subscriptionError) {
@@ -126,6 +128,7 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
   // Admin sempre tem acesso total
   if (role === 'admin' || role === 'superadmin') {
+    console.log('validatePlanAccess: Admin detectado, retornando acesso total');
     return {
       isActive: true,
       plan: 'Premium',
@@ -135,6 +138,7 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
   // Se não há assinatura, acesso limitado
   if (!subscription) {
+    console.log('validatePlanAccess: Sem assinatura, retornando acesso básico');
     return {
       isActive: false,
       plan: 'Free',
@@ -146,15 +150,24 @@ export const validatePlanAccess = (subscription: any, role: string): {
   const now = new Date();
   let isActive = false;
 
+  console.log('validatePlanAccess: Verificando status da assinatura:', {
+    status: subscription.status,
+    ends_at: subscription.ends_at,
+    trial_ends_at: subscription.trial_ends_at,
+    now: now.toISOString()
+  });
+
   if (subscription.status === 'active') {
     // Verificar se não expirou
     if (!subscription.ends_at || new Date(subscription.ends_at) > now) {
       isActive = true;
+      console.log('validatePlanAccess: Assinatura ativa confirmada');
     }
   } else if (subscription.status === 'trialing') {
     // Verificar se o trial não expirou
     if (subscription.trial_ends_at && new Date(subscription.trial_ends_at) > now) {
       isActive = true;
+      console.log('validatePlanAccess: Trial ativo confirmado');
     }
   }
 
@@ -188,7 +201,8 @@ export const validatePlanAccess = (subscription: any, role: string): {
   console.log('validatePlanAccess: Resultado da validação:', {
     isActive,
     plan,
-    permissions: permissions.length
+    permissions: permissions.length,
+    permissionsList: permissions
   });
 
   return {
@@ -200,5 +214,11 @@ export const validatePlanAccess = (subscription: any, role: string): {
 
 export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
   const { isActive } = validatePlanAccess(subscription, role);
+  console.log('calculateCanAccessFeatures: Calculando acesso:', {
+    subscription: !!subscription,
+    role,
+    subscriptionStatus: subscription?.status,
+    result: isActive
+  });
   return isActive;
 };
