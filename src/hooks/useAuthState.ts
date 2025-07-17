@@ -26,20 +26,25 @@ export const useAuthState = () => {
         if (session?.user) {
           setProfileLoading(true);
           try {
+            console.log('useAuthState: Buscando perfil para:', session.user.id);
             const profile = await fetchUserProfile(session.user.id);
             setUser(profile);
             setRole(profile.role);
-            console.log('useAuthState: Profile carregado:', profile);
+            console.log('useAuthState: Profile carregado com sucesso:', profile.email);
           } catch (error) {
             console.error('useAuthState: Erro ao carregar profile:', error);
+            // ✅ Em caso de erro, limpar estados mas não travar
             setUser(null);
             setRole(null);
           } finally {
+            // ✅ SEMPRE finalizar profileLoading, mesmo com erro
             setProfileLoading(false);
           }
         } else {
+          console.log('useAuthState: Sem sessão, limpando estados');
           setUser(null);
           setRole(null);
+          setProfileLoading(false);
         }
         
         if (initialLoad) {
@@ -48,18 +53,19 @@ export const useAuthState = () => {
       }
     );
 
-    // Depois verificar sessão existente
+    // Verificar sessão existente
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('useAuthState: Sessão inicial verificada:', !!session);
       // O listener já vai processar esta sessão
     });
 
-    // Timeout de segurança para evitar loading infinito
+    // Timeout de segurança mais curto
     const timeout = setTimeout(() => {
-      console.log('useAuthState: Timeout de segurança atingido');
+      console.log('useAuthState: Timeout de segurança atingido - forçando fim do loading');
       setLoading(false);
       setIsLoadingAuth(false);
-    }, 3000);
+      setProfileLoading(false);
+    }, 2000); // Reduzido para 2 segundos
 
     return () => {
       subscription.unsubscribe();
@@ -72,6 +78,12 @@ export const useAuthState = () => {
     const isLoading = initialLoad || profileLoading;
     setLoading(isLoading);
     setIsLoadingAuth(isLoading);
+    
+    console.log('useAuthState: Atualizando loading states:', {
+      initialLoad,
+      profileLoading,
+      finalLoading: isLoading
+    });
   }, [initialLoad, profileLoading]);
 
   console.log('useAuthState: Estado atual:', {

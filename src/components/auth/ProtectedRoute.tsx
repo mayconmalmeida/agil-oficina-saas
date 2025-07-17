@@ -22,12 +22,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     forceLoad
   });
 
-  // Timeout de segurança mais agressivo para evitar loading infinito
+  // Timeout de segurança mais agressivo
   useEffect(() => {
     const timeout = setTimeout(() => {
       console.log('ProtectedRoute: Timeout de loading atingido, forçando verificação');
       setForceLoad(true);
-    }, 2000); // Reduzido para 2 segundos
+    }, 1500); // Reduzido para 1.5 segundos
 
     return () => clearTimeout(timeout);
   }, []);
@@ -42,7 +42,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     // Verificação simples e direta
     if (!user) {
-      console.log('ProtectedRoute: Usuário não autenticado, redirecionando');
+      console.log('ProtectedRoute: Usuário não autenticado, redirecionando para login');
       return <Navigate to="/login" replace state={{ from: location }} />;
     }
 

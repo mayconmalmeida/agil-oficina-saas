@@ -14,13 +14,14 @@ const AppContent: React.FC = () => {
     const timeout = setTimeout(() => {
       console.log('AppContent: Timeout de loading atingido, forçando carregamento do app');
       setForceLoad(true);
-    }, 1500); // Reduzido para 1.5 segundos
+    }, 1000); // Reduzido para 1 segundo
 
     return () => clearTimeout(timeout);
   }, []);
 
   // Mostrar app se não está carregando ou se passou do timeout
   if (!isLoadingAuth || forceLoad) {
+    console.log('AppContent: Carregando app - isLoadingAuth:', isLoadingAuth, 'forceLoad:', forceLoad);
     return (
       <RouteManager>
         <AppRoutes />
@@ -28,6 +29,7 @@ const AppContent: React.FC = () => {
     );
   }
 
+  console.log('AppContent: Exibindo loading - isLoadingAuth:', isLoadingAuth);
   return <Loading fullscreen text="Carregando aplicação..." />;
 };
 

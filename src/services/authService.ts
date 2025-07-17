@@ -34,7 +34,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
   console.log('fetchUserProfile: Buscando perfil para usuário:', userId);
   
   try {
-    // Buscar perfil do usuário
+    // ✅ Buscar perfil do usuário primeiro
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -50,17 +50,17 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       throw new Error('Perfil não encontrado');
     }
 
-    console.log('fetchUserProfile: Profile encontrado:', profile);
+    console.log('fetchUserProfile: Profile encontrado:', profile.email);
 
-    // ✅ Buscar oficina vinculada ao usuário
+    // ✅ Buscar oficina - usar maybeSingle para não falhar se não existir
     const { data: oficina, error: oficinaError } = await supabase
       .from('oficinas')
       .select('id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (oficinaError) {
-      console.error('fetchUserProfile: Erro ao buscar oficina:', oficinaError);
+      console.warn('fetchUserProfile: Aviso ao buscar oficina:', oficinaError);
     }
 
     let subscriptionData = null;
@@ -68,7 +68,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     if (oficina) {
       console.log('fetchUserProfile: Oficina encontrada:', oficina.id);
       
-      // ✅ Buscar assinatura mais recente da oficina
+      // ✅ Buscar assinatura mais recente - usar maybeSingle para não falhar
       const { data: subscription, error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -92,13 +92,14 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         .maybeSingle();
 
       if (subscriptionError) {
-        console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
-      } else {
+        console.warn('fetchUserProfile: Aviso ao buscar subscription:', subscriptionError);
+      } else if (subscription) {
         subscriptionData = subscription;
-        console.log('fetchUserProfile: Subscription encontrada:', subscriptionData);
+        console.log('fetchUserProfile: Subscription encontrada:', subscriptionData.plan_type);
       }
     }
 
+    // ✅ Sempre retornar um perfil válido, mesmo sem oficina/assinatura
     const userProfile: UserProfile = {
       id: profile.id,
       email: profile.email || '',
@@ -113,11 +114,12 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       oficina_id: oficina?.id
     };
 
-    console.log('fetchUserProfile: Perfil completo retornado:', userProfile);
+    console.log('fetchUserProfile: Perfil completo retornado para:', userProfile.email);
     return userProfile;
     
   } catch (error) {
     console.error('fetchUserProfile: Erro geral:', error);
+    // ✅ Re-throw para que o caller possa tratar
     throw error;
   }
 };
