@@ -11,6 +11,14 @@ import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Tipagem para o retorno da função RPC
+interface TrialRPCResponse {
+  success: boolean;
+  error?: string;
+  plan_type?: string;
+  trial_ends_at?: string;
+}
+
 interface PlanFeature {
   name: string;
   included: boolean;
@@ -141,12 +149,15 @@ const SubscriptionPage = () => {
         return;
       }
 
-      if (data.success) {
+      // Cast para o tipo correto
+      const response = data as TrialRPCResponse;
+
+      if (response?.success) {
         toast.success('Trial Premium iniciado com sucesso! Aproveite 7 dias com todos os recursos.');
         // Recarregar dados
         window.location.reload();
       } else {
-        toast.error(data.error || 'Erro ao iniciar trial');
+        toast.error(response?.error || 'Erro ao iniciar trial');
       }
     } catch (error) {
       console.error('Erro ao iniciar trial:', error);
