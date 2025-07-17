@@ -7,6 +7,9 @@ export interface UserSubscription {
   starts_at: string;
   ends_at: string | null;
   trial_ends_at: string | null;
+  is_manual: boolean | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   created_at: string;
   updated_at: string;
 }
