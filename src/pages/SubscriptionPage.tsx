@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, AlertCircle, Calendar, CreditCard } from 'lucide-react';
+import { Check, Crown, Star, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import PlanStatusCard from '@/components/subscription/PlanStatusCard';
 
 // Tipagem para o retorno da função RPC
 interface TrialRPCResponse {
@@ -149,8 +147,8 @@ const SubscriptionPage = () => {
         return;
       }
 
-      // Cast para o tipo correto
-      const response = data as TrialRPCResponse;
+      // Cast seguro para o tipo correto
+      const response = data as unknown as TrialRPCResponse;
 
       if (response?.success) {
         toast.success('Trial Premium iniciado com sucesso! Aproveite 7 dias com todos os recursos.');
@@ -172,90 +170,6 @@ const SubscriptionPage = () => {
     toast.info('Funcionalidade de pagamento será implementada em breve');
   };
 
-  // Função para renderizar o status da assinatura atual
-  const renderCurrentSubscriptionStatus = () => {
-    if (!subscriptionData) {
-      return (
-        <Card className="mb-6 border-gray-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-gray-500" />
-              <div>
-                <h3 className="font-medium">Nenhuma assinatura ativa</h3>
-                <p className="text-sm text-gray-600">
-                  Inicie um trial gratuito ou assine um plano para acessar os recursos.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    const now = new Date();
-    const isTrialing = subscriptionData.status === 'trialing';
-    const isActive = subscriptionData.status === 'active';
-    
-    let statusText = '';
-    let statusColor = '';
-    let expiryDate = null;
-
-    if (isTrialing && subscriptionData.trial_ends_at) {
-      expiryDate = new Date(subscriptionData.trial_ends_at);
-      const isExpired = expiryDate <= now;
-      statusText = isExpired ? 'Trial Expirado' : 'Trial Ativo';
-      statusColor = isExpired ? 'text-red-600' : 'text-blue-600';
-    } else if (isActive) {
-      if (subscriptionData.ends_at) {
-        expiryDate = new Date(subscriptionData.ends_at);
-        const isExpired = expiryDate <= now;
-        statusText = isExpired ? 'Plano Expirado' : 'Plano Ativo';
-        statusColor = isExpired ? 'text-red-600' : 'text-green-600';
-      } else {
-        statusText = 'Plano Ativo';
-        statusColor = 'text-green-600';
-      }
-    }
-
-    return (
-      <Card className="mb-6 border-blue-200 bg-blue-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-              <div>
-                <h3 className="font-medium flex items-center gap-2">
-                  Assinatura Atual
-                  <Badge variant="outline" className={statusColor}>
-                    {statusText}
-                  </Badge>
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Plano: <span className="font-medium">{plan}</span>
-                  {expiryDate && (
-                    <>
-                      <br />
-                      {isTrialing ? 'Trial expira' : 'Renova'} em:{' '}
-                      <span className="font-medium">
-                        {format(expiryDate, 'dd/MM/yyyy', { locale: ptBR })}
-                      </span>
-                      {' '}({formatDistanceToNow(expiryDate, { locale: ptBR, addSuffix: true })})
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-            {subscriptionData.is_manual && (
-              <Badge variant="secondary" className="text-xs">
-                Manual
-              </Badge>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
@@ -269,7 +183,11 @@ const SubscriptionPage = () => {
           </p>
         </div>
 
-        {renderCurrentSubscriptionStatus()}
+        <PlanStatusCard 
+          subscriptionData={subscriptionData} 
+          plan={plan} 
+          planActive={planActive} 
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((planConfig) => (

@@ -168,19 +168,34 @@ export const validatePlanAccess = (subscription: any, role: string): {
     now: now.toISOString()
   });
 
+  // ✅ CORREÇÃO: Trial sempre Premium e ativo se dentro do período
   if (status === 'trialing') {
-    isActive = trial_ends_at && new Date(trial_ends_at) > now;
-    currentPlan = 'Premium'; // Trial sempre Premium
-    console.log('validatePlanAccess: Trial detectado, ativo:', isActive);
-  } else if (status === 'active') {
+    if (trial_ends_at && new Date(trial_ends_at) > now) {
+      isActive = true;
+      currentPlan = 'Premium'; // Trial sempre Premium
+      console.log('validatePlanAccess: Trial ativo detectado, definindo Premium');
+    } else {
+      console.log('validatePlanAccess: Trial expirado');
+    }
+  } 
+  // ✅ CORREÇÃO: Assinatura ativa - verificar plano corretamente
+  else if (status === 'active') {
     if (!ends_at || new Date(ends_at) > now) {
       isActive = true;
-      if (plan_type.includes('premium')) {
+      
+      // Verificar tipo de plano com case insensitive
+      const planTypeLower = plan_type?.toLowerCase() || '';
+      if (planTypeLower.includes('premium')) {
         currentPlan = 'Premium';
-      } else if (plan_type.includes('essencial')) {
+        console.log('validatePlanAccess: Plano Premium ativo detectado');
+      } else if (planTypeLower.includes('essencial')) {
         currentPlan = 'Essencial';
+        console.log('validatePlanAccess: Plano Essencial ativo detectado');
+      } else {
+        // Fallback para assinaturas ativas sem tipo específico
+        currentPlan = 'Premium';
+        console.log('validatePlanAccess: Assinatura ativa sem tipo, assumindo Premium');
       }
-      console.log('validatePlanAccess: Assinatura ativa, plano:', currentPlan);
     } else {
       console.log('validatePlanAccess: Assinatura expirada');
     }
