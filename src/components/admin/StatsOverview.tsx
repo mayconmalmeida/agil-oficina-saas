@@ -11,7 +11,7 @@ type StatsOverviewProps = {
 const StatsOverview = ({ stats }: StatsOverviewProps) => {
   return (
     <section className="mb-8">
-      <h2 className="text-lg font-medium mb-4">Visão Geral</h2>
+      <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Visão Geral</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Usuários Totais"

@@ -14,20 +14,19 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// -- TEMA GLOBAL PAINEL ADMIN:
+// Tema global para o painel admin
 function useAdminThemeSync() {
-  // Preferência salva do admin-theme (contexto separado do user normal)
   const [theme, setTheme] = useState<"light" | "dark">(
     () => (localStorage.getItem("admin-theme") as "light" | "dark") || "light"
   );
 
-  // Ao montar, aplicar tema salvo ao <html> global
+  // Aplicar tema ao <html> quando o componente for montado ou o tema mudar
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("admin-theme", theme);
   }, [theme]);
 
-  // Sincronizar se "admin-theme" mudar em outra aba ou processo
+  // Sincronizar mudanças de tema entre abas
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "admin-theme" && (e.newValue === "dark" || e.newValue === "light")) {
@@ -38,7 +37,6 @@ function useAdminThemeSync() {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Função de toggle para injetar para subcomponentes do admin
   const toggleTheme = useCallback(() => {
     setTheme(prev => {
       const newTheme = prev === "dark" ? "light" : "dark";
@@ -56,8 +54,8 @@ const OptimizedAdminLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // TEMA GLOBAL (correção)
-  useAdminThemeSync();
+  // Aplicar o tema global do admin
+  const { theme } = useAdminThemeSync();
 
   const menuItems = [
     {
@@ -95,13 +93,13 @@ const OptimizedAdminLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar Desktop */}
       <div className="hidden md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow bg-white shadow-lg border-r">
-          <div className="p-6 border-b">
-            <h1 className="text-xl font-bold text-gray-800">Oficina Ágil</h1>
-            <p className="text-sm text-gray-600">Painel Admin</p>
+        <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Ágil</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Painel Admin</p>
           </div>
           
           <nav className="mt-6 px-4 flex-1">
@@ -112,8 +110,8 @@ const OptimizedAdminLayout: React.FC = () => {
                   to={item.href}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive(item.href)
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 dark:border-blue-300'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
                   <item.icon className="h-5 w-5 mr-3" />
@@ -123,20 +121,20 @@ const OptimizedAdminLayout: React.FC = () => {
             </div>
           </nav>
 
-          <div className="p-4 border-t bg-white">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {user?.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">Admin</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Admin</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={signOut}>
+              <Button variant="ghost" size="sm" onClick={signOut} className="dark:text-gray-300 dark:hover:text-white">
                 <LogOut className="h-4 w-4" />
                 <span className="ml-1 hidden lg:inline">Sair</span>
               </Button>
@@ -149,7 +147,7 @@ const OptimizedAdminLayout: React.FC = () => {
       {sidebarOpen && (
         <div className="fixed inset-0 flex z-40 md:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white dark:bg-gray-800">
             <div className="absolute top-0 right-0 -mr-12 pt-2">
               <button
                 className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -160,7 +158,7 @@ const OptimizedAdminLayout: React.FC = () => {
             </div>
             <div className="pt-5 pb-4">
               <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-xl font-bold text-gray-800">Oficina Ágil</h1>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Ágil</h1>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {menuItems.map((item) => (
@@ -170,8 +168,8 @@ const OptimizedAdminLayout: React.FC = () => {
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                       isActive(item.href)
-                        ? 'bg-blue-100 text-blue-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-900 dark:text-blue-300'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
                     <item.icon className="h-5 w-5 mr-3" />
@@ -180,23 +178,23 @@ const OptimizedAdminLayout: React.FC = () => {
                 ))}
               </nav>
             </div>
-            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 flex border-t border-gray-200 dark:border-gray-700 p-4">
               <div className="flex-shrink-0 w-full group block">
                 <div className="flex items-center">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
                       {user?.email?.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-gray-700">Admin</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Admin</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={signOut}
-                    className="ml-2"
+                    className="ml-2 dark:text-gray-300 dark:hover:text-white"
                   >
                     <LogOut className="h-4 w-4" />
                     <span className="ml-1">Sair</span>
@@ -211,27 +209,27 @@ const OptimizedAdminLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header Mobile */}
-        <div className="bg-white shadow-sm border-b border-gray-200 md:hidden sticky top-0 z-10">
+        <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 md:hidden sticky top-0 z-10">
           <div className="flex items-center justify-between px-4 py-3">
             <button
-              className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900"
+              className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-6 w-6" />
             </button>
             
             <div>
-              <h1 className="text-lg font-bold text-gray-800">Painel Admin</h1>
+              <h1 className="text-lg font-bold text-gray-800 dark:text-white">Painel Admin</h1>
             </div>
             
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button variant="ghost" size="sm" onClick={signOut} className="dark:text-gray-300 dark:hover:text-white">
               <LogOut className="h-4 w-4" />
               <span className="ml-1">Sair</span>
             </Button>
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <Outlet />
         </main>
       </div>
@@ -240,4 +238,3 @@ const OptimizedAdminLayout: React.FC = () => {
 };
 
 export default OptimizedAdminLayout;
-

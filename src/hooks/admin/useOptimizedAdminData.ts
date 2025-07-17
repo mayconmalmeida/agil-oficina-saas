@@ -40,17 +40,33 @@ export const useOptimizedAdminData = () => {
         throw new Error('Acesso negado: usuário não é administrador');
       }
 
-      // Buscar estatísticas de forma segura
+      // Buscar estatísticas corrigidas
       const [
         { count: totalUsers },
         { count: activeSubscriptions },
         { count: trialingUsers },
         { count: newUsersThisMonth }
       ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('user_subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'trialing'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true })
+        // Contar apenas usuários não-admin na tabela profiles
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .neq('role', 'admin')
+          .neq('role', 'superadmin'),
+        supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active'),
+        supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'trialing'),
+        // Contar novos usuários (não-admin) deste mês
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .neq('role', 'admin')
+          .neq('role', 'superadmin')
           .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
       ]);
 

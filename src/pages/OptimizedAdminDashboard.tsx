@@ -19,12 +19,12 @@ const OptimizedAdminDashboard = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button 
             onClick={refetch}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600"
           >
             Tentar Novamente
           </button>
@@ -34,11 +34,11 @@ const OptimizedAdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Painel Administrativo</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Painel Administrativo</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Bem-vindo, {user?.email} - Visão geral do sistema OficinaÁgil
           </p>
         </div>
@@ -68,7 +68,7 @@ const OptimizedAdminDashboard = () => {
         <div className="mt-8 flex justify-end">
           <button
             onClick={refetch}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             Atualizar Dados
           </button>
