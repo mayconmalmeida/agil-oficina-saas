@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { useDaysRemaining } from '@/hooks/useDaysRemaining';
+import { supabase } from '@/lib/supabase';
 import Loading from '@/components/ui/loading';
 import SubscriptionExpiredCard from './SubscriptionExpiredCard';
 
@@ -20,14 +21,52 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   const { user, isLoadingAuth, signOut } = useAuth();
   const { shouldShowContent, isAdmin } = useAccessControl({ requiredPlan });
   const { diasRestantes, isPremiumTrial, isExpired, loading: daysLoading } = useDaysRemaining();
+  const [activeSubscription, setActiveSubscription] = useState<any>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   const handleLogout = async () => {
     await signOut();
     window.location.replace('/login');
   };
 
-  // Aguarda o carregamento da autenticação
-  if (isLoadingAuth || daysLoading) {
+  // Buscar assinatura ativa do usuário
+  useEffect(() => {
+    const fetchActiveSubscription = async () => {
+      if (!user?.id) {
+        setSubscriptionLoading(false);
+        return;
+      }
+
+      try {
+        console.log('SubscriptionGuard: Buscando assinatura ativa para usuário:', user.id);
+        
+        const { data: subscription, error } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('SubscriptionGuard: Erro ao buscar assinatura:', error);
+        } else {
+          console.log('SubscriptionGuard: Assinatura encontrada:', subscription);
+          setActiveSubscription(subscription);
+        }
+      } catch (error) {
+        console.error('SubscriptionGuard: Erro ao verificar assinatura:', error);
+      } finally {
+        setSubscriptionLoading(false);
+      }
+    };
+
+    fetchActiveSubscription();
+  }, [user?.id]);
+
+  // Aguarda o carregamento da autenticação e assinatura
+  if (isLoadingAuth || daysLoading || subscriptionLoading) {
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
@@ -42,46 +81,45 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // SISTEMA DE ASSINATURA
+  // SISTEMA DE ASSINATURA ATUALIZADO
   const authUser = user as any;
   
   console.log('SubscriptionGuard: Verificando acesso do usuário:', {
     userId: authUser.id,
     email: authUser.email,
     role: authUser.role,
+    activeSubscription,
     diasRestantes,
     isPremiumTrial,
     isExpired,
-    requiredPlan,
-    subscription: authUser.subscription
+    requiredPlan
   });
 
-  // Verificar se tem assinatura ativa via user_subscriptions
-  if (authUser.subscription) {
-    const subscription = authUser.subscription;
+  // Verificar se tem assinatura ativa na tabela user_subscriptions
+  if (activeSubscription) {
     const now = new Date();
     
-    console.log('SubscriptionGuard: Verificando assinatura:', {
-      subscription,
+    console.log('SubscriptionGuard: Verificando assinatura ativa:', {
+      subscription: activeSubscription,
       now: now.toISOString(),
-      status: subscription.status,
-      trial_ends_at: subscription.trial_ends_at,
-      ends_at: subscription.ends_at
+      status: activeSubscription.status,
+      trial_ends_at: activeSubscription.trial_ends_at,
+      ends_at: activeSubscription.ends_at
     });
     
     // Verificar trial ativo
-    const isTrialActive = subscription.status === 'trialing' && 
-      subscription.trial_ends_at && 
-      new Date(subscription.trial_ends_at) > now;
+    const isTrialActive = activeSubscription.status === 'trialing' && 
+      activeSubscription.trial_ends_at && 
+      new Date(activeSubscription.trial_ends_at) > now;
     
     // Verificar assinatura paga ativa
-    const isPaidActive = subscription.status === 'active' && 
-      (!subscription.ends_at || new Date(subscription.ends_at) > now);
+    const isPaidActive = activeSubscription.status === 'active' && 
+      (!activeSubscription.ends_at || new Date(activeSubscription.ends_at) > now);
     
     // Verificar assinatura manual ativa
-    const isManualActive = subscription.is_manual && 
-      subscription.status === 'active' &&
-      (!subscription.ends_at || new Date(subscription.ends_at) > now);
+    const isManualActive = activeSubscription.is_manual && 
+      activeSubscription.status === 'active' &&
+      (!activeSubscription.ends_at || new Date(activeSubscription.ends_at) > now);
     
     console.log('SubscriptionGuard: Status de validação:', {
       isTrialActive,
@@ -91,7 +129,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     });
     
     if (isTrialActive || isPaidActive || isManualActive) {
-      console.log('SubscriptionGuard: Assinatura válida - ACESSO LIBERADO');
+      console.log('SubscriptionGuard: Assinatura válida encontrada - ACESSO LIBERADO');
       return <>{children}</>;
     }
   }
@@ -130,10 +168,9 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   // Se chegou até aqui, não tem assinatura válida
   console.log('SubscriptionGuard: Usuário sem assinatura válida, bloqueando acesso');
   
-  // Evitar loops de rechecking removendo o useEffect que causava o erro React #310
   return (
     <SubscriptionExpiredCard 
-      hasSubscription={!!authUser.subscription}
+      hasSubscription={!!activeSubscription}
       onLogout={handleLogout} 
     />
   );

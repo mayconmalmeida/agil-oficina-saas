@@ -42,17 +42,16 @@ export const useOptimizedAdminData = () => {
 
       // Buscar estatísticas corrigidas
       const [
-        { count: totalUsers },
+        { count: activeWorkshops },
         { count: activeSubscriptions },
         { count: trialingUsers },
         { count: newUsersThisMonth }
       ] = await Promise.all([
-        // Contar apenas usuários não-admin na tabela profiles
+        // Contar oficinas ativas (is_active = true)
         supabase
-          .from('profiles')
+          .from('oficinas')
           .select('*', { count: 'exact', head: true })
-          .neq('role', 'admin')
-          .neq('role', 'superadmin'),
+          .eq('is_active', true),
         supabase
           .from('user_subscriptions')
           .select('*', { count: 'exact', head: true })
@@ -74,7 +73,7 @@ export const useOptimizedAdminData = () => {
       const estimatedRevenue = (activeSubscriptions || 0) * 49.90;
 
       setStats({
-        totalUsers: totalUsers || 0,
+        totalUsers: activeWorkshops || 0, // Agora representa oficinas ativas
         activeSubscriptions: activeSubscriptions || 0,
         trialingUsers: trialingUsers || 0,
         totalRevenue: estimatedRevenue,

@@ -14,9 +14,9 @@ const StatsOverview = ({ stats }: StatsOverviewProps) => {
       <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">Visão Geral</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Usuários Totais"
+          title="Oficinas Ativas"
           value={stats.totalUsers}
-          description="Oficinas cadastradas no sistema"
+          description="Oficinas com status ativo"
           icon={Users}
         />
         <StatsCard
