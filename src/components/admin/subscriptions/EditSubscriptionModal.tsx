@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -120,15 +119,25 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
-      // Use direct SQL query instead of RPC to avoid TypeScript issues
+      // Calculate end date based on plan type
+      const startDate = new Date();
+      let endDate = new Date(startDate);
+      
+      if (formData.plan_type.includes('anual')) {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      } else {
+        endDate.setMonth(endDate.getMonth() + 1);
+      }
+
+      // Use direct database query to create/update subscription
       const { data, error } = await supabase
         .from('user_subscriptions')
         .upsert({
           user_id: formData.user_id,
           plan_type: formData.plan_type,
           status: 'active',
-          starts_at: new Date().toISOString(),
-          ends_at: formData.ends_at?.toISOString() || null,
+          starts_at: startDate.toISOString(),
+          ends_at: endDate.toISOString(),
           is_manual: true
         }, {
           onConflict: 'user_id'
