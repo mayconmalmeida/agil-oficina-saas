@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -131,20 +130,49 @@ export const calculateCanAccessFeatures = (subscription: any, role: string): boo
   if (subscription) {
     const now = new Date();
     
+    console.log('calculateCanAccessFeatures: Validando assinatura:', {
+      status: subscription.status,
+      is_manual: subscription.is_manual,
+      ends_at: subscription.ends_at,
+      trial_ends_at: subscription.trial_ends_at,
+      now: now.toISOString()
+    });
+    
     // Verificar se a assinatura está ativa
     if (subscription.status === 'active') {
-      // Se tem data de término, verificar se ainda não expirou
-      if (subscription.ends_at) {
-        return new Date(subscription.ends_at) > now;
+      // Assinatura manual sempre é válida se status for active
+      if (subscription.is_manual) {
+        console.log('Assinatura manual ativa detectada');
+        // Se tem data de término, verificar se ainda não expirou
+        if (subscription.ends_at) {
+          const isValid = new Date(subscription.ends_at) > now;
+          console.log('Assinatura manual com data fim:', { isValid, ends_at: subscription.ends_at });
+          return isValid;
+        }
+        // Se não tem data de fim, é válida indefinidamente
+        console.log('Assinatura manual sem data fim - válida indefinidamente');
+        return true;
       }
+      
+      // Para assinaturas pagas do Stripe
+      if (subscription.ends_at) {
+        const isValid = new Date(subscription.ends_at) > now;
+        console.log('Assinatura paga do Stripe:', { isValid, ends_at: subscription.ends_at });
+        return isValid;
+      }
+      
+      console.log('Assinatura ativa sem data fim');
       return true;
     }
     
     // Verificar se está em período de teste
     if (subscription.status === 'trialing') {
       if (subscription.trial_ends_at) {
-        return new Date(subscription.trial_ends_at) > now;
+        const isValid = new Date(subscription.trial_ends_at) > now;
+        console.log('Trial ativo:', { isValid, trial_ends_at: subscription.trial_ends_at });
+        return isValid;
       }
+      console.log('Trial sem data fim');
       return true;
     }
   }

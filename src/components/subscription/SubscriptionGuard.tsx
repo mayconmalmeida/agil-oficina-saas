@@ -63,7 +63,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     
     console.log('SubscriptionGuard: Verificando assinatura:', {
       subscription,
-      now: now.toISOString()
+      now: now.toISOString(),
+      status: subscription.status,
+      trial_ends_at: subscription.trial_ends_at,
+      ends_at: subscription.ends_at
     });
     
     // Verificar trial ativo
@@ -75,7 +78,19 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     const isPaidActive = subscription.status === 'active' && 
       (!subscription.ends_at || new Date(subscription.ends_at) > now);
     
-    if (isTrialActive || isPaidActive) {
+    // Verificar assinatura manual ativa
+    const isManualActive = subscription.is_manual && 
+      subscription.status === 'active' &&
+      (!subscription.ends_at || new Date(subscription.ends_at) > now);
+    
+    console.log('SubscriptionGuard: Status de validação:', {
+      isTrialActive,
+      isPaidActive,
+      isManualActive,
+      hasValidSubscription: isTrialActive || isPaidActive || isManualActive
+    });
+    
+    if (isTrialActive || isPaidActive || isManualActive) {
       console.log('SubscriptionGuard: Assinatura válida - ACESSO LIBERADO');
       return <>{children}</>;
     }
@@ -87,44 +102,36 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     const now = new Date();
     const trialEnd = new Date(trialStarted.getTime() + (7 * 24 * 60 * 60 * 1000));
       
-      console.log('SubscriptionGuard: Verificação detalhada do trial:', {
-        trialStarted: trialStarted.toISOString(),
-        trialEnd: trialEnd.toISOString(),
-        now: now.toISOString(),
-        isTrialActive: now <= trialEnd,
-        diasRestantes,
-        isPremiumTrial
-      });
+    console.log('SubscriptionGuard: Verificação detalhada do trial (sistema antigo):', {
+      trialStarted: trialStarted.toISOString(),
+      trialEnd: trialEnd.toISOString(),
+      now: now.toISOString(),
+      isTrialActive: now <= trialEnd,
+      diasRestantes,
+      isPremiumTrial
+    });
       
-      // Se trial ainda está ativo (dentro dos 7 dias)
-      if (now <= trialEnd) {
-        console.log('SubscriptionGuard: Trial ativo - ACESSO PREMIUM LIBERADO');
-        
-        // Durante o trial de 7 dias, o usuário tem acesso total premium
-        if (requiredPlan === 'premium') {
-          console.log('SubscriptionGuard: Funcionalidade premium solicitada - PERMITINDO (trial ativo)');
-          return <>{children}</>;
-        }
-        
-        // Para funcionalidades essenciais ou sem requerimento específico
-        console.log('SubscriptionGuard: Acesso geral permitido (trial ativo)');
+    // Se trial ainda está ativo (dentro dos 7 dias)
+    if (now <= trialEnd) {
+      console.log('SubscriptionGuard: Trial ativo (sistema antigo) - ACESSO PREMIUM LIBERADO');
+      
+      // Durante o trial de 7 dias, o usuário tem acesso total premium
+      if (requiredPlan === 'premium') {
+        console.log('SubscriptionGuard: Funcionalidade premium solicitada - PERMITINDO (trial ativo)');
         return <>{children}</>;
-      } else {
-        console.log('SubscriptionGuard: Trial expirado, bloqueando acesso');
-        return (
-          <SubscriptionExpiredCard 
-            hasSubscription={false}
-            onLogout={handleLogout} 
-          />
-        );
       }
+      
+      // Para funcionalidades essenciais ou sem requerimento específico
+      console.log('SubscriptionGuard: Acesso geral permitido (trial ativo)');
+      return <>{children}</>;
+    }
   }
 
-  // Se não tem assinatura nem trial, bloquear acesso
+  // Se chegou até aqui, não tem assinatura válida
   console.log('SubscriptionGuard: Usuário sem assinatura válida, bloqueando acesso');
   return (
     <SubscriptionExpiredCard 
-      hasSubscription={false}
+      hasSubscription={!!authUser.subscription}
       onLogout={handleLogout} 
     />
   );
