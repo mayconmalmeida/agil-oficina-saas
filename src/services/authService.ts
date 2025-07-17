@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { AuthUser } from '@/types/auth';
 
@@ -5,184 +6,92 @@ export interface UserProfile {
   id: string;
   email: string;
   role: string;
-  nome_oficina?: string;
-  telefone?: string; // Adicionar telefone ao tipo UserProfile
   is_active: boolean;
+  nome_oficina?: string;
+  telefone?: string;
+  plano?: string;
+  trial_started_at?: string;
   subscription?: {
     id: string;
-    user_id: string; // Garantir que user_id está presente
+    user_id: string;
     plan_type: string;
     status: string;
     starts_at: string;
     ends_at?: string;
     trial_ends_at?: string;
+    is_manual?: boolean;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
     created_at?: string;
     updated_at?: string;
-  } | null;
-  plano?: string;
-  trial_started_at?: string;
+  };
 }
 
-export const signOutUser = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    throw error;
-  }
-};
-
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
+  console.log('fetchUserProfile: Buscando perfil para usuário:', userId);
+  
   try {
-    console.log('Buscando perfil do usuário:', userId);
-    
     // Buscar perfil do usuário
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .maybeSingle();
+      .single();
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Erro ao buscar perfil:', profileError);
+    if (profileError) {
+      console.error('fetchUserProfile: Erro ao buscar profile:', profileError);
       throw profileError;
     }
 
-    if (!profileData) {
-      console.log('Perfil não encontrado, usando dados padrão');
-      return {
-        id: userId,
-        email: 'email@unknown.com',
-        role: 'user',
-        is_active: true,
-        subscription: null
-      };
+    if (!profile) {
+      throw new Error('Perfil não encontrado');
     }
 
-    console.log('Role do usuário encontrada:', profileData.role);
+    console.log('fetchUserProfile: Profile encontrado:', profile);
 
-    // Se é admin, não precisa verificar assinatura
-    if (profileData.role === 'admin' || profileData.role === 'superadmin') {
-      console.log('Usuário identificado como admin, pulando verificação de assinatura');
-      return {
-        id: profileData.id,
-        email: profileData.email || 'admin@system.com',
-        role: profileData.role,
-        nome_oficina: profileData.nome_oficina,
-        telefone: profileData.telefone, // Incluir telefone do perfil
-        is_active: profileData.is_active ?? true,
-        subscription: null,
-        plano: profileData.plano,
-        trial_started_at: profileData.trial_started_at
-      };
-    }
-
-    // Para usuários normais, buscar assinatura da tabela user_subscriptions
-    const { data: subscriptionData, error: subscriptionError } = await supabase
+    // Buscar assinatura do usuário
+    const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
-      .select('*')
+      .select(`
+        id,
+        user_id,
+        plan_type,
+        status,
+        starts_at,
+        ends_at,
+        trial_ends_at,
+        is_manual,
+        stripe_customer_id,
+        stripe_subscription_id,
+        created_at,
+        updated_at
+      `)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
       .maybeSingle();
 
-    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-      console.warn('Erro ao buscar assinatura:', subscriptionError);
+    if (subscriptionError) {
+      console.error('fetchUserProfile: Erro ao buscar subscription:', subscriptionError);
     }
 
-    console.log('Assinatura encontrada:', subscriptionData);
+    console.log('fetchUserProfile: Subscription encontrada:', subscription);
 
-    return {
-      id: profileData.id,
-      email: profileData.email || 'user@system.com',
-      role: profileData.role || 'user',
-      nome_oficina: profileData.nome_oficina,
-      telefone: profileData.telefone, // Incluir telefone do perfil
-      is_active: profileData.is_active ?? true,
-      subscription: subscriptionData ? {
-        ...subscriptionData,
-        user_id: subscriptionData.user_id // Garantir que user_id está presente
-      } : null,
-      plano: profileData.plano,
-      trial_started_at: profileData.trial_started_at
+    const userProfile: UserProfile = {
+      id: profile.id,
+      email: profile.email || '',
+      role: profile.role || 'user',
+      is_active: profile.is_active ?? true,
+      nome_oficina: profile.nome_oficina,
+      telefone: profile.telefone,
+      plano: profile.plano,
+      trial_started_at: profile.trial_started_at,
+      subscription: subscription || undefined
     };
 
+    console.log('fetchUserProfile: Perfil completo retornado:', userProfile);
+    return userProfile;
+    
   } catch (error) {
-    console.error('Erro ao buscar dados do usuário:', error);
-    
-    // Retornar dados padrão em caso de erro
-    return {
-      id: userId,
-      email: 'error@system.com',
-      role: 'user',
-      is_active: true,
-      subscription: null
-    };
+    console.error('fetchUserProfile: Erro geral:', error);
+    throw error;
   }
-};
-
-export const calculateCanAccessFeatures = (subscription: any, role: string): boolean => {
-  // CRÍTICO: Admins sempre têm acesso total
-  if (role === 'admin' || role === 'superadmin') {
-    console.log('Admin detectado, acesso total liberado');
-    return true;
-  }
-  
-  // Para usuários com assinatura válida
-  if (subscription) {
-    const now = new Date();
-    
-    console.log('calculateCanAccessFeatures: Validando assinatura:', {
-      status: subscription.status,
-      is_manual: subscription.is_manual,
-      ends_at: subscription.ends_at,
-      trial_ends_at: subscription.trial_ends_at,
-      now: now.toISOString()
-    });
-    
-    // Verificar se a assinatura está ativa
-    if (subscription.status === 'active') {
-      // Assinatura manual sempre é válida se status for active
-      if (subscription.is_manual) {
-        console.log('Assinatura manual ativa detectada');
-        // Se tem data de término, verificar se ainda não expirou
-        if (subscription.ends_at) {
-          const isValid = new Date(subscription.ends_at) > now;
-          console.log('Assinatura manual com data fim:', { isValid, ends_at: subscription.ends_at });
-          return isValid;
-        }
-        // Se não tem data de fim, é válida indefinidamente
-        console.log('Assinatura manual sem data fim - válida indefinidamente');
-        return true;
-      }
-      
-      // Para assinaturas pagas do Stripe
-      if (subscription.ends_at) {
-        const isValid = new Date(subscription.ends_at) > now;
-        console.log('Assinatura paga do Stripe:', { isValid, ends_at: subscription.ends_at });
-        return isValid;
-      }
-      
-      console.log('Assinatura ativa sem data fim');
-      return true;
-    }
-    
-    // Verificar se está em período de teste
-    if (subscription.status === 'trialing') {
-      if (subscription.trial_ends_at) {
-        const isValid = new Date(subscription.trial_ends_at) > now;
-        console.log('Trial ativo:', { isValid, trial_ends_at: subscription.trial_ends_at });
-        return isValid;
-      }
-      console.log('Trial sem data fim');
-      return true;
-    }
-  }
-  
-  // NOVO: Usuários normais autenticados têm acesso básico ao dashboard
-  // Isso resolve o problema do bloqueio de usuários comuns
-  if (role === 'user') {
-    console.log('Usuário comum detectado, liberando acesso básico ao dashboard');
-    return true; // Permite acesso básico ao dashboard para usuários autenticados
-  }
-  
-  return false;
 };
