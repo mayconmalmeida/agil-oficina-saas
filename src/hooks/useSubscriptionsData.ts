@@ -44,6 +44,19 @@ export const useSubscriptionsData = () => {
             }
             profile = profileData || {};
 
+            // Se não encontrou nome_oficina no profiles, buscar na tabela oficinas
+            if (!profile.nome_oficina) {
+              const { data: oficinaData, error: oficinaError } = await supabase
+                .from('oficinas')
+                .select('nome_oficina')
+                .eq('user_id', subscription.user_id)
+                .maybeSingle();
+
+              if (!oficinaError && oficinaData) {
+                profile.nome_oficina = oficinaData.nome_olicina;
+              }
+            }
+
             // Buscar preço do plano da tabela plan_configurations
             const planType = subscription.plan_type.replace('_anual', '').replace('_mensal', '');
             const billingCycle = subscription.plan_type.includes('_anual') ? 'anual' : 'mensal';

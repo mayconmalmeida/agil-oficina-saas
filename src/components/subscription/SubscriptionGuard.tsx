@@ -42,7 +42,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     return <>{children}</>;
   }
 
-  // SISTEMA DE TRIAL PREMIUM DE 7 DIAS
+  // SISTEMA DE ASSINATURA
   const authUser = user as any;
   
   console.log('SubscriptionGuard: Verificando acesso do usuário:', {
@@ -53,7 +53,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     isPremiumTrial,
     isExpired,
     requiredPlan,
-    trial_started_at: authUser.trial_started_at
+    subscription: authUser.subscription
   });
 
   // Verificar se tem assinatura ativa via user_subscriptions
@@ -81,7 +81,7 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
     }
   }
   
-  // Fallback: verificar trial_started_at para compatibilidade
+  // Fallback: verificar trial_started_at para compatibilidade (sistema antigo)
   if ((authUser.role === 'user' || !authUser.role) && authUser.trial_started_at) {
     const trialStarted = new Date(authUser.trial_started_at);
     const now = new Date();
@@ -118,20 +118,16 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
           />
         );
       }
-  } else {
-    // Se não tem trial_started_at, bloquear
-    console.log('SubscriptionGuard: Usuário sem trial configurado, bloqueando acesso');
-    return (
-      <SubscriptionExpiredCard 
-        hasSubscription={false}
-        onLogout={handleLogout} 
-      />
-    );
   }
 
-  // Para outros tipos de usuário, permitir acesso
-  console.log('SubscriptionGuard: Usuário especial, permitindo acesso');
-  return <>{children}</>;
+  // Se não tem assinatura nem trial, bloquear acesso
+  console.log('SubscriptionGuard: Usuário sem assinatura válida, bloqueando acesso');
+  return (
+    <SubscriptionExpiredCard 
+      hasSubscription={false}
+      onLogout={handleLogout} 
+    />
+  );
 };
 
 export default SubscriptionGuard;

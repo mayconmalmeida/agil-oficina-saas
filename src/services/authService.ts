@@ -76,7 +76,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       };
     }
 
-    // Para usuários normais, buscar assinatura
+    // Para usuários normais, buscar assinatura da tabela user_subscriptions
     const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -88,6 +88,8 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     if (subscriptionError && subscriptionError.code !== 'PGRST116') {
       console.warn('Erro ao buscar assinatura:', subscriptionError);
     }
+
+    console.log('Assinatura encontrada:', subscriptionData);
 
     return {
       id: profileData.id,
@@ -125,33 +127,33 @@ export const calculateCanAccessFeatures = (subscription: any, role: string): boo
     return true;
   }
   
+  // Para usuários com assinatura válida
+  if (subscription) {
+    const now = new Date();
+    
+    // Verificar se a assinatura está ativa
+    if (subscription.status === 'active') {
+      // Se tem data de término, verificar se ainda não expirou
+      if (subscription.ends_at) {
+        return new Date(subscription.ends_at) > now;
+      }
+      return true;
+    }
+    
+    // Verificar se está em período de teste
+    if (subscription.status === 'trialing') {
+      if (subscription.trial_ends_at) {
+        return new Date(subscription.trial_ends_at) > now;
+      }
+      return true;
+    }
+  }
+  
   // NOVO: Usuários normais autenticados têm acesso básico ao dashboard
   // Isso resolve o problema do bloqueio de usuários comuns
   if (role === 'user') {
     console.log('Usuário comum detectado, liberando acesso básico ao dashboard');
     return true; // Permite acesso básico ao dashboard para usuários autenticados
-  }
-  
-  // Para outros casos, verificar assinatura
-  if (!subscription) return false;
-  
-  const now = new Date();
-  
-  // Verificar se a assinatura está ativa
-  if (subscription.status === 'active') {
-    // Se tem data de término, verificar se ainda não expirou
-    if (subscription.ends_at) {
-      return new Date(subscription.ends_at) > now;
-    }
-    return true;
-  }
-  
-  // Verificar se está em período de teste
-  if (subscription.status === 'trialing') {
-    if (subscription.trial_ends_at) {
-      return new Date(subscription.trial_ends_at) > now;
-    }
-    return true;
   }
   
   return false;
