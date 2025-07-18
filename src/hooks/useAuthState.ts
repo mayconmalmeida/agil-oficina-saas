@@ -24,20 +24,32 @@ export const useAuthState = () => {
         setSession(session);
         
         if (session?.user) {
+          console.log('useAuthState: Buscando perfil para:', session.user.id);
           setProfileLoading(true);
           try {
-            console.log('useAuthState: Buscando perfil para:', session.user.id);
             const profile = await fetchUserProfile(session.user.id);
             setUser(profile);
             setRole(profile.role);
             console.log('useAuthState: Profile carregado com sucesso:', profile.email);
           } catch (error) {
             console.error('useAuthState: Erro ao carregar profile:', error);
-            // ✅ Em caso de erro, limpar estados mas não travar
-            setUser(null);
-            setRole(null);
+            // ✅ Se falhar, criar perfil básico com dados da sessão
+            const basicProfile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'user', // default role
+              nome_oficina: null,
+              telefone: null,
+              is_active: true,
+              subscription: null,
+              oficina_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            setUser(basicProfile);
+            setRole('user');
+            console.log('useAuthState: Usando perfil básico devido a erro');
           } finally {
-            // ✅ SEMPRE finalizar profileLoading, mesmo com erro
             setProfileLoading(false);
           }
         } else {
@@ -56,7 +68,6 @@ export const useAuthState = () => {
     // Verificar sessão existente
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('useAuthState: Sessão inicial verificada:', !!session);
-      // O listener já vai processar esta sessão
     });
 
     // Timeout de segurança mais curto
@@ -65,7 +76,8 @@ export const useAuthState = () => {
       setLoading(false);
       setIsLoadingAuth(false);
       setProfileLoading(false);
-    }, 2000); // Reduzido para 2 segundos
+      setInitialLoad(false);
+    }, 1500); // Reduzido para 1.5 segundos
 
     return () => {
       subscription.unsubscribe();

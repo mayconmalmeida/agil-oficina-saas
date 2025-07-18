@@ -69,13 +69,20 @@ const LoginPage: React.FC = () => {
           console.log("LoginPage: Sessão encontrada para:", session.user.email);
           setUserId(session.user.id);
           
-          // Verificar perfil
+          // Verificar perfil com timeout mais agressivo
           try {
+            const profileTimeout = setTimeout(() => {
+              console.log("LoginPage: Timeout ao verificar perfil, redirecionando para dashboard");
+              navigate('/dashboard', { replace: true });
+            }, 3000);
+
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('role, nome_oficina, telefone')
               .eq('id', session.user.id)
               .maybeSingle();
+
+            clearTimeout(profileTimeout);
                 
             // Se é admin, redirecionar para admin
             if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
@@ -112,7 +119,8 @@ const LoginPage: React.FC = () => {
             
           } catch (adminCheckError) {
             console.error("LoginPage: Erro ao verificar perfil:", adminCheckError);
-            navigate('/perfil-setup', { replace: true });
+            // Se deu erro, redirecionar para dashboard mesmo assim
+            navigate('/dashboard', { replace: true });
             return;
           }
         } else {
