@@ -17,6 +17,7 @@ export interface AuthUser {
   is_active?: boolean;
   plan?: 'Essencial' | 'Premium' | 'Free';
   planActive?: boolean;
+  expired?: boolean; // ✅ Nova propriedade
   permissions?: string[];
   oficina_id?: string | null;
   app_metadata?: any;

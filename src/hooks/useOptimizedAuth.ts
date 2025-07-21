@@ -1,35 +1,69 @@
+
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { UserSubscription } from '@/types/subscription';
 import { AuthUser, AuthState } from '@/types/auth';
 
-const validatePlanAccess = (subscription: UserSubscription | null, profile: any) => {
-  console.log('[useOptimizedAuth] Validando plano:', { subscription, profile });
-
-  if (!subscription) {
-    // Verificar se é trial ativo baseado no perfil
-    if (profile?.trial_started_at && profile?.trial_ends_at) {
-      const trialEnd = new Date(profile.trial_ends_at);
-      const now = new Date();
-      
-      if (now <= trialEnd) {
-        // Trial ativo - usar plano do perfil ou Premium por padrão
-        const planType = profile.plano || 'Premium';
-        console.log('[useOptimizedAuth] Trial ativo detectado:', planType);
-        return {
-          isActive: true,
-          plan: planType as 'Essencial' | 'Premium' | 'Free',
-          permissionsCount: planType === 'Premium' ? 20 : 10,
-          permissions: planType === 'Premium' ? 
-            ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados'] : 
-            ['campanhas_marketing', 'relatorios_basicos']
-        };
-      }
-    }
+// ✅ Nova função para buscar plano da oficina
+const getOficinaPlan = async (oficinaId: string) => {
+  try {
+    console.log('[getOficinaPlan] Buscando plano para oficina:', oficinaId);
     
-    // Sem assinatura e sem trial ativo
-    console.log('[useOptimizedAuth] Sem assinatura ativa');
+    const { data, error } = await supabase
+      .from('oficinas')
+      .select('plano, trial_ends_at')
+      .eq('id', oficinaId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[getOficinaPlan] Erro ao buscar plano:', error);
+      return { plan: 'Free', planActive: false, expired: true };
+    }
+
+    if (!data) {
+      console.log('[getOficinaPlan] Oficina não encontrada');
+      return { plan: 'Free', planActive: false, expired: true };
+    }
+
+    const now = new Date();
+    const trialEnd = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
+    const expired = !trialEnd || trialEnd < now;
+
+    console.log('[getOficinaPlan] Resultado:', {
+      plano: data.plano,
+      trial_ends_at: data.trial_ends_at,
+      expired,
+      planActive: !expired
+    });
+
+    return {
+      plan: data.plano || 'Free',
+      planActive: !expired,
+      expired
+    };
+  } catch (error) {
+    console.error('[getOficinaPlan] Erro inesperado:', error);
+    return { plan: 'Free', planActive: false, expired: true };
+  }
+};
+
+const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean) => {
+  console.log('[useOptimizedAuth] Validando acesso ao plano:', { plan, planActive, isAdmin });
+
+  if (isAdmin) {
+    // Admin tem acesso total
+    return {
+      isActive: true,
+      plan: 'Premium' as const,
+      permissionsCount: 20,
+      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados']
+    };
+  }
+
+  if (!planActive) {
+    // Plano expirado
+    console.log('[useOptimizedAuth] Plano expirado ou inativo');
     return {
       isActive: false,
       plan: 'Free' as const,
@@ -37,120 +71,31 @@ const validatePlanAccess = (subscription: UserSubscription | null, profile: any)
       permissions: []
     };
   }
-  
-  // ✅ NOVA LÓGICA CORRIGIDA: Buscar assinatura mais recente por oficina
-  const now = new Date();
-  
-  // ✅ Priorizar status trialing (sempre Premium durante trial)
-  if (subscription.status === 'trialing' && subscription.trial_ends_at) {
-    const trialEnd = new Date(subscription.trial_ends_at);
-    if (now <= trialEnd) {
-      console.log('[useOptimizedAuth] Trial Premium ativo');
-      return {
-        isActive: true,
-        plan: 'Premium' as const,
-        permissionsCount: 20,
-        permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados']
-      };
-    }
+
+  // Plano ativo - definir permissões baseado no tipo
+  if (plan === 'Premium') {
+    return {
+      isActive: true,
+      plan: 'Premium' as const,
+      permissionsCount: 20,
+      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados']
+    };
+  } else if (plan === 'Essencial') {
+    return {
+      isActive: true,
+      plan: 'Essencial' as const,
+      permissionsCount: 10,
+      permissions: ['campanhas_marketing', 'relatorios_basicos']
+    };
   }
-  
-  // ✅ Assinatura ativa paga/manual
-  if (subscription.status === 'active') {
-    const isActive = !subscription.ends_at || new Date(subscription.ends_at) > now;
-    
-    if (isActive) {
-      let planType: 'Essencial' | 'Premium' = 'Essencial';
-      let permissionsCount = 10;
-      let permissions = ['campanhas_marketing', 'relatorios_basicos'];
-      
-      // ✅ Detectar tipo de plano corretamente
-      if (subscription.plan_type?.toLowerCase().includes('premium')) {
-        planType = 'Premium';
-        permissionsCount = 20;
-        permissions = ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados'];
-        console.log('[useOptimizedAuth] Plano Premium ativo detectado');
-      } else if (subscription.plan_type?.toLowerCase().includes('essencial')) {
-        planType = 'Essencial';
-        console.log('[useOptimizedAuth] Plano Essencial ativo detectado');
-      }
-      
-      return {
-        isActive: true,
-        plan: planType,
-        permissionsCount,
-        permissions
-      };
-    }
-  }
-  
-  console.log('[useOptimizedAuth] Assinatura expirada ou inválida');
+
+  // Fallback para Free
   return {
     isActive: false,
     plan: 'Free' as const,
     permissionsCount: 0,
     permissions: []
   };
-};
-
-// ✅ Função para buscar assinatura correta por oficina_id
-const getUserSubscriptionByOficina = async (userId: string): Promise<UserSubscription | null> => {
-  try {
-    console.log('[useOptimizedAuth] Buscando assinatura por oficina para userId:', userId);
-    
-    // Primeiro buscar a oficina do usuário
-    const { data: oficina, error: oficinaError } = await supabase
-      .from('oficinas')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (oficinaError) {
-      console.error('[useOptimizedAuth] Erro ao buscar oficina:', oficinaError);
-    }
-
-    if (!oficina) {
-      console.log('[useOptimizedAuth] Oficina não encontrada, buscando por user_id diretamente');
-    }
-    
-    // ✅ Buscar assinatura mais recente ATIVA - primeiro por oficina, depois por user_id
-    const { data: subscription, error: subscriptionError } = await supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .in('status', ['active', 'trialing'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    
-    if (subscriptionError) {
-      console.error('[useOptimizedAuth] Erro ao buscar assinatura:', subscriptionError);
-      return null;
-    }
-    
-    if (!subscription) {
-      console.log('[useOptimizedAuth] Nenhuma assinatura ativa encontrada');
-      return null;
-    }
-    
-    console.log('[useOptimizedAuth] Assinatura encontrada:', {
-      id: subscription.id,
-      plan_type: subscription.plan_type,
-      status: subscription.status,
-      ends_at: subscription.ends_at
-    });
-    
-    // Cast the subscription data to match UserSubscription type
-    return {
-      ...subscription,
-      plan_type: subscription.plan_type as UserSubscription['plan_type'],
-      status: subscription.status as UserSubscription['status']
-    };
-    
-  } catch (error) {
-    console.error('[useOptimizedAuth] Erro geral ao buscar assinatura:', error);
-    return null;
-  }
 };
 
 export const useOptimizedAuth = (): AuthState => {
@@ -200,14 +145,30 @@ export const useOptimizedAuth = (): AuthState => {
             .maybeSingle();
           
           if (profile && mounted) {
-            // ✅ Buscar assinatura correta por oficina - mas não bloquear se falhar
-            let subscription: UserSubscription | null = null;
+            // ✅ Buscar oficina_id do usuário
+            let oficinaId: string | null = null;
             
             try {
-              subscription = await getUserSubscriptionByOficina(currentSession.user.id);
-            } catch (subscriptionError) {
-              console.warn('useOptimizedAuth: Erro ao buscar assinatura, continuando sem ela:', subscriptionError);
+              const { data: oficina } = await supabase
+                .from('oficinas')
+                .select('id')
+                .eq('user_id', currentSession.user.id)
+                .maybeSingle();
+              
+              oficinaId = oficina?.id || null;
+              console.log('useOptimizedAuth: Oficina ID encontrada:', oficinaId);
+            } catch (oficinaError) {
+              console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
             }
+
+            // ✅ Buscar plano da oficina
+            let planData = { plan: 'Free', planActive: false, expired: true };
+            
+            if (oficinaId) {
+              planData = await getOficinaPlan(oficinaId);
+            }
+
+            const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
             
             const authUser: AuthUser = {
               id: profile.id,
@@ -216,19 +177,27 @@ export const useOptimizedAuth = (): AuthState => {
               nome_oficina: profile.nome_oficina,
               telefone: profile.telefone,
               is_active: profile.is_active ?? true,
-              subscription: subscription,
-              oficina_id: null,
+              subscription: null, // Não usamos mais subscription
+              oficina_id: oficinaId,
               trial_ends_at: profile.trial_ends_at,
-              plano: profile.plano,
+              plano: planData.plan,
               trial_started_at: profile.trial_started_at,
               app_metadata: currentSession.user.app_metadata,
               user_metadata: currentSession.user.user_metadata,
-              aud: currentSession.user.aud
+              aud: currentSession.user.aud,
+              planActive: planData.planActive,
+              expired: planData.expired
             };
             
             setUser(authUser);
             setRole(authUser.role);
-            console.log('useOptimizedAuth: Perfil carregado:', authUser.email, 'role:', authUser.role);
+            console.log('useOptimizedAuth: Perfil carregado:', {
+              email: authUser.email,
+              role: authUser.role,
+              plan: planData.plan,
+              planActive: planData.planActive,
+              expired: planData.expired
+            });
           } else {
             console.log('useOptimizedAuth: Perfil não encontrado, criando básico');
             // Criar perfil básico
@@ -243,7 +212,9 @@ export const useOptimizedAuth = (): AuthState => {
               oficina_id: null,
               app_metadata: currentSession.user.app_metadata,
               user_metadata: currentSession.user.user_metadata,
-              aud: currentSession.user.aud
+              aud: currentSession.user.aud,
+              planActive: false,
+              expired: true
             };
             if (mounted) {
               setUser(basicAuthUser);
@@ -310,19 +281,23 @@ export const useOptimizedAuth = (): AuthState => {
     };
   }, []);
 
-  // Validação de plano
-  const planValidation = validatePlanAccess(user?.subscription || null, user);
+  // Validação de plano usando os novos dados
+  const isAdmin = role === 'admin' || role === 'superadmin';
+  const planValidation = validatePlanAccess(
+    user?.plano || 'Free', 
+    user?.planActive || false, 
+    isAdmin
+  );
   
   console.log('useOptimizedAuth: Validação de plano aplicada:', {
     hasUser: !!user,
-    subscription: !!user?.subscription,
-    subscriptionStatus: user?.subscription?.status,
-    subscriptionPlanType: user?.subscription?.plan_type,
+    plan: user?.plano,
+    planActive: user?.planActive,
+    expired: user?.expired,
     planValidation
   });
 
   // Estado final
-  const isAdmin = role === 'admin' || role === 'superadmin';
   const canAccessFeatures = planValidation.isActive || isAdmin;
 
   console.log('useOptimizedAuth: Resultado final da validação:', {
@@ -331,6 +306,7 @@ export const useOptimizedAuth = (): AuthState => {
     isAdmin,
     plan: planValidation.plan,
     planActive: planValidation.isActive,
+    expired: user?.expired,
     canAccessFeatures,
     permissionsCount: planValidation.permissionsCount,
     permissions: planValidation.permissions,

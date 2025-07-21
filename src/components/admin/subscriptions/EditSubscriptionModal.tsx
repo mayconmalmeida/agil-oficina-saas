@@ -1,19 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { ptBR } from 'date-fns/locale';
-import StripeCheckoutButton from './StripeCheckoutButton';
+import { toast } from '@/hooks/use-toast';
 
 interface EditSubscriptionModalProps {
   subscription?: any;
@@ -32,257 +25,139 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   isCreating,
   oficinas
 }) => {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [planPrices, setPlanPrices] = useState<{ [key: string]: number }>({});
   const [formData, setFormData] = useState({
-    oficina_id: '',
     user_id: '',
-    plan_type: 'essencial_mensal',
+    plan_type: '',
     status: 'active',
-    starts_at: new Date(),
-    ends_at: null as Date | null,
-    amount: 0,
-    payment_method: 'manual'
+    starts_at: '',
+    ends_at: '',
+    oficina_id: ''
   });
-
-  // Carregar preços dos planos
-  useEffect(() => {
-    const fetchPlanPrices = async () => {
-      try {
-        const { data: plansData, error } = await supabase
-          .from('plan_configurations')
-          .select('plan_type, billing_cycle, price');
-
-        if (error) {
-          console.error('Erro ao buscar preços dos planos:', error);
-          return;
-        }
-
-        const pricesMap: { [key: string]: number } = {};
-        (plansData || []).forEach(plan => {
-          const key = `${plan.plan_type}_${plan.billing_cycle}`;
-          pricesMap[key] = plan.price;
-        });
-
-        // Valores padrão se não encontrar na configuração
-        pricesMap['essencial_mensal'] = pricesMap['essencial_mensal'] || 49.90;
-        pricesMap['essencial_anual'] = pricesMap['essencial_anual'] || 499.00;
-        pricesMap['premium_mensal'] = pricesMap['premium_mensal'] || 99.90;
-        pricesMap['premium_anual'] = pricesMap['premium_anual'] || 999.00;
-
-        setPlanPrices(pricesMap);
-      } catch (error) {
-        console.error('Erro ao carregar preços:', error);
-      }
-    };
-
-    fetchPlanPrices();
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (subscription && !isCreating) {
-      // Ao editar, buscar a oficina do usuário
-      const findOficinaByUserId = async () => {
-        if (subscription.user_id) {
-          const oficinaEncontrada = oficinas.find(o => o.user_id === subscription.user_id);
-          
-          setFormData({
-            oficina_id: oficinaEncontrada?.id || '',
-            user_id: subscription.user_id || '',
-            plan_type: subscription.plan || 'essencial_mensal',
-            status: subscription.status || 'active',
-            starts_at: subscription.started_at ? new Date(subscription.started_at) : new Date(),
-            ends_at: subscription.ends_at ? new Date(subscription.ends_at) : null,
-            amount: planPrices[subscription.plan] || subscription.amount || 0,
-            payment_method: subscription.payment_method || 'manual'
-          });
-        }
-      };
-      
-      findOficinaByUserId();
-    } else if (isCreating) {
       setFormData({
-        oficina_id: '',
+        user_id: subscription.user_id || '',
+        plan_type: subscription.plan_type || '',
+        status: subscription.status || 'active',
+        starts_at: subscription.starts_at ? subscription.starts_at.split('T')[0] : '',
+        ends_at: subscription.ends_at ? subscription.ends_at.split('T')[0] : '',
+        oficina_id: subscription.oficina_id || ''
+      });
+    } else {
+      setFormData({
         user_id: '',
-        plan_type: 'essencial_mensal',
+        plan_type: '',
         status: 'active',
-        starts_at: new Date(),
-        ends_at: null,
-        amount: planPrices['essencial_mensal'] || 49.90,
-        payment_method: 'manual'
+        starts_at: new Date().toISOString().split('T')[0],
+        ends_at: '',
+        oficina_id: ''
       });
     }
-  }, [subscription, isCreating, oficinas, planPrices]);
+  }, [subscription, isCreating, isOpen]);
 
-  // Auto-calculate end date and amount based on plan type
-  useEffect(() => {
-    if (formData.starts_at && formData.plan_type) {
-      const startDate = new Date(formData.starts_at);
-      let endDate = new Date(startDate);
-      
-      if (formData.plan_type.includes('anual')) {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-      } else {
-        endDate.setMonth(endDate.getMonth() + 1);
-      }
-      
-      const planPrice = planPrices[formData.plan_type] || 0;
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        ends_at: endDate,
-        amount: planPrice
-      }));
-    }
-  }, [formData.plan_type, formData.starts_at, planPrices]);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  // Auto-set user_id when oficina is selected
-  useEffect(() => {
-    if (formData.oficina_id) {
-      const selectedOficina = oficinas.find(o => o.id === formData.oficina_id);
-      if (selectedOficina) {
-        setFormData(prev => ({ ...prev, user_id: selectedOficina.user_id }));
-      }
-    }
-  }, [formData.oficina_id, oficinas]);
-
-  const handleManualSave = async () => {
     try {
-      setLoading(true);
-
-      // Validation
-      if (!formData.oficina_id) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Selecione uma oficina"
-        });
-        return;
-      }
-
-      if (!formData.user_id) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "User ID é obrigatório"
-        });
-        return;
-      }
-
-      // Calculate end date based on plan type
-      const startDate = new Date();
-      let endDate = new Date(startDate);
+      // Encontrar a oficina selecionada
+      const selectedOficina = oficinas.find(o => o.user_id === formData.user_id);
       
-      if (formData.plan_type.includes('anual')) {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-      } else {
-        endDate.setMonth(endDate.getMonth() + 1);
+      if (!selectedOficina) {
+        toast({
+          title: "Erro",
+          description: "Oficina não encontrada para o usuário selecionado",
+          variant: "destructive"
+        });
+        return;
       }
 
-      // Use direct database query to create/update subscription
       const subscriptionData = {
         user_id: formData.user_id,
         plan_type: formData.plan_type,
-        status: 'active',
-        starts_at: startDate.toISOString(),
-        ends_at: endDate.toISOString(),
+        status: formData.status,
+        starts_at: formData.starts_at,
+        ends_at: formData.ends_at,
         is_manual: true
       };
 
       let result;
       if (isCreating) {
-        const { data, error } = await supabase
+        result = await supabase
           .from('user_subscriptions')
-          .insert(subscriptionData)
-          .select();
-        result = { data, error };
+          .insert([subscriptionData]);
       } else {
-        const { data, error } = await supabase
+        result = await supabase
           .from('user_subscriptions')
           .update(subscriptionData)
-          .eq('id', subscription.id)
-          .select();
-        result = { data, error };
+          .eq('id', subscription.id);
       }
 
-      if (result.error) {
-        console.error('Erro ao salvar assinatura:', result.error);
-        throw result.error;
+      if (result.error) throw result.error;
+
+      // ✅ Atualizar também a tabela oficinas
+      const planType = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
+      
+      const { error: oficinaError } = await supabase
+        .from('oficinas')
+        .update({
+          plano: planType,
+          trial_ends_at: formData.ends_at
+        })
+        .eq('id', selectedOficina.id);
+
+      if (oficinaError) {
+        console.error('Erro ao atualizar oficina:', oficinaError);
+        toast({
+          title: "Aviso",
+          description: "Assinatura criada, mas houve erro ao atualizar a oficina",
+          variant: "destructive"
+        });
       }
 
       toast({
         title: "Sucesso",
-        description: isCreating ? "Assinatura criada com sucesso!" : "Assinatura atualizada com sucesso!"
+        description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso`
       });
 
-      // Forçar atualização da sessão do usuário se necessário
-      if (formData.user_id) {
-        try {
-          // Tentar forçar refresh dos dados do usuário
-          const { data: userData } = await supabase.auth.admin.getUserById(formData.user_id);
-          if (userData.user) {
-            console.log('Assinatura salva para usuário:', userData.user.email);
-          }
-        } catch (error) {
-          console.log('Não foi possível atualizar dados do usuário:', error);
-        }
-      }
-
       onSuccess();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao salvar assinatura:', error);
       toast({
-        variant: "destructive",
         title: "Erro",
-        description: error.message || "Não foi possível salvar a assinatura"
+        description: `Erro ao ${isCreating ? 'criar' : 'atualizar'} assinatura`,
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (oficinas.length === 0) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nenhuma oficina encontrada</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Nenhuma oficina cadastrada. Cadastre uma oficina antes de atribuir uma assinatura.</p>
-          </div>
-          <DialogFooter>
-            <Button onClick={onClose}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
             {isCreating ? 'Nova Assinatura' : 'Editar Assinatura'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="oficina">Oficina *</Label>
+            <Label htmlFor="user_id">Usuário/Oficina</Label>
             <Select
-              value={formData.oficina_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, oficina_id: value }))}
+              value={formData.user_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, user_id: value }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma oficina" />
               </SelectTrigger>
               <SelectContent>
                 {oficinas.map((oficina) => (
-                  <SelectItem key={oficina.id} value={oficina.id}>
-                    {oficina.nome_oficina}
+                  <SelectItem key={oficina.user_id} value={oficina.user_id}>
+                    {oficina.nome_oficina || oficina.email}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -290,13 +165,13 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="plan_type">Plano</Label>
+            <Label htmlFor="plan_type">Tipo de Plano</Label>
             <Select
               value={formData.plan_type}
               onValueChange={(value) => setFormData(prev => ({ ...prev, plan_type: value }))}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Selecione o plano" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="essencial_mensal">Essencial Mensal</SelectItem>
@@ -317,91 +192,43 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Ativa</SelectItem>
-                <SelectItem value="trialing">Trial</SelectItem>
-                <SelectItem value="cancelled">Cancelada</SelectItem>
-                <SelectItem value="expired">Expirada</SelectItem>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="trialing">Em Teste</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="expired">Expirado</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Data de Início</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !formData.starts_at && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.starts_at ? (
-                    format(formData.starts_at, "dd/MM/yyyy", { locale: ptBR })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.starts_at}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, starts_at: date || new Date() }))}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="starts_at">Data de Início</Label>
+            <Input
+              id="starts_at"
+              type="date"
+              value={formData.starts_at}
+              onChange={(e) => setFormData(prev => ({ ...prev, starts_at: e.target.value }))}
+            />
           </div>
-
-          {formData.ends_at && (
-            <div>
-              <Label>Data de Término (Calculada Automaticamente)</Label>
-              <Input
-                value={format(formData.ends_at, "dd/MM/yyyy", { locale: ptBR })}
-                disabled
-                className="bg-gray-100"
-              />
-            </div>
-          )}
 
           <div>
-            <Label htmlFor="amount">Valor (R$)</Label>
+            <Label htmlFor="ends_at">Data de Fim</Label>
             <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              disabled
-              className="bg-gray-100"
+              id="ends_at"
+              type="date"
+              value={formData.ends_at}
+              onChange={(e) => setFormData(prev => ({ ...prev, ends_at: e.target.value }))}
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Valor calculado automaticamente baseado no plano selecionado
-            </p>
           </div>
-        </div>
 
-        <DialogFooter className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button onClick={handleManualSave} disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar Manual'}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Salvando...' : (isCreating ? 'Criar' : 'Atualizar')}
             </Button>
           </div>
-          
-          {formData.user_id && (
-            <div className="w-full">
-              <StripeCheckoutButton
-                userId={formData.user_id}
-                planType={formData.plan_type}
-                disabled={!formData.oficina_id}
-              />
-            </div>
-          )}
-        </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
