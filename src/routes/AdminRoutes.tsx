@@ -15,11 +15,7 @@ export const adminRoutes = [
   <Route
     key="admin-login"
     path="/admin/login"
-    element={
-      <AdminProvider>
-        <AdminLoginPage />
-      </AdminProvider>
-    }
+    element={<AdminLoginPage />}
   />,
   <Route
     key="admin-dashboard"
