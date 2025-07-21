@@ -18,6 +18,7 @@ interface AuthState {
   canAccessFeatures: boolean;
   permissionsCount: number;
   oficinaId: string | null;
+  signOut: () => Promise<void>;
 }
 
 const validatePlanAccess = (subscription: UserSubscription | null, profile: UserProfile | null) => {
@@ -89,6 +90,24 @@ export const useOptimizedAuth = (): AuthState => {
   const [loading, setLoading] = useState(true);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+
+  const signOut = async () => {
+    console.log('useOptimizedAuth: Iniciando logout');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('useOptimizedAuth: Erro ao fazer logout:', error);
+        throw error;
+      }
+      console.log('useOptimizedAuth: Logout realizado com sucesso');
+      setUser(null);
+      setSession(null);
+      setRole(null);
+    } catch (error) {
+      console.error('useOptimizedAuth: Erro no logout:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     console.log('useOptimizedAuth: Iniciando configuração');
@@ -246,6 +265,7 @@ export const useOptimizedAuth = (): AuthState => {
     permissions: planValidation.permissions,
     canAccessFeatures,
     permissionsCount: planValidation.permissionsCount,
-    oficinaId: user?.oficina_id || null
+    oficinaId: user?.oficina_id || null,
+    signOut
   };
 };
