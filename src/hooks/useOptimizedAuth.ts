@@ -118,7 +118,16 @@ const getUserSubscriptionByOficina = async (userId: string): Promise<UserSubscri
         .limit(1)
         .maybeSingle();
       
-      return subError ? null : subscription;
+      if (subError || !subscription) {
+        return null;
+      }
+
+      // Cast the subscription data to match UserSubscription type
+      return {
+        ...subscription,
+        plan_type: subscription.plan_type as UserSubscription['plan_type'],
+        status: subscription.status as UserSubscription['status']
+      };
     }
     
     // ✅ Buscar assinatura mais recente ATIVA da oficina
@@ -136,8 +145,19 @@ const getUserSubscriptionByOficina = async (userId: string): Promise<UserSubscri
       return null;
     }
     
+    if (!subscription) {
+      console.log('[useOptimizedAuth] Nenhuma assinatura encontrada');
+      return null;
+    }
+    
     console.log('[useOptimizedAuth] Assinatura encontrada:', subscription);
-    return subscription;
+    
+    // Cast the subscription data to match UserSubscription type
+    return {
+      ...subscription,
+      plan_type: subscription.plan_type as UserSubscription['plan_type'],
+      status: subscription.status as UserSubscription['status']
+    };
     
   } catch (error) {
     console.error('[useOptimizedAuth] Erro geral ao buscar assinatura:', error);
