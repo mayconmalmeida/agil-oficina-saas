@@ -62,6 +62,8 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     setLoading(true);
 
     try {
+      console.log('[EditSubscriptionModal] Iniciando criação/edição de assinatura:', formData);
+
       // Encontrar a oficina selecionada
       const selectedOficina = oficinas.find(o => o.user_id === formData.user_id);
       
@@ -74,67 +76,85 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
+      // ✅ Preparar dados para user_subscriptions com todos os campos necessários
       const subscriptionData = {
         user_id: formData.user_id,
         plan_type: formData.plan_type,
         status: formData.status,
-        starts_at: formData.starts_at,
-        ends_at: formData.ends_at,
-        is_manual: true
+        starts_at: formData.starts_at + 'T00:00:00.000Z', // Formato ISO completo
+        ends_at: formData.ends_at ? formData.ends_at + 'T23:59:59.999Z' : null, // Data final do dia
+        trial_ends_at: formData.ends_at ? formData.ends_at + 'T23:59:59.999Z' : null, // Usar mesma data para trial
+        is_manual: true,
+        stripe_customer_id: null,
+        stripe_subscription_id: null
       };
 
+      console.log('[EditSubscriptionModal] Dados da assinatura preparados:', subscriptionData);
+
+      // ✅ Inserir/atualizar na tabela user_subscriptions
       let result;
       if (isCreating) {
+        // Para criação, usar UPSERT para evitar conflitos
         result = await supabase
           .from('user_subscriptions')
-          .insert([subscriptionData]);
+          .upsert([subscriptionData], { 
+            onConflict: 'user_id',
+            ignoreDuplicates: false 
+          });
       } else {
+        // Para edição, fazer UPDATE específico
         result = await supabase
           .from('user_subscriptions')
           .update(subscriptionData)
           .eq('id', subscription.id);
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        console.error('[EditSubscriptionModal] Erro ao salvar user_subscriptions:', result.error);
+        throw result.error;
+      }
+
+      console.log('[EditSubscriptionModal] Assinatura salva com sucesso em user_subscriptions');
 
       // ✅ Atualizar também a tabela oficinas com os dados corretos
       const planType = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
       
-      console.log('Atualizando oficina:', {
+      console.log('[EditSubscriptionModal] Atualizando oficina:', {
         oficinaId: selectedOficina.id,
         planType,
-        trialEndsAt: formData.ends_at
+        trialEndsAt: formData.ends_at + 'T23:59:59.999Z'
       });
 
       const { error: oficinaError } = await supabase
         .from('oficinas')
         .update({
           plano: planType,
-          trial_ends_at: formData.ends_at
+          trial_ends_at: formData.ends_at + 'T23:59:59.999Z'
         })
         .eq('id', selectedOficina.id);
 
       if (oficinaError) {
-        console.error('Erro ao atualizar oficina:', oficinaError);
+        console.error('[EditSubscriptionModal] Erro ao atualizar oficina:', oficinaError);
         toast({
           title: "Aviso",
           description: "Assinatura criada, mas houve erro ao atualizar a oficina",
           variant: "destructive"
         });
       } else {
-        console.log('Oficina atualizada com sucesso');
-        toast({
-          title: "Sucesso",
-          description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso. Oficina também foi atualizada.`
-        });
+        console.log('[EditSubscriptionModal] Oficina atualizada com sucesso');
       }
+
+      toast({
+        title: "Sucesso",
+        description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso!`
+      });
 
       onSuccess();
     } catch (error) {
-      console.error('Erro ao salvar assinatura:', error);
+      console.error('[EditSubscriptionModal] Erro ao salvar assinatura:', error);
       toast({
         title: "Erro",
-        description: `Erro ao ${isCreating ? 'criar' : 'atualizar'} assinatura`,
+        description: `Erro ao ${isCreating ? 'criar' : 'atualizar'} assinatura: ${error.message}`,
         variant: "destructive"
       });
     } finally {
