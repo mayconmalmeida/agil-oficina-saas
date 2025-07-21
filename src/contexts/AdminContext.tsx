@@ -58,10 +58,11 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeAdmin = async () => {
       try {
-        console.log('AdminContext: Inicializando verificação de admin...');
+        console.log('AdminContext: Iniciando verificação de admin...');
         setIsLoading(true);
         setError(null);
         
@@ -135,16 +136,16 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
     };
 
-    // Timeout de segurança mais agressivo para admin
-    const timeout = setTimeout(() => {
-      if (mounted) {
-        console.log('AdminContext: Timeout de segurança atingido');
+    // Timeout de segurança mais generoso para admin - 5 segundos
+    timeoutId = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.warn('AdminContext: Timeout de segurança atingido, mas continuando...');
         setIsLoading(false);
-        setError('Timeout ao verificar permissões administrativas');
+        // NÃO definir erro aqui - permitir que o usuário continue se já estiver autenticado
       }
-    }, 3000); // 3 segundos para admin
+    }, 5000);
 
-    // Inicializar verificação imediatamente
+    // Inicializar verificação
     initializeAdmin();
 
     // Configurar listener de mudanças de autenticação
@@ -174,7 +175,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [navigate, toast]);

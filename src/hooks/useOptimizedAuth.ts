@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -106,35 +105,19 @@ const getUserSubscriptionByOficina = async (userId: string): Promise<UserSubscri
       .eq('user_id', userId)
       .maybeSingle();
     
-    if (oficinaError || !oficina) {
-      console.log('[useOptimizedAuth] Oficina não encontrada, buscando por user_id');
-      // Fallback: buscar por user_id diretamente
-      const { data: subscription, error: subError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .in('status', ['active', 'trialing'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (subError || !subscription) {
-        return null;
-      }
+    if (oficinaError) {
+      console.error('[useOptimizedAuth] Erro ao buscar oficina:', oficinaError);
+    }
 
-      // Cast the subscription data to match UserSubscription type
-      return {
-        ...subscription,
-        plan_type: subscription.plan_type as UserSubscription['plan_type'],
-        status: subscription.status as UserSubscription['status']
-      };
+    if (!oficina) {
+      console.log('[useOptimizedAuth] Oficina não encontrada, buscando por user_id diretamente');
     }
     
-    // ✅ Buscar assinatura mais recente ATIVA da oficina
+    // ✅ Buscar assinatura mais recente ATIVA - primeiro por oficina, depois por user_id
     const { data: subscription, error: subscriptionError } = await supabase
       .from('user_subscriptions')
       .select('*')
-      .eq('user_id', userId) // Ainda filtrar por user_id mas considerar oficina
+      .eq('user_id', userId)
       .in('status', ['active', 'trialing'])
       .order('created_at', { ascending: false })
       .limit(1)
@@ -146,11 +129,16 @@ const getUserSubscriptionByOficina = async (userId: string): Promise<UserSubscri
     }
     
     if (!subscription) {
-      console.log('[useOptimizedAuth] Nenhuma assinatura encontrada');
+      console.log('[useOptimizedAuth] Nenhuma assinatura ativa encontrada');
       return null;
     }
     
-    console.log('[useOptimizedAuth] Assinatura encontrada:', subscription);
+    console.log('[useOptimizedAuth] Assinatura encontrada:', {
+      id: subscription.id,
+      plan_type: subscription.plan_type,
+      status: subscription.status,
+      ends_at: subscription.ends_at
+    });
     
     // Cast the subscription data to match UserSubscription type
     return {
@@ -192,12 +180,14 @@ export const useOptimizedAuth = (): AuthState => {
 
   useEffect(() => {
     console.log('useOptimizedAuth: Iniciando configuração');
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
     
     const initializeAuth = async () => {
       try {
         // Obter sessão atual
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
+        if (mounted) setSession(currentSession);
         
         if (currentSession?.user) {
           console.log('useOptimizedAuth: Sessão encontrada, buscando perfil');
@@ -209,9 +199,15 @@ export const useOptimizedAuth = (): AuthState => {
             .eq('id', currentSession.user.id)
             .maybeSingle();
           
-          if (profile) {
-            // ✅ Buscar assinatura correta por oficina
-            const subscription = await getUserSubscriptionByOficina(currentSession.user.id);
+          if (profile && mounted) {
+            // ✅ Buscar assinatura correta por oficina - mas não bloquear se falhar
+            let subscription: UserSubscription | null = null;
+            
+            try {
+              subscription = await getUserSubscriptionByOficina(currentSession.user.id);
+            } catch (subscriptionError) {
+              console.warn('useOptimizedAuth: Erro ao buscar assinatura, continuando sem ela:', subscriptionError);
+            }
             
             const authUser: AuthUser = {
               id: profile.id,
@@ -249,27 +245,37 @@ export const useOptimizedAuth = (): AuthState => {
               user_metadata: currentSession.user.user_metadata,
               aud: currentSession.user.aud
             };
-            setUser(basicAuthUser);
-            setRole('user');
+            if (mounted) {
+              setUser(basicAuthUser);
+              setRole('user');
+            }
           }
         } else {
           console.log('useOptimizedAuth: Nenhuma sessão encontrada');
-          setUser(null);
-          setRole(null);
+          if (mounted) {
+            setUser(null);
+            setRole(null);
+          }
         }
       } catch (error) {
         console.error('useOptimizedAuth: Erro na inicialização:', error);
-        setUser(null);
-        setRole(null);
+        if (mounted) {
+          setUser(null);
+          setRole(null);
+        }
       } finally {
-        setLoading(false);
-        setIsLoadingAuth(false);
+        if (mounted) {
+          setLoading(false);
+          setIsLoadingAuth(false);
+        }
       }
     };
 
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('useOptimizedAuth: Auth state change:', event);
         setSession(session);
         
@@ -288,16 +294,19 @@ export const useOptimizedAuth = (): AuthState => {
     // Inicialização inicial
     initializeAuth();
 
-    // Timeout de segurança
-    const timeout = setTimeout(() => {
-      console.log('useOptimizedAuth: Timeout atingido, forçando fim do loading');
-      setLoading(false);
-      setIsLoadingAuth(false);
-    }, 3000);
+    // Timeout de segurança mais generoso - 5 segundos
+    timeoutId = setTimeout(() => {
+      if (mounted) {
+        console.log('useOptimizedAuth: Timeout atingido, forçando fim do loading');
+        setLoading(false);
+        setIsLoadingAuth(false);
+      }
+    }, 5000);
 
     return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
-      clearTimeout(timeout);
     };
   }, []);
 
