@@ -5,49 +5,107 @@ import { supabase } from '@/lib/supabase';
 import { UserSubscription } from '@/types/subscription';
 import { AuthUser, AuthState } from '@/types/auth';
 
-// ✅ Nova função para buscar plano da oficina com validação correta de data
-const getOficinaPlan = async (oficinaId: string) => {
+// ✅ Nova função que valida primeiro user_subscriptions e depois oficinas
+const getUserPlanStatus = async (userId: string) => {
   try {
-    console.log('[getOficinaPlan] Buscando plano para oficina:', oficinaId);
+    console.log('[getUserPlanStatus] Validando plano para usuário:', userId);
     
-    const { data, error } = await supabase
-      .from('oficinas')
-      .select('plano, trial_ends_at')
-      .eq('id', oficinaId)
+    const hoje = new Date();
+    
+    // 1. PRIORIDADE: Buscar assinatura ativa em user_subscriptions
+    const { data: subscription, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select('plan_type, trial_ends_at, ends_at, status')
+      .eq('user_id', userId)
+      .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (error) {
-      console.error('[getOficinaPlan] Erro ao buscar plano:', error);
-      return { plan: 'Free', planActive: false, expired: true };
+    if (!subError && subscription) {
+      console.log('[getUserPlanStatus] Assinatura encontrada:', subscription);
+      
+      // Usar trial_ends_at se existir, senão ends_at
+      const dataExpiracao = subscription.trial_ends_at || subscription.ends_at;
+      
+      if (dataExpiracao) {
+        const expiracao = new Date(dataExpiracao);
+        const planActive = expiracao >= hoje;
+        
+        // Determinar o tipo de plano baseado no plan_type
+        let planType = 'Free';
+        if (subscription.plan_type.includes('premium')) {
+          planType = 'Premium';
+        } else if (subscription.plan_type.includes('essencial')) {
+          planType = 'Essencial';
+        }
+        
+        console.log('[getUserPlanStatus] Resultado da assinatura:', {
+          planType,
+          planActive,
+          expired: !planActive,
+          dataExpiracao: expiracao.toISOString(),
+          hoje: hoje.toISOString(),
+          source: 'user_subscriptions'
+        });
+        
+        return {
+          plan: planType,
+          planActive,
+          expired: !planActive,
+          source: 'user_subscriptions'
+        };
+      }
     }
 
-    if (!data) {
-      console.log('[getOficinaPlan] Oficina não encontrada');
-      return { plan: 'Free', planActive: false, expired: true };
+    console.log('[getUserPlanStatus] Nenhuma assinatura ativa encontrada, verificando oficinas...');
+
+    // 2. FALLBACK: Buscar dados na tabela oficinas
+    const { data: oficina, error: oficinaError } = await supabase
+      .from('oficinas')
+      .select('plano, trial_ends_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!oficinaError && oficina && oficina.trial_ends_at) {
+      const expiracao = new Date(oficina.trial_ends_at);
+      const planActive = expiracao >= hoje;
+      
+      console.log('[getUserPlanStatus] Resultado da oficina:', {
+        plano: oficina.plano,
+        planActive,
+        expired: !planActive,
+        dataExpiracao: expiracao.toISOString(),
+        hoje: hoje.toISOString(),
+        source: 'oficinas'
+      });
+      
+      return {
+        plan: oficina.plano || 'Free',
+        planActive,
+        expired: !planActive,
+        source: 'oficinas'
+      };
     }
 
-    // ✅ Validação correta da data de expiração
-    const now = new Date();
-    const trialEnd = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
-    const expired = !trialEnd || trialEnd < now;
-
-    console.log('[getOficinaPlan] Resultado:', {
-      plano: data.plano,
-      trial_ends_at: data.trial_ends_at,
-      trialEnd: trialEnd?.toISOString(),
-      now: now.toISOString(),
-      expired,
-      planActive: !expired
-    });
-
+    console.log('[getUserPlanStatus] Nenhum plano encontrado');
+    
+    // 3. SEM PLANO
     return {
-      plan: data.plano || 'Free',
-      planActive: !expired,
-      expired
+      plan: 'Free',
+      planActive: false,
+      expired: true,
+      source: 'none'
     };
+    
   } catch (error) {
-    console.error('[getOficinaPlan] Erro inesperado:', error);
-    return { plan: 'Free', planActive: false, expired: true };
+    console.error('[getUserPlanStatus] Erro inesperado:', error);
+    return {
+      plan: 'Free',
+      planActive: false,
+      expired: true,
+      source: 'error'
+    };
   }
 };
 
@@ -164,12 +222,8 @@ export const useOptimizedAuth = (): AuthState => {
               console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
             }
 
-            // ✅ Buscar plano da oficina
-            let planData = { plan: 'Free', planActive: false, expired: true };
-            
-            if (oficinaId) {
-              planData = await getOficinaPlan(oficinaId);
-            }
+            // ✅ Buscar plano usando nova lógica de prioridade
+            const planData = await getUserPlanStatus(currentSession.user.id);
 
             const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
             
@@ -199,7 +253,8 @@ export const useOptimizedAuth = (): AuthState => {
               role: authUser.role,
               plan: planData.plan,
               planActive: planData.planActive,
-              expired: planData.expired
+              expired: planData.expired,
+              source: planData.source
             });
           } else {
             console.log('useOptimizedAuth: Perfil não encontrado, criando básico');
