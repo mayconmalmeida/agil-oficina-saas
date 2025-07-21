@@ -13,6 +13,9 @@ export interface UserProfile {
   oficina_id: string | null;
   created_at: string;
   updated_at: string;
+  trial_ends_at?: string | null;
+  plano?: string | null;
+  trial_started_at?: string | null;
 }
 
 export const fetchUserProfile = async (userId: string): Promise<UserProfile> => {
@@ -28,7 +31,24 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 
     if (profileError) {
       console.error('fetchUserProfile: Erro ao buscar perfil:', profileError);
-      throw new Error(`Erro ao buscar perfil: ${profileError.message}`);
+      // Se falhar, criar perfil básico
+      const basicProfile: UserProfile = {
+        id: userId,
+        email: '',
+        role: 'user',
+        nome_oficina: null,
+        telefone: null,
+        is_active: true,
+        subscription: null,
+        oficina_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        trial_ends_at: null,
+        plano: 'Essencial',
+        trial_started_at: null
+      };
+      console.log('fetchUserProfile: Usando perfil básico devido a erro');
+      return basicProfile;
     }
 
     if (!profile) {
@@ -44,7 +64,10 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         subscription: null,
         oficina_id: null,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        trial_ends_at: null,
+        plano: 'Essencial',
+        trial_started_at: null
       };
     }
 
@@ -92,7 +115,10 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       subscription,
       oficina_id,
       created_at: profile.created_at,
-      updated_at: profile.updated_at
+      updated_at: profile.created_at, // Use created_at as fallback
+      trial_ends_at: profile.trial_ends_at,
+      plano: profile.plano,
+      trial_started_at: profile.trial_started_at
     };
 
     console.log('fetchUserProfile: Perfil carregado com sucesso:', {
@@ -105,7 +131,24 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     return userProfile;
   } catch (error) {
     console.error('fetchUserProfile: Erro geral:', error);
-    throw error;
+    // Retornar perfil básico em caso de erro
+    const basicProfile: UserProfile = {
+      id: userId,
+      email: '',
+      role: 'user',
+      nome_oficina: null,
+      telefone: null,
+      is_active: true,
+      subscription: null,
+      oficina_id: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      trial_ends_at: null,
+      plano: 'Essencial',
+      trial_started_at: null
+    };
+    console.log('fetchUserProfile: Retornando perfil básico devido a erro geral');
+    return basicProfile;
   }
 };
 
