@@ -2,7 +2,9 @@
 import { User, Session } from '@supabase/supabase-js';
 import { UserSubscription } from './subscription';
 
-export interface AuthUser extends User {
+export interface AuthUser {
+  id: string;
+  email: string;
   role?: string;
   isAdmin?: boolean;
   canAccessFeatures?: boolean;
@@ -16,6 +18,10 @@ export interface AuthUser extends User {
   plan?: 'Essencial' | 'Premium' | 'Free';
   planActive?: boolean;
   permissions?: string[];
+  oficina_id?: string | null;
+  app_metadata?: any;
+  user_metadata?: any;
+  aud?: string;
 }
 
 export interface AuthState {
@@ -28,6 +34,9 @@ export interface AuthState {
   plan: 'Essencial' | 'Premium' | 'Free' | null;
   planActive: boolean;
   permissions: string[];
+  canAccessFeatures: boolean;
+  permissionsCount: number;
+  oficinaId: string | null;
   signOut: () => Promise<void>;
 }
 

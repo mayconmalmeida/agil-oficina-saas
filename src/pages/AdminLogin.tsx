@@ -3,90 +3,147 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { zodResolver } from "@hookform/resolvers/zod";
-import LoginForm, { formSchema } from "@/components/admin/auth/LoginForm";
-import AuthConnectionStatus from "@/components/admin/auth/AuthConnectionStatus";
-import ErrorDisplay from "@/components/admin/auth/ErrorDisplay";
-import { useForm } from "react-hook-form";
-import type { FormValues } from "@/hooks/admin/types";
-import { useAdminLogin } from "@/hooks/admin/useAdminLogin";
-import { testBasicConnection, ConnectionResult } from "@/hooks/admin/utils/connectionUtils";
-import { AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from '@/lib/supabase';
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 const AdminLogin = () => {
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error' | 'cors-error' | 'timeout'>('checking');
-  const [connectionDetails, setConnectionDetails] = useState<ConnectionResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { isLoading, handleLogin } = useAdminLogin();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const navigate = useNavigate();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    }
-  });
 
-  // Verificar conexão com Supabase quando o componente montar
+  // Verificar conexão com Supabase
   useEffect(() => {
     const checkConnection = async () => {
       try {
         setConnectionStatus('checking');
-        console.log("🔍 Verificando conexão com Supabase na página de admin login...");
+        console.log("🔍 Verificando conexão com Supabase...");
         
-        const result = await testBasicConnection();
-        setConnectionDetails(result);
+        const { data, error } = await supabase.from('profiles').select('count').limit(1);
         
-        if (result.isConnected) {
-          console.log("✅ Conexão com Supabase estabelecida");
-          setConnectionStatus('connected');
-          setErrorMessage(null);
+        if (error) {
+          console.error("❌ Falha na conexão:", error);
+          setConnectionStatus('error');
+          setError(`Erro de conexão: ${error.message}`);
         } else {
-          console.error("❌ Falha na conexão com Supabase:", result.error);
-          
-          // Determinar tipo específico de erro
-          if (result.error?.includes('CORS') || result.error?.includes('Access-Control-Allow-Origin')) {
-            setConnectionStatus('cors-error');
-          } else if (result.statusCode === 408 || result.error?.includes('Timeout')) {
-            setConnectionStatus('timeout');
-          } else {
-            setConnectionStatus('error');
-          }
-          
-          setErrorMessage(result.error || "Erro de conexão desconhecido");
+          console.log("✅ Conexão estabelecida");
+          setConnectionStatus('connected');
+          setError(null);
         }
       } catch (error) {
         console.error("💥 Erro ao verificar conexão:", error);
         setConnectionStatus('error');
-        setErrorMessage(
-          "Erro ao verificar conexão com o servidor: " + 
-          (error instanceof Error ? error.message : "Erro desconhecido")
-        );
+        setError("Erro ao conectar com o servidor");
       }
     };
     
     checkConnection();
-    
-    // Verificar conexão a cada 30 segundos, mas só se estivermos com erro
-    const intervalId = setInterval(() => {
-      if (connectionStatus === 'error' || connectionStatus === 'cors-error' || connectionStatus === 'timeout') {
-        console.log("🔄 Tentando reconectar...");
-        checkConnection();
-      }
-    }, 30000);
-    
-    return () => clearInterval(intervalId);
-  }, [connectionStatus]);
 
-  // Função para lidar com o login do administrador
-  const onSubmit = async (values: FormValues) => {
+    // Verificar se já está logado como admin
+    const checkExistingSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        if (profile?.role === 'admin' || profile?.role === 'superadmin') {
+          console.log("Admin já logado, redirecionando...");
+          navigate('/admin');
+        }
+      }
+    };
+    
+    checkExistingSession();
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (connectionStatus !== 'connected') {
-      setErrorMessage("Não é possível fazer login sem uma conexão estável com o servidor. Por favor, resolva os problemas de conectividade primeiro.");
+      setError("Não é possível fazer login sem conexão com o servidor");
       return;
     }
-    
-    await handleLogin(values);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log("🔐 Tentando fazer login admin...");
+      
+      // Fazer login
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginError) {
+        throw new Error(loginError.message);
+      }
+
+      if (!data.user) {
+        throw new Error("Dados do usuário não encontrados");
+      }
+
+      console.log("✅ Login realizado, verificando permissões admin...");
+
+      // Verificar se é admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("❌ Erro ao buscar perfil:", profileError);
+        throw new Error("Erro ao verificar permissões");
+      }
+
+      if (!profile) {
+        throw new Error("Perfil não encontrado");
+      }
+
+      const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
+      
+      if (!isAdmin) {
+        console.log("❌ Usuário não é admin, role:", profile.role);
+        await supabase.auth.signOut();
+        throw new Error("Acesso negado: usuário não é administrador");
+      }
+
+      console.log("✅ Admin autenticado com sucesso:", profile.email);
+      navigate('/admin');
+
+    } catch (err: any) {
+      console.error("💥 Erro no login admin:", err);
+      setError(err.message || "Erro ao fazer login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'checking': return 'text-yellow-600';
+      case 'connected': return 'text-green-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'checking': return 'Verificando conexão...';
+      case 'connected': return 'Conexão estabelecida';
+      case 'error': return 'Erro de conexão';
+      default: return 'Status desconhecido';
+    }
   };
 
   return (
@@ -99,14 +156,24 @@ const AdminLogin = () => {
               Entre com suas credenciais de administrador
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <AuthConnectionStatus 
-              status={connectionStatus} 
-              errorDetails={connectionDetails?.error}
-            />
-            <ErrorDisplay message={errorMessage} />
-            
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          
+          <CardContent className="space-y-4">
+            {/* Status da Conexão */}
+            <div className={`flex items-center space-x-2 text-sm ${getConnectionStatusColor()}`}>
+              {connectionStatus === 'checking' && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span>{getConnectionStatusText()}</span>
+            </div>
+
+            {/* Mensagem de Erro */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Informação sobre Admin */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <AlertTriangle className="h-4 w-4 text-blue-600 mr-2" />
                 <span className="text-sm font-medium text-blue-800">Informação Importante</span>
@@ -120,22 +187,62 @@ const AdminLogin = () => {
                 </code>
               </p>
             </div>
-            
-            <LoginForm 
-              onSubmit={onSubmit} 
-              isLoading={isLoading} 
-              isConnectionChecking={connectionStatus === 'checking'} 
-            />
+
+            {/* Formulário de Login */}
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@empresa.com"
+                  required
+                  disabled={loading || connectionStatus !== 'connected'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={loading || connectionStatus !== 'connected'}
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || connectionStatus !== 'connected'}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar como Admin'
+                )}
+              </Button>
+            </form>
           </CardContent>
+          
           <CardFooter className="flex justify-center flex-col space-y-2">
             <Button
               variant="link"
               onClick={() => navigate("/")}
+              disabled={loading}
             >
               Voltar para a página inicial
             </Button>
             
-            {connectionStatus !== 'connected' && (
+            {connectionStatus === 'error' && (
               <div className="text-center text-xs text-gray-500 mt-2">
                 <p>Problemas de conexão? Verifique:</p>
                 <ul className="text-left mt-1 ml-4">
