@@ -35,7 +35,7 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // Se o plano expirou, redirecionar para página de plano expirado
+  // ✅ Se o plano expirou, redirecionar para página de plano expirado
   if (user.expired || !user.planActive) {
     console.log('PlanExpiredGuard: Plano expirado, redirecionando:', {
       expired: user.expired,

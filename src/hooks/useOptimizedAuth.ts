@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { UserSubscription } from '@/types/subscription';
 import { AuthUser, AuthState } from '@/types/auth';
 
-// ✅ Nova função para buscar plano da oficina
+// ✅ Nova função para buscar plano da oficina com validação correta de data
 const getOficinaPlan = async (oficinaId: string) => {
   try {
     console.log('[getOficinaPlan] Buscando plano para oficina:', oficinaId);
@@ -26,6 +26,7 @@ const getOficinaPlan = async (oficinaId: string) => {
       return { plan: 'Free', planActive: false, expired: true };
     }
 
+    // ✅ Validação correta da data de expiração
     const now = new Date();
     const trialEnd = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
     const expired = !trialEnd || trialEnd < now;
@@ -33,6 +34,8 @@ const getOficinaPlan = async (oficinaId: string) => {
     console.log('[getOficinaPlan] Resultado:', {
       plano: data.plano,
       trial_ends_at: data.trial_ends_at,
+      trialEnd: trialEnd?.toISOString(),
+      now: now.toISOString(),
       expired,
       planActive: !expired
     });

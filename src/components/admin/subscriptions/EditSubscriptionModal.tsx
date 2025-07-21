@@ -97,9 +97,15 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
 
       if (result.error) throw result.error;
 
-      // ✅ Atualizar também a tabela oficinas
+      // ✅ Atualizar também a tabela oficinas com os dados corretos
       const planType = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
       
+      console.log('Atualizando oficina:', {
+        oficinaId: selectedOficina.id,
+        planType,
+        trialEndsAt: formData.ends_at
+      });
+
       const { error: oficinaError } = await supabase
         .from('oficinas')
         .update({
@@ -115,12 +121,13 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
           description: "Assinatura criada, mas houve erro ao atualizar a oficina",
           variant: "destructive"
         });
+      } else {
+        console.log('Oficina atualizada com sucesso');
+        toast({
+          title: "Sucesso",
+          description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso. Oficina também foi atualizada.`
+        });
       }
-
-      toast({
-        title: "Sucesso",
-        description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso`
-      });
 
       onSuccess();
     } catch (error) {
@@ -217,6 +224,7 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               type="date"
               value={formData.ends_at}
               onChange={(e) => setFormData(prev => ({ ...prev, ends_at: e.target.value }))}
+              required
             />
           </div>
 
