@@ -5,13 +5,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PlanExpiredGuard from '@/components/subscription/PlanExpiredGuard';
 import { adminRoutes } from '@/routes/AdminRoutes';
+import { publicRoutes } from '@/routes/PublicRoutes';
 import UserDashboard from '@/pages/UserDashboard';
 import PlanoExpirado from '@/pages/plano-expirado';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
 
 const AppRoutes: React.FC = () => {
-  const { user, isLoadingAuth } = useAuth();
+  const { user, isLoadingAuth, isAdmin } = useAuth();
+
+  console.log('AppRoutes: Estado atual', {
+    hasUser: !!user,
+    isAdmin,
+    isLoadingAuth,
+    userEmail: user?.email
+  });
 
   if (isLoadingAuth) {
     return <div>Carregando...</div>;
@@ -19,21 +25,40 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Rotas públicas */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      {/* Rotas públicas sempre disponíveis */}
+      {publicRoutes}
+      
+      {/* Rota especial para plano expirado */}
       <Route path="/plano-expirado" element={<PlanoExpirado />} />
       
       {/* Rotas administrativas */}
       {adminRoutes}
       
-      {/* Rotas protegidas com verificação de plano */}
-      <Route path="/" element={
+      {/* Rota protegida para dashboard do usuário */}
+      <Route path="/dashboard" element={
         <ProtectedRoute>
           <PlanExpiredGuard>
             <UserDashboard />
           </PlanExpiredGuard>
         </ProtectedRoute>
+      } />
+      
+      {/* Rota raiz - comportamento baseado no usuário */}
+      <Route path="/" element={
+        user ? (
+          isAdmin ? (
+            <Navigate to="/admin/dashboard" replace />
+          ) : (
+            <ProtectedRoute>
+              <PlanExpiredGuard>
+                <UserDashboard />
+              </PlanExpiredGuard>
+            </ProtectedRoute>
+          )
+        ) : (
+          // Usuário não autenticado vai para a página inicial pública
+          <Navigate to="/home" replace />
+        )
       } />
       
       {/* Redirecionar qualquer rota não encontrada */}

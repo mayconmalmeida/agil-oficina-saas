@@ -29,7 +29,7 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Admin sempre tem acesso
+  // Admin sempre tem acesso total
   if (isAdmin) {
     console.log('PlanExpiredGuard: Admin detectado, liberando acesso');
     return <>{children}</>;
