@@ -22,21 +22,21 @@ const AdminLogin = () => {
     const checkConnection = async () => {
       try {
         setConnectionStatus('checking');
-        console.log("🔍 Verificando conexão com Supabase...");
+        console.log("[AdminLogin] 🔍 Verificando conexão com Supabase...");
         
         const { data, error } = await supabase.from('profiles').select('count').limit(1);
         
         if (error) {
-          console.error("❌ Falha na conexão:", error);
+          console.error("[AdminLogin] ❌ Falha na conexão:", error);
           setConnectionStatus('error');
           setError(`Erro de conexão: ${error.message}`);
         } else {
-          console.log("✅ Conexão estabelecida");
+          console.log("[AdminLogin] ✅ Conexão estabelecida");
           setConnectionStatus('connected');
           setError(null);
         }
       } catch (error) {
-        console.error("💥 Erro ao verificar conexão:", error);
+        console.error("[AdminLogin] 💥 Erro ao verificar conexão:", error);
         setConnectionStatus('error');
         setError("Erro ao conectar com o servidor");
       }
@@ -48,6 +48,8 @@ const AdminLogin = () => {
     const checkExistingSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        console.log("[AdminLogin] Verificando sessão existente para userId:", session.user.id);
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -55,7 +57,7 @@ const AdminLogin = () => {
           .maybeSingle();
         
         if (profile?.role === 'admin' || profile?.role === 'superadmin') {
-          console.log("Admin já logado, redirecionando...");
+          console.log("[AdminLogin] Admin já logado, redirecionando... userId:", session.user.id);
           navigate('/admin');
         }
       }
@@ -75,7 +77,7 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      console.log("🔐 Tentando fazer login admin...");
+      console.log("[AdminLogin] 🔐 Tentando fazer login admin...");
       
       // Fazer login
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
@@ -91,7 +93,7 @@ const AdminLogin = () => {
         throw new Error("Dados do usuário não encontrados");
       }
 
-      console.log("✅ Login realizado, verificando permissões admin...");
+      console.log("[AdminLogin] ✅ Login realizado para userId:", data.user.id, "verificando permissões admin...");
 
       // Verificar se é admin
       const { data: profile, error: profileError } = await supabase
@@ -101,7 +103,7 @@ const AdminLogin = () => {
         .maybeSingle();
 
       if (profileError) {
-        console.error("❌ Erro ao buscar perfil:", profileError);
+        console.error("[AdminLogin] ❌ Erro ao buscar perfil:", profileError);
         throw new Error("Erro ao verificar permissões");
       }
 
@@ -112,16 +114,16 @@ const AdminLogin = () => {
       const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
       
       if (!isAdmin) {
-        console.log("❌ Usuário não é admin, role:", profile.role);
+        console.log("[AdminLogin] ❌ Usuário não é admin, role:", profile.role, "userId:", data.user.id);
         await supabase.auth.signOut();
         throw new Error("Acesso negado: usuário não é administrador");
       }
 
-      console.log("✅ Admin autenticado com sucesso:", profile.email);
+      console.log("[AdminLogin] ✅ Admin autenticado com sucesso:", profile.email, "userId:", data.user.id);
       navigate('/admin');
 
     } catch (err: any) {
-      console.error("💥 Erro no login admin:", err);
+      console.error("[AdminLogin] 💥 Erro no login admin:", err);
       setError(err.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
@@ -257,6 +259,24 @@ const AdminLogin = () => {
       </div>
     </div>
   );
+
+  function getConnectionStatusColor() {
+    switch (connectionStatus) {
+      case 'checking': return 'text-yellow-600';
+      case 'connected': return 'text-green-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  }
+
+  function getConnectionStatusText() {
+    switch (connectionStatus) {
+      case 'checking': return 'Verificando conexão...';
+      case 'connected': return 'Conexão estabelecida';
+      case 'error': return 'Erro de conexão';
+      default: return 'Status desconhecido';
+    }
+  }
 };
 
 export default AdminLogin;
