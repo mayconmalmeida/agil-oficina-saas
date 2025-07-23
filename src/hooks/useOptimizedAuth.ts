@@ -100,7 +100,7 @@ export const useOptimizedAuth = (): AuthState => {
       try {
         console.log('useOptimizedAuth: Sessão encontrada, buscando perfil para userId:', currentSession.user.id);
         
-        // Tentar buscar perfil do usuário com timeout individual
+        // Buscar perfil do usuário com timeout reduzido
         const profilePromise = supabase
           .from('profiles')
           .select('*')
@@ -108,62 +108,44 @@ export const useOptimizedAuth = (): AuthState => {
           .maybeSingle();
 
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout ao buscar perfil')), 3000);
+          setTimeout(() => reject(new Error('Timeout ao buscar perfil')), 2000); // Reduzido para 2 segundos
         });
 
-        const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-        
-        if (error) {
-          console.error('useOptimizedAuth: Erro ao buscar perfil:', error);
-          // Mesmo com erro, criar um usuário básico se temos uma sessão válida
-          if (mounted) {
-            const basicUser: AuthUser = {
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              role: 'user',
-              nome_oficina: null,
-              telefone: null,
-              is_active: true,
-              subscription: null,
-              oficina_id: null,
-              app_metadata: currentSession.user.app_metadata,
-              user_metadata: currentSession.user.user_metadata,
-              aud: currentSession.user.aud,
-              planActive: false,
-              expired: true,
-              isAdmin: false
-            };
-            
-            setUser(basicUser);
-            setRole('user');
-            setPlanData({ plan: 'Free', planActive: false, expired: true });
-            setLoading(false);
-            setIsLoadingAuth(false);
-            
-            console.log('useOptimizedAuth: Usuário básico criado devido a erro no perfil');
-          }
-          return;
+        let profile: any = null;
+        let profileError: any = null;
+
+        try {
+          const result = await Promise.race([profilePromise, timeoutPromise]) as any;
+          profile = result.data;
+          profileError = result.error;
+        } catch (error) {
+          console.warn('useOptimizedAuth: Timeout ou erro ao buscar perfil:', error);
+          profileError = error;
         }
         
+        if (profileError && !profileError.message?.includes('Timeout')) {
+          console.error('useOptimizedAuth: Erro ao buscar perfil:', profileError);
+        }
+
+        // Buscar oficina_id do usuário
+        let oficinaId: string | null = null;
+        
+        try {
+          const { data: oficina } = await supabase
+            .from('oficinas')
+            .select('id')
+            .eq('user_id', currentSession.user.id)
+            .maybeSingle();
+          
+          oficinaId = oficina?.id || null;
+          console.log('useOptimizedAuth: Oficina ID encontrada:', oficinaId);
+        } catch (oficinaError) {
+          console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
+        }
+
         if (profile && mounted) {
           console.log('useOptimizedAuth: Perfil encontrado:', profile);
           
-          // Buscar oficina_id do usuário
-          let oficinaId: string | null = null;
-          
-          try {
-            const { data: oficina } = await supabase
-              .from('oficinas')
-              .select('id')
-              .eq('user_id', currentSession.user.id)
-              .maybeSingle();
-            
-            oficinaId = oficina?.id || null;
-            console.log('useOptimizedAuth: Oficina ID encontrada:', oficinaId);
-          } catch (oficinaError) {
-            console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
-          }
-
           // Verificar se é admin ANTES de buscar plano
           const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
           console.log('useOptimizedAuth: Verificando se é admin:', { role: profile.role, isAdmin });
@@ -334,7 +316,7 @@ export const useOptimizedAuth = (): AuthState => {
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 3000); // Reduzido para 3 segundos
+    }, 2000); // Reduzido para 2 segundos
 
     return () => {
       mounted = false;

@@ -62,6 +62,12 @@ export const getUserPlanStatus = async (userId: string) => {
       .limit(1)
       .maybeSingle();
 
+    if (subError) {
+      console.error('[getUserPlanStatus] Erro ao buscar assinatura:', subError);
+    } else {
+      console.log('[getUserPlanStatus] Resultado da busca de assinatura:', subscription);
+    }
+
     if (!subError && subscription) {
       console.log('[getUserPlanStatus] Assinatura encontrada:', subscription);
       
@@ -76,10 +82,17 @@ export const getUserPlanStatus = async (userId: string) => {
       // Validar se o plano está ativo baseado em trial_ends_at ou ends_at
       if (trialEnd && now <= trialEnd) {
         planActive = true;
+        console.log('[getUserPlanStatus] Plano ativo por trial até:', trialEnd.toISOString());
       } else if (endDate && now <= endDate) {
         planActive = true;
+        console.log('[getUserPlanStatus] Plano ativo por assinatura até:', endDate.toISOString());
+      } else if (sub.is_manual && sub.status === 'active') {
+        // Para assinaturas manuais, verificar se ainda está ativa
+        planActive = true;
+        console.log('[getUserPlanStatus] Plano ativo por assinatura manual');
       } else {
         expired = true;
+        console.log('[getUserPlanStatus] Plano expirado');
       }
 
       // Determinar o tipo de plano baseado no plan_type
@@ -96,6 +109,8 @@ export const getUserPlanStatus = async (userId: string) => {
         expired,
         trialEnd: trialEnd?.toISOString(),
         endDate: endDate?.toISOString(),
+        isManual: sub.is_manual,
+        status: sub.status,
         hoje: hoje.toISOString(),
         source: 'user_subscriptions'
       });
