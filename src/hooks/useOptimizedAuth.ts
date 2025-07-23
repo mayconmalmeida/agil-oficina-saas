@@ -98,23 +98,49 @@ export const useOptimizedAuth = (): AuthState => {
     
     const loadUserData = async (currentSession: Session) => {
       try {
-        console.log('useOptimizedAuth: Sessão encontrada, buscando perfil');
+        console.log('useOptimizedAuth: Sessão encontrada, buscando perfil para userId:', currentSession.user.id);
         
-        // Buscar perfil do usuário
-        const { data: profile, error } = await supabase
+        // Tentar buscar perfil do usuário com timeout individual
+        const profilePromise = supabase
           .from('profiles')
           .select('*')
           .eq('id', currentSession.user.id)
           .maybeSingle();
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout ao buscar perfil')), 3000);
+        });
+
+        const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
         
         if (error) {
           console.error('useOptimizedAuth: Erro ao buscar perfil:', error);
+          // Mesmo com erro, criar um usuário básico se temos uma sessão válida
           if (mounted) {
-            setUser(null);
-            setRole(null);
+            const basicUser: AuthUser = {
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              role: 'user',
+              nome_oficina: null,
+              telefone: null,
+              is_active: true,
+              subscription: null,
+              oficina_id: null,
+              app_metadata: currentSession.user.app_metadata,
+              user_metadata: currentSession.user.user_metadata,
+              aud: currentSession.user.aud,
+              planActive: false,
+              expired: true,
+              isAdmin: false
+            };
+            
+            setUser(basicUser);
+            setRole('user');
             setPlanData({ plan: 'Free', planActive: false, expired: true });
             setLoading(false);
             setIsLoadingAuth(false);
+            
+            console.log('useOptimizedAuth: Usuário básico criado devido a erro no perfil');
           }
           return;
         }
@@ -186,9 +212,9 @@ export const useOptimizedAuth = (): AuthState => {
               expired: planStatus.expired
             });
           }
-        } else {
+        } else if (mounted) {
           console.log('useOptimizedAuth: Perfil não encontrado, criando básico');
-          // Criar perfil básico
+          // Criar perfil básico se não encontrou nada
           const basicAuthUser: AuthUser = {
             id: currentSession.user.id,
             email: currentSession.user.email || '',
@@ -202,19 +228,37 @@ export const useOptimizedAuth = (): AuthState => {
             user_metadata: currentSession.user.user_metadata,
             aud: currentSession.user.aud,
             planActive: false,
-            expired: true
+            expired: true,
+            isAdmin: false
           };
-          if (mounted) {
-            setUser(basicAuthUser);
-            setRole('user');
-            setPlanData({ plan: 'Free', planActive: false, expired: true });
-          }
+          
+          setUser(basicAuthUser);
+          setRole('user');
+          setPlanData({ plan: 'Free', planActive: false, expired: true });
         }
       } catch (error) {
         console.error('useOptimizedAuth: Erro ao carregar dados do usuário:', error);
         if (mounted) {
-          setUser(null);
-          setRole(null);
+          // Mesmo com erro, tentar criar um usuário básico se temos sessão
+          const basicUser: AuthUser = {
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            role: 'user',
+            nome_oficina: null,
+            telefone: null,
+            is_active: true,
+            subscription: null,
+            oficina_id: null,
+            app_metadata: currentSession.user.app_metadata,
+            user_metadata: currentSession.user.user_metadata,
+            aud: currentSession.user.aud,
+            planActive: false,
+            expired: true,
+            isAdmin: false
+          };
+          
+          setUser(basicUser);
+          setRole('user');
           setPlanData({ plan: 'Free', planActive: false, expired: true });
         }
       } finally {
@@ -227,11 +271,14 @@ export const useOptimizedAuth = (): AuthState => {
 
     const initializeAuth = async () => {
       try {
+        console.log('useOptimizedAuth: Inicializando autenticação');
+        
         // Obter sessão atual
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (mounted) setSession(currentSession);
         
         if (currentSession?.user) {
+          console.log('useOptimizedAuth: Sessão encontrada, carregando dados do usuário');
           await loadUserData(currentSession);
         } else {
           console.log('useOptimizedAuth: Nenhuma sessão encontrada');
@@ -264,8 +311,10 @@ export const useOptimizedAuth = (): AuthState => {
         setSession(session);
         
         if (session?.user) {
+          console.log('useOptimizedAuth: Sessão detectada no auth state change');
           await loadUserData(session);
         } else {
+          console.log('useOptimizedAuth: Sessão removida no auth state change');
           setUser(null);
           setRole(null);
           setPlanData({ plan: 'Free', planActive: false, expired: true });
@@ -278,14 +327,14 @@ export const useOptimizedAuth = (): AuthState => {
     // Inicialização inicial
     initializeAuth();
 
-    // Timeout de segurança
+    // Timeout de segurança reduzido
     timeoutId = setTimeout(() => {
       if (mounted) {
         console.log('useOptimizedAuth: Timeout atingido, forçando fim do loading');
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 5000);
+    }, 3000); // Reduzido para 3 segundos
 
     return () => {
       mounted = false;
