@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { UserSubscription } from '@/types/subscription';
 import { AuthUser, AuthState } from '@/types/auth';
 
-// ✅ Nova função que valida primeiro user_subscriptions e depois oficinas
+// ✅ Função corrigida que valida user_subscriptions com lógica adequada
 const getUserPlanStatus = async (userId: string) => {
   try {
     console.log('[getUserPlanStatus] Validando plano para usuário:', userId);
@@ -14,7 +14,7 @@ const getUserPlanStatus = async (userId: string) => {
     // 1. PRIORIDADE: Buscar assinatura ativa em user_subscriptions
     const { data: subscription, error: subError } = await supabase
       .from('user_subscriptions')
-      .select('plan_type, trial_ends_at, ends_at, status')
+      .select('*')
       .eq('user_id', userId)
       .in('status', ['active', 'trialing'])
       .order('created_at', { ascending: false })
@@ -24,37 +24,47 @@ const getUserPlanStatus = async (userId: string) => {
     if (!subError && subscription) {
       console.log('[getUserPlanStatus] Assinatura encontrada:', subscription);
       
-      // Usar trial_ends_at se existir, senão ends_at
-      const dataExpiracao = subscription.trial_ends_at || subscription.ends_at;
-      
-      if (dataExpiracao) {
-        const expiracao = new Date(dataExpiracao);
-        const planActive = expiracao >= hoje;
-        
-        // Determinar o tipo de plano baseado no plan_type
-        let planType = 'Free';
-        if (subscription.plan_type.includes('premium')) {
-          planType = 'Premium';
-        } else if (subscription.plan_type.includes('essencial')) {
-          planType = 'Essencial';
-        }
-        
-        console.log('[getUserPlanStatus] Resultado da assinatura:', {
-          planType,
-          planActive,
-          expired: !planActive,
-          dataExpiracao: expiracao.toISOString(),
-          hoje: hoje.toISOString(),
-          source: 'user_subscriptions'
-        });
-        
-        return {
-          plan: planType,
-          planActive,
-          expired: !planActive,
-          source: 'user_subscriptions'
-        };
+      const sub = subscription;
+      const now = new Date();
+      const trialEnd = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
+      const endDate = sub.ends_at ? new Date(sub.ends_at) : null;
+
+      let planActive = false;
+      let expired = false;
+
+      // Validar se o plano está ativo baseado em trial_ends_at ou ends_at
+      if (trialEnd && now <= trialEnd) {
+        planActive = true;
+      } else if (endDate && now <= endDate) {
+        planActive = true;
+      } else {
+        expired = true;
       }
+
+      // Determinar o tipo de plano baseado no plan_type
+      let planType = 'Free';
+      if (sub.plan_type && sub.plan_type.includes('premium')) {
+        planType = 'Premium';
+      } else if (sub.plan_type && sub.plan_type.includes('essencial')) {
+        planType = 'Essencial';
+      }
+      
+      console.log('[getUserPlanStatus] Resultado da assinatura:', {
+        planType,
+        planActive,
+        expired,
+        trialEnd: trialEnd?.toISOString(),
+        endDate: endDate?.toISOString(),
+        hoje: hoje.toISOString(),
+        source: 'user_subscriptions'
+      });
+      
+      return {
+        plan: planType,
+        planActive,
+        expired,
+        source: 'user_subscriptions'
+      };
     }
 
     console.log('[getUserPlanStatus] Nenhuma assinatura ativa encontrada, verificando oficinas...');
@@ -221,7 +231,7 @@ export const useOptimizedAuth = (): AuthState => {
               console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
             }
 
-            // ✅ Buscar plano usando nova lógica de prioridade
+            // ✅ Buscar plano usando nova lógica corrigida
             const planData = await getUserPlanStatus(currentSession.user.id);
 
             const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';

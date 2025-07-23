@@ -57,6 +57,40 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     }
   }, [subscription, isCreating, isOpen]);
 
+  const saveUserSubscription = async (userId: string, planType: string, trialEndsAt: string | null, endsAt: string | null, stripeData = null) => {
+    console.log('[saveUserSubscription] Salvando assinatura:', {
+      userId, planType, trialEndsAt, endsAt, stripeData
+    });
+
+    const subscriptionData = {
+      user_id: userId,
+      plan_type: planType,
+      status: 'active',
+      starts_at: new Date().toISOString(),
+      ends_at: endsAt ? new Date(endsAt + 'T23:59:59.999Z').toISOString() : null,
+      trial_ends_at: trialEndsAt ? new Date(trialEndsAt + 'T23:59:59.999Z').toISOString() : null,
+      stripe_customer_id: stripeData ? stripeData.customerId : null,
+      stripe_subscription_id: stripeData ? stripeData.subscriptionId : null,
+      is_manual: !stripeData,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('user_subscriptions')
+      .upsert([subscriptionData], { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      });
+
+    if (error) {
+      console.error('[saveUserSubscription] Erro ao salvar assinatura:', error);
+      throw error;
+    }
+
+    console.log('[saveUserSubscription] Assinatura salva com sucesso');
+    return subscriptionData;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -76,47 +110,16 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
-      // ✅ Preparar dados para user_subscriptions com todos os campos necessários
-      const subscriptionData = {
-        user_id: formData.user_id,
-        plan_type: formData.plan_type,
-        status: formData.status,
-        starts_at: formData.starts_at + 'T00:00:00.000Z', // Formato ISO completo
-        ends_at: formData.ends_at ? formData.ends_at + 'T23:59:59.999Z' : null, // Data final do dia
-        trial_ends_at: formData.ends_at ? formData.ends_at + 'T23:59:59.999Z' : null, // Usar mesma data para trial
-        is_manual: true,
-        stripe_customer_id: null,
-        stripe_subscription_id: null
-      };
+      // ✅ Salvar assinatura usando função dedicada
+      await saveUserSubscription(
+        formData.user_id,
+        formData.plan_type,
+        formData.ends_at, // usar ends_at como trial_ends_at para planos manuais
+        formData.ends_at,
+        null // sem dados do Stripe para assinatura manual
+      );
 
-      console.log('[EditSubscriptionModal] Dados da assinatura preparados:', subscriptionData);
-
-      // ✅ Inserir/atualizar na tabela user_subscriptions
-      let result;
-      if (isCreating) {
-        // Para criação, usar UPSERT para evitar conflitos
-        result = await supabase
-          .from('user_subscriptions')
-          .upsert([subscriptionData], { 
-            onConflict: 'user_id',
-            ignoreDuplicates: false 
-          });
-      } else {
-        // Para edição, fazer UPDATE específico
-        result = await supabase
-          .from('user_subscriptions')
-          .update(subscriptionData)
-          .eq('id', subscription.id);
-      }
-
-      if (result.error) {
-        console.error('[EditSubscriptionModal] Erro ao salvar user_subscriptions:', result.error);
-        throw result.error;
-      }
-
-      console.log('[EditSubscriptionModal] Assinatura salva com sucesso em user_subscriptions');
-
-      // ✅ Atualizar também a tabela oficinas com os dados corretos
+      // ✅ Atualizar tabela oficinas para compatibilidade
       const planType = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
       
       console.log('[EditSubscriptionModal] Atualizando oficina:', {
