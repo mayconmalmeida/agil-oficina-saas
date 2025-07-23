@@ -107,7 +107,21 @@ export const useOptimizedAuth = (): AuthState => {
           .eq('id', currentSession.user.id)
           .maybeSingle();
         
+        if (error) {
+          console.error('useOptimizedAuth: Erro ao buscar perfil:', error);
+          if (mounted) {
+            setUser(null);
+            setRole(null);
+            setPlanData({ plan: 'Free', planActive: false, expired: true });
+            setLoading(false);
+            setIsLoadingAuth(false);
+          }
+          return;
+        }
+        
         if (profile && mounted) {
+          console.log('useOptimizedAuth: Perfil encontrado:', profile);
+          
           // Buscar oficina_id do usuário
           let oficinaId: string | null = null;
           
@@ -124,16 +138,22 @@ export const useOptimizedAuth = (): AuthState => {
             console.warn('useOptimizedAuth: Erro ao buscar oficina_id:', oficinaError);
           }
 
-          // ✅ Buscar plano usando getUserPlanStatus
-          const planStatus = await getUserPlanStatus(currentSession.user.id);
-          console.log('useOptimizedAuth: Status do plano obtido:', planStatus);
+          // Verificar se é admin ANTES de buscar plano
+          const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
+          console.log('useOptimizedAuth: Verificando se é admin:', { role: profile.role, isAdmin });
+
+          // Buscar plano (mas não depender dele se for admin)
+          let planStatus = { plan: 'Free', planActive: false, expired: true };
+          
+          try {
+            planStatus = await getUserPlanStatus(currentSession.user.id);
+            console.log('useOptimizedAuth: Status do plano obtido:', planStatus);
+          } catch (planError) {
+            console.warn('useOptimizedAuth: Erro ao buscar plano:', planError);
+          }
 
           if (mounted) {
-            setPlanData({
-              plan: planStatus.plan,
-              planActive: planStatus.planActive,
-              expired: planStatus.expired
-            });
+            setPlanData(planStatus);
 
             const authUser: AuthUser = {
               id: profile.id,
@@ -151,7 +171,8 @@ export const useOptimizedAuth = (): AuthState => {
               user_metadata: currentSession.user.user_metadata,
               aud: currentSession.user.aud,
               planActive: planStatus.planActive,
-              expired: planStatus.expired
+              expired: planStatus.expired,
+              isAdmin: isAdmin
             };
             
             setUser(authUser);
@@ -159,10 +180,10 @@ export const useOptimizedAuth = (): AuthState => {
             console.log('useOptimizedAuth: Perfil carregado:', {
               email: authUser.email,
               role: authUser.role,
+              isAdmin: isAdmin,
               plan: planStatus.plan,
               planActive: planStatus.planActive,
-              expired: planStatus.expired,
-              source: planStatus.source
+              expired: planStatus.expired
             });
           }
         } else {
@@ -273,8 +294,8 @@ export const useOptimizedAuth = (): AuthState => {
     };
   }, []);
 
-  // ✅ Só aplicar validação de plano APÓS carregar os dados do usuário
-  const isAdmin = role === 'admin' || role === 'superadmin';
+  // Só aplicar validação de plano APÓS carregar os dados do usuário
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin' || user?.isAdmin;
   const planValidation = validatePlanAccess(
     planData.plan, 
     planData.planActive, 
@@ -283,6 +304,8 @@ export const useOptimizedAuth = (): AuthState => {
   
   console.log('useOptimizedAuth: Validação de plano aplicada:', {
     hasUser: !!user,
+    userRole: user?.role,
+    isAdmin,
     plan: planData.plan,
     planActive: planData.planActive,
     expired: planData.expired,
@@ -294,6 +317,7 @@ export const useOptimizedAuth = (): AuthState => {
 
   console.log('useOptimizedAuth: Resultado final da validação:', {
     hasAuthUser: !!user,
+    userEmail: user?.email,
     role,
     isAdmin,
     plan: planValidation.plan,
