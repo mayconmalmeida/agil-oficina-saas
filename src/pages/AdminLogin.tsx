@@ -259,24 +259,6 @@ const AdminLogin = () => {
       </div>
     </div>
   );
-
-  function getConnectionStatusColor() {
-    switch (connectionStatus) {
-      case 'checking': return 'text-yellow-600';
-      case 'connected': return 'text-green-600';
-      case 'error': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  }
-
-  function getConnectionStatusText() {
-    switch (connectionStatus) {
-      case 'checking': return 'Verificando conexão...';
-      case 'connected': return 'Conexão estabelecida';
-      case 'error': return 'Erro de conexão';
-      default: return 'Status desconhecido';
-    }
-  }
 };
 
 export default AdminLogin;
