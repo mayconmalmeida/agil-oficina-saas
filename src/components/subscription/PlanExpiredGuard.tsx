@@ -9,13 +9,12 @@ interface PlanExpiredGuardProps {
 }
 
 const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
-  const { user, isLoadingAuth, isAdmin } = useAuth();
+  const { user, isLoadingAuth, isAdmin, planActive } = useAuth();
 
   console.log('PlanExpiredGuard: Verificando acesso', {
     hasUser: !!user,
     isAdmin,
-    expired: user?.expired,
-    planActive: user?.planActive,
+    planActive,
     isLoadingAuth
   });
 
@@ -35,12 +34,9 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // ✅ Se o plano expirou, redirecionar para página de plano expirado
-  if (user.expired || !user.planActive) {
-    console.log('PlanExpiredGuard: Plano expirado, redirecionando:', {
-      expired: user.expired,
-      planActive: user.planActive
-    });
+  // ✅ Se o plano não está ativo, redirecionar para página de plano expirado
+  if (!planActive) {
+    console.log('PlanExpiredGuard: Plano inativo, redirecionando para /plano-expirado');
     return <Navigate to="/plano-expirado" replace />;
   }
 
