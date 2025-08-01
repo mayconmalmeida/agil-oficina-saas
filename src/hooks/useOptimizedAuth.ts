@@ -10,7 +10,7 @@ const getUserProfile = async (userId: string) => {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('role, email')
+      .select('role, email, nome_oficina, telefone, is_active')
       .eq('id', userId)
       .maybeSingle();
 
@@ -179,6 +179,8 @@ export const useOptimizedAuth = (): AuthState => {
       setSession(null);
       setRole(null);
       setPlanData({ plan: 'Free', planActive: false, expired: true });
+      setLoading(false);
+      setIsLoadingAuth(false);
     } catch (error) {
       console.error('[useOptimizedAuth] Erro no logout:', error);
       throw error;
@@ -192,6 +194,8 @@ export const useOptimizedAuth = (): AuthState => {
     
     const loadUserData = async (currentSession: Session) => {
       try {
+        if (!mounted) return;
+        
         const userId = currentSession.user.id;
         const userEmail = currentSession.user.email || '';
         
@@ -232,7 +236,7 @@ export const useOptimizedAuth = (): AuthState => {
           return;
         }
 
-        // Para usuários comuns, validar plano apenas na user_subscriptions
+        // Para usuários comuns, validar plano
         const planStatus = await getUserPlanStatus(userId);
         
         console.log('[useOptimizedAuth] Status do plano para userId:', userId, planStatus);
@@ -269,6 +273,7 @@ export const useOptimizedAuth = (): AuthState => {
           const userId = currentSession.user.id;
           const userEmail = currentSession.user.email || '';
           
+          // Em caso de erro, criar usuário básico mas válido
           const basicUser: AuthUser = {
             id: userId,
             email: userEmail,
@@ -283,6 +288,11 @@ export const useOptimizedAuth = (): AuthState => {
           setPlanData({ plan: 'Free', planActive: false, expired: true });
           setLoading(false);
           setIsLoadingAuth(false);
+          
+          console.log('[useOptimizedAuth] Usuário básico criado devido a erro:', {
+            userId,
+            email: userEmail
+          });
         }
       }
     };
@@ -343,13 +353,14 @@ export const useOptimizedAuth = (): AuthState => {
 
     initializeAuth();
 
+    // Timeout de segurança mais agressivo
     timeoutId = setTimeout(() => {
       if (mounted) {
         console.log('[useOptimizedAuth] Timeout atingido, forçando fim do loading');
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 3000);
+    }, 2000); // Reduzido para 2 segundos
 
     return () => {
       mounted = false;
