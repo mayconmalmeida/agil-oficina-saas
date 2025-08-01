@@ -1,127 +1,103 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, AlertCircle } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 interface PlanStatusCardProps {
   subscriptionData: any;
-  plan: string | null;
+  plan: string;
   planActive: boolean;
 }
 
-const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ subscriptionData, plan, planActive }) => {
-  console.log('PlanStatusCard: Renderizando com dados:', {
-    subscriptionData: !!subscriptionData,
-    plan,
-    planActive,
-    subscriptionStatus: subscriptionData?.status,
-    subscriptionPlanType: subscriptionData?.plan_type
-  });
-
-  if (!subscriptionData) {
-    return (
-      <Card className="mb-6 border-gray-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-gray-500" />
-            <div>
-              <h3 className="font-medium">Nenhuma assinatura ativa</h3>
-              <p className="text-sm text-gray-600">
-                Inicie um trial gratuito ou assine um plano para acessar os recursos.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const now = new Date();
-  const isTrialing = subscriptionData.status === 'trialing';
-  const isActive = subscriptionData.status === 'active';
-  
-  let statusText = '';
-  let statusColor = '';
-  let expiryDate = null;
-  let displayPlan = plan;
-
-  // ✅ Lógica corrigida de exibição do plano
-  if (isTrialing && subscriptionData.trial_ends_at) {
-    expiryDate = new Date(subscriptionData.trial_ends_at);
-    const isExpired = expiryDate <= now;
-    statusText = isExpired ? 'Trial Expirado' : 'Trial Premium Ativo';
-    statusColor = isExpired ? 'text-red-600' : 'text-blue-600';
-    displayPlan = 'Premium (Trial)'; // ✅ Trial sempre mostra Premium
-  } else if (isActive) {
-    if (subscriptionData.ends_at) {
-      expiryDate = new Date(subscriptionData.ends_at);
-      const isExpired = expiryDate <= now;
-      statusText = isExpired ? 'Plano Expirado' : 'Plano Ativo';
-      statusColor = isExpired ? 'text-red-600' : 'text-green-600';
-    } else {
-      statusText = 'Plano Ativo';
-      statusColor = 'text-green-600';
+const PlanStatusCard: React.FC<PlanStatusCardProps> = ({ 
+  subscriptionData, 
+  plan, 
+  planActive 
+}) => {
+  const getStatusIcon = () => {
+    if (planActive) {
+      return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
-    
-    // ✅ Garantir que o plano seja exibido corretamente baseado no plan_type
-    const planTypeLower = subscriptionData.plan_type?.toLowerCase() || '';
-    if (planTypeLower.includes('premium')) {
-      displayPlan = 'Premium';
-    } else if (planTypeLower.includes('essencial')) {
-      displayPlan = 'Essencial';
-    }
-  }
+    return <AlertCircle className="h-5 w-5 text-red-500" />;
+  };
 
-  console.log('PlanStatusCard: Status calculado:', {
-    isTrialing,
-    isActive,
-    statusText,
-    displayPlan,
-    expiryDate: expiryDate?.toISOString()
-  });
+  const getStatusText = () => {
+    if (planActive) {
+      return 'Ativo';
+    }
+    return 'Inativo';
+  };
+
+  const getStatusColor = () => {
+    if (planActive) {
+      return 'bg-green-100 text-green-800';
+    }
+    return 'bg-red-100 text-red-800';
+  };
+
+  const formatDate = (date: string) => {
+    if (!date) return 'Não definido';
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
 
   return (
-    <Card className="mb-6 border-blue-200 bg-blue-50">
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-            <div>
-              <h3 className="font-medium flex items-center gap-2">
-                Assinatura Atual
-                <Badge variant="outline" className={statusColor}>
-                  {statusText}
-                </Badge>
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Plano: <span className="font-medium">{displayPlan}</span>
-                {isTrialing && (
-                  <span className="text-xs text-blue-600 ml-2">
-                    (Acesso completo ao Premium por 7 dias)
-                  </span>
-                )}
-                {expiryDate && (
-                  <>
-                    <br />
-                    {isTrialing ? 'Trial expira' : 'Renova'} em:{' '}
-                    <span className="font-medium">
-                      {format(expiryDate, 'dd/MM/yyyy', { locale: ptBR })}
-                    </span>
-                    {' '}({formatDistanceToNow(expiryDate, { locale: ptBR, addSuffix: true })})
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-          {subscriptionData.is_manual && (
-            <Badge variant="secondary" className="text-xs">
-              Manual
-            </Badge>
-          )}
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {getStatusIcon()}
+          Status da Assinatura
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Plano Atual:</span>
+          <Badge variant="outline" className="font-medium">
+            {plan}
+          </Badge>
         </div>
+        
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Status:</span>
+          <Badge className={getStatusColor()}>
+            {getStatusText()}
+          </Badge>
+        </div>
+
+        {subscriptionData && (
+          <>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Início:</span>
+              <span className="text-sm text-gray-600">
+                {formatDate(subscriptionData.starts_at)}
+              </span>
+            </div>
+
+            {subscriptionData.ends_at && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Fim:</span>
+                <span className="text-sm text-gray-600">
+                  {formatDate(subscriptionData.ends_at)}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Tipo:</span>
+              <span className="text-sm text-gray-600">
+                {subscriptionData.is_manual ? 'Manual' : 'Automática'}
+              </span>
+            </div>
+          </>
+        )}
+
+        {!planActive && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-800">
+              Seu plano está inativo. Entre em contato com o administrador para reativar.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

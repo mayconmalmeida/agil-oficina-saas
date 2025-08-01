@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { AuthUser, AuthState } from '@/types/auth';
@@ -31,12 +31,11 @@ const getUserPlanStatus = async (userId: string) => {
   try {
     console.log('[useOptimizedAuth] Validando plano para userId:', userId);
     
-    const now = new Date();
-
     const { data, error } = await supabase
       .from('user_subscriptions')
-      .select('plan_type, status, trial_ends_at, stripe_customer_id')
+      .select('plan_type, status, starts_at, ends_at')
       .eq('user_id', userId)
+      .eq('status', 'active')
       .maybeSingle();
 
     if (error) {
@@ -50,7 +49,7 @@ const getUserPlanStatus = async (userId: string) => {
     }
 
     if (!data) {
-      console.log('[useOptimizedAuth] Nenhuma assinatura encontrada para userId:', userId);
+      console.log('[useOptimizedAuth] Nenhuma assinatura ativa encontrada para userId:', userId);
       return { 
         plan: 'Free',
         planActive: false,
@@ -59,57 +58,41 @@ const getUserPlanStatus = async (userId: string) => {
       };
     }
 
-    const { plan_type, status, trial_ends_at, stripe_customer_id } = data;
+    const { plan_type, status, ends_at } = data;
+    const now = new Date();
 
     console.log('[useOptimizedAuth] Dados da assinatura:', {
       userId,
       plan_type,
       status,
-      trial_ends_at,
-      stripe_customer_id,
+      ends_at,
       now: now.toISOString()
     });
 
-    // ✅ Regra 1: Se status = active → OK
-    if (status === 'active') {
-      console.log('[useOptimizedAuth] Status ativo encontrado para userId:', userId);
-      
-      let planType = 'Essencial';
-      if (plan_type && plan_type.includes('premium')) {
-        planType = 'Premium';
-      }
-      
-      return {
-        plan: planType,
-        planActive: true,
-        expired: false,
-        source: 'active'
+    // Check if subscription is still valid (if ends_at is set)
+    const isExpired = ends_at && new Date(ends_at) < now;
+    
+    if (isExpired) {
+      console.log('[useOptimizedAuth] Plano expirado para userId:', userId);
+      return { 
+        plan: 'Free',
+        planActive: false,
+        expired: true,
+        source: 'expired'
       };
     }
 
-    // ✅ Regra 2: Se trial_ends_at > agora → OK
-    if (trial_ends_at && new Date(trial_ends_at) > now) {
-      console.log('[useOptimizedAuth] Trial válido até:', trial_ends_at, 'para userId:', userId);
-      
-      let planType = 'Essencial';
-      if (plan_type && plan_type.includes('premium')) {
-        planType = 'Premium';
-      }
-      
-      return {
-        plan: planType,
-        planActive: true,
-        expired: false,
-        source: 'trial'
-      };
+    let planType = 'Essencial';
+    if (plan_type && plan_type.toLowerCase().includes('premium')) {
+      planType = 'Premium';
     }
-
-    console.log('[useOptimizedAuth] Plano inativo/expirado para userId:', userId);
-    return { 
-      plan: 'Free',
-      planActive: false,
-      expired: true,
-      source: 'expired'
+    
+    console.log('[useOptimizedAuth] Plano ativo encontrado:', planType);
+    return {
+      plan: planType,
+      planActive: true,
+      expired: false,
+      source: 'active'
     };
   } catch (err) {
     console.error('[useOptimizedAuth] Exception ao validar plano:', err);
@@ -130,7 +113,7 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
       isActive: true,
       plan: 'Premium' as const,
       permissionsCount: 20,
-      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados']
+      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'integracao_contabil']
     };
   }
 
@@ -138,8 +121,8 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
     return {
       isActive: false,
       plan: 'Free' as const,
-      permissionsCount: 0,
-      permissions: []
+      permissionsCount: 2,
+      permissions: ['clientes', 'orcamentos']
     };
   }
 
@@ -148,14 +131,14 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
       isActive: true,
       plan: 'Premium' as const,
       permissionsCount: 20,
-      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados']
+      permissions: ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'backup_automatico', 'integracao_contabil']
     };
   } else if (plan === 'Essencial') {
     return {
       isActive: true,
       plan: 'Essencial' as const,
       permissionsCount: 10,
-      permissions: ['campanhas_marketing', 'relatorios_basicos']
+      permissions: ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'backup_automatico']
     };
   }
 
@@ -214,13 +197,13 @@ export const useOptimizedAuth = (): AuthState => {
         
         console.log('[useOptimizedAuth] Carregando dados para userId correto:', userId);
         
-        // ✅ Buscar perfil para verificar se é admin
+        // Buscar perfil para verificar se é admin
         const profile = await getUserProfile(userId);
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
         
         console.log('[useOptimizedAuth] Verificando admin:', { role: profile?.role, isAdmin, userId });
 
-        // ✅ Se é admin, bypass da validação de plano
+        // Se é admin, bypass da validação de plano
         if (isAdmin) {
           console.log('[useOptimizedAuth] Admin detectado, liberando acesso total para userId:', userId);
           
@@ -249,7 +232,7 @@ export const useOptimizedAuth = (): AuthState => {
           return;
         }
 
-        // ✅ Para usuários comuns, validar plano
+        // Para usuários comuns, validar plano apenas na user_subscriptions
         const planStatus = await getUserPlanStatus(userId);
         
         console.log('[useOptimizedAuth] Status do plano para userId:', userId, planStatus);
@@ -308,7 +291,6 @@ export const useOptimizedAuth = (): AuthState => {
       try {
         console.log('[useOptimizedAuth] Inicializando autenticação');
         
-        // ✅ Buscar sessão atual PRIMEIRO
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -338,7 +320,6 @@ export const useOptimizedAuth = (): AuthState => {
       }
     };
 
-    // ✅ Configurar listener apenas UMA vez
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -360,10 +341,8 @@ export const useOptimizedAuth = (): AuthState => {
       }
     );
 
-    // Inicializar
     initializeAuth();
 
-    // Timeout de segurança
     timeoutId = setTimeout(() => {
       if (mounted) {
         console.log('[useOptimizedAuth] Timeout atingido, forçando fim do loading');

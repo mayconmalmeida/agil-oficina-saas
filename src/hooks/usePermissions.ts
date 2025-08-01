@@ -51,10 +51,43 @@ export const usePermissions = () => {
   };
 
   const getAvailableFeatures = () => {
-    if (!planActive) {
-      return ['clientes', 'orcamentos']; // Recursos básicos
+    if (isAdmin) {
+      return ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'backup_automatico', 'integracao_contabil'];
     }
+    
+    if (!planActive) {
+      return ['clientes', 'orcamentos']; // Recursos básicos para plano inativo
+    }
+    
     return permissions;
+  };
+
+  const getPlanFeatures = () => {
+    const features = {
+      Free: [
+        'Gestão básica de clientes',
+        'Orçamentos simples'
+      ],
+      Essencial: [
+        'Gestão de clientes',
+        'Orçamentos digitais',
+        'Controle de serviços',
+        'Relatórios básicos',
+        'Suporte por email',
+        'Backup automático'
+      ],
+      Premium: [
+        'Todos os recursos do Essencial',
+        'IA para diagnóstico',
+        'Agendamentos inteligentes',
+        'Relatórios avançados',
+        'Marketing automático',
+        'Suporte prioritário',
+        'Integração contábil'
+      ]
+    };
+
+    return features[plan as keyof typeof features] || features.Free;
   };
 
   console.log('usePermissions: Estado atual:', {
@@ -64,7 +97,8 @@ export const usePermissions = () => {
     permissionsCount: permissions.length,
     isPremium: isPremium(),
     isEssencial: isEssencial(),
-    hasIADiagnostico: hasPermission('diagnostico_ia')
+    hasIADiagnostico: hasPermission('diagnostico_ia'),
+    hasMarketing: hasPermission('campanhas_marketing')
   });
 
   return {
@@ -73,6 +107,7 @@ export const usePermissions = () => {
     isEssencial,
     canAccessPremiumFeatures,
     getAvailableFeatures,
+    getPlanFeatures,
     permissions,
     plan,
     planActive

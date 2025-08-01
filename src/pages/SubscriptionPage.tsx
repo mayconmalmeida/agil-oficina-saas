@@ -1,21 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap } from 'lucide-react';
+import { Check, Crown, Star, Zap, Info, Phone, Mail } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import PlanStatusCard from '@/components/subscription/PlanStatusCard';
-
-// Tipagem para o retorno da função RPC
-interface TrialRPCResponse {
-  success: boolean;
-  error?: string;
-  plan_type?: string;
-  trial_ends_at?: string;
-}
 
 interface PlanFeature {
   name: string;
@@ -24,8 +17,6 @@ interface PlanFeature {
 
 interface PlanConfig {
   name: string;
-  price: string;
-  period: string;
   description: string;
   icon: React.ReactNode;
   features: PlanFeature[];
@@ -36,8 +27,7 @@ interface PlanConfig {
 
 const SubscriptionPage = () => {
   const { user, plan, planActive } = useAuth();
-  const { hasPermission } = usePermissions();
-  const [loading, setLoading] = useState(false);
+  const { hasPermission, getPlanFeatures } = usePermissions();
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
   // Buscar dados da assinatura atual
@@ -71,103 +61,47 @@ const SubscriptionPage = () => {
   // Configuração dos planos
   const plans: PlanConfig[] = [
     {
-      name: 'Free',
-      price: 'R$ 0',
-      period: '7 dias de trial',
-      description: 'Experimente todos os recursos Premium por 7 dias',
-      icon: <Zap className="h-6 w-6" />,
-      features: [
-        { name: 'Todos os recursos Premium', included: true },
-        { name: 'IA Diagnóstico', included: true },
-        { name: 'Relatórios Avançados', included: true },
-        { name: 'Agendamento Avançado', included: true },
-        { name: 'Marketing Integrado', included: true },
-        { name: 'Backup Automático', included: true },
-        { name: 'Suporte Prioritário', included: true },
-      ],
-      buttonText: subscriptionData?.status === 'trialing' ? 'Trial Ativo' : 'Iniciar Trial',
-      buttonVariant: subscriptionData?.status === 'trialing' ? 'outline' : 'default',
-    },
-    {
       name: 'Essencial',
-      price: 'R$ 29,90',
-      period: 'por mês',
       description: 'Recursos fundamentais para sua oficina',
       icon: <Star className="h-6 w-6" />,
       features: [
-        { name: 'Gestão de Clientes', included: true },
-        { name: 'Orçamentos', included: true },
-        { name: 'Produtos e Serviços', included: true },
-        { name: 'Gestão de Veículos', included: true },
-        { name: 'Relatórios Básicos', included: true },
-        { name: 'Suporte por E-mail', included: true },
-        { name: 'IA Diagnóstico', included: false },
-        { name: 'Relatórios Avançados', included: false },
-        { name: 'Agendamento Avançado', included: false },
-        { name: 'Marketing Integrado', included: false },
-        { name: 'Backup Automático', included: false },
+        { name: 'Gestão de clientes', included: true },
+        { name: 'Orçamentos digitais', included: true },
+        { name: 'Controle de serviços', included: true },
+        { name: 'Relatórios básicos', included: true },
+        { name: 'Suporte por email', included: true },
+        { name: 'Backup automático', included: true },
+        { name: 'IA para diagnóstico', included: false },
+        { name: 'Agendamentos inteligentes', included: false },
+        { name: 'Relatórios avançados', included: false },
+        { name: 'Marketing automático', included: false },
+        { name: 'Integração contábil', included: false },
       ],
-      buttonText: plan === 'Essencial' && planActive ? 'Plano Atual' : 'Assinar Essencial',
+      buttonText: plan === 'Essencial' && planActive ? 'Plano Atual' : 'Solicitar Plano',
       buttonVariant: plan === 'Essencial' && planActive ? 'outline' : 'default',
     },
     {
       name: 'Premium',
-      price: 'R$ 49,90',
-      period: 'por mês',
       description: 'Todos os recursos para máxima produtividade',
       icon: <Crown className="h-6 w-6" />,
       popular: true,
       features: [
-        { name: 'Tudo do Essencial', included: true },
-        { name: 'IA Diagnóstico', included: true },
-        { name: 'Relatórios Avançados', included: true },
-        { name: 'Agendamento Avançado', included: true },
-        { name: 'Marketing Integrado', included: true },
-        { name: 'Backup Automático', included: true },
-        { name: 'Suporte Prioritário', included: true },
-        { name: 'Integração Contábil', included: true },
+        { name: 'Todos os recursos do Essencial', included: true },
+        { name: 'IA para diagnóstico', included: true },
+        { name: 'Agendamentos inteligentes', included: true },
+        { name: 'Relatórios avançados', included: true },
+        { name: 'Marketing automático', included: true },
+        { name: 'Suporte prioritário', included: true },
+        { name: 'Integração contábil', included: true },
       ],
-      buttonText: plan === 'Premium' && planActive ? 'Plano Atual' : 'Assinar Premium',
+      buttonText: plan === 'Premium' && planActive ? 'Plano Atual' : 'Solicitar Plano',
       buttonVariant: plan === 'Premium' && planActive ? 'outline' : 'default',
     },
   ];
 
-  // Função para iniciar trial Premium
-  const startFreeTrial = async () => {
-    if (!user?.id) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('start_free_trial', {
-        selected_plan_type: 'premium'
-      });
-
-      if (error) {
-        toast.error('Erro ao iniciar trial: ' + error.message);
-        return;
-      }
-
-      // Cast seguro para o tipo correto
-      const response = data as unknown as TrialRPCResponse;
-
-      if (response?.success) {
-        toast.success('Trial Premium iniciado com sucesso! Aproveite 7 dias com todos os recursos.');
-        // Recarregar dados
-        window.location.reload();
-      } else {
-        toast.error(response?.error || 'Erro ao iniciar trial');
-      }
-    } catch (error) {
-      console.error('Erro ao iniciar trial:', error);
-      toast.error('Erro interno ao iniciar trial');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Função para assinar plano
-  const subscribeToPlan = async (planType: string) => {
-    toast.info('Funcionalidade de pagamento será implementada em breve');
+  // Função para solicitar plano
+  const requestPlan = async (planType: string) => {
+    toast.info('Para ativar ou alterar seu plano, entre em contato com o administrador do sistema.');
   };
 
   return (
@@ -189,7 +123,7 @@ const SubscriptionPage = () => {
           planActive={planActive} 
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {plans.map((planConfig) => (
             <Card 
               key={planConfig.name} 
@@ -220,12 +154,6 @@ const SubscriptionPage = () => {
                 <CardTitle className="text-xl font-bold">
                   {planConfig.name}
                 </CardTitle>
-                <div className="text-3xl font-bold text-gray-900">
-                  {planConfig.price}
-                  <span className="text-base font-normal text-gray-600 ml-1">
-                    {planConfig.period}
-                  </span>
-                </div>
                 <p className="text-sm text-gray-600 mt-2">
                   {planConfig.description}
                 </p>
@@ -256,20 +184,10 @@ const SubscriptionPage = () => {
                 <Button
                   className="w-full mt-6"
                   variant={planConfig.buttonVariant}
-                  disabled={
-                    loading || 
-                    (planConfig.name === plan && planActive) ||
-                    (planConfig.name === 'Free' && subscriptionData?.status === 'trialing')
-                  }
-                  onClick={() => {
-                    if (planConfig.name === 'Free') {
-                      startFreeTrial();
-                    } else {
-                      subscribeToPlan(planConfig.name.toLowerCase());
-                    }
-                  }}
+                  disabled={planConfig.name === plan && planActive}
+                  onClick={() => requestPlan(planConfig.name.toLowerCase())}
                 >
-                  {loading ? 'Processando...' : planConfig.buttonText}
+                  {planConfig.buttonText}
                 </Button>
               </CardContent>
             </Card>
@@ -289,35 +207,27 @@ const SubscriptionPage = () => {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-3 px-4 font-medium">Recursos</th>
-                      <th className="text-center py-3 px-4 font-medium">Free (Trial)</th>
                       <th className="text-center py-3 px-4 font-medium">Essencial</th>
                       <th className="text-center py-3 px-4 font-medium">Premium</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {[
-                      { name: 'Gestão de Clientes', free: true, essencial: true, premium: true },
-                      { name: 'Orçamentos', free: true, essencial: true, premium: true },
-                      { name: 'Produtos e Serviços', free: true, essencial: true, premium: true },
-                      { name: 'Gestão de Veículos', free: true, essencial: true, premium: true },
-                      { name: 'Relatórios Básicos', free: true, essencial: true, premium: true },
-                      { name: 'IA Diagnóstico', free: true, essencial: false, premium: true },
-                      { name: 'Relatórios Avançados', free: true, essencial: false, premium: true },
-                      { name: 'Agendamento Avançado', free: true, essencial: false, premium: true },
-                      { name: 'Marketing Integrado', free: true, essencial: false, premium: true },
-                      { name: 'Backup Automático', free: true, essencial: false, premium: true },
-                      { name: 'Integração Contábil', free: true, essencial: false, premium: true },
-                      { name: 'Suporte Prioritário', free: true, essencial: false, premium: true },
+                      { name: 'Gestão de clientes', essencial: true, premium: true },
+                      { name: 'Orçamentos digitais', essencial: true, premium: true },
+                      { name: 'Controle de serviços', essencial: true, premium: true },
+                      { name: 'Relatórios básicos', essencial: true, premium: true },
+                      { name: 'Suporte por email', essencial: true, premium: true },
+                      { name: 'Backup automático', essencial: true, premium: true },
+                      { name: 'IA para diagnóstico', essencial: false, premium: true },
+                      { name: 'Agendamentos inteligentes', essencial: false, premium: true },
+                      { name: 'Relatórios avançados', essencial: false, premium: true },
+                      { name: 'Marketing automático', essencial: false, premium: true },
+                      { name: 'Suporte prioritário', essencial: false, premium: true },
+                      { name: 'Integração contábil', essencial: false, premium: true },
                     ].map((feature, index) => (
                       <tr key={index}>
                         <td className="py-3 px-4 font-medium">{feature.name}</td>
-                        <td className="text-center py-3 px-4">
-                          {feature.free ? (
-                            <Check className="h-4 w-4 text-green-600 mx-auto" />
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
-                        </td>
                         <td className="text-center py-3 px-4">
                           {feature.essencial ? (
                             <Check className="h-4 w-4 text-green-600 mx-auto" />
@@ -341,20 +251,26 @@ const SubscriptionPage = () => {
           </Card>
         </div>
 
-        {/* FAQ ou Informações Adicionais */}
+        {/* Informações de Contato */}
         <div className="mt-12 text-center">
           <Card className="bg-gray-50">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold mb-4">
-                Precisa de Ajuda?
+                Como ativar seu plano?
               </h3>
               <p className="text-gray-600 mb-4">
-                Entre em contato conosco para esclarecer dúvidas sobre os planos 
-                ou solicitar uma demonstração personalizada.
+                Para ativar ou alterar seu plano, entre em contato com o administrador do sistema.
               </p>
-              <Button variant="outline">
-                Falar com Suporte
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Enviar Email
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Entrar em Contato
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

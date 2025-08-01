@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface EditSubscriptionModalProps {
-  subscription?: any;
+  subscription: any;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -25,149 +26,93 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
   isCreating,
   oficinas
 }) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     user_id: '',
-    plan_type: '',
+    plan_type: 'essencial',
     status: 'active',
-    starts_at: '',
-    ends_at: '',
-    oficina_id: ''
+    starts_at: new Date().toISOString().split('T')[0],
+    ends_at: ''
   });
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (subscription && !isCreating) {
       setFormData({
-        user_id: subscription.user_id || '',
-        plan_type: subscription.plan_type || '',
+        user_id: subscription.user_id,
+        plan_type: subscription.plan_type || 'essencial',
         status: subscription.status || 'active',
-        starts_at: subscription.starts_at ? subscription.starts_at.split('T')[0] : '',
-        ends_at: subscription.ends_at ? subscription.ends_at.split('T')[0] : '',
-        oficina_id: subscription.oficina_id || ''
+        starts_at: subscription.starts_at ? new Date(subscription.starts_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        ends_at: subscription.ends_at ? new Date(subscription.ends_at).toISOString().split('T')[0] : ''
       });
-    } else {
+    } else if (isCreating) {
       setFormData({
         user_id: '',
-        plan_type: '',
+        plan_type: 'essencial',
         status: 'active',
         starts_at: new Date().toISOString().split('T')[0],
-        ends_at: '',
-        oficina_id: ''
+        ends_at: ''
       });
     }
-  }, [subscription, isCreating, isOpen]);
-
-  const saveUserSubscription = async (userId: string, planType: string, trialEndsAt: string | null, endsAt: string | null, stripeData = null) => {
-    console.log('[saveUserSubscription] Salvando assinatura:', {
-      userId, planType, trialEndsAt, endsAt, stripeData
-    });
-
-    const subscriptionData = {
-      user_id: userId,
-      plan_type: planType,
-      status: 'active',
-      starts_at: new Date().toISOString(),
-      ends_at: endsAt ? new Date(endsAt + 'T23:59:59.999Z').toISOString() : null,
-      trial_ends_at: trialEndsAt ? new Date(trialEndsAt + 'T23:59:59.999Z').toISOString() : null,
-      stripe_customer_id: stripeData ? stripeData.customerId : null,
-      stripe_subscription_id: stripeData ? stripeData.subscriptionId : null,
-      is_manual: !stripeData,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await supabase
-      .from('user_subscriptions')
-      .upsert([subscriptionData], { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false 
-      });
-
-    if (error) {
-      console.error('[saveUserSubscription] Erro ao salvar assinatura:', error);
-      throw error;
-    }
-
-    console.log('[saveUserSubscription] Assinatura salva com sucesso');
-    return subscriptionData;
-  };
+  }, [subscription, isCreating]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      console.log('[EditSubscriptionModal] Iniciando criação/edição de assinatura:', formData);
+      const subscriptionData = {
+        user_id: formData.user_id,
+        plan_type: formData.plan_type,
+        status: formData.status,
+        starts_at: new Date(formData.starts_at).toISOString(),
+        ends_at: formData.ends_at ? new Date(formData.ends_at).toISOString() : null,
+        is_manual: true
+      };
 
-      // Encontrar a oficina selecionada
-      const selectedOficina = oficinas.find(o => o.user_id === formData.user_id);
-      
-      if (!selectedOficina) {
+      if (isCreating) {
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .insert([subscriptionData]);
+
+        if (error) throw error;
+
         toast({
-          title: "Erro",
-          description: "Oficina não encontrada para o usuário selecionado",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // ✅ Salvar assinatura usando função dedicada
-      await saveUserSubscription(
-        formData.user_id,
-        formData.plan_type,
-        formData.ends_at, // usar ends_at como trial_ends_at para planos manuais
-        formData.ends_at,
-        null // sem dados do Stripe para assinatura manual
-      );
-
-      // ✅ Atualizar tabela oficinas para compatibilidade
-      const planType = formData.plan_type.includes('premium') ? 'Premium' : 'Essencial';
-      
-      console.log('[EditSubscriptionModal] Atualizando oficina:', {
-        oficinaId: selectedOficina.id,
-        planType,
-        trialEndsAt: formData.ends_at + 'T23:59:59.999Z'
-      });
-
-      const { error: oficinaError } = await supabase
-        .from('oficinas')
-        .update({
-          plano: planType,
-          trial_ends_at: formData.ends_at + 'T23:59:59.999Z'
-        })
-        .eq('id', selectedOficina.id);
-
-      if (oficinaError) {
-        console.error('[EditSubscriptionModal] Erro ao atualizar oficina:', oficinaError);
-        toast({
-          title: "Aviso",
-          description: "Assinatura criada, mas houve erro ao atualizar a oficina",
-          variant: "destructive"
+          title: "Sucesso",
+          description: "Assinatura criada com sucesso!"
         });
       } else {
-        console.log('[EditSubscriptionModal] Oficina atualizada com sucesso');
+        const { error } = await supabase
+          .from('user_subscriptions')
+          .update(subscriptionData)
+          .eq('id', subscription.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sucesso", 
+          description: "Assinatura atualizada com sucesso!"
+        });
       }
 
-      toast({
-        title: "Sucesso",
-        description: `Assinatura ${isCreating ? 'criada' : 'atualizada'} com sucesso!`
-      });
-
       onSuccess();
-    } catch (error) {
-      console.error('[EditSubscriptionModal] Erro ao salvar assinatura:', error);
+    } catch (error: any) {
+      console.error('Erro ao salvar assinatura:', error);
       toast({
+        variant: "destructive",
         title: "Erro",
-        description: `Erro ao ${isCreating ? 'criar' : 'atualizar'} assinatura: ${error.message}`,
-        variant: "destructive"
+        description: error.message || "Não foi possível salvar a assinatura."
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const selectedOficina = oficinas.find(o => o.user_id === formData.user_id);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {isCreating ? 'Nova Assinatura' : 'Editar Assinatura'}
@@ -175,11 +120,13 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Seleção de Oficina */}
           <div>
-            <Label htmlFor="user_id">Usuário/Oficina</Label>
+            <Label htmlFor="user_id">Oficina</Label>
             <Select
               value={formData.user_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, user_id: value }))}
+              disabled={!isCreating}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma oficina" />
@@ -187,31 +134,32 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               <SelectContent>
                 {oficinas.map((oficina) => (
                   <SelectItem key={oficina.user_id} value={oficina.user_id}>
-                    {oficina.nome_oficina || oficina.email}
+                    {oficina.nome_oficina} ({oficina.email})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Plano */}
           <div>
-            <Label htmlFor="plan_type">Tipo de Plano</Label>
+            <Label htmlFor="plan_type">Plano</Label>
             <Select
               value={formData.plan_type}
               onValueChange={(value) => setFormData(prev => ({ ...prev, plan_type: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o plano" />
+                <SelectValue placeholder="Selecione um plano" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="essencial_mensal">Essencial Mensal</SelectItem>
-                <SelectItem value="essencial_anual">Essencial Anual</SelectItem>
+                <SelectItem value="essencial">Essencial</SelectItem>
                 <SelectItem value="premium_mensal">Premium Mensal</SelectItem>
                 <SelectItem value="premium_anual">Premium Anual</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {/* Status */}
           <div>
             <Label htmlFor="status">Status</Label>
             <Select
@@ -223,43 +171,54 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Ativo</SelectItem>
-                <SelectItem value="trialing">Em Teste</SelectItem>
                 <SelectItem value="cancelled">Cancelado</SelectItem>
                 <SelectItem value="expired">Expirado</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {/* Data de Início */}
           <div>
             <Label htmlFor="starts_at">Data de Início</Label>
             <Input
-              id="starts_at"
               type="date"
               value={formData.starts_at}
               onChange={(e) => setFormData(prev => ({ ...prev, starts_at: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="ends_at">Data de Fim</Label>
-            <Input
-              id="ends_at"
-              type="date"
-              value={formData.ends_at}
-              onChange={(e) => setFormData(prev => ({ ...prev, ends_at: e.target.value }))}
               required
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : (isCreating ? 'Criar' : 'Atualizar')}
-            </Button>
+          {/* Data de Fim */}
+          <div>
+            <Label htmlFor="ends_at">Data de Fim (opcional)</Label>
+            <Input
+              type="date"
+              value={formData.ends_at}
+              onChange={(e) => setFormData(prev => ({ ...prev, ends_at: e.target.value }))}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Deixe em branco para assinatura sem data de expiração
+            </p>
           </div>
+
+          {selectedOficina && (
+            <div className="p-3 bg-gray-50 rounded-md">
+              <p className="text-sm font-medium">Oficina Selecionada:</p>
+              <p className="text-sm text-gray-600">{selectedOficina.nome_oficina}</p>
+              <p className="text-sm text-gray-600">{selectedOficina.email}</p>
+            </div>
+          )}
         </form>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit} disabled={loading || !formData.user_id}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isCreating ? 'Criar Assinatura' : 'Salvar Alterações'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

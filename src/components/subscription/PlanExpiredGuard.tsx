@@ -34,7 +34,7 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // ✅ Se o plano não está ativo, redirecionar para página de plano expirado
+  // Se o plano não está ativo, redirecionar para página de plano expirado
   if (!planActive) {
     console.log('PlanExpiredGuard: Plano inativo, redirecionando para /plano-expirado');
     return <Navigate to="/plano-expirado" replace />;
