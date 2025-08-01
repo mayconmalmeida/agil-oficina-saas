@@ -1,13 +1,13 @@
 
 import React, { createContext, useContext } from 'react';
-import { useOptimizedAuth } from '@/hooks/useOptimizedAuth';
+import { useManualAuth } from '@/hooks/useManualAuth';
 import { AuthContextValue } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  console.log('[AuthProvider] Renderizando contexto de autenticação');
-  const authValue = useOptimizedAuth();
+  console.log('[AuthProvider] Renderizando contexto de autenticação manual');
+  const authValue = useManualAuth();
 
   console.log('[AuthProvider] Estado atual:', {
     user: authValue.user?.email || 'não logado',
@@ -44,7 +44,7 @@ export const useAuth = (): AuthContextValue => {
   return context;
 };
 
-// ✅ Debug UI para validar plano e userId em tempo real
+// Debug UI para validar plano e userId em tempo real
 const PlanDebugUI: React.FC<{ 
   plan: any; 
   active: boolean; 
@@ -64,12 +64,13 @@ const PlanDebugUI: React.FC<{
       opacity: 0.9,
       zIndex: 9999,
       fontFamily: 'monospace',
-      maxWidth: '200px'
+      maxWidth: '250px'
     }}>
       <div>UserId: {userId?.slice(0, 8) || 'null'}</div>
       <div>Plano: {plan || 'null'}</div>
       <div>Status: {active ? 'Ativo' : 'Inativo'}</div>
       <div>Permissões: {permissions.length}</div>
+      <div style={{ fontSize: '10px', opacity: 0.7 }}>Manual Auth</div>
     </div>
   );
 };

@@ -11,7 +11,7 @@ export const usePermissions = () => {
       plan,
       planActive,
       permissions: permissions.length,
-      hasFeature: permissions.includes(feature)
+      hasFeature: permissions.includes(feature) || permissions.includes('*')
     });
 
     // Admin tem todas as permissões
@@ -44,15 +44,27 @@ export const usePermissions = () => {
     return result;
   };
 
+  const isEnterprise = (): boolean => {
+    const result = plan === 'Enterprise' && planActive;
+    console.log('usePermissions: isEnterprise check:', { plan, planActive, result });
+    return result;
+  };
+
   const canAccessPremiumFeatures = (): boolean => {
-    const result = isAdmin || isPremium();
+    const result = isAdmin || isPremium() || isEnterprise();
     console.log('usePermissions: canAccessPremiumFeatures check:', { isAdmin, isPremium: isPremium(), result });
+    return result;
+  };
+
+  const canAccessEnterpriseFeatures = (): boolean => {
+    const result = isAdmin || isEnterprise();
+    console.log('usePermissions: canAccessEnterpriseFeatures check:', { isAdmin, isEnterprise: isEnterprise(), result });
     return result;
   };
 
   const getAvailableFeatures = () => {
     if (isAdmin) {
-      return ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'backup_automatico', 'integracao_contabil'];
+      return ['*']; // Admin tem todas as funcionalidades
     }
     
     if (!planActive) {
@@ -74,7 +86,8 @@ export const usePermissions = () => {
         'Controle de serviços',
         'Relatórios básicos',
         'Suporte por email',
-        'Backup automático'
+        'Backup automático',
+        'IA para Suporte Inteligente'
       ],
       Premium: [
         'Todos os recursos do Essencial',
@@ -84,6 +97,15 @@ export const usePermissions = () => {
         'Marketing automático',
         'Suporte prioritário',
         'Integração contábil'
+      ],
+      Enterprise: [
+        'Todos os recursos do Premium',
+        'Multi-filiais',
+        'API personalizada',
+        'Treinamento dedicado',
+        'Gerente de conta',
+        'SLA garantido',
+        'Customizações'
       ]
     };
 
@@ -97,15 +119,18 @@ export const usePermissions = () => {
     permissionsCount: permissions.length,
     isPremium: isPremium(),
     isEssencial: isEssencial(),
+    isEnterprise: isEnterprise(),
     hasIADiagnostico: hasPermission('diagnostico_ia'),
-    hasMarketing: hasPermission('campanhas_marketing')
+    hasMarketing: hasPermission('marketing_automatico')
   });
 
   return {
     hasPermission,
     isPremium,
     isEssencial,
+    isEnterprise,
     canAccessPremiumFeatures,
+    canAccessEnterpriseFeatures,
     getAvailableFeatures,
     getPlanFeatures,
     permissions,
