@@ -207,19 +207,21 @@ export const useOptimizedAuth = (): AuthState => {
         
         console.log('[useOptimizedAuth] Verificando admin:', { role: profile?.role, isAdmin, userId });
 
+        // Criar usuário base primeiro
+        const authUser: AuthUser = {
+          id: userId,
+          email: userEmail,
+          role: profile?.role || 'user',
+          isAdmin: isAdmin
+        };
+
         // Se é admin, bypass da validação de plano
         if (isAdmin) {
           console.log('[useOptimizedAuth] Admin detectado, liberando acesso total para userId:', userId);
           
           if (mounted) {
-            const authUser: AuthUser = {
-              id: userId,
-              email: userEmail,
-              role: profile?.role || 'admin',
-              planActive: true,
-              expired: false,
-              isAdmin: true
-            };
+            authUser.planActive = true;
+            authUser.expired = false;
             
             setUser(authUser);
             setRole(authUser.role);
@@ -242,17 +244,10 @@ export const useOptimizedAuth = (): AuthState => {
         console.log('[useOptimizedAuth] Status do plano para userId:', userId, planStatus);
 
         if (mounted) {
-          setPlanData(planStatus);
-
-          const authUser: AuthUser = {
-            id: userId,
-            email: userEmail,
-            role: profile?.role || 'user',
-            planActive: planStatus.planActive,
-            expired: planStatus.expired,
-            isAdmin: false
-          };
+          authUser.planActive = planStatus.planActive;
+          authUser.expired = planStatus.expired;
           
+          setPlanData(planStatus);
           setUser(authUser);
           setRole(authUser.role);
           setLoading(false);
