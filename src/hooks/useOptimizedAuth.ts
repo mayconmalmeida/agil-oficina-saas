@@ -33,9 +33,10 @@ const getUserPlanStatus = async (userId: string) => {
     
     const { data, error } = await supabase
       .from('user_subscriptions')
-      .select('plan_type, status, starts_at, ends_at')
+      .select('plan_type, status, starts_at, ends_at, trial_ends_at')
       .eq('user_id', userId)
       .eq('status', 'active')
+      .order('created_at', { ascending: false })
       .maybeSingle();
 
     if (error) {
@@ -58,7 +59,7 @@ const getUserPlanStatus = async (userId: string) => {
       };
     }
 
-    const { plan_type, status, ends_at } = data;
+    const { plan_type, status, ends_at, trial_ends_at } = data;
     const now = new Date();
 
     console.log('[useOptimizedAuth] Dados da assinatura:', {
@@ -66,33 +67,65 @@ const getUserPlanStatus = async (userId: string) => {
       plan_type,
       status,
       ends_at,
+      trial_ends_at,
       now: now.toISOString()
     });
 
-    // Check if subscription is still valid (if ends_at is set)
-    const isExpired = ends_at && new Date(ends_at) < now;
-    
-    if (isExpired) {
-      console.log('[useOptimizedAuth] Plano expirado para userId:', userId);
-      return { 
-        plan: 'Free',
-        planActive: false,
-        expired: true,
-        source: 'expired'
+    // Verificar se a assinatura está ativa
+    if (status === 'active') {
+      // Verificar se ainda está válida (trial ou assinatura paga)
+      const trialExpired = trial_ends_at && new Date(trial_ends_at) < now;
+      const subscriptionExpired = ends_at && new Date(ends_at) < now;
+      
+      const isExpired = trialExpired || subscriptionExpired;
+      
+      if (isExpired) {
+        console.log('[useOptimizedAuth] Assinatura expirada para userId:', userId, {
+          trialExpired,
+          subscriptionExpired,
+          trial_ends_at,
+          ends_at
+        });
+        return { 
+          plan: 'Free',
+          planActive: false,
+          expired: true,
+          source: 'expired'
+        };
+      }
+
+      // Determinar tipo do plano
+      let planType = 'Essencial';
+      if (plan_type?.toLowerCase().includes('premium')) {
+        planType = 'Premium';
+      } else if (plan_type?.toLowerCase().includes('enterprise')) {
+        planType = 'Enterprise';
+      } else if (plan_type?.toLowerCase().includes('essencial')) {
+        planType = 'Essencial';
+      }
+      
+      console.log('[useOptimizedAuth] Plano ativo encontrado:', {
+        userId,
+        planType,
+        plan_type,
+        ends_at,
+        trial_ends_at
+      });
+      
+      return {
+        plan: planType,
+        planActive: true,
+        expired: false,
+        source: 'active'
       };
     }
-
-    let planType = 'Essencial';
-    if (plan_type && plan_type.toLowerCase().includes('premium')) {
-      planType = 'Premium';
-    }
     
-    console.log('[useOptimizedAuth] Plano ativo encontrado:', planType);
-    return {
-      plan: planType,
-      planActive: true,
-      expired: false,
-      source: 'active'
+    console.log('[useOptimizedAuth] Status da assinatura inválido:', status);
+    return { 
+      plan: 'Free',
+      planActive: false,
+      expired: true,
+      source: 'invalid_status'
     };
   } catch (err) {
     console.error('[useOptimizedAuth] Exception ao validar plano:', err);
@@ -109,15 +142,17 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
   console.log('[validatePlanAccess] Validando acesso:', { plan, planActive, isAdmin });
 
   if (isAdmin) {
+    console.log('[validatePlanAccess] Admin detectado, liberando acesso total');
     return {
       isActive: true,
       plan: 'Premium' as const,
-      permissionsCount: 20,
-      permissions: ['diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'integracao_contabil']
+      permissionsCount: 25,
+      permissions: ['*'] // Admin tem todas as permissões
     };
   }
 
   if (!planActive) {
+    console.log('[validatePlanAccess] Plano inativo, recursos básicos');
     return {
       isActive: false,
       plan: 'Free' as const,
@@ -127,21 +162,47 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
   }
 
   if (plan === 'Premium') {
+    console.log('[validatePlanAccess] Plano Premium ativo');
     return {
       isActive: true,
       plan: 'Premium' as const,
       permissionsCount: 20,
-      permissions: ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 'agendamentos', 'backup_automatico', 'integracao_contabil']
+      permissions: [
+        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
+        'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
+        'agendamentos', 'backup_automatico', 'integracao_contabil',
+        'suporte_prioritario', 'marketing_automatico'
+      ]
     };
   } else if (plan === 'Essencial') {
+    console.log('[validatePlanAccess] Plano Essencial ativo');
     return {
       isActive: true,
       plan: 'Essencial' as const,
-      permissionsCount: 10,
-      permissions: ['clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 'backup_automatico']
+      permissionsCount: 8,
+      permissions: [
+        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
+        'backup_automatico', 'suporte_email', 'ia_suporte_inteligente'
+      ]
+    };
+  } else if (plan === 'Enterprise') {
+    console.log('[validatePlanAccess] Plano Enterprise ativo');
+    return {
+      isActive: true,
+      plan: 'Enterprise' as const,
+      permissionsCount: 30,
+      permissions: [
+        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
+        'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
+        'agendamentos', 'backup_automatico', 'integracao_contabil',
+        'suporte_prioritario', 'marketing_automatico', 'multi_filiais',
+        'api_personalizada', 'treinamento_dedicado', 'gerente_conta',
+        'sla_garantido', 'customizacoes'
+      ]
     };
   }
 
+  console.log('[validatePlanAccess] Plano não reconhecido, retornando Free');
   return {
     isActive: false,
     plan: 'Free' as const,
@@ -199,7 +260,7 @@ export const useOptimizedAuth = (): AuthState => {
         const userId = currentSession.user.id;
         const userEmail = currentSession.user.email || '';
         
-        console.log('[useOptimizedAuth] Carregando dados para userId correto:', userId);
+        console.log('[useOptimizedAuth] Carregando dados para userId:', userId);
         
         // Buscar perfil para verificar se é admin
         const profile = await getUserProfile(userId);
@@ -259,7 +320,8 @@ export const useOptimizedAuth = (): AuthState => {
             role: authUser.role,
             plan: planStatus.plan,
             planActive: planStatus.planActive,
-            expired: planStatus.expired
+            expired: planStatus.expired,
+            source: planStatus.source
           });
         }
       } catch (error) {
