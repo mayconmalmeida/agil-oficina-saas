@@ -45,7 +45,9 @@ export const usePermissions = () => {
   };
 
   const isEnterprise = (): boolean => {
-    const result = plan === 'Enterprise' && planActive;
+    // Since Enterprise is not in the current plan types, always return false
+    // This will be updated when Enterprise is properly added to the system
+    const result = false;
     console.log('usePermissions: isEnterprise check:', { plan, planActive, result });
     return result;
   };
@@ -97,15 +99,6 @@ export const usePermissions = () => {
         'Marketing automático',
         'Suporte prioritário',
         'Integração contábil'
-      ],
-      Enterprise: [
-        'Todos os recursos do Premium',
-        'Multi-filiais',
-        'API personalizada',
-        'Treinamento dedicado',
-        'Gerente de conta',
-        'SLA garantido',
-        'Customizações'
       ]
     };
 

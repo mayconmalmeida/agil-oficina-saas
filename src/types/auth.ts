@@ -15,9 +15,9 @@ export interface AuthUser {
   nome_oficina?: string;
   telefone?: string;
   is_active?: boolean;
-  plan?: 'Essencial' | 'Premium' | 'Free';
+  plan?: 'Essencial' | 'Premium' | 'Enterprise' | 'Free';
   planActive?: boolean;
-  expired?: boolean; // ✅ Nova propriedade
+  expired?: boolean;
   permissions?: string[];
   oficina_id?: string | null;
   app_metadata?: any;
@@ -32,7 +32,7 @@ export interface AuthState {
   isLoadingAuth: boolean;
   role: string | null;
   isAdmin: boolean;
-  plan: 'Essencial' | 'Premium' | 'Free' | null;
+  plan: 'Essencial' | 'Premium' | 'Enterprise' | 'Free' | null;
   planActive: boolean;
   permissions: string[];
   canAccessFeatures: boolean;
@@ -46,7 +46,7 @@ export interface AuthContextValue extends AuthState {}
 export interface UserProfileData {
   role: string;
   subscription: UserSubscription | null;
-  plan?: 'Essencial' | 'Premium' | 'Free';
+  plan?: 'Essencial' | 'Premium' | 'Enterprise' | 'Free';
   planActive?: boolean;
   permissions?: string[];
 }
