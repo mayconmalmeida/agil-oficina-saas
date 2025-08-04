@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -102,10 +101,10 @@ export const useManualAuth = (): AuthState => {
         
         console.log('[useManualAuth] Carregando dados para userId:', userId);
         
-        // Primeiro buscar perfil
+        // Primeiro buscar perfil da tabela profiles
         const profile = await getUserProfile(userId);
         
-        // Depois buscar oficina ID baseado no user_id
+        // Depois buscar oficina ID da tabela oficinas usando user_id
         const oficinaId = await getOficinaId(userId);
         
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
