@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -23,6 +24,29 @@ const getUserProfile = async (userId: string) => {
     return data;
   } catch (error) {
     console.error('[useManualAuth] Exception ao buscar perfil:', error);
+    return null;
+  }
+};
+
+const getOficinaId = async (userId: string) => {
+  try {
+    console.log('[useManualAuth] Buscando oficina para userId:', userId);
+    
+    const { data, error } = await supabase
+      .from('oficinas')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[useManualAuth] Erro ao buscar oficina:', error);
+      return null;
+    }
+
+    console.log('[useManualAuth] Oficina encontrada:', data);
+    return data?.id || null;
+  } catch (error) {
+    console.error('[useManualAuth] Exception ao buscar oficina:', error);
     return null;
   }
 };
@@ -80,16 +104,26 @@ export const useManualAuth = (): AuthState => {
         
         // Buscar perfil
         const profile = await getUserProfile(userId);
+        
+        // Buscar oficina ID
+        const oficinaId = await getOficinaId(userId);
+        
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
         
-        console.log('[useManualAuth] Verificando admin:', { role: profile?.role, isAdmin, userId });
+        console.log('[useManualAuth] Dados carregados:', { 
+          profile: !!profile, 
+          oficinaId, 
+          isAdmin, 
+          role: profile?.role 
+        });
 
         // Criar usuário base
         const authUser: AuthUser = {
           id: userId,
           email: userEmail,
           role: profile?.role || 'user',
-          isAdmin: isAdmin
+          isAdmin: isAdmin,
+          oficina_id: oficinaId
         };
 
         // Se é admin, bypass da validação de plano
@@ -137,6 +171,8 @@ export const useManualAuth = (): AuthState => {
           console.log('[useManualAuth] Usuário carregado:', {
             userId,
             email: userEmail,
+            role: authUser.role,
+            oficinaId,
             plan: planValidation.plan,
             planActive: planValidation.isActive,
             permissions: planValidation.permissions.length
@@ -148,14 +184,15 @@ export const useManualAuth = (): AuthState => {
           const userId = currentSession.user.id;
           const userEmail = currentSession.user.email || '';
           
-          // Em caso de erro, criar usuário básico
+          // Em caso de erro, criar usuário básico mas válido
           const basicUser: AuthUser = {
             id: userId,
             email: userEmail,
             role: 'user',
             planActive: false,
             expired: true,
-            isAdmin: false
+            isAdmin: false,
+            oficina_id: null
           };
           
           setUser(basicUser);
@@ -179,7 +216,7 @@ export const useManualAuth = (): AuthState => {
           setSession(currentSession);
           
           if (currentSession?.user) {
-            console.log('[useManualAuth] Sessão inicial encontrada');
+            console.log('[useManualAuth] Sessão inicial encontrada para userId:', currentSession.user.id);
             await loadUserData(currentSession);
           } else {
             console.log('[useManualAuth] Nenhuma sessão inicial encontrada');
@@ -206,7 +243,7 @@ export const useManualAuth = (): AuthState => {
       async (event, session) => {
         if (!mounted) return;
         
-        console.log('[useManualAuth] Auth state change:', event);
+        console.log('[useManualAuth] Auth state change:', event, 'userId:', session?.user?.id);
         setSession(session);
         
         if (session?.user) {
@@ -232,7 +269,7 @@ export const useManualAuth = (): AuthState => {
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 3000);
+    }, 5000);
 
     return () => {
       mounted = false;
@@ -248,6 +285,7 @@ export const useManualAuth = (): AuthState => {
     hasUser: !!user,
     userEmail: user?.email,
     userId: user?.id,
+    oficinaId: user?.oficina_id,
     role,
     isAdmin,
     plan: planData.plan,
