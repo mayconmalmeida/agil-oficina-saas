@@ -102,10 +102,10 @@ export const useManualAuth = (): AuthState => {
         
         console.log('[useManualAuth] Carregando dados para userId:', userId);
         
-        // Buscar perfil
+        // Primeiro buscar perfil
         const profile = await getUserProfile(userId);
         
-        // Buscar oficina ID
+        // Depois buscar oficina ID baseado no user_id
         const oficinaId = await getOficinaId(userId);
         
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
@@ -210,7 +210,13 @@ export const useManualAuth = (): AuthState => {
       try {
         console.log('[useManualAuth] Inicializando autenticação');
         
+        // Debug da sessão atual
         const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('[useManualAuth] Sessão atual obtida:', {
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id || 'nenhum',
+          email: currentSession?.user?.email || 'nenhum'
+        });
         
         if (mounted) {
           setSession(currentSession);
