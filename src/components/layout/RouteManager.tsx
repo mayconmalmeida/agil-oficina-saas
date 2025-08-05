@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useRoutePersistence } from '@/hooks/useRoutePersistence';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,29 +9,28 @@ interface RouteManagerProps {
 }
 
 const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
-  const { restoreLastRoute } = useRoutePersistence();
+  const location = useLocation();
+  const { saveLastRoute } = useRoutePersistence();
   const { isLoadingAuth, user } = useAuth();
-  const hasTriedRestore = useRef(false);
+  const lastSavedRoute = useRef<string>('');
 
   useEffect(() => {
-    // Só tentar restaurar se:
+    // Só salvar rotas se:
     // 1. Não está carregando autenticação
     // 2. Usuário está logado
-    // 3. Ainda não tentou restaurar
-    // 4. Está na rota raiz (/)
-    if (!isLoadingAuth && user && !hasTriedRestore.current && window.location.pathname === '/') {
-      hasTriedRestore.current = true;
+    // 3. A rota atual é diferente da última salva
+    // 4. Não é uma rota de redirecionamento (/) ou home
+    if (!isLoadingAuth && user && location.pathname !== lastSavedRoute.current) {
+      // Não salvar rotas de redirecionamento ou páginas públicas
+      const skipRoutes = ['/', '/home', '/login', '/register', '/plano-expirado'];
       
-      // Pequeno delay para garantir que o contexto está totalmente carregado
-      setTimeout(() => {
-        try {
-          restoreLastRoute();
-        } catch (error) {
-          console.error('Erro ao restaurar rota:', error);
-        }
-      }, 100);
+      if (!skipRoutes.includes(location.pathname)) {
+        lastSavedRoute.current = location.pathname;
+        saveLastRoute(location.pathname);
+        console.log('Rota salva:', location.pathname);
+      }
     }
-  }, [isLoadingAuth, user, restoreLastRoute]);
+  }, [location.pathname, isLoadingAuth, user, saveLastRoute]);
 
   return <>{children}</>;
 };

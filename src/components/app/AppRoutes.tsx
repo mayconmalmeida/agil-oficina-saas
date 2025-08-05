@@ -43,20 +43,15 @@ const AppRoutes: React.FC = () => {
         </ProtectedRoute>
       } />
       
-      {/* Rota raiz - comportamento baseado no usuário */}
+      {/* Rota raiz - redirecionamento simples sem loops */}
       <Route path="/" element={
         user ? (
           isAdmin ? (
             <Navigate to="/admin/dashboard" replace />
           ) : (
-            <ProtectedRoute>
-              <PlanExpiredGuard>
-                <UserDashboard />
-              </PlanExpiredGuard>
-            </ProtectedRoute>
+            <Navigate to="/dashboard" replace />
           )
         ) : (
-          // Usuário não autenticado vai para a página inicial pública
           <Navigate to="/home" replace />
         )
       } />
