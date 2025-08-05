@@ -83,40 +83,56 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           return;
         }
 
-        console.log('AdminContext: Usuário encontrado, verificando permissões admin...', {
+        console.log('AdminContext: Usuário autenticado encontrado:', {
           userId: session.user.id,
           email: session.user.email
         });
         
-        // ✅ BUSCAR NA TABELA ADMINS USANDO O EMAIL DA SESSÃO
+        // ✅ BUSCAR ADMIN USANDO O EMAIL DA SESSÃO COM SELECT EXPLÍCITO
+        console.log('AdminContext: Buscando admin para email:', session.user.email);
+        
         const { data: adminData, error: adminError } = await supabase
           .from('admins')
-          .select('id, email, is_superadmin')
+          .select('id, email, is_superadmin, created_at')
           .eq('email', session.user.email)
-          .maybeSingle();
+          .single();
 
-        console.log('AdminContext: Resultado busca admins:', { adminData, adminError });
+        console.log('AdminContext: Resultado completo da busca na tabela admins:', {
+          adminData,
+          adminError,
+          email: session.user.email
+        });
 
         if (adminError) {
           console.error('AdminContext: Erro ao buscar na tabela admins:', adminError);
-          throw adminError;
+          
+          if (adminError.code === 'PGRST116') {
+            console.log('AdminContext: Nenhum registro encontrado na tabela admins para:', session.user.email);
+            throw new Error(`Usuário ${session.user.email} não está cadastrado como administrador na tabela admins`);
+          } else {
+            throw new Error(`Erro ao consultar tabela admins: ${adminError.message}`);
+          }
         }
 
         if (!adminData) {
-          console.log('AdminContext: Usuário não encontrado na tabela admins para email:', session.user.email);
-          throw new Error('Acesso negado: usuário não é administrador');
+          console.log('AdminContext: adminData é null para email:', session.user.email);
+          throw new Error(`Administrador não encontrado para email: ${session.user.email}`);
         }
 
-        console.log('AdminContext: Admin encontrado na tabela admins:', {
+        console.log('AdminContext: ✅ Admin encontrado na tabela admins:', {
           id: adminData.id,
           email: adminData.email,
-          is_superadmin: adminData.is_superadmin
+          is_superadmin: adminData.is_superadmin,
+          created_at: adminData.created_at
         });
 
-        // ✅ CRIAR/ATUALIZAR PERFIL NA TABELA PROFILES PARA COMPATIBILIDADE
-        const adminRole = adminData.is_superadmin ? 'superadmin' : 'admin';
+        // ✅ DETERMINAR ROLE BASEADO NO is_superadmin
+        const adminRole: AdminRole = adminData.is_superadmin ? 'superadmin' : 'admin';
         
-        console.log('AdminContext: Sincronizando perfil admin...');
+        console.log('AdminContext: Role determinada:', adminRole);
+
+        // ✅ SINCRONIZAR PERFIL NA TABELA PROFILES
+        console.log('AdminContext: Sincronizando perfil admin na tabela profiles...');
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
@@ -125,13 +141,15 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
             role: adminRole,
             is_active: true,
             created_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
           });
 
         if (profileError) {
-          console.warn('AdminContext: Erro ao sincronizar perfil admin:', profileError);
-          // Não bloquear o login por isso
+          console.warn('AdminContext: Aviso - erro ao sincronizar perfil admin:', profileError);
+          // Não bloquear o login por isso, apenas avisar
         } else {
-          console.log('AdminContext: Perfil admin sincronizado com sucesso');
+          console.log('AdminContext: ✅ Perfil admin sincronizado com sucesso na tabela profiles');
         }
 
         if (mounted) {
@@ -143,10 +161,11 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
             canAccessFeatures: true
           };
 
-          console.log('AdminContext: Admin autenticado com sucesso:', {
+          console.log('AdminContext: ✅ Admin configurado com sucesso:', {
             email: adminUser.email,
             role: adminUser.role,
-            userId: adminUser.id
+            userId: adminUser.id,
+            isAdmin: adminUser.isAdmin
           });
           
           setUser(adminUser);
@@ -154,7 +173,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         }
 
       } catch (error: any) {
-        console.error('AdminContext: Erro na inicialização:', error);
+        console.error('AdminContext: ❌ Erro na inicialização:', error);
         if (mounted) {
           setUser(null);
           setError(error.message || 'Erro ao verificar permissões administrativas');
@@ -166,13 +185,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       }
     };
 
-    // Timeout de segurança - 3 segundos
+    // Timeout de segurança - 5 segundos
     timeoutId = setTimeout(() => {
       if (mounted && isLoading) {
-        console.warn('AdminContext: Timeout de segurança atingido');
+        console.warn('AdminContext: ⚠️ Timeout de segurança atingido após 5 segundos');
         setIsLoading(false);
+        setError('Timeout ao verificar permissões administrativas');
       }
-    }, 3000);
+    }, 5000);
 
     // Inicializar verificação
     initializeAdmin();
@@ -182,9 +202,14 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       (event, session) => {
         if (!mounted) return;
 
-        console.log('AdminContext: Auth state change:', event, 'userId:', session?.user?.id);
+        console.log('AdminContext: Auth state change detectado:', {
+          event,
+          userId: session?.user?.id,
+          email: session?.user?.email
+        });
         
         if (event === 'SIGNED_OUT') {
+          console.log('AdminContext: Usuário fez logout');
           setUser(null);
           setError(null);
           setIsLoading(false);
@@ -192,12 +217,13 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         }
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log('AdminContext: Usuário logado ou token renovado, reinicializando...');
           // Pequeno delay para evitar conflitos
           setTimeout(() => {
             if (mounted) {
               initializeAdmin();
             }
-          }, 100);
+          }, 200);
         }
       }
     );
@@ -206,6 +232,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       mounted = false;
       clearTimeout(timeoutId);
       subscription.unsubscribe();
+      console.log('AdminContext: Cleanup realizado');
     };
   }, [navigate, toast]);
 
