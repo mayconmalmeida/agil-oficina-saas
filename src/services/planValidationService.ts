@@ -45,10 +45,10 @@ const calculateDaysRemaining = (endDate: string | null): number => {
 
 export const validateUserPlan = async (userId: string): Promise<PlanValidationResult> => {
   try {
-    console.log('[validateUserPlan] Validando plano para userId:', userId);
+    console.log('[validateUserPlan] 🔍 Validando plano para userId:', userId);
     
     // Buscar assinatura ativa mais recente - incluindo diferentes status
-    const { data: subscription, error } = await supabase
+    let { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', userId)
@@ -57,10 +57,10 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       .limit(1)
       .maybeSingle();
 
-    console.log('[validateUserPlan] Resultado da consulta:', { subscription, error });
+    console.log('[validateUserPlan] 📊 Resultado da consulta ativa:', { subscription, error });
 
     if (error) {
-      console.error('[validateUserPlan] Erro ao buscar assinatura:', error);
+      console.error('[validateUserPlan] ❌ Erro ao buscar assinatura:', error);
       return {
         isActive: false,
         plan: null,
@@ -70,48 +70,59 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       };
     }
 
+    // Se não encontrou ativa, buscar qualquer assinatura para análise
     if (!subscription) {
-      console.log('[validateUserPlan] Nenhuma assinatura ativa encontrada, tentando buscar qualquer assinatura...');
+      console.log('[validateUserPlan] 🔄 Nenhuma assinatura ativa encontrada, buscando todas...');
       
-      // Se não encontrou ativa, buscar qualquer assinatura para debug
-      const { data: anySubscription, error: anyError } = await supabase
+      const { data: allSubscriptions, error: allError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      console.log('[validateUserPlan] Qualquer assinatura encontrada:', { anySubscription, anyError });
+      console.log('[validateUserPlan] 📋 Todas as assinaturas encontradas:', { 
+        count: allSubscriptions?.length || 0, 
+        subscriptions: allSubscriptions,
+        error: allError 
+      });
 
-      if (anySubscription) {
-        console.log('[validateUserPlan] Encontrada assinatura com status:', anySubscription.status);
-        console.log('[validateUserPlan] Dados completos da assinatura:', anySubscription);
+      if (allSubscriptions && allSubscriptions.length > 0) {
+        const latestSubscription = allSubscriptions[0];
+        console.log('[validateUserPlan] 🔍 Analisando assinatura mais recente:', {
+          id: latestSubscription.id,
+          status: latestSubscription.status,
+          plan_type: latestSubscription.plan_type,
+          starts_at: latestSubscription.starts_at,
+          ends_at: latestSubscription.ends_at,
+          is_manual: latestSubscription.is_manual
+        });
         
-        // Verificar se a assinatura deveria estar ativa
+        // Verificar se deveria estar ativa baseado nas datas
         const now = new Date();
-        const startsAt = new Date(anySubscription.starts_at);
-        const endsAt = anySubscription.ends_at ? new Date(anySubscription.ends_at) : null;
-        const trialEndsAt = anySubscription.trial_ends_at ? new Date(anySubscription.trial_ends_at) : null;
+        const startsAt = new Date(latestSubscription.starts_at);
+        const endsAt = latestSubscription.ends_at ? new Date(latestSubscription.ends_at) : null;
         
-        console.log('[validateUserPlan] Verificação de datas:', {
+        const hasStarted = now >= startsAt;
+        const hasNotExpired = !endsAt || now <= endsAt;
+        
+        console.log('[validateUserPlan] ⏰ Análise de datas:', {
           now: now.toISOString(),
           startsAt: startsAt.toISOString(),
-          endsAt: endsAt?.toISOString(),
-          trialEndsAt: trialEndsAt?.toISOString(),
-          isAfterStart: now >= startsAt,
-          isBeforeEnd: !endsAt || now <= endsAt,
-          isBeforeTrialEnd: !trialEndsAt || now <= trialEndsAt
+          endsAt: endsAt?.toISOString() || 'sem data de fim',
+          hasStarted,
+          hasNotExpired,
+          shouldBeActive: hasStarted && hasNotExpired
         });
 
-        // Se a assinatura deveria estar ativa, processar mesmo assim
-        if (now >= startsAt && (!endsAt || now <= endsAt)) {
-          console.log('[validateUserPlan] Assinatura deveria estar ativa, processando...');
-          subscription = anySubscription;
+        // Se deveria estar ativa mas não está, usar mesmo assim
+        if (hasStarted && hasNotExpired) {
+          console.log('[validateUserPlan] ✅ Assinatura deveria estar ativa, processando...');
+          subscription = latestSubscription;
         }
       }
       
       if (!subscription) {
+        console.log('[validateUserPlan] ❌ Nenhuma assinatura válida encontrada');
         return {
           isActive: false,
           plan: null,
@@ -122,7 +133,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       }
     }
 
-    console.log('[validateUserPlan] Assinatura encontrada:', {
+    console.log('[validateUserPlan] 🎯 Processando assinatura:', {
       id: subscription.id,
       plan_type: subscription.plan_type,
       status: subscription.status,
@@ -135,21 +146,16 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
     const now = new Date();
     const { plan_type, status, ends_at, trial_ends_at, is_manual, starts_at } = subscription;
 
-    // Determinar se está ativo
-    let isActive = false;
-    let daysRemaining = 0;
-    let source: 'active' | 'trial' | 'manual' | 'expired' | 'none' = 'none';
-
     // Verificar se já começou
     const hasStarted = new Date(starts_at) <= now;
-    console.log('[validateUserPlan] Verificando se já começou:', {
+    console.log('[validateUserPlan] 🕐 Verificando início:', {
       starts_at,
       now: now.toISOString(),
       hasStarted
     });
 
     if (!hasStarted) {
-      console.log('[validateUserPlan] Assinatura ainda não começou');
+      console.log('[validateUserPlan] ⏳ Assinatura ainda não começou');
       return {
         isActive: false,
         plan: null,
@@ -159,6 +165,11 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       };
     }
 
+    // Determinar se está ativo
+    let isActive = false;
+    let daysRemaining = 0;
+    let source: 'active' | 'trial' | 'manual' | 'expired' | 'none' = 'none';
+
     if (status === 'active') {
       if (is_manual) {
         // Assinatura manual - verificar se não expirou
@@ -166,8 +177,10 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
           isActive = true;
           source = 'manual';
           daysRemaining = ends_at ? calculateDaysRemaining(ends_at) : 9999;
+          console.log('[validateUserPlan] ✅ Assinatura manual ativa');
         } else {
           source = 'expired';
+          console.log('[validateUserPlan] ❌ Assinatura manual expirada');
         }
       } else {
         // Assinatura regular - verificar se não expirou
@@ -175,8 +188,10 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
           isActive = true;
           source = 'active';
           daysRemaining = ends_at ? calculateDaysRemaining(ends_at) : 9999;
+          console.log('[validateUserPlan] ✅ Assinatura regular ativa');
         } else {
           source = 'expired';
+          console.log('[validateUserPlan] ❌ Assinatura regular expirada');
         }
       }
     } else if (status === 'trialing') {
@@ -185,8 +200,10 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
         isActive = true;
         source = 'trial';
         daysRemaining = calculateDaysRemaining(trial_ends_at);
+        console.log('[validateUserPlan] ✅ Trial ativo');
       } else {
         source = 'expired';
+        console.log('[validateUserPlan] ❌ Trial expirado');
       }
     }
 
@@ -202,23 +219,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
 
     const permissions = isActive ? getPlanPermissions(plan_type) : getPlanPermissions('free');
 
-    console.log('[validateUserPlan] Resultado da validação:', {
-      isActive,
-      planType,
-      source,
-      daysRemaining,
-      permissionsCount: permissions.length,
-      debugInfo: {
-        status,
-        is_manual,
-        starts_at,
-        ends_at,
-        trial_ends_at,
-        now: now.toISOString()
-      }
-    });
-
-    return {
+    const result = {
       isActive,
       plan: planType,
       permissions,
@@ -226,8 +227,19 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       source
     };
 
+    console.log('[validateUserPlan] 🏁 Resultado final:', {
+      isActive,
+      planType,
+      source,
+      daysRemaining,
+      permissionsCount: permissions.length,
+      permissions: permissions.slice(0, 5) // Mostrar apenas os primeiros 5 para evitar spam no log
+    });
+
+    return result;
+
   } catch (error) {
-    console.error('[validateUserPlan] Erro na validação:', error);
+    console.error('[validateUserPlan] 💥 Erro na validação:', error);
     return {
       isActive: false,
       plan: null,
