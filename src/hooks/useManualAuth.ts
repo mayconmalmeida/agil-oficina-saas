@@ -135,15 +135,14 @@ export const useManualAuth = (): AuthState => {
         console.log('[useManualAuth] Carregando dados para userId:', userId, 'email:', userEmail);
         
         // Buscar perfil da tabela profiles
-        const profile = await getUserProfile(userId);
+        let profile = await getUserProfile(userId);
         
         console.log('[useManualAuth] Resultado da busca do perfil:', profile);
         
+        // Se não encontrar perfil, criar um básico
         if (!profile) {
-          console.error('[useManualAuth] Perfil não encontrado para userId:', userId);
-          console.log('[useManualAuth] Tentando criar perfil básico...');
+          console.log('[useManualAuth] Perfil não encontrado, criando perfil básico...');
           
-          // Tentar criar um perfil básico para o usuário
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .upsert({
@@ -158,106 +157,26 @@ export const useManualAuth = (): AuthState => {
 
           if (createError) {
             console.error('[useManualAuth] Erro ao criar perfil:', createError);
-            if (mounted) {
-              setUser(null);
-              setRole(null);
-              setPlanData({ plan: null, planActive: false, permissions: [] });
-              setLoading(false);
-              setIsLoadingAuth(false);
-            }
-            return;
-          }
-
-          console.log('[useManualAuth] Perfil criado com sucesso:', newProfile);
-          // Usar o perfil recém-criado
-          const finalProfile = newProfile;
-          
-          const isAdmin = finalProfile?.role === 'admin' || finalProfile?.role === 'superadmin';
-          
-          console.log('[useManualAuth] Perfil final carregado:', { 
-            profile: !!finalProfile, 
-            isAdmin, 
-            role: finalProfile?.role,
-            hasOficinaId: !!finalProfile?.oficina_id
-          });
-
-          // Garantir que o usuário tenha uma oficina vinculada (exceto admins)
-          let oficinaId = finalProfile?.oficina_id;
-          if (!isAdmin && !oficinaId) {
-            console.log('[useManualAuth] Usuário sem oficina, criando/vinculando...');
-            oficinaId = await createOficinaAndLinkToProfile(userId, userEmail);
-          }
-
-          // Criar usuário base
-          const authUser: AuthUser = {
-            id: userId,
-            email: userEmail,
-            role: finalProfile?.role || 'user',
-            isAdmin: isAdmin,
-            oficina_id: oficinaId
-          };
-
-          // ✅ CORRIGIDO: Se é admin, bypass completo da validação de plano
-          if (isAdmin) {
-            console.log('[useManualAuth] Admin detectado, liberando acesso total');
-            
-            if (mounted) {
-              authUser.planActive = true;
-              authUser.expired = false;
-              
-              setUser(authUser);
-              setRole(authUser.role);
-              // ✅ Admin tem plano premium e todas as permissões
-              setPlanData({ 
-                plan: 'premium', 
-                planActive: true, 
-                permissions: ['*'] // Admin tem todas as permissões
-              });
-              setLoading(false);
-              setIsLoadingAuth(false);
-              
-              console.log('[useManualAuth] Admin configurado com sucesso');
-            }
-            return;
-          }
-
-          // Para usuários comuns, validar plano no banco
-          console.log('[useManualAuth] Validando plano para usuário comum:', userId);
-          const planValidation = await validateUserPlan(userId);
-          
-          console.log('[useManualAuth] Validação do plano:', planValidation);
-
-          if (mounted) {
-            authUser.planActive = planValidation.isActive;
-            authUser.expired = !planValidation.isActive;
-            
-            setPlanData({
-              plan: planValidation.plan,
-              planActive: planValidation.isActive,
-              permissions: planValidation.permissions
-            });
-            setUser(authUser);
-            setRole(authUser.role);
-            setLoading(false);
-            setIsLoadingAuth(false);
-            
-            console.log('[useManualAuth] Usuário carregado:', {
-              userId,
+            // Mesmo com erro, tentar continuar com dados básicos
+            profile = {
+              role: 'user',
               email: userEmail,
-              role: authUser.role,
-              oficinaId,
-              plan: planValidation.plan,
-              planActive: planValidation.isActive,
-              permissions: planValidation.permissions.length,
-              source: planValidation.source
-            });
+              nome_oficina: null,
+              telefone: null,
+              is_active: true,
+              oficina_id: null
+            };
+          } else {
+            console.log('[useManualAuth] Perfil criado com sucesso:', newProfile);
+            profile = newProfile;
           }
-          return;
         }
+
+        if (!mounted) return;
 
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
         
-        console.log('[useManualAuth] Dados carregados:', { 
+        console.log('[useManualAuth] Dados processados:', { 
           profile: !!profile, 
           isAdmin, 
           role: profile?.role,
@@ -281,7 +200,9 @@ export const useManualAuth = (): AuthState => {
           oficina_id: oficinaId
         };
 
-        // ✅ CORRIGIDO: Se é admin, bypass completo da validação de plano
+        console.log('[useManualAuth] AuthUser criado:', authUser);
+
+        // ✅ Se é admin, bypass completo da validação de plano
         if (isAdmin) {
           console.log('[useManualAuth] Admin detectado, liberando acesso total');
           
@@ -291,7 +212,6 @@ export const useManualAuth = (): AuthState => {
             
             setUser(authUser);
             setRole(authUser.role);
-            // ✅ Admin tem plano premium e todas as permissões
             setPlanData({ 
               plan: 'premium', 
               planActive: true, 
@@ -300,7 +220,13 @@ export const useManualAuth = (): AuthState => {
             setLoading(false);
             setIsLoadingAuth(false);
             
-            console.log('[useManualAuth] Admin configurado com sucesso');
+            console.log('[useManualAuth] Admin configurado com sucesso:', {
+              userId: authUser.id,
+              email: authUser.email,
+              role: authUser.role,
+              isAdmin: authUser.isAdmin,
+              planActive: true
+            });
           }
           return;
         }
@@ -325,7 +251,7 @@ export const useManualAuth = (): AuthState => {
           setLoading(false);
           setIsLoadingAuth(false);
           
-          console.log('[useManualAuth] Usuário carregado:', {
+          console.log('[useManualAuth] Usuário comum carregado:', {
             userId,
             email: userEmail,
             role: authUser.role,
@@ -339,7 +265,6 @@ export const useManualAuth = (): AuthState => {
       } catch (error) {
         console.error('[useManualAuth] Erro ao carregar dados do usuário:', error);
         if (mounted) {
-          // ✅ CORRIGIDO: Não definir usuário se houve erro no carregamento
           console.log('[useManualAuth] Erro no carregamento, mantendo usuário deslogado');
           setUser(null);
           setRole(null);
@@ -404,6 +329,8 @@ export const useManualAuth = (): AuthState => {
         
         if (session?.user) {
           console.log('[useManualAuth] Sessão detectada no auth state change para userId:', session.user.id);
+          setLoading(true);
+          setIsLoadingAuth(true);
           await loadUserData(session);
         } else {
           console.log('[useManualAuth] Sessão removida');
@@ -425,7 +352,7 @@ export const useManualAuth = (): AuthState => {
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 2000); // Reduzido para 2 segundos
+    }, 5000); // Aumentado para 5 segundos para dar mais tempo
 
     return () => {
       mounted = false;
