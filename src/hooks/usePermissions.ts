@@ -14,8 +14,8 @@ export const usePermissions = () => {
       hasFeature: permissions.includes(feature) || permissions.includes('*')
     });
 
-    // Admin tem todas as permissões
-    if (isAdmin) {
+    // ✅ CORRIGIDO: Admin tem todas as permissões - verificação mais robusta
+    if (isAdmin === true) {
       console.log('usePermissions: Admin detectado, permitindo acesso');
       return true;
     }
@@ -33,39 +33,42 @@ export const usePermissions = () => {
   };
 
   const isPremium = (): boolean => {
+    // ✅ Admin sempre tem acesso premium
+    if (isAdmin === true) return true;
     const result = plan === 'Premium' && planActive;
-    console.log('usePermissions: isPremium check:', { plan, planActive, result });
+    console.log('usePermissions: isPremium check:', { plan, planActive, isAdmin, result });
     return result;
   };
 
   const isEssencial = (): boolean => {
+    // ✅ Admin sempre tem acesso, mas pode retornar false para isPremium lógica
     const result = plan === 'Essencial' && planActive;
     console.log('usePermissions: isEssencial check:', { plan, planActive, result });
     return result;
   };
 
   const isEnterprise = (): boolean => {
-    // Since Enterprise is not in the current plan types, always return false
-    // This will be updated when Enterprise is properly added to the system
-    const result = false;
+    // ✅ Admin sempre tem acesso enterprise se implementado
+    if (isAdmin === true) return true;
+    const result = false; // Enterprise não implementado ainda
     console.log('usePermissions: isEnterprise check:', { plan, planActive, result });
     return result;
   };
 
   const canAccessPremiumFeatures = (): boolean => {
-    const result = isAdmin || isPremium() || isEnterprise();
+    const result = isAdmin === true || isPremium() || isEnterprise();
     console.log('usePermissions: canAccessPremiumFeatures check:', { isAdmin, isPremium: isPremium(), result });
     return result;
   };
 
   const canAccessEnterpriseFeatures = (): boolean => {
-    const result = isAdmin || isEnterprise();
+    const result = isAdmin === true || isEnterprise();
     console.log('usePermissions: canAccessEnterpriseFeatures check:', { isAdmin, isEnterprise: isEnterprise(), result });
     return result;
   };
 
   const getAvailableFeatures = () => {
-    if (isAdmin) {
+    if (isAdmin === true) {
       return ['*']; // Admin tem todas as funcionalidades
     }
     

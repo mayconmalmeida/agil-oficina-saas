@@ -137,6 +137,19 @@ export const useManualAuth = (): AuthState => {
         // Buscar perfil da tabela profiles
         const profile = await getUserProfile(userId);
         
+        if (!profile) {
+          console.error('[useManualAuth] Perfil não encontrado, não é possível continuar');
+          // Se não conseguir carregar o perfil, não pode prosseguir
+          if (mounted) {
+            setUser(null);
+            setRole(null);
+            setPlanData({ plan: null, planActive: false, permissions: [] });
+            setLoading(false);
+            setIsLoadingAuth(false);
+          }
+          return;
+        }
+
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
         
         console.log('[useManualAuth] Dados carregados:', { 
@@ -162,7 +175,7 @@ export const useManualAuth = (): AuthState => {
           oficina_id: oficinaId
         };
 
-        // Se é admin, bypass da validação de plano
+        // ✅ CORRIGIDO: Se é admin, bypass completo da validação de plano
         if (isAdmin) {
           console.log('[useManualAuth] Admin detectado, liberando acesso total');
           
@@ -172,6 +185,7 @@ export const useManualAuth = (): AuthState => {
             
             setUser(authUser);
             setRole(authUser.role);
+            // ✅ Admin tem plano premium e todas as permissões
             setPlanData({ 
               plan: 'premium', 
               planActive: true, 
@@ -186,6 +200,7 @@ export const useManualAuth = (): AuthState => {
         }
 
         // Para usuários comuns, validar plano no banco
+        console.log('[useManualAuth] Validando plano para usuário comum:', userId);
         const planValidation = await validateUserPlan(userId);
         
         console.log('[useManualAuth] Validação do plano:', planValidation);
@@ -218,27 +233,13 @@ export const useManualAuth = (): AuthState => {
       } catch (error) {
         console.error('[useManualAuth] Erro ao carregar dados do usuário:', error);
         if (mounted) {
-          const userId = currentSession.user.id;
-          const userEmail = currentSession.user.email || '';
-          
-          // Em caso de erro, criar usuário básico mas válido
-          const basicUser: AuthUser = {
-            id: userId,
-            email: userEmail,
-            role: 'user',
-            planActive: false,
-            expired: true,
-            isAdmin: false,
-            oficina_id: null
-          };
-          
-          setUser(basicUser);
-          setRole('user');
+          // ✅ CORRIGIDO: Não definir usuário se houve erro no carregamento
+          console.log('[useManualAuth] Erro no carregamento, mantendo usuário deslogado');
+          setUser(null);
+          setRole(null);
           setPlanData({ plan: null, planActive: false, permissions: [] });
           setLoading(false);
           setIsLoadingAuth(false);
-          
-          console.log('[useManualAuth] Usuário básico criado devido a erro');
         }
       }
     };
@@ -312,7 +313,7 @@ export const useManualAuth = (): AuthState => {
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 3000); // Aumentado para 3 segundos para dar tempo da oficina ser criada
+    }, 2000); // Reduzido para 2 segundos
 
     return () => {
       mounted = false;
