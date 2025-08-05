@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/ui/loading';
@@ -12,27 +12,38 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isLoadingAuth, user } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute: Verificando acesso', {
-    isLoadingAuth,
-    hasUser: !!user,
-    userEmail: user?.email || 'não logado',
-    currentPath: location.pathname,
-    userRole: user?.role || 'sem role'
-  });
+  // Memoizar o resultado para evitar re-renders desnecessários
+  const authDecision = useMemo(() => {
+    console.log('ProtectedRoute: Verificando acesso uma única vez', {
+      isLoadingAuth,
+      hasUser: !!user,
+      userEmail: user?.email || 'não logado',
+      currentPath: location.pathname,
+      userRole: user?.role || 'sem role'
+    });
 
-  // Aguardar o carregamento completo da autenticação
-  if (isLoadingAuth) {
-    console.log('ProtectedRoute: Carregando autenticação...');
+    if (isLoadingAuth) {
+      console.log('ProtectedRoute: Carregando autenticação...');
+      return 'loading';
+    }
+
+    if (!user) {
+      console.log('ProtectedRoute: Usuário não autenticado, redirecionando para login');
+      return 'redirect';
+    }
+
+    console.log('ProtectedRoute: Acesso permitido para usuário:', user.email);
+    return 'allowed';
+  }, [isLoadingAuth, user, location.pathname]);
+
+  if (authDecision === 'loading') {
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
-  // Verificação simples e direta
-  if (!user) {
-    console.log('ProtectedRoute: Usuário não autenticado, redirecionando para login');
+  if (authDecision === 'redirect') {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  console.log('ProtectedRoute: Acesso permitido para usuário:', user.email);
   return <>{children}</>;
 };
 

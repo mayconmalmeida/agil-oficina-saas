@@ -12,23 +12,31 @@ const RouteManager: React.FC<RouteManagerProps> = ({ children }) => {
   const location = useLocation();
   const { saveLastRoute } = useRoutePersistence();
   const { isLoadingAuth, user } = useAuth();
-  const lastSavedRoute = useRef<string>('');
+  const lastProcessedRoute = useRef<string>('');
+  const processingRoute = useRef<boolean>(false);
 
   useEffect(() => {
-    // Só salvar rotas se:
-    // 1. Não está carregando autenticação
-    // 2. Usuário está logado
-    // 3. A rota atual é diferente da última salva
-    // 4. Não é uma rota de redirecionamento (/) ou home
-    if (!isLoadingAuth && user && location.pathname !== lastSavedRoute.current) {
-      // Não salvar rotas de redirecionamento ou páginas públicas
+    // Evitar processamento múltiplo da mesma rota
+    if (processingRoute.current || lastProcessedRoute.current === location.pathname) {
+      return;
+    }
+
+    // Só salvar rotas se condições básicas forem atendidas
+    if (!isLoadingAuth && user) {
+      processingRoute.current = true;
+      
       const skipRoutes = ['/', '/home', '/login', '/register', '/plano-expirado'];
       
       if (!skipRoutes.includes(location.pathname)) {
-        lastSavedRoute.current = location.pathname;
+        lastProcessedRoute.current = location.pathname;
         saveLastRoute(location.pathname);
-        console.log('Rota salva:', location.pathname);
+        console.log('RouteManager: Rota processada uma única vez:', location.pathname);
       }
+      
+      // Reset do flag após um pequeno delay
+      setTimeout(() => {
+        processingRoute.current = false;
+      }, 100);
     }
   }, [location.pathname, isLoadingAuth, user, saveLastRoute]);
 

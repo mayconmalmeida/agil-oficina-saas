@@ -6,35 +6,46 @@ export const useRoutePersistence = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const hasRestored = useRef(false);
+  const lastSavedRoute = useRef<string>('');
 
-  // Salvar a rota atual automaticamente
+  // Salvar a rota atual automaticamente apenas quando necessário
   useEffect(() => {
     const currentPath = location.pathname;
     
+    // Evitar salvar a mesma rota repetidamente
+    if (lastSavedRoute.current === currentPath) {
+      return;
+    }
+    
     // Não salvar certas rotas específicas
-    const routesToIgnore = ['/login', '/register', '/admin/login'];
+    const routesToIgnore = ['/login', '/register', '/admin/login', '/', '/home'];
     
     if (!routesToIgnore.includes(currentPath)) {
+      lastSavedRoute.current = currentPath;
       localStorage.setItem('lastRoute', currentPath);
-      console.log('Rota salva:', currentPath);
+      console.log('Rota salva uma única vez:', currentPath);
     }
   }, [location.pathname]);
 
-  // Função para salvar rota manualmente
+  // Função para salvar rota manualmente (otimizada)
   const saveLastRoute = (route: string) => {
+    // Evitar salvar a mesma rota repetidamente
+    if (lastSavedRoute.current === route) {
+      return;
+    }
+
     const routesToIgnore = ['/login', '/register', '/admin/login', '/', '/home', '/plano-expirado'];
     
     if (!routesToIgnore.includes(route)) {
+      lastSavedRoute.current = route;
       localStorage.setItem('lastRoute', route);
-      console.log('Rota salva manualmente:', route);
+      console.log('Rota salva manualmente uma única vez:', route);
     }
   };
 
-  // Restaurar rota apenas se necessário (quando está na home e há rota salva)
+  // Restaurar rota apenas se necessário
   const restoreLastRoute = () => {
-    // Evitar múltiplas execuções
     if (hasRestored.current) {
-      console.log('Rota já foi restaurada anteriormente');
       return;
     }
     
@@ -43,7 +54,6 @@ export const useRoutePersistence = () => {
     
     console.log('Verificando restauração:', { lastRoute, currentPath });
     
-    // Só restaurar se estiver na home (/) e houver uma rota válida salva
     if (lastRoute && 
         currentPath === '/' && 
         lastRoute !== '/' &&
@@ -53,11 +63,7 @@ export const useRoutePersistence = () => {
       
       hasRestored.current = true;
       console.log('Restaurando rota para:', lastRoute);
-      
-      // Usar replace para não adicionar à história
       navigate(lastRoute, { replace: true });
-    } else {
-      console.log('Não é necessário restaurar rota');
     }
   };
 
