@@ -1,9 +1,11 @@
 
 import { supabase } from '@/lib/supabase';
 
+export type PlanType = 'free' | 'essencial' | 'premium' | null;
+
 export interface PlanValidationResult {
   isActive: boolean;
-  plan: string | null;
+  plan: PlanType;
   permissions: string[];
   daysRemaining: number;
   source: 'user_subscriptions' | 'profiles' | 'none';
@@ -49,18 +51,18 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
 
       // Determinar data de expiração
       let expirationDate: Date;
-      let planName: string;
+      let planName: PlanType;
 
       if (activeSubscription.status === 'trialing' && activeSubscription.trial_ends_at) {
         expirationDate = new Date(activeSubscription.trial_ends_at);
-        planName = activeSubscription.plan_type.includes('premium') ? 'Premium Trial' : 'Essencial Trial';
+        planName = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
       } else if (activeSubscription.ends_at) {
         expirationDate = new Date(activeSubscription.ends_at);
-        planName = activeSubscription.plan_type.includes('premium') ? 'Premium' : 'Essencial';
+        planName = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
       } else {
         // Sem data de expiração definida, considerar como ativo por padrão
         console.log('[validateUserPlan] ⚠️ Sem data de expiração, considerando ativo');
-        planName = activeSubscription.plan_type.includes('premium') ? 'Premium' : 'Essencial';
+        planName = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
         return {
           isActive: true,
           plan: planName,
@@ -92,7 +94,6 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
         };
       } else {
         console.log('[validateUserPlan] ❌ Assinatura expirada');
-        // Continuar para verificar fallbacks...
       }
     }
 
@@ -121,10 +122,11 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
 
         if (trialEnd > now) {
           console.log('[validateUserPlan] ✅ Trial ativo encontrado no profiles');
+          const planType: PlanType = profile.plano?.toLowerCase() === 'premium' ? 'premium' : 'essencial';
           return {
             isActive: true,
-            plan: profile.plano || 'Essencial',
-            permissions: getPlanPermissions(profile.plano || 'Essencial'),
+            plan: planType,
+            permissions: getPlanPermissions(planType),
             daysRemaining: Math.max(0, daysRemaining),
             source: 'profiles'
           };
@@ -134,10 +136,11 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       // Se tem plano ativo (sem trial)
       if (profile.plano && profile.plano !== 'Free') {
         console.log('[validateUserPlan] ✅ Plano ativo encontrado no profiles:', profile.plano);
+        const planType: PlanType = profile.plano.toLowerCase() === 'premium' ? 'premium' : 'essencial';
         return {
           isActive: true,
-          plan: profile.plano,
-          permissions: getPlanPermissions(profile.plano),
+          plan: planType,
+          permissions: getPlanPermissions(planType),
           daysRemaining: 999, // Sem expiração definida
           source: 'profiles'
         };
@@ -148,7 +151,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
     console.log('[validateUserPlan] Nenhuma assinatura ativa encontrada');
     return {
       isActive: false,
-      plan: null,
+      plan: 'free',
       permissions: ['clientes', 'orcamentos'], // Recursos básicos
       daysRemaining: 0,
       source: 'none'
@@ -158,7 +161,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
     console.error('[validateUserPlan] ❌ Erro na validação:', error);
     return {
       isActive: false,
-      plan: null,
+      plan: 'free',
       permissions: ['clientes', 'orcamentos'],
       daysRemaining: 0,
       source: 'none'
@@ -169,10 +172,10 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
 /**
  * ✅ Retorna as permissões baseadas no plano
  */
-export const getPlanPermissions = (plan: string): string[] => {
-  const planLower = plan?.toLowerCase() || '';
+export const getPlanPermissions = (plan: PlanType): string[] => {
+  if (!plan) return ['clientes', 'orcamentos'];
 
-  if (planLower.includes('premium')) {
+  if (plan === 'premium') {
     return [
       'clientes', 'orcamentos', 'servicos', 'agendamentos', 'estoque',
       'relatorios', 'marketing_automatico', 'diagnostico_ia', 'integracoes',
@@ -180,7 +183,7 @@ export const getPlanPermissions = (plan: string): string[] => {
     ];
   }
 
-  if (planLower.includes('essencial')) {
+  if (plan === 'essencial') {
     return [
       'clientes', 'orcamentos', 'servicos', 'agendamentos',
       'relatorios_basicos', 'backup_automatico'

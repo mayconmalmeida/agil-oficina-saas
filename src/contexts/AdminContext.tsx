@@ -58,22 +58,10 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
     
     const initializeAdmin = async () => {
-      if (retryCount >= maxRetries) {
-        console.error('AdminContext: Máximo de tentativas atingido');
-        if (mounted) {
-          setUser(null);
-          setError('Não foi possível verificar permissões administrativas após múltiplas tentativas');
-          setIsLoading(false);
-        }
-        return;
-      }
-
       try {
-        console.log(`AdminContext: Tentativa ${retryCount + 1} de verificação de admin...`);
+        console.log('AdminContext: Iniciando verificação de admin...');
         setIsLoading(true);
         setError(null);
         
@@ -94,13 +82,9 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           return;
         }
 
-        console.log('AdminContext: Usuário encontrado:', {
-          userId: session.user.id,
-          email: session.user.email
-        });
+        console.log('AdminContext: Verificando permissões para:', session.user.email);
         
         // Primeiro verificar na tabela profiles se já tem role admin
-        console.log('AdminContext: Verificando role na tabela profiles...');
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role, email')
@@ -110,11 +94,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         if (profileError) {
           console.error('AdminContext: Erro ao buscar perfil:', profileError);
         }
-
-        console.log('AdminContext: Perfil encontrado:', {
-          profile,
-          role: profile?.role
-        });
 
         // Se já tem role admin/superadmin no profiles, usar
         if (profile && (profile.role === 'admin' || profile.role === 'superadmin')) {
@@ -139,98 +118,71 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         // Se não tem role admin no profiles, verificar tabela admins
         console.log('AdminContext: Verificando na tabela admins...');
         
-        try {
-          const { data: adminData, error: adminError } = await supabase
-            .from('admins')
-            .select('email, is_superadmin, is_active')
-            .eq('email', session.user.email)
-            .eq('is_active', true)
-            .maybeSingle();
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .select('email, is_superadmin')
+          .eq('email', session.user.email)
+          .maybeSingle();
 
-          console.log('AdminContext: Resultado da busca na tabela admins:', {
-            adminData,
-            adminError: adminError?.message,
-            email: session.user.email
-          });
-
-          if (adminError) {
-            console.error('AdminContext: Erro ao buscar na tabela admins:', adminError.message);
-            
-            // Se for erro 406 ou similar, considerar que não é admin
-            if (adminError.code === 'PGRST116' || adminError.message.includes('406')) {
-              console.log('AdminContext: ❌ Tabela admins inacessível ou não existe - usuário não é admin');
-              throw new Error(`Usuário ${session.user.email} não é administrador`);
-            }
-            
-            throw new Error(`Erro ao verificar admin: ${adminError.message}`);
-          }
-
-          if (!adminData) {
-            console.log('AdminContext: ❌ Usuário não encontrado na tabela admins');
-            throw new Error(`Usuário ${session.user.email} não é administrador`);
-          }
-
-          console.log('AdminContext: ✅ Admin encontrado na tabela admins');
-
-          // Determinar role
-          const adminRole: AdminRole = adminData.is_superadmin ? 'superadmin' : 'admin';
-          
-          // Sincronizar com tabela profiles
-          console.log('AdminContext: Sincronizando com tabela profiles...');
-          const { error: profileSyncError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: session.user.id,
-              email: adminData.email,
-              role: adminRole,
-              is_active: true,
-              created_at: new Date().toISOString()
-            }, {
-              onConflict: 'id'
-            });
-
-          if (profileSyncError) {
-            console.warn('AdminContext: Erro ao sincronizar perfil:', profileSyncError);
-          } else {
-            console.log('AdminContext: ✅ Perfil sincronizado');
-          }
-
-          if (mounted) {
-            const adminUser: AdminUser = {
-              id: session.user.id,
-              email: adminData.email,
-              role: adminRole,
-              isAdmin: true,
-              canAccessFeatures: true
-            };
-
-            setUser(adminUser);
-            setError(null);
-            setIsLoading(false);
-          }
-        } catch (adminTableError: any) {
-          console.error('AdminContext: Erro na tabela admins:', adminTableError);
+        if (adminError) {
+          console.error('AdminContext: Erro ao buscar na tabela admins:', adminError.message);
           
           if (mounted) {
             setUser(null);
-            setError(adminTableError.message || 'Erro ao verificar permissões administrativas');
+            setError(`Usuário ${session.user.email} não é administrador`);
             setIsLoading(false);
           }
+          return;
+        }
+
+        if (!adminData) {
+          console.log('AdminContext: ❌ Usuário não encontrado na tabela admins');
+          if (mounted) {
+            setUser(null);
+            setError(`Usuário ${session.user.email} não é administrador`);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        console.log('AdminContext: ✅ Admin encontrado na tabela admins');
+
+        // Determinar role
+        const adminRole: AdminRole = adminData.is_superadmin ? 'superadmin' : 'admin';
+        
+        // Sincronizar com tabela profiles
+        const { error: profileSyncError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: session.user.id,
+            email: adminData.email,
+            role: adminRole,
+            is_active: true,
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileSyncError) {
+          console.warn('AdminContext: Erro ao sincronizar perfil:', profileSyncError);
+        }
+
+        if (mounted) {
+          const adminUser: AdminUser = {
+            id: session.user.id,
+            email: adminData.email,
+            role: adminRole,
+            isAdmin: true,
+            canAccessFeatures: true
+          };
+
+          setUser(adminUser);
+          setError(null);
+          setIsLoading(false);
         }
 
       } catch (error: any) {
         console.error('AdminContext: ❌ Erro geral:', error);
-        retryCount++;
-        
-        if (retryCount < maxRetries) {
-          console.log(`AdminContext: Tentando novamente em 2 segundos... (${retryCount}/${maxRetries})`);
-          setTimeout(() => {
-            if (mounted) {
-              initializeAdmin();
-            }
-          }, 2000);
-          return;
-        }
         
         if (mounted) {
           setUser(null);
@@ -243,29 +195,25 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     // Executar verificação inicial
     initializeAdmin();
 
-    // Configurar listener de mudanças de auth - mas apenas para logout
+    // Configurar listener de mudanças de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
 
-      console.log('AdminContext: Auth state change:', { event, userId: session?.user?.id });
+      console.log('AdminContext: Auth state change:', event);
       
       if (event === 'SIGNED_OUT') {
         console.log('AdminContext: Logout detectado, limpando estado');
         setUser(null);
         setError(null);
         setIsLoading(false);
-        return;
       }
-
-      // Para SIGNED_IN, não fazer nada para evitar loop - a verificação inicial já cuida disso
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      console.log('AdminContext: Cleanup realizado');
     };
-  }, []); // Dependências vazias para executar apenas uma vez
+  }, []);
 
   const contextValue: AdminContextValue = {
     user,
