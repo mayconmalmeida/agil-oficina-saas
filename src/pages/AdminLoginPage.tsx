@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,12 +11,19 @@ const AdminLoginPage: React.FC = () => {
   const { isLoading, errorMessage, handleLogin } = useAdminLogin();
   const { user, isAdmin, isLoadingAuth } = useAuth();
 
+  console.log('AdminLoginPage: Estado:', {
+    user: user?.email,
+    isAdmin,
+    isLoadingAuth
+  });
+
   // Se já está logado como admin, redirecionar
   if (!isLoadingAuth && user && isAdmin) {
-    console.log('AdminLoginPage: Admin já logado, redirecionando');
+    console.log('AdminLoginPage: Admin já logado, redirecionando para /admin');
     return <Navigate to="/admin" replace />;
   }
 
+  // Se está logado mas não é admin, mostrar formulário
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
