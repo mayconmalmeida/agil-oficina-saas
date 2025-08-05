@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -10,7 +11,7 @@ const getUserProfile = async (userId: string) => {
     
     const { data, error } = await supabase
       .from('profiles')
-      .select('role, email, nome_oficina, telefone, is_active')
+      .select('role, email, nome_oficina, telefone, is_active, oficina_id')
       .eq('id', userId)
       .maybeSingle();
 
@@ -27,25 +28,58 @@ const getUserProfile = async (userId: string) => {
   }
 };
 
-const getOficinaId = async (userId: string) => {
+const createOficinaAndLinkToProfile = async (userId: string, userEmail: string) => {
   try {
-    console.log('[useManualAuth] Buscando oficina para userId:', userId);
+    console.log('[useManualAuth] Criando oficina para userId:', userId);
     
-    const { data, error } = await supabase
+    // Verificar se já existe uma oficina para este usuário
+    const { data: existingOficina } = await supabase
       .from('oficinas')
       .select('id')
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (error) {
-      console.error('[useManualAuth] Erro ao buscar oficina:', error);
-      return null;
+    let oficinaId = existingOficina?.id;
+
+    if (!oficinaId) {
+      // Criar nova oficina
+      const { data: novaOficina, error: oficinaError } = await supabase
+        .from('oficinas')
+        .insert({
+          user_id: userId,
+          nome_oficina: 'Minha Oficina',
+          email: userEmail,
+          is_active: true,
+          ativo: true,
+        })
+        .select('id')
+        .single();
+
+      if (oficinaError) {
+        console.error('[useManualAuth] Erro ao criar oficina:', oficinaError);
+        return null;
+      }
+
+      oficinaId = novaOficina.id;
+      console.log('[useManualAuth] Nova oficina criada com ID:', oficinaId);
     }
 
-    console.log('[useManualAuth] Oficina encontrada:', data);
-    return data?.id || null;
+    // Vincular oficina ao perfil se não estiver já vinculada
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ oficina_id: oficinaId })
+      .eq('id', userId)
+      .is('oficina_id', null);
+
+    if (updateError) {
+      console.error('[useManualAuth] Erro ao vincular oficina ao perfil:', updateError);
+    } else {
+      console.log('[useManualAuth] Oficina vinculada ao perfil com sucesso');
+    }
+
+    return oficinaId;
   } catch (error) {
-    console.error('[useManualAuth] Exception ao buscar oficina:', error);
+    console.error('[useManualAuth] Exception ao criar/vincular oficina:', error);
     return null;
   }
 };
@@ -104,17 +138,21 @@ export const useManualAuth = (): AuthState => {
         // Primeiro buscar perfil da tabela profiles
         const profile = await getUserProfile(userId);
         
-        // Depois buscar oficina ID da tabela oficinas usando user_id
-        const oficinaId = await getOficinaId(userId);
-        
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
         
         console.log('[useManualAuth] Dados carregados:', { 
           profile: !!profile, 
-          oficinaId, 
           isAdmin, 
-          role: profile?.role 
+          role: profile?.role,
+          hasOficinaId: !!profile?.oficina_id
         });
+
+        // Garantir que o usuário tenha uma oficina vinculada (exceto admins)
+        let oficinaId = profile?.oficina_id;
+        if (!isAdmin && !oficinaId) {
+          console.log('[useManualAuth] Usuário sem oficina, criando/vinculando...');
+          oficinaId = await createOficinaAndLinkToProfile(userId, userEmail);
+        }
 
         // Criar usuário base
         const authUser: AuthUser = {
