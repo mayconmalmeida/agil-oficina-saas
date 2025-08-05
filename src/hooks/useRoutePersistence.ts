@@ -20,6 +20,16 @@ export const useRoutePersistence = () => {
     }
   }, [location.pathname]);
 
+  // Função para salvar rota manualmente
+  const saveLastRoute = (route: string) => {
+    const routesToIgnore = ['/login', '/register', '/admin/login', '/', '/home', '/plano-expirado'];
+    
+    if (!routesToIgnore.includes(route)) {
+      localStorage.setItem('lastRoute', route);
+      console.log('Rota salva manualmente:', route);
+    }
+  };
+
   // Restaurar rota apenas se necessário (quando está na home e há rota salva)
   const restoreLastRoute = () => {
     // Evitar múltiplas execuções
@@ -51,5 +61,5 @@ export const useRoutePersistence = () => {
     }
   };
 
-  return { restoreLastRoute };
+  return { restoreLastRoute, saveLastRoute };
 };
