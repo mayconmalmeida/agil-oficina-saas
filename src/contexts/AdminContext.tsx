@@ -58,11 +58,22 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
-
+    let retryCount = 0;
+    const maxRetries = 3;
+    
     const initializeAdmin = async () => {
+      if (retryCount >= maxRetries) {
+        console.error('AdminContext: Máximo de tentativas atingido');
+        if (mounted) {
+          setUser(null);
+          setError('Não foi possível verificar permissões administrativas após múltiplas tentativas');
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
-        console.log('AdminContext: Iniciando verificação única de admin...');
+        console.log(`AdminContext: Tentativa ${retryCount + 1} de verificação de admin...`);
         setIsLoading(true);
         setError(null);
         
@@ -120,6 +131,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
             setUser(adminUser);
             setError(null);
+            setIsLoading(false);
           }
           return;
         }
@@ -128,21 +140,28 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         console.log('AdminContext: Verificando na tabela admins...');
         
         try {
-          // Usar um select mais simples para evitar erro 406
           const { data: adminData, error: adminError } = await supabase
             .from('admins')
-            .select('email, is_superadmin')
+            .select('email, is_superadmin, is_active')
             .eq('email', session.user.email)
+            .eq('is_active', true)
             .maybeSingle();
 
           console.log('AdminContext: Resultado da busca na tabela admins:', {
             adminData,
-            adminError,
+            adminError: adminError?.message,
             email: session.user.email
           });
 
           if (adminError) {
             console.error('AdminContext: Erro ao buscar na tabela admins:', adminError.message);
+            
+            // Se for erro 406 ou similar, considerar que não é admin
+            if (adminError.code === 'PGRST116' || adminError.message.includes('406')) {
+              console.log('AdminContext: ❌ Tabela admins inacessível ou não existe - usuário não é admin');
+              throw new Error(`Usuário ${session.user.email} não é administrador`);
+            }
+            
             throw new Error(`Erro ao verificar admin: ${adminError.message}`);
           }
 
@@ -187,6 +206,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
             setUser(adminUser);
             setError(null);
+            setIsLoading(false);
           }
         } catch (adminTableError: any) {
           console.error('AdminContext: Erro na tabela admins:', adminTableError);
@@ -194,76 +214,54 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
           if (mounted) {
             setUser(null);
             setError(adminTableError.message || 'Erro ao verificar permissões administrativas');
+            setIsLoading(false);
           }
         }
 
       } catch (error: any) {
         console.error('AdminContext: ❌ Erro geral:', error);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          console.log(`AdminContext: Tentando novamente em 2 segundos... (${retryCount}/${maxRetries})`);
+          setTimeout(() => {
+            if (mounted) {
+              initializeAdmin();
+            }
+          }, 2000);
+          return;
+        }
+        
         if (mounted) {
           setUser(null);
           setError(error.message || 'Erro ao verificar permissões administrativas');
-        }
-      } finally {
-        if (mounted) {
           setIsLoading(false);
         }
       }
     };
 
-    // Timeout de segurança - 8 segundos
-    timeoutId = setTimeout(() => {
-      if (mounted && isLoading) {
-        console.warn('AdminContext: ⚠️ Timeout atingido');
-        setIsLoading(false);
-        setError('Timeout ao verificar permissões');
-      }
-    }, 8000);
-
-    // Executar apenas uma vez
+    // Executar verificação inicial
     initializeAdmin();
 
-    // Configurar listener de mudanças - mas evitar loops
-    let lastEventTime = 0;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+    // Configurar listener de mudanças de auth - mas apenas para logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
 
-        const now = Date.now();
-        if (now - lastEventTime < 1000) {
-          console.log('AdminContext: Evento ignorado para evitar loop');
-          return;
-        }
-        lastEventTime = now;
-
-        console.log('AdminContext: Auth state change:', {
-          event,
-          userId: session?.user?.id,
-          email: session?.user?.email
-        });
-        
-        if (event === 'SIGNED_OUT') {
-          console.log('AdminContext: Logout detectado');
-          setUser(null);
-          setError(null);
-          setIsLoading(false);
-          return;
-        }
-
-        // Para outros eventos, apenas verificar se já tem admin válido
-        if (event === 'SIGNED_IN' && !user) {
-          console.log('AdminContext: Login detectado, reinicializando...');
-          setTimeout(() => {
-            if (mounted) {
-              initializeAdmin();
-            }
-          }, 500);
-        }
+      console.log('AdminContext: Auth state change:', { event, userId: session?.user?.id });
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('AdminContext: Logout detectado, limpando estado');
+        setUser(null);
+        setError(null);
+        setIsLoading(false);
+        return;
       }
-    );
+
+      // Para SIGNED_IN, não fazer nada para evitar loop - a verificação inicial já cuida disso
+    });
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
       subscription.unsubscribe();
       console.log('AdminContext: Cleanup realizado');
     };
