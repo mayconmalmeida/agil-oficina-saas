@@ -47,7 +47,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
   try {
     console.log('[validateUserPlan] Validando plano para userId:', userId);
     
-    // Buscar assinatura ativa mais recente
+    // Buscar assinatura ativa mais recente - incluindo diferentes status
     const { data: subscription, error } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -56,6 +56,8 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    console.log('[validateUserPlan] Resultado da consulta:', { subscription, error });
 
     if (error) {
       console.error('[validateUserPlan] Erro ao buscar assinatura:', error);
@@ -69,7 +71,85 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
     }
 
     if (!subscription) {
-      console.log('[validateUserPlan] Nenhuma assinatura ativa encontrada');
+      console.log('[validateUserPlan] Nenhuma assinatura ativa encontrada, tentando buscar qualquer assinatura...');
+      
+      // Se não encontrou ativa, buscar qualquer assinatura para debug
+      const { data: anySubscription, error: anyError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      console.log('[validateUserPlan] Qualquer assinatura encontrada:', { anySubscription, anyError });
+
+      if (anySubscription) {
+        console.log('[validateUserPlan] Encontrada assinatura com status:', anySubscription.status);
+        console.log('[validateUserPlan] Dados completos da assinatura:', anySubscription);
+        
+        // Verificar se a assinatura deveria estar ativa
+        const now = new Date();
+        const startsAt = new Date(anySubscription.starts_at);
+        const endsAt = anySubscription.ends_at ? new Date(anySubscription.ends_at) : null;
+        const trialEndsAt = anySubscription.trial_ends_at ? new Date(anySubscription.trial_ends_at) : null;
+        
+        console.log('[validateUserPlan] Verificação de datas:', {
+          now: now.toISOString(),
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt?.toISOString(),
+          trialEndsAt: trialEndsAt?.toISOString(),
+          isAfterStart: now >= startsAt,
+          isBeforeEnd: !endsAt || now <= endsAt,
+          isBeforeTrialEnd: !trialEndsAt || now <= trialEndsAt
+        });
+
+        // Se a assinatura deveria estar ativa, processar mesmo assim
+        if (now >= startsAt && (!endsAt || now <= endsAt)) {
+          console.log('[validateUserPlan] Assinatura deveria estar ativa, processando...');
+          subscription = anySubscription;
+        }
+      }
+      
+      if (!subscription) {
+        return {
+          isActive: false,
+          plan: null,
+          permissions: getPlanPermissions('free'),
+          daysRemaining: 0,
+          source: 'none'
+        };
+      }
+    }
+
+    console.log('[validateUserPlan] Assinatura encontrada:', {
+      id: subscription.id,
+      plan_type: subscription.plan_type,
+      status: subscription.status,
+      is_manual: subscription.is_manual,
+      starts_at: subscription.starts_at,
+      ends_at: subscription.ends_at,
+      trial_ends_at: subscription.trial_ends_at
+    });
+
+    const now = new Date();
+    const { plan_type, status, ends_at, trial_ends_at, is_manual, starts_at } = subscription;
+
+    // Determinar se está ativo
+    let isActive = false;
+    let daysRemaining = 0;
+    let source: 'active' | 'trial' | 'manual' | 'expired' | 'none' = 'none';
+
+    // Verificar se já começou
+    const hasStarted = new Date(starts_at) <= now;
+    console.log('[validateUserPlan] Verificando se já começou:', {
+      starts_at,
+      now: now.toISOString(),
+      hasStarted
+    });
+
+    if (!hasStarted) {
+      console.log('[validateUserPlan] Assinatura ainda não começou');
       return {
         isActive: false,
         plan: null,
@@ -78,23 +158,6 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
         source: 'none'
       };
     }
-
-    console.log('[validateUserPlan] Assinatura encontrada:', {
-      id: subscription.id,
-      plan_type: subscription.plan_type,
-      status: subscription.status,
-      is_manual: subscription.is_manual,
-      ends_at: subscription.ends_at,
-      trial_ends_at: subscription.trial_ends_at
-    });
-
-    const now = new Date();
-    const { plan_type, status, ends_at, trial_ends_at, is_manual } = subscription;
-
-    // Determinar se está ativo
-    let isActive = false;
-    let daysRemaining = 0;
-    let source: 'active' | 'trial' | 'manual' | 'expired' | 'none' = 'none';
 
     if (status === 'active') {
       if (is_manual) {
@@ -144,7 +207,15 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       planType,
       source,
       daysRemaining,
-      permissionsCount: permissions.length
+      permissionsCount: permissions.length,
+      debugInfo: {
+        status,
+        is_manual,
+        starts_at,
+        ends_at,
+        trial_ends_at,
+        now: now.toISOString()
+      }
     });
 
     return {
