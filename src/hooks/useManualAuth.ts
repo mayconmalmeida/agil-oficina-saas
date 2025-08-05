@@ -68,8 +68,7 @@ const createOficinaAndLinkToProfile = async (userId: string, userEmail: string) 
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ oficina_id: oficinaId })
-      .eq('id', userId)
-      .is('oficina_id', null);
+      .eq('id', userId);
 
     if (updateError) {
       console.error('[useManualAuth] Erro ao vincular oficina ao perfil:', updateError);
@@ -135,7 +134,7 @@ export const useManualAuth = (): AuthState => {
         
         console.log('[useManualAuth] Carregando dados para userId:', userId);
         
-        // Primeiro buscar perfil da tabela profiles
+        // Buscar perfil da tabela profiles
         const profile = await getUserProfile(userId);
         
         const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
@@ -312,7 +311,7 @@ export const useManualAuth = (): AuthState => {
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 5000);
+    }, 3000); // Aumentado para 3 segundos para dar tempo da oficina ser criada
 
     return () => {
       mounted = false;
