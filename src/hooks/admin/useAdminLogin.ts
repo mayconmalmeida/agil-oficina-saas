@@ -58,15 +58,15 @@ export const useAdminLogin = () => {
 
       console.log("✅ Login bem-sucedido para userId:", data.user.id);
 
-      // Verificar se é admin através da tabela profiles
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', data.user.id)
+      // ✅ BUSCAR ADMIN NA TABELA ADMINS EM VEZ DE PROFILES
+      const { data: admin, error: adminError } = await supabase
+        .from('admins')
+        .select('id, email, is_superadmin')
+        .eq('email', values.email)
         .maybeSingle();
 
-      if (profileError) {
-        console.error("❌ Erro ao verificar perfil:", profileError);
+      if (adminError) {
+        console.error("❌ Erro ao verificar admin:", adminError);
         setErrorMessage('Erro ao verificar permissões de administrador.');
         toast({
           variant: "destructive",
@@ -77,23 +77,9 @@ export const useAdminLogin = () => {
         return;
       }
 
-      if (!profile) {
-        console.error("❌ Perfil não encontrado para userId:", data.user.id);
-        setErrorMessage("Perfil de usuário não encontrado.");
-        toast({
-          variant: "destructive",
-          title: "Perfil não encontrado",
-          description: "Este usuário não tem um perfil válido no sistema.",
-        });
-        await supabase.auth.signOut();
-        return;
-      }
-
-      const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
-      
-      if (!isAdmin) {
-        console.error("❌ Usuário não tem permissão de admin. Role:", profile.role);
-        setErrorMessage("Este usuário não tem permissão de administrador.");
+      if (!admin) {
+        console.error("❌ Admin não encontrado na tabela admins para email:", values.email);
+        setErrorMessage("Este usuário não é um administrador autorizado.");
         toast({
           variant: "destructive",
           title: "Acesso negado",
@@ -103,11 +89,32 @@ export const useAdminLogin = () => {
         return;
       }
 
-      console.log("✅ Admin autenticado com sucesso:", profile.email, "role:", profile.role);
+      console.log("✅ Admin encontrado na tabela admins:", admin.email, "is_superadmin:", admin.is_superadmin);
+
+      // ✅ AGORA CRIAR/ATUALIZAR PERFIL ADMIN NA TABELA PROFILES COM ROLE ADMIN
+      const adminRole = admin.is_superadmin ? 'superadmin' : 'admin';
+      
+      console.log("🔧 Criando/atualizando perfil admin na tabela profiles...");
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          email: admin.email,
+          role: adminRole,
+          is_active: true,
+          created_at: new Date().toISOString()
+        });
+
+      if (profileError) {
+        console.warn("⚠️ Erro ao criar/atualizar perfil admin:", profileError);
+        // Não bloquear o login por isso, apenas avisar
+      } else {
+        console.log("✅ Perfil admin criado/atualizado com sucesso");
+      }
 
       toast({
         title: "Login realizado com sucesso",
-        description: `Bem-vindo ao painel administrativo, ${profile.email}`,
+        description: `Bem-vindo ao painel administrativo, ${admin.email}`,
       });
 
       console.log("➡️ Redirecionando para dashboard admin");

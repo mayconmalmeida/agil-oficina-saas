@@ -85,35 +85,71 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
         console.log('AdminContext: Usuário encontrado, verificando permissões admin...');
         
-        // Verificar se o usuário tem role de admin na tabela profiles
-        const { data: profile, error: profileError } = await supabase
+        // ✅ PRIMEIRO BUSCAR NA TABELA ADMINS PELO EMAIL
+        const { data: admin, error: adminError } = await supabase
+          .from('admins')
+          .select('email, is_superadmin')
+          .eq('email', session.user.email)
+          .maybeSingle();
+
+        if (adminError) {
+          console.error('AdminContext: Erro ao buscar na tabela admins:', adminError);
+          throw adminError;
+        }
+
+        if (!admin) {
+          console.log('AdminContext: Usuário não encontrado na tabela admins');
+          throw new Error('Acesso negado: usuário não é administrador');
+        }
+
+        // ✅ SE ENCONTRADO NA TABELA ADMINS, BUSCAR/CRIAR PERFIL NA PROFILES
+        let profile;
+        const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('role, email')
           .eq('id', session.user.id)
           .maybeSingle();
 
         if (profileError) {
-          console.error('AdminContext: Erro ao buscar perfil:', profileError);
-          throw profileError;
+          console.warn('AdminContext: Erro ao buscar perfil:', profileError);
         }
 
-        if (!profile) {
-          console.log('AdminContext: Perfil não encontrado para usuário:', session.user.id);
-          throw new Error('Perfil não encontrado');
-        }
+        if (!existingProfile) {
+          // Criar perfil admin se não existir
+          console.log('AdminContext: Criando perfil admin...');
+          const adminRole = admin.is_superadmin ? 'superadmin' : 'admin';
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: session.user.id,
+              email: admin.email,
+              role: adminRole,
+              is_active: true,
+              created_at: new Date().toISOString()
+            })
+            .select('role, email')
+            .single();
 
-        const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
-        
-        if (!isAdmin) {
-          console.log('AdminContext: Usuário não é admin, role:', profile.role);
-          throw new Error('Acesso negado: usuário não é administrador');
+          if (createError) {
+            console.error('AdminContext: Erro ao criar perfil admin:', createError);
+            // Usar dados da tabela admins mesmo se falhar
+            profile = {
+              email: admin.email,
+              role: adminRole
+            };
+          } else {
+            profile = newProfile;
+          }
+        } else {
+          profile = existingProfile;
         }
 
         if (mounted) {
           const adminUser: AdminUser = {
             id: session.user.id,
             email: profile.email || session.user.email || '',
-            role: profile.role as 'admin' | 'superadmin',
+            role: (profile.role as 'admin' | 'superadmin') || (admin.is_superadmin ? 'superadmin' : 'admin'),
             isAdmin: true,
             canAccessFeatures: true
           };
