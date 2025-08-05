@@ -211,7 +211,8 @@ export const useManualAuth = (): AuthState => {
             oficinaId,
             plan: planValidation.plan,
             planActive: planValidation.isActive,
-            permissions: planValidation.permissions.length
+            permissions: planValidation.permissions.length,
+            source: planValidation.source
           });
         }
       } catch (error) {
@@ -289,7 +290,7 @@ export const useManualAuth = (): AuthState => {
         setSession(session);
         
         if (session?.user) {
-          console.log('[useManualAuth] Sessão detectada no auth state change');
+          console.log('[useManualAuth] Sessão detectada no auth state change para userId:', session.user.id);
           await loadUserData(session);
         } else {
           console.log('[useManualAuth] Sessão removida');
