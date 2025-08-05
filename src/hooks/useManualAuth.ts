@@ -132,20 +132,125 @@ export const useManualAuth = (): AuthState => {
         const userId = currentSession.user.id;
         const userEmail = currentSession.user.email || '';
         
-        console.log('[useManualAuth] Carregando dados para userId:', userId);
+        console.log('[useManualAuth] Carregando dados para userId:', userId, 'email:', userEmail);
         
         // Buscar perfil da tabela profiles
         const profile = await getUserProfile(userId);
         
+        console.log('[useManualAuth] Resultado da busca do perfil:', profile);
+        
         if (!profile) {
-          console.error('[useManualAuth] Perfil não encontrado, não é possível continuar');
-          // Se não conseguir carregar o perfil, não pode prosseguir
+          console.error('[useManualAuth] Perfil não encontrado para userId:', userId);
+          console.log('[useManualAuth] Tentando criar perfil básico...');
+          
+          // Tentar criar um perfil básico para o usuário
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              role: 'user',
+              is_active: true,
+              created_at: new Date().toISOString()
+            })
+            .select('role, email, nome_oficina, telefone, is_active, oficina_id')
+            .single();
+
+          if (createError) {
+            console.error('[useManualAuth] Erro ao criar perfil:', createError);
+            if (mounted) {
+              setUser(null);
+              setRole(null);
+              setPlanData({ plan: null, planActive: false, permissions: [] });
+              setLoading(false);
+              setIsLoadingAuth(false);
+            }
+            return;
+          }
+
+          console.log('[useManualAuth] Perfil criado com sucesso:', newProfile);
+          // Usar o perfil recém-criado
+          const finalProfile = newProfile;
+          
+          const isAdmin = finalProfile?.role === 'admin' || finalProfile?.role === 'superadmin';
+          
+          console.log('[useManualAuth] Perfil final carregado:', { 
+            profile: !!finalProfile, 
+            isAdmin, 
+            role: finalProfile?.role,
+            hasOficinaId: !!finalProfile?.oficina_id
+          });
+
+          // Garantir que o usuário tenha uma oficina vinculada (exceto admins)
+          let oficinaId = finalProfile?.oficina_id;
+          if (!isAdmin && !oficinaId) {
+            console.log('[useManualAuth] Usuário sem oficina, criando/vinculando...');
+            oficinaId = await createOficinaAndLinkToProfile(userId, userEmail);
+          }
+
+          // Criar usuário base
+          const authUser: AuthUser = {
+            id: userId,
+            email: userEmail,
+            role: finalProfile?.role || 'user',
+            isAdmin: isAdmin,
+            oficina_id: oficinaId
+          };
+
+          // ✅ CORRIGIDO: Se é admin, bypass completo da validação de plano
+          if (isAdmin) {
+            console.log('[useManualAuth] Admin detectado, liberando acesso total');
+            
+            if (mounted) {
+              authUser.planActive = true;
+              authUser.expired = false;
+              
+              setUser(authUser);
+              setRole(authUser.role);
+              // ✅ Admin tem plano premium e todas as permissões
+              setPlanData({ 
+                plan: 'premium', 
+                planActive: true, 
+                permissions: ['*'] // Admin tem todas as permissões
+              });
+              setLoading(false);
+              setIsLoadingAuth(false);
+              
+              console.log('[useManualAuth] Admin configurado com sucesso');
+            }
+            return;
+          }
+
+          // Para usuários comuns, validar plano no banco
+          console.log('[useManualAuth] Validando plano para usuário comum:', userId);
+          const planValidation = await validateUserPlan(userId);
+          
+          console.log('[useManualAuth] Validação do plano:', planValidation);
+
           if (mounted) {
-            setUser(null);
-            setRole(null);
-            setPlanData({ plan: null, planActive: false, permissions: [] });
+            authUser.planActive = planValidation.isActive;
+            authUser.expired = !planValidation.isActive;
+            
+            setPlanData({
+              plan: planValidation.plan,
+              planActive: planValidation.isActive,
+              permissions: planValidation.permissions
+            });
+            setUser(authUser);
+            setRole(authUser.role);
             setLoading(false);
             setIsLoadingAuth(false);
+            
+            console.log('[useManualAuth] Usuário carregado:', {
+              userId,
+              email: userEmail,
+              role: authUser.role,
+              oficinaId,
+              plan: planValidation.plan,
+              planActive: planValidation.isActive,
+              permissions: planValidation.permissions.length,
+              source: planValidation.source
+            });
           }
           return;
         }
@@ -156,7 +261,8 @@ export const useManualAuth = (): AuthState => {
           profile: !!profile, 
           isAdmin, 
           role: profile?.role,
-          hasOficinaId: !!profile?.oficina_id
+          hasOficinaId: !!profile?.oficina_id,
+          email: profile?.email
         });
 
         // Garantir que o usuário tenha uma oficina vinculada (exceto admins)
@@ -249,11 +355,17 @@ export const useManualAuth = (): AuthState => {
         console.log('[useManualAuth] Inicializando autenticação');
         
         // Debug da sessão atual
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('[useManualAuth] Erro ao obter sessão:', sessionError);
+        }
+        
         console.log('[useManualAuth] Sessão atual obtida:', {
           hasSession: !!currentSession,
           userId: currentSession?.user?.id || 'nenhum',
-          email: currentSession?.user?.email || 'nenhum'
+          email: currentSession?.user?.email || 'nenhum',
+          error: !!sessionError
         });
         
         if (mounted) {
