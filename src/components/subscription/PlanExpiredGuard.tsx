@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/ui/loading';
@@ -10,15 +10,23 @@ interface PlanExpiredGuardProps {
 
 const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
   const { user, isLoadingAuth, isAdmin, planActive } = useAuth();
+  const lastDecisionRef = useRef<string>('');
+  const lastLogRef = useRef<string>('');
 
   // Memoizar a decisão para evitar re-renders desnecessários
   const accessDecision = useMemo(() => {
-    console.log('PlanExpiredGuard: Verificando acesso uma única vez', {
-      hasUser: !!user,
-      isAdmin,
-      planActive,
-      isLoadingAuth
-    });
+    const decisionKey = `${user?.id}-${isLoadingAuth}-${isAdmin}-${planActive}`;
+    
+    // Evitar logs duplicados
+    if (lastLogRef.current !== decisionKey) {
+      console.log('PlanExpiredGuard: Verificando acesso uma única vez', {
+        hasUser: !!user,
+        isAdmin,
+        planActive,
+        isLoadingAuth
+      });
+      lastLogRef.current = decisionKey;
+    }
 
     if (isLoadingAuth) {
       return 'loading';
@@ -40,7 +48,16 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
 
     console.log('PlanExpiredGuard: Acesso liberado, plano ativo');
     return 'allowed';
-  }, [user, isLoadingAuth, isAdmin, planActive]);
+  }, [user?.id, isLoadingAuth, isAdmin, planActive]); // Dependências mais específicas
+
+  // Evitar re-renderizações desnecessárias
+  useEffect(() => {
+    const currentDecision = `${accessDecision}-${user?.id}-${isAdmin}-${planActive}`;
+    if (lastDecisionRef.current === currentDecision) {
+      return;
+    }
+    lastDecisionRef.current = currentDecision;
+  }, [accessDecision, user?.id, isAdmin, planActive]);
 
   if (accessDecision === 'loading') {
     return <Loading fullscreen text="Verificando plano..." />;

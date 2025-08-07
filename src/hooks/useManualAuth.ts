@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { AuthUser, AuthState } from '@/types/auth';
@@ -27,17 +27,40 @@ const getUserProfile = async (userId: string) => {
   }
 };
 
+const checkOficinaExists = async (userId: string) => {
+  try {
+    console.log('[useManualAuth] 🔍 Verificando se oficina já existe para userId:', userId);
+    
+    const { data, error } = await supabase
+      .from('oficinas')
+      .select('id, nome_oficina, email, is_active, ativo')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[useManualAuth] ❌ Erro ao verificar oficina:', error);
+      return null;
+    }
+
+    if (data) {
+      console.log('[useManualAuth] ✅ Oficina já existe:', data);
+      return data;
+    }
+
+    console.log('[useManualAuth] ❌ Oficina não encontrada');
+    return null;
+  } catch (error) {
+    console.error('[useManualAuth] 💥 Exception ao verificar oficina:', error);
+    return null;
+  }
+};
+
 const createOficinaAndLinkToProfile = async (userId: string, userEmail: string) => {
   try {
     console.log('[useManualAuth] 🏗️ Criando oficina para userId:', userId);
     
     // Verificar se já existe uma oficina para este usuário
-    const { data: existingOficina } = await supabase
-      .from('oficinas')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-
+    const existingOficina = await checkOficinaExists(userId);
     let oficinaId = existingOficina?.id;
 
     if (!oficinaId) {
@@ -98,7 +121,15 @@ export const useManualAuth = (): AuthState => {
     permissions: []
   });
 
-  const signOut = async () => {
+  // Refs para controlar estados e evitar re-renderizações
+  const mountedRef = useRef(true);
+  const lastUserStateRef = useRef<string>('');
+  const lastLogRef = useRef<string>('');
+  const authStateChangeRef = useRef<boolean>(false);
+  const initializationRef = useRef<boolean>(false);
+  const lastAuthStateRef = useRef<string>('');
+
+  const signOut = useCallback(async () => {
     console.log('[useManualAuth] 🚪 Iniciando logout');
     try {
       const { error } = await supabase.auth.signOut();
@@ -117,59 +148,39 @@ export const useManualAuth = (): AuthState => {
       console.error('[useManualAuth] 💥 Erro no logout:', error);
       throw error;
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    console.log('[useManualAuth] 🚀 Iniciando configuração');
-    let mounted = true;
-    let timeoutId: NodeJS.Timeout;
-    
-    const loadUserData = async (currentSession: Session) => {
-      try {
-        if (!mounted) return;
+  const loadUserData = useCallback(async (currentSession: Session) => {
+    try {
+      if (!mountedRef.current) return;
+      
+      const userId = currentSession.user.id;
+      const userEmail = currentSession.user.email || '';
+      
+      console.log('[useManualAuth] 📊 Carregando dados para userId:', userId, 'email:', userEmail);
+      
+      // Buscar perfil da tabela profiles
+      let profile = await getUserProfile(userId);
+      
+      // Se não encontrar perfil, criar um básico
+      if (!profile) {
+        console.log('[useManualAuth] 🆕 Perfil não encontrado, criando perfil básico...');
         
-        const userId = currentSession.user.id;
-        const userEmail = currentSession.user.email || '';
-        
-        console.log('[useManualAuth] 📊 Carregando dados para userId:', userId, 'email:', userEmail);
-        
-        // Buscar perfil da tabela profiles
-        let profile = await getUserProfile(userId);
-        
-        // Se não encontrar perfil, criar um básico
-        if (!profile) {
-          console.log('[useManualAuth] 🆕 Perfil não encontrado, criando perfil básico...');
-          
-          try {
-            const { data: newProfile, error: createError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: userId,
-                email: userEmail,
-                role: 'user',
-                is_active: true,
-                created_at: new Date().toISOString()
-              })
-              .select('role, email, nome_oficina, telefone, is_active, oficina_id')
-              .single();
+        try {
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              role: 'user',
+              is_active: true,
+              created_at: new Date().toISOString()
+            })
+            .select('role, email, nome_oficina, telefone, is_active, oficina_id')
+            .single();
 
-            if (createError) {
-              console.error('[useManualAuth] ❌ Erro ao criar perfil:', createError);
-              // Fallback para dados básicos
-              profile = {
-                role: 'user',
-                email: userEmail,
-                nome_oficina: null,
-                telefone: null,
-                is_active: true,
-                oficina_id: null
-              };
-            } else {
-              console.log('[useManualAuth] ✅ Perfil criado com sucesso:', newProfile);
-              profile = newProfile;
-            }
-          } catch (error) {
-            console.error('[useManualAuth] 💥 Exception ao criar perfil:', error);
+          if (createError) {
+            console.error('[useManualAuth] ❌ Erro ao criar perfil:', createError);
             // Fallback para dados básicos
             profile = {
               role: 'user',
@@ -179,23 +190,59 @@ export const useManualAuth = (): AuthState => {
               is_active: true,
               oficina_id: null
             };
+          } else {
+            console.log('[useManualAuth] ✅ Perfil criado com sucesso:', newProfile);
+            profile = newProfile;
           }
+        } catch (error) {
+          console.error('[useManualAuth] 💥 Exception ao criar perfil:', error);
+          // Fallback para dados básicos
+          profile = {
+            role: 'user',
+            email: userEmail,
+            nome_oficina: null,
+            telefone: null,
+            is_active: true,
+            oficina_id: null
+          };
         }
+      }
 
-        if (!mounted) return;
+      if (!mountedRef.current) return;
 
-        const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
-        
-        console.log('[useManualAuth] 🔐 Dados processados:', { 
-          profile: !!profile, 
-          isAdmin, 
-          role: profile?.role,
-          hasOficinaId: !!profile?.oficina_id,
-          email: profile?.email
+      const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+      
+      console.log('[useManualAuth] 🔐 Dados processados:', { 
+        profile: !!profile, 
+        isAdmin, 
+        role: profile?.role,
+        hasOficinaId: !!profile?.oficina_id,
+        email: profile?.email
+      });
+
+      // Verificar se já existe oficina cadastrada
+      const existingOficina = await checkOficinaExists(userId);
+      
+      console.log('[useManualAuth] 🔍 Resultado da verificação de oficina:', {
+        userId,
+        existingOficina: !!existingOficina,
+        oficinaId: existingOficina?.id,
+        isAdmin,
+        hasProfileOficinaId: !!profile?.oficina_id
+      });
+      
+      // Se é admin ou já tem oficina cadastrada, ir direto para dashboard
+      if (isAdmin || existingOficina) {
+        console.log('[useManualAuth] 🚀 Usuário já tem oficina ou é admin, indo direto para dashboard');
+        console.log('[useManualAuth] 📊 Detalhes do fluxo direto:', {
+          isAdmin,
+          hasExistingOficina: !!existingOficina,
+          oficinaId: existingOficina?.id,
+          profileOficinaId: profile?.oficina_id
         });
-
+        
         // Garantir que o usuário tenha uma oficina vinculada (exceto admins)
-        let oficinaId = profile?.oficina_id;
+        let oficinaId = profile?.oficina_id || existingOficina?.id;
         if (!isAdmin && !oficinaId) {
           console.log('[useManualAuth] 🏗️ Usuário sem oficina, criando/vinculando...');
           oficinaId = await createOficinaAndLinkToProfile(userId, userEmail);
@@ -216,7 +263,7 @@ export const useManualAuth = (): AuthState => {
         if (isAdmin) {
           console.log('[useManualAuth] 👑 Admin detectado, liberando acesso total');
           
-          if (mounted) {
+          if (mountedRef.current) {
             authUser.planActive = true;
             authUser.expired = false;
             
@@ -241,86 +288,131 @@ export const useManualAuth = (): AuthState => {
           return;
         }
 
-        // Para usuários comuns, validar plano no banco
-        console.log('[useManualAuth] 📋 Validando plano para usuário comum:', userId);
+        // Para usuários comuns com oficina já cadastrada, validar plano no banco
+        console.log('[useManualAuth] 📋 Validando plano para usuário com oficina existente:', userId);
         const planValidation = await validateUserPlan(userId);
         
         console.log('[useManualAuth] 📊 Validação do plano:', planValidation);
-
-        if (mounted) {
+        
+        if (mountedRef.current) {
           authUser.planActive = planValidation.isActive;
           authUser.expired = !planValidation.isActive;
           
-          setPlanData({
-            plan: planValidation.plan,
-            planActive: planValidation.isActive,
-            permissions: planValidation.permissions
-          });
           setUser(authUser);
           setRole(authUser.role);
+          setPlanData({ 
+            plan: planValidation.plan, 
+            planActive: planValidation.isActive, 
+            permissions: planValidation.permissions 
+          });
           setLoading(false);
           setIsLoadingAuth(false);
           
-          console.log('[useManualAuth] ✅ Usuário comum carregado:', {
-            userId,
-            email: userEmail,
+          console.log('[useManualAuth] ✅ Usuário com oficina configurado com sucesso:', {
+            userId: authUser.id,
+            email: authUser.email,
             role: authUser.role,
-            oficinaId,
-            plan: planValidation.plan,
-            planActive: planValidation.isActive,
-            permissions: planValidation.permissions.length,
-            source: planValidation.source
+            isAdmin: authUser.isAdmin,
+            planActive: authUser.planActive,
+            plan: planValidation.plan
           });
         }
-      } catch (error) {
-        console.error('[useManualAuth] 💥 Erro ao carregar dados do usuário:', error);
-        if (mounted) {
-          console.log('[useManualAuth] 🚫 Erro no carregamento, forçando estado deslogado');
-          setUser(null);
-          setRole(null);
-          setPlanData({ plan: null, planActive: false, permissions: [] });
-          setLoading(false);
-          setIsLoadingAuth(false);
-        }
+        return;
       }
-    };
 
-    const initializeAuth = async () => {
-      try {
-        console.log('[useManualAuth] 🔄 Inicializando autenticação');
+      // Para usuários sem oficina, criar e validar
+      console.log('[useManualAuth] 🏗️ Usuário sem oficina, criando/vinculando...');
+      console.log('[useManualAuth] 📊 Fluxo de criação de oficina:', {
+        userId,
+        userEmail,
+        isAdmin,
+        hasExistingOficina: !!existingOficina
+      });
+      
+      let oficinaId = await createOficinaAndLinkToProfile(userId, userEmail);
+
+      // Criar usuário base
+      const authUser: AuthUser = {
+        id: userId,
+        email: userEmail,
+        role: profile?.role || 'user',
+        isAdmin: isAdmin,
+        oficina_id: oficinaId
+      };
+
+      console.log('[useManualAuth] 👤 AuthUser criado:', authUser);
+
+      // Para usuários comuns, validar plano no banco
+      console.log('[useManualAuth] 📋 Validando plano para usuário comum:', userId);
+      const planValidation = await validateUserPlan(userId);
+      
+      console.log('[useManualAuth] 📊 Validação do plano:', planValidation);
+      
+      if (mountedRef.current) {
+        authUser.planActive = planValidation.isActive;
+        authUser.expired = !planValidation.isActive;
         
-        // Debug da sessão atual
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('[useManualAuth] ❌ Erro ao obter sessão:', sessionError);
-        }
-        
-        console.log('[useManualAuth] 📱 Sessão atual obtida:', {
-          hasSession: !!currentSession,
-          userId: currentSession?.user?.id || 'nenhum',
-          email: currentSession?.user?.email || 'nenhum',
-          error: !!sessionError
+        setUser(authUser);
+        setRole(authUser.role);
+        setPlanData({ 
+          plan: planValidation.plan, 
+          planActive: planValidation.isActive, 
+          permissions: planValidation.permissions 
         });
+        setLoading(false);
+        setIsLoadingAuth(false);
         
-        if (mounted) {
-          setSession(currentSession);
-          
-          if (currentSession?.user) {
-            console.log('[useManualAuth] 🔑 Sessão inicial encontrada para userId:', currentSession.user.id);
-            await loadUserData(currentSession);
-          } else {
-            console.log('[useManualAuth] 🚫 Nenhuma sessão inicial encontrada');
-            setUser(null);
-            setRole(null);
-            setPlanData({ plan: null, planActive: false, permissions: [] });
-            setLoading(false);
-            setIsLoadingAuth(false);
-          }
-        }
-      } catch (error) {
-        console.error('[useManualAuth] 💥 Erro na inicialização:', error);
-        if (mounted) {
+        console.log('[useManualAuth] ✅ Usuário configurado com sucesso:', {
+          userId: authUser.id,
+          email: authUser.email,
+          role: authUser.role,
+          isAdmin: authUser.isAdmin,
+          planActive: authUser.planActive,
+          plan: planValidation.plan
+        });
+      }
+    } catch (error) {
+      console.error('[useManualAuth] 💥 Erro no carregamento:', error);
+      if (mountedRef.current) {
+        console.log('[useManualAuth] 🚫 Erro no carregamento, forçando estado deslogado');
+        setUser(null);
+        setRole(null);
+        setPlanData({ plan: null, planActive: false, permissions: [] });
+        setLoading(false);
+        setIsLoadingAuth(false);
+      }
+    }
+  }, []);
+
+  const initializeAuth = useCallback(async () => {
+    try {
+      if (initializationRef.current) return;
+      initializationRef.current = true;
+      
+      console.log('[useManualAuth] 🔄 Inicializando autenticação');
+      
+      // Debug da sessão atual
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('[useManualAuth] ❌ Erro ao obter sessão:', sessionError);
+      }
+      
+      console.log('[useManualAuth] 📱 Sessão atual obtida:', {
+        hasSession: !!currentSession,
+        userId: currentSession?.user?.id || 'nenhum',
+        email: currentSession?.user?.email || 'nenhum',
+        error: !!sessionError
+      });
+      
+      if (mountedRef.current) {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          console.log('[useManualAuth] 🔑 Sessão inicial encontrada para userId:', currentSession.user.id);
+          await loadUserData(currentSession);
+        } else {
+          console.log('[useManualAuth] 🚫 Nenhuma sessão inicial encontrada');
           setUser(null);
           setRole(null);
           setPlanData({ plan: null, planActive: false, permissions: [] });
@@ -328,11 +420,26 @@ export const useManualAuth = (): AuthState => {
           setIsLoadingAuth(false);
         }
       }
-    };
+    } catch (error) {
+      console.error('[useManualAuth] 💥 Erro na inicialização:', error);
+      if (mountedRef.current) {
+        setUser(null);
+        setRole(null);
+        setPlanData({ plan: null, planActive: false, permissions: [] });
+        setLoading(false);
+        setIsLoadingAuth(false);
+      }
+    }
+  }, [loadUserData]);
 
+  useEffect(() => {
+    console.log('[useManualAuth] 🚀 Iniciando configuração');
+    mountedRef.current = true;
+    let timeoutId: NodeJS.Timeout;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
+        if (!mountedRef.current) return;
         
         console.log('[useManualAuth] 🔄 Auth state change:', event, 'userId:', session?.user?.id);
         setSession(session);
@@ -344,7 +451,7 @@ export const useManualAuth = (): AuthState => {
           
           // Usar setTimeout para evitar problemas de concorrência
           setTimeout(() => {
-            if (mounted) {
+            if (mountedRef.current) {
               loadUserData(session);
             }
           }, 0);
@@ -363,7 +470,7 @@ export const useManualAuth = (): AuthState => {
 
     // Timeout de segurança reduzido
     timeoutId = setTimeout(() => {
-      if (mounted) {
+      if (mountedRef.current) {
         console.log('[useManualAuth] ⏰ Timeout atingido, forçando fim do loading');
         setLoading(false);
         setIsLoadingAuth(false);
@@ -371,44 +478,101 @@ export const useManualAuth = (): AuthState => {
     }, 3000); // Reduzido para 3 segundos
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initializeAuth, loadUserData]);
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin' || user?.isAdmin;
-  const canAccessFeatures = planData.planActive || isAdmin;
+  // Memoizar valores calculados para evitar re-renderizações
+  const isAdmin = useMemo(() => {
+    return user?.role === 'admin' || user?.role === 'superadmin' || user?.isAdmin;
+  }, [user?.role, user?.isAdmin]);
 
-  console.log('[useManualAuth] 📊 Estado final:', {
-    hasUser: !!user,
-    userEmail: user?.email,
-    userId: user?.id,
-    oficinaId: user?.oficina_id,
-    role,
-    isAdmin,
-    plan: planData.plan,
-    planActive: planData.planActive,
-    canAccessFeatures,
-    permissionsCount: planData.permissions.length,
-    loading,
-    isLoadingAuth
-  });
+  const canAccessFeatures = useMemo(() => {
+    return planData.planActive || isAdmin;
+  }, [planData.planActive, isAdmin]);
 
-  return {
+  // Evitar logs duplicados
+  const currentState = useMemo(() => {
+    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.planActive}-${loading}-${isLoadingAuth}`;
+    
+    if (lastLogRef.current !== stateKey) {
+      console.log('[useManualAuth] 📊 Estado final:', {
+        hasUser: !!user,
+        userEmail: user?.email,
+        userId: user?.id,
+        oficinaId: user?.oficina_id,
+        role,
+        isAdmin,
+        plan: planData.plan,
+        planActive: planData.planActive,
+        canAccessFeatures,
+        permissionsCount: planData.permissions.length,
+        loading,
+        isLoadingAuth
+      });
+      lastLogRef.current = stateKey;
+    }
+    
+    return stateKey;
+  }, [user?.id, user?.email, user?.oficina_id, role, isAdmin, planData.plan, planData.planActive, planData.permissions.length, canAccessFeatures, loading, isLoadingAuth]);
+
+  // Memoizar o objeto de retorno para evitar re-criações desnecessárias
+  const authState = useMemo(() => {
+    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.plan}-${planData.planActive}-${planData.permissions.length}-${loading}-${isLoadingAuth}`;
+    
+    // Evitar re-criação se o estado não mudou realmente
+    if (lastAuthStateRef.current === stateKey) {
+      return {
+        user,
+        session,
+        loading,
+        isLoadingAuth,
+        role,
+        isAdmin,
+        plan: (planData.plan === 'premium' ? 'Premium' : 
+              planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
+        planActive: planData.planActive,
+        permissions: planData.permissions,
+        canAccessFeatures,
+        permissionsCount: planData.permissions.length,
+        oficinaId: user?.oficina_id || null,
+        signOut
+      };
+    }
+    
+    lastAuthStateRef.current = stateKey;
+    
+    return {
+      user,
+      session,
+      loading,
+      isLoadingAuth,
+      role,
+      isAdmin,
+      plan: (planData.plan === 'premium' ? 'Premium' : 
+            planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
+      planActive: planData.planActive,
+      permissions: planData.permissions,
+      canAccessFeatures,
+      permissionsCount: planData.permissions.length,
+      oficinaId: user?.oficina_id || null,
+      signOut
+    };
+  }, [
     user,
     session,
     loading,
     isLoadingAuth,
     role,
     isAdmin,
-    plan: planData.plan === 'premium' ? 'Premium' : 
-          planData.plan === 'essencial' ? 'Essencial' : 'Free',
-    planActive: planData.planActive,
-    permissions: planData.permissions,
+    planData.plan,
+    planData.planActive,
+    planData.permissions,
     canAccessFeatures,
-    permissionsCount: planData.permissions.length,
-    oficinaId: user?.oficina_id || null,
     signOut
-  };
+  ]);
+
+  return authState;
 };

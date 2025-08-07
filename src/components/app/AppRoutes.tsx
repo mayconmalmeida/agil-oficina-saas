@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PlanExpiredGuard from '@/components/subscription/PlanExpiredGuard';
 import { adminRoutes } from '@/routes/AdminRoutes';
 import { publicRoutes } from '@/routes/PublicRoutes';
+import { protectedRoutes } from '@/routes/ProtectedRoutes';
 import UserDashboard from '@/pages/UserDashboard';
 import PlanoExpirado from '@/pages/plano-expirado';
 
@@ -33,6 +34,9 @@ const AppRoutes: React.FC = () => {
       
       {/* Rotas administrativas */}
       {adminRoutes}
+      
+      {/* Rotas protegidas */}
+      {protectedRoutes}
       
       {/* Rota protegida para dashboard do usuário */}
       <Route path="/dashboard" element={

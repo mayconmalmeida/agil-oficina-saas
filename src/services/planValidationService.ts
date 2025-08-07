@@ -8,12 +8,12 @@ export interface PlanValidationResult {
   plan: PlanType;
   permissions: string[];
   daysRemaining: number;
-  source: 'user_subscriptions' | 'profiles' | 'none';
+  source: 'user_subscriptions' | 'oficinas' | 'profiles' | 'none';
 }
 
 /**
  * ✅ Validação completa de plano do usuário
- * Verifica tanto user_subscriptions quanto profiles para determinar o plano ativo
+ * Verifica user_subscriptions, oficinas e profiles para determinar o plano ativo
  */
 export const validateUserPlan = async (userId: string): Promise<PlanValidationResult> => {
   console.log('[validateUserPlan] Validando plano para userId:', userId);
@@ -97,7 +97,38 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       }
     }
 
-    // ✅ PASSO 2: Verificar na tabela profiles como fallback
+    // ✅ PASSO 2: Verificar na tabela oficinas
+    console.log('[validateUserPlan] Verificando na tabela oficinas...');
+    const { data: oficina, error: oficinaError } = await supabase
+      .from('oficinas')
+      .select('plano, is_active, ativo')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (oficinaError) {
+      console.error('[validateUserPlan] Erro ao buscar oficina:', oficinaError);
+    } else if (oficina) {
+      console.log('[validateUserPlan] Oficina encontrada:', {
+        plano: oficina.plano,
+        is_active: oficina.is_active,
+        ativo: oficina.ativo
+      });
+
+      // Se a oficina está ativa e tem plano definido
+      if ((oficina.is_active || oficina.ativo) && oficina.plano) {
+        console.log('[validateUserPlan] ✅ Plano ativo encontrado na oficina:', oficina.plano);
+        const planType: PlanType = oficina.plano.toLowerCase() === 'premium' ? 'premium' : 'essencial';
+        return {
+          isActive: true,
+          plan: planType,
+          permissions: getPlanPermissions(planType),
+          daysRemaining: 999, // Sem expiração definida
+          source: 'oficinas'
+        };
+      }
+    }
+
+    // ✅ PASSO 3: Verificar na tabela profiles como fallback
     console.log('[validateUserPlan] Verificando na tabela profiles...');
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -147,7 +178,7 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
       }
     }
 
-    // ✅ PASSO 3: Nenhum plano ativo encontrado
+    // ✅ PASSO 4: Nenhum plano ativo encontrado
     console.log('[validateUserPlan] Nenhuma assinatura ativa encontrada');
     return {
       isActive: false,

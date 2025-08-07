@@ -200,7 +200,7 @@ export const useOnboardingProgress = (userId?: string) => {
     };
     
     loadStatus();
-  }, [userId, fetchStatus]);
+  }, [userId]); // Removida dependência fetchStatus para evitar loops
 
   return {
     status,
