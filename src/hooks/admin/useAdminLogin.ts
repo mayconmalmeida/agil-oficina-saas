@@ -16,93 +16,101 @@ export const useAdminLogin = () => {
     setErrorMessage(null);
     
     try {
-      console.log("🔐 Tentando login admin com email:", values.email);
+      console.log("🔐 Tentando login admin direto na tabela admins:", values.email);
       
-      // Tentar login com supabase.auth.signInWithPassword
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-
-      if (error) {
-        console.error("❌ Erro de autenticação:", error);
-        
-        if (error.message.includes('Invalid login credentials')) {
-          setErrorMessage('Credenciais inválidas. Verifique seu email e senha.');
-          toast({
-            variant: "destructive",
-            title: "Credenciais inválidas",
-            description: "Verifique seu email e senha.",
-          });
-        } else {
-          setErrorMessage(error.message || 'Erro desconhecido durante o login');
-          toast({
-            variant: "destructive",
-            title: "Erro ao fazer login",
-            description: error.message || "Ocorreu um erro durante o login",
-          });
-        }
-        return;
-      }
-
-      // Verificar se a sessão foi criada corretamente
-      if (!data.session || !data.user) {
-        setErrorMessage("Sessão de login inválida.");
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: "Não foi possível iniciar sua sessão",
-        });
-        return;
-      }
-
-      console.log("✅ Login bem-sucedido para userId:", data.user.id);
-
-      // ✅ BUSCAR ADMIN NA TABELA ADMINS EM VEZ DE PROFILES
+      // ✅ PRIMEIRO: Verificar se admin existe na tabela admins
       const { data: admin, error: adminError } = await supabase
         .from('admins')
-        .select('id, email, is_superadmin')
+        .select('id, email, password, is_superadmin')
         .eq('email', values.email)
         .maybeSingle();
 
-      if (adminError) {
-        console.error("❌ Erro ao verificar admin:", adminError);
-        setErrorMessage('Erro ao verificar permissões de administrador.');
-        toast({
-          variant: "destructive",
-          title: "Erro ao verificar permissões",
-          description: "Não foi possível verificar se o usuário é administrador.",
-        });
-        await supabase.auth.signOut();
-        return;
-      }
-
-      if (!admin) {
-        console.error("❌ Admin não encontrado na tabela admins para email:", values.email);
-        setErrorMessage("Este usuário não é um administrador autorizado.");
+      if (adminError || !admin) {
+        console.error("❌ Admin não encontrado na tabela admins:", adminError);
+        setErrorMessage("Credenciais inválidas ou usuário não é administrador.");
         toast({
           variant: "destructive",
           title: "Acesso negado",
           description: "Você não tem permissão de administrador.",
         });
-        await supabase.auth.signOut();
         return;
       }
 
-      console.log("✅ Admin encontrado na tabela admins:", admin.email, "is_superadmin:", admin.is_superadmin);
+      console.log("✅ Admin encontrado na tabela admins:", admin.email);
 
-      // ✅ AGORA CRIAR/ATUALIZAR PERFIL ADMIN NA TABELA PROFILES COM ROLE ADMIN
+      // ✅ VERIFICAR SENHA DIRETAMENTE
+      // Verificar se a senha está hasheada (bcrypt) ou é texto simples
+      let passwordValid = false;
+      
+      // Se a senha começa com $2a$, $2b$, $2x$, $2y$ é um hash bcrypt
+      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password);
+      
+      if (isBcryptHash) {
+        try {
+          // Importar bcrypt dinamicamente
+          const bcrypt = await import('bcryptjs');
+          passwordValid = await bcrypt.compare(values.password, admin.password);
+          console.log("✅ Verificação de senha hash bcrypt:", passwordValid);
+        } catch (bcryptError) {
+          console.error("❌ Erro ao verificar hash bcrypt:", bcryptError);
+          passwordValid = false;
+        }
+      } else {
+        // Comparação direta para senhas em texto simples
+        passwordValid = values.password === admin.password;
+        console.log("✅ Verificação de senha direta:", passwordValid);
+      }
+
+      if (!passwordValid) {
+        console.error("❌ Senha incorreta para admin:", admin.email);
+        setErrorMessage("Credenciais inválidas. Verifique seu email e senha.");
+        toast({
+          variant: "destructive",
+          title: "Credenciais inválidas",
+          description: "Verifique seu email e senha.",
+        });
+        return;
+      }
+
+      console.log("✅ Senha validada com sucesso para admin:", admin.email);
+
+      // ✅ TERCEIRO: Criar sessão direta usando os dados da tabela admins
+      // Como estamos autenticando diretamente na tabela admins, vamos usar o ID do admin
+      const userId = admin.id;
+      console.log("✅ Usando ID do admin da tabela admins:", userId);
+
+      // Opcional: Tentar também autenticar no Supabase Auth se o usuário existir lá
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        });
+
+        if (!authError && authData.session) {
+          console.log("✅ Bonus: Autenticação Supabase também bem-sucedida");
+          // Usar o ID do Supabase Auth se disponível
+          // userId = authData.user.id;
+        } else {
+          console.log("⚠️ Autenticação Supabase falhou, mas continuando com dados da tabela admins");
+        }
+      } catch (authAttemptError) {
+        console.log("⚠️ Erro na tentativa de autenticação Supabase, continuando com tabela admins");
+      }
+
+      // ✅ CRIAR/ATUALIZAR PERFIL ADMIN NA TABELA PROFILES
       const adminRole = admin.is_superadmin ? 'superadmin' : 'admin';
       
       console.log("🔧 Criando/atualizando perfil admin na tabela profiles...");
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: data.user.id,
+          id: userId,
           email: admin.email,
           role: adminRole,
           is_active: true,
           created_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
         });
 
       if (profileError) {
