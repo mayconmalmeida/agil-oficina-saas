@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { AuthUser, AuthState } from '@/types/auth';
-import { validateUserPlan, PlanType } from '@/services/planValidationService';
+import { validatePlanAccess, PlanStatus, ensureOficinaExists } from '@/services/planValidationCentralized';
 
 const getUserProfile = async (userId: string) => {
   try {
@@ -111,14 +111,17 @@ export const useManualAuth = (): AuthState => {
   const [loading, setLoading] = useState(true);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const [planData, setPlanData] = useState<{
-    plan: PlanType | null;
-    planActive: boolean;
-    permissions: string[];
-  }>({
-    plan: null,
-    planActive: false,
-    permissions: []
+  const [planData, setPlanData] = useState<PlanStatus>({
+    isActive: false,
+    plan: 'free',
+    planName: 'Gratuito',
+    permissions: [],
+    daysRemaining: 0,
+    source: 'none',
+    isAdmin: false,
+    isPremium: false,
+    isEssencial: false,
+    canAccessFeatures: false
   });
 
   // Refs para controlar estados e evitar re-renderizações
@@ -141,7 +144,18 @@ export const useManualAuth = (): AuthState => {
       setUser(null);
       setSession(null);
       setRole(null);
-      setPlanData({ plan: null, planActive: false, permissions: [] });
+      setPlanData({
+        isActive: false,
+        plan: 'free',
+        planName: 'Gratuito',
+        permissions: [],
+        daysRemaining: 0,
+        source: 'none',
+        isAdmin: false,
+        isPremium: false,
+        isEssencial: false,
+        canAccessFeatures: false
+      });
       setLoading(false);
       setIsLoadingAuth(false);
     } catch (error) {
@@ -259,62 +273,31 @@ export const useManualAuth = (): AuthState => {
 
         console.log('[useManualAuth] 👤 AuthUser criado:', authUser);
 
-        // ✅ Se é admin, bypass completo da validação de plano
-        if (isAdmin) {
-          console.log('[useManualAuth] 👑 Admin detectado, liberando acesso total');
-          
-          if (mountedRef.current) {
-            authUser.planActive = true;
-            authUser.expired = false;
-            
-            setUser(authUser);
-            setRole(authUser.role);
-            setPlanData({ 
-              plan: 'premium', 
-              planActive: true, 
-              permissions: ['*'] // Admin tem todas as permissões
-            });
-            setLoading(false);
-            setIsLoadingAuth(false);
-            
-            console.log('[useManualAuth] ✅ Admin configurado com sucesso:', {
-              userId: authUser.id,
-              email: authUser.email,
-              role: authUser.role,
-              isAdmin: authUser.isAdmin,
-              planActive: true
-            });
-          }
-          return;
-        }
-
-        // Para usuários comuns com oficina já cadastrada, validar plano no banco
-        console.log('[useManualAuth] 📋 Validando plano para usuário com oficina existente:', userId);
-        const planValidation = await validateUserPlan(userId);
+        // ✅ Usar validação centralizada de plano
+        console.log('[useManualAuth] 📋 Validando plano usando função centralizada:', userId);
+        const planStatus = await validatePlanAccess(userId);
         
-        console.log('[useManualAuth] 📊 Validação do plano:', planValidation);
+        console.log('[useManualAuth] 📊 Status do plano:', planStatus);
         
         if (mountedRef.current) {
-          authUser.planActive = planValidation.isActive;
-          authUser.expired = !planValidation.isActive;
+          authUser.planActive = planStatus.canAccessFeatures;
+          authUser.expired = !planStatus.isActive;
+          authUser.isAdmin = planStatus.isAdmin;
           
           setUser(authUser);
           setRole(authUser.role);
-          setPlanData({ 
-            plan: planValidation.plan, 
-            planActive: planValidation.isActive, 
-            permissions: planValidation.permissions 
-          });
+          setPlanData(planStatus);
           setLoading(false);
           setIsLoadingAuth(false);
           
-          console.log('[useManualAuth] ✅ Usuário com oficina configurado com sucesso:', {
+          console.log('[useManualAuth] ✅ Usuário configurado com sucesso:', {
             userId: authUser.id,
             email: authUser.email,
             role: authUser.role,
-            isAdmin: authUser.isAdmin,
-            planActive: authUser.planActive,
-            plan: planValidation.plan
+            isAdmin: planStatus.isAdmin,
+            planActive: planStatus.canAccessFeatures,
+            planName: planStatus.planName,
+            plan: planStatus.plan
           });
         }
         return;
@@ -342,23 +325,20 @@ export const useManualAuth = (): AuthState => {
 
       console.log('[useManualAuth] 👤 AuthUser criado:', authUser);
 
-      // Para usuários comuns, validar plano no banco
-      console.log('[useManualAuth] 📋 Validando plano para usuário comum:', userId);
-      const planValidation = await validateUserPlan(userId);
+      // ✅ Usar validação centralizada de plano
+      console.log('[useManualAuth] 📋 Validando plano usando função centralizada:', userId);
+      const planStatus = await validatePlanAccess(userId);
       
-      console.log('[useManualAuth] 📊 Validação do plano:', planValidation);
+      console.log('[useManualAuth] 📊 Status do plano:', planStatus);
       
       if (mountedRef.current) {
-        authUser.planActive = planValidation.isActive;
-        authUser.expired = !planValidation.isActive;
+        authUser.planActive = planStatus.canAccessFeatures;
+        authUser.expired = !planStatus.isActive;
+        authUser.isAdmin = planStatus.isAdmin;
         
         setUser(authUser);
         setRole(authUser.role);
-        setPlanData({ 
-          plan: planValidation.plan, 
-          planActive: planValidation.isActive, 
-          permissions: planValidation.permissions 
-        });
+        setPlanData(planStatus);
         setLoading(false);
         setIsLoadingAuth(false);
         
@@ -366,9 +346,10 @@ export const useManualAuth = (): AuthState => {
           userId: authUser.id,
           email: authUser.email,
           role: authUser.role,
-          isAdmin: authUser.isAdmin,
-          planActive: authUser.planActive,
-          plan: planValidation.plan
+          isAdmin: planStatus.isAdmin,
+          planActive: planStatus.canAccessFeatures,
+          planName: planStatus.planName,
+          plan: planStatus.plan
         });
       }
     } catch (error) {
@@ -377,7 +358,18 @@ export const useManualAuth = (): AuthState => {
         console.log('[useManualAuth] 🚫 Erro no carregamento, forçando estado deslogado');
         setUser(null);
         setRole(null);
-        setPlanData({ plan: null, planActive: false, permissions: [] });
+        setPlanData({
+          isActive: false,
+          plan: 'free',
+          planName: 'Gratuito',
+          permissions: [],
+          daysRemaining: 0,
+          source: 'none',
+          isAdmin: false,
+          isPremium: false,
+          isEssencial: false,
+          canAccessFeatures: false
+        });
         setLoading(false);
         setIsLoadingAuth(false);
       }
@@ -415,7 +407,18 @@ export const useManualAuth = (): AuthState => {
           console.log('[useManualAuth] 🚫 Nenhuma sessão inicial encontrada');
           setUser(null);
           setRole(null);
-          setPlanData({ plan: null, planActive: false, permissions: [] });
+          setPlanData({
+            isActive: false,
+            plan: 'free',
+            planName: 'Gratuito',
+            permissions: [],
+            daysRemaining: 0,
+            source: 'none',
+            isAdmin: false,
+            isPremium: false,
+            isEssencial: false,
+            canAccessFeatures: false
+          });
           setLoading(false);
           setIsLoadingAuth(false);
         }
@@ -425,7 +428,18 @@ export const useManualAuth = (): AuthState => {
       if (mountedRef.current) {
         setUser(null);
         setRole(null);
-        setPlanData({ plan: null, planActive: false, permissions: [] });
+          setPlanData({
+            isActive: false,
+            plan: 'free',
+            planName: 'Gratuito',
+            permissions: [],
+            daysRemaining: 0,
+            source: 'none',
+            isAdmin: false,
+            isPremium: false,
+            isEssencial: false,
+            canAccessFeatures: false
+          });
         setLoading(false);
         setIsLoadingAuth(false);
       }
@@ -459,7 +473,18 @@ export const useManualAuth = (): AuthState => {
           console.log('[useManualAuth] 🚫 Sessão removida');
           setUser(null);
           setRole(null);
-          setPlanData({ plan: null, planActive: false, permissions: [] });
+          setPlanData({
+            isActive: false,
+            plan: 'free',
+            planName: 'Gratuito',
+            permissions: [],
+            daysRemaining: 0,
+            source: 'none',
+            isAdmin: false,
+            isPremium: false,
+            isEssencial: false,
+            canAccessFeatures: false
+          });
           setLoading(false);
           setIsLoadingAuth(false);
         }
@@ -490,12 +515,12 @@ export const useManualAuth = (): AuthState => {
   }, [user?.role, user?.isAdmin]);
 
   const canAccessFeatures = useMemo(() => {
-    return planData.planActive || isAdmin;
-  }, [planData.planActive, isAdmin]);
+    return planData.canAccessFeatures || isAdmin;
+  }, [planData.canAccessFeatures, isAdmin]);
 
   // Evitar logs duplicados
   const currentState = useMemo(() => {
-    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.planActive}-${loading}-${isLoadingAuth}`;
+    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.isActive}-${loading}-${isLoadingAuth}`;
     
     if (lastLogRef.current !== stateKey) {
       console.log('[useManualAuth] 📊 Estado final:', {
@@ -506,7 +531,7 @@ export const useManualAuth = (): AuthState => {
         role,
         isAdmin,
         plan: planData.plan,
-        planActive: planData.planActive,
+        planActive: planData.isActive,
         canAccessFeatures,
         permissionsCount: planData.permissions.length,
         loading,
@@ -516,11 +541,11 @@ export const useManualAuth = (): AuthState => {
     }
     
     return stateKey;
-  }, [user?.id, user?.email, user?.oficina_id, role, isAdmin, planData.plan, planData.planActive, planData.permissions.length, canAccessFeatures, loading, isLoadingAuth]);
+  }, [user?.id, user?.email, user?.oficina_id, role, isAdmin, planData.plan, planData.isActive, planData.permissions.length, canAccessFeatures, loading, isLoadingAuth]);
 
   // Memoizar o objeto de retorno para evitar re-criações desnecessárias
   const authState = useMemo(() => {
-    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.plan}-${planData.planActive}-${planData.permissions.length}-${loading}-${isLoadingAuth}`;
+    const stateKey = `${user?.id}-${user?.email}-${role}-${isAdmin}-${planData.plan}-${planData.isActive}-${planData.permissions.length}-${loading}-${isLoadingAuth}`;
     
     // Evitar re-criação se o estado não mudou realmente
     if (lastAuthStateRef.current === stateKey) {
@@ -533,7 +558,7 @@ export const useManualAuth = (): AuthState => {
         isAdmin,
         plan: (planData.plan === 'premium' ? 'Premium' : 
               planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
-        planActive: planData.planActive,
+        planActive: planData.isActive,
         permissions: planData.permissions,
         canAccessFeatures,
         permissionsCount: planData.permissions.length,
@@ -553,7 +578,7 @@ export const useManualAuth = (): AuthState => {
       isAdmin,
       plan: (planData.plan === 'premium' ? 'Premium' : 
             planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
-      planActive: planData.planActive,
+      planActive: planData.isActive,
       permissions: planData.permissions,
       canAccessFeatures,
       permissionsCount: planData.permissions.length,
@@ -568,7 +593,7 @@ export const useManualAuth = (): AuthState => {
     role,
     isAdmin,
     planData.plan,
-    planData.planActive,
+    planData.isActive,
     planData.permissions,
     canAccessFeatures,
     signOut

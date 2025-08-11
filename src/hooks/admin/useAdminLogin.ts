@@ -25,21 +25,35 @@ export const useAdminLogin = () => {
         .eq('email', values.email)
         .maybeSingle();
 
-      if (adminError || !admin) {
-        console.error("❌ Admin não encontrado na tabela admins:", adminError);
-        setErrorMessage("Credenciais inválidas ou usuário não é administrador.");
+      if (adminError) {
+        console.error("❌ Erro ao buscar admin na tabela admins:", adminError);
+        setErrorMessage("Erro ao verificar credenciais. Tente novamente.");
         toast({
           variant: "destructive",
-          title: "Acesso negado",
-          description: "Você não tem permissão de administrador.",
+          title: "Erro de conexão",
+          description: "Erro ao verificar credenciais. Tente novamente.",
         });
         return;
       }
 
-      console.log("✅ Admin encontrado na tabela admins:", admin.email);
+      if (!admin) {
+        console.error("❌ Admin não encontrado na tabela admins para email:", values.email);
+        setErrorMessage("Email não encontrado no sistema de administração.");
+        toast({
+          variant: "destructive",
+          title: "Acesso negado",
+          description: "Email não encontrado no sistema de administração.",
+        });
+        return;
+      }
+
+      console.log("✅ Admin encontrado na tabela admins:", {
+        email: admin.email,
+        id: admin.id,
+        is_superadmin: admin.is_superadmin
+      });
 
       // ✅ VERIFICAR SENHA DIRETAMENTE
-      // Verificar se a senha está hasheada (bcrypt) ou é texto simples
       let passwordValid = false;
       
       // Se a senha começa com $2a$, $2b$, $2x$, $2y$ é um hash bcrypt
@@ -58,28 +72,32 @@ export const useAdminLogin = () => {
       } else {
         // Comparação direta para senhas em texto simples
         passwordValid = values.password === admin.password;
-        console.log("✅ Verificação de senha direta:", passwordValid);
+        console.log("✅ Verificação de senha direta:", passwordValid, {
+          providedPassword: values.password,
+          storedPassword: admin.password,
+          match: passwordValid
+        });
       }
 
       if (!passwordValid) {
         console.error("❌ Senha incorreta para admin:", admin.email);
-        setErrorMessage("Credenciais inválidas. Verifique seu email e senha.");
+        setErrorMessage("Senha incorreta. Verifique suas credenciais.");
         toast({
           variant: "destructive",
           title: "Credenciais inválidas",
-          description: "Verifique seu email e senha.",
+          description: "Senha incorreta. Verifique suas credenciais.",
         });
         return;
       }
 
       console.log("✅ Senha validada com sucesso para admin:", admin.email);
 
-      // ✅ TERCEIRO: Criar sessão direta usando os dados da tabela admins
-      // Como estamos autenticando diretamente na tabela admins, vamos usar o ID do admin
+      // ✅ CRIAR SESSÃO FAKE PARA ADMIN
       const userId = admin.id;
       console.log("✅ Usando ID do admin da tabela admins:", userId);
 
-      // Opcional: Tentar também autenticar no Supabase Auth se o usuário existir lá
+      // Tentar autenticação no Supabase Auth (opcional, pode falhar)
+      let supabaseUserId = userId;
       try {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: values.email,
@@ -88,23 +106,26 @@ export const useAdminLogin = () => {
 
         if (!authError && authData.session) {
           console.log("✅ Bonus: Autenticação Supabase também bem-sucedida");
-          // Usar o ID do Supabase Auth se disponível
-          // userId = authData.user.id;
+          supabaseUserId = authData.user.id;
         } else {
-          console.log("⚠️ Autenticação Supabase falhou, mas continuando com dados da tabela admins");
+          console.log("⚠️ Autenticação Supabase falhou, usando ID da tabela admins");
         }
       } catch (authAttemptError) {
-        console.log("⚠️ Erro na tentativa de autenticação Supabase, continuando com tabela admins");
+        console.log("⚠️ Erro na tentativa de autenticação Supabase, usando tabela admins");
       }
 
       // ✅ CRIAR/ATUALIZAR PERFIL ADMIN NA TABELA PROFILES
       const adminRole = admin.is_superadmin ? 'superadmin' : 'admin';
       
       console.log("🔧 Criando/atualizando perfil admin na tabela profiles...");
+      
+      // Usar o userId do Supabase Auth se disponível, senão o da tabela admins
+      const profileId = supabaseUserId;
+      
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: userId,
+          id: profileId,
           email: admin.email,
           role: adminRole,
           is_active: true,
@@ -114,8 +135,9 @@ export const useAdminLogin = () => {
         });
 
       if (profileError) {
-        console.warn("⚠️ Erro ao criar/atualizar perfil admin:", profileError);
-        // Não bloquear o login por isso, apenas avisar
+        console.error("❌ Erro ao criar/atualizar perfil admin:", profileError);
+        // Se falhar ao criar perfil, ainda assim permitir login
+        console.log("⚠️ Continuando com login mesmo com erro de perfil");
       } else {
         console.log("✅ Perfil admin criado/atualizado com sucesso");
       }
@@ -126,7 +148,11 @@ export const useAdminLogin = () => {
       });
 
       console.log("➡️ Redirecionando para dashboard admin");
-      navigate("/admin");
+      
+      // Esperar um pouco para garantir que o perfil foi criado antes de redirecionar
+      setTimeout(() => {
+        navigate("/admin");
+      }, 100);
     } catch (error: any) {
       console.error("💥 Erro inesperado:", error);
       setErrorMessage('Ocorreu um erro durante o login. ' + (error.message || ''));

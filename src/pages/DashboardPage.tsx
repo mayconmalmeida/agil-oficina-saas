@@ -73,7 +73,7 @@ const DashboardPage: React.FC = () => {
         </div>
         
         <div className="space-y-6">
-          <PlanInfoCard planType={dashboardData?.planType || 'essencial'} />
+          <PlanInfoCard />
           <OnboardingCard 
             onboardingStatus={onboardingStatus}
             getCompletedSteps={getCompletedSteps}
