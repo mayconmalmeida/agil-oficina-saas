@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { TabsContent } from '@/components/ui/tabs';
 import { useSettingsPage } from '@/hooks/useSettingsPage';
@@ -11,6 +10,7 @@ import SupportContact from '@/components/settings/SupportContact';
 import SettingsContainer from '@/components/settings/SettingsContainer';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const SettingsPage: React.FC = () => {
   const {
@@ -29,6 +29,8 @@ const SettingsPage: React.FC = () => {
     toggleTheme
   } = useSettingsPage();
   
+  const isMobile = useIsMobile();
+  
   if (isLoadingProfile) {
     return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
   }
@@ -36,15 +38,15 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="relative">
       {/* Botão Sair fixo no topo direito */}
-      <div className="absolute right-8 top-8 z-10">
+      <div className={`absolute z-10 ${isMobile ? 'right-4 top-4' : 'right-8 top-8'}`}>
         <Button
           variant="destructive"
           onClick={handleLogout}
           title="Sair"
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 ${isMobile ? 'px-3 py-2 text-sm' : ''}`}
         >
-          <LogOut className="w-4 h-4 mr-1" />
-          Sair
+          <LogOut className={`mr-1 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+          {!isMobile && 'Sair'}
         </Button>
       </div>
       
@@ -95,4 +97,3 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
-

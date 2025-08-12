@@ -1,21 +1,25 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, MessageSquare, Clock, TrendingUp } from 'lucide-react';
 import SuporteIA from '@/components/ai/SuporteIA';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const IASuporteInteligentePage: React.FC = () => {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isMobile ? 'px-2' : ''}`}>
       <div className="flex items-center space-x-2">
-        <Bot className="h-6 w-6 text-blue-600" />
-        <h1 className="text-2xl font-bold text-gray-900">IA para Suporte Inteligente</h1>
+        <Bot className={`text-blue-600 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
+        <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
+          IA para Suporte Inteligente
+        </h1>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
         <Card>
           <CardHeader>
-            <CardTitle>Assistente de Suporte</CardTitle>
+            <CardTitle className={isMobile ? 'text-lg' : ''}>Assistente de Suporte</CardTitle>
           </CardHeader>
           <CardContent>
             <SuporteIA />
@@ -24,7 +28,7 @@ const IASuporteInteligentePage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Como usar o Suporte Inteligente</CardTitle>
+            <CardTitle className={isMobile ? 'text-lg' : ''}>Como usar o Suporte Inteligente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-3 bg-blue-50 rounded-lg">

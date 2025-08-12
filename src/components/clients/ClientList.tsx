@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOficinaFilters, getOficinaFilter } from '@/hooks/useOficinaFilters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,30 +42,41 @@ const ClientList: React.FC<ClientListProps> = ({
   filters = {}
 }) => {
   const { user } = useAuth();
+  const { oficina_id, user_id, isReady } = useOficinaFilters();
 
   const { data: clients = [], isLoading, error } = useQuery({
-    queryKey: ['clients', user?.id],
+    queryKey: ['clients', oficina_id, user_id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!isReady) return [];
       
-      console.log('Buscando clientes para usuário:', user.id);
+      const filter = getOficinaFilter(oficina_id, user_id);
+      if (!filter) {
+        console.log('[ClientList] ❌ Filtros não disponíveis');
+        return [];
+      }
+
+      console.log('[ClientList] 🔍 Buscando clientes com filtro:', filter);
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('clients')
         .select('*')
-        .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
+
+      // Apply the correct filter based on column and value
+      query = query.eq(filter.column, filter.value);
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Erro ao buscar clientes:', error);
         throw error;
       }
 
-      console.log('Clientes encontrados:', data);
+      console.log('[ClientList] ✅ Clientes encontrados:', data?.length || 0);
       return data as Client[];
     },
-    enabled: !!user?.id,
+    enabled: isReady,
     staleTime: 1000 * 60 * 5, // 5 minutos
     refetchOnWindowFocus: false
   });

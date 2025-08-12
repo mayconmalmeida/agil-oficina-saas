@@ -77,10 +77,10 @@ const SchedulingPage: React.FC = () => {
       // Use the safeRpc function to call the create_agendamento RPC
       const { error: insertError } = await safeRpc('create_agendamento', {
         p_user_id: userId,
-        p_data: format(data.data, 'yyyy-MM-dd'),
+        p_data: data.data,
         p_horario: data.horario,
         p_cliente_id: data.cliente_id,
-        p_veiculo_id: data.veiculo_id, 
+        p_veiculo_id: null, // Vehicle ID is optional for now
         p_servico_id: data.servico_id,
         p_observacoes: data.observacoes || '',
         p_status: 'agendado'

@@ -10,13 +10,13 @@ import ClientSelector from './form-sections/ClientSelector';
 import ServiceSelector from './form-sections/ServiceSelector';
 import DateTimeSelector from './form-sections/DateTimeSelector';
 import NotesField from './form-sections/NotesField';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Define schema
 export const schedulingSchema = z.object({
   cliente_id: z.string().min(1, "Selecione um cliente"),
-  veiculo_id: z.string().min(1, "Selecione um veículo"),
   servico_id: z.string().min(1, "Selecione um serviço"),
-  data: z.date(),
+  data: z.string().min(1, "Selecione uma data"),
   horario: z.string().min(1, "Selecione um horário"),
   observacoes: z.string().optional(),
 });
@@ -31,13 +31,13 @@ interface SchedulingFormProps {
 }
 
 const SchedulingForm: React.FC<SchedulingFormProps> = ({ onSubmit, isLoading, clients, services }) => {
+  const isMobile = useIsMobile();
   const methods = useForm<SchedulingFormValues>({
     resolver: zodResolver(schedulingSchema),
     defaultValues: {
       cliente_id: '',
-      veiculo_id: '',
       servico_id: '',
-      data: new Date(),
+      data: '',
       horario: '',
       observacoes: '',
     },
@@ -52,9 +52,9 @@ const SchedulingForm: React.FC<SchedulingFormProps> = ({ onSubmit, isLoading, cl
   }, [formErrors]);
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className={`w-full ${isMobile ? 'mx-2' : 'max-w-4xl mx-auto'}`}>
       <CardHeader>
-        <CardTitle className="text-2xl">Novo Agendamento</CardTitle>
+        <CardTitle className={isMobile ? 'text-xl' : 'text-2xl'}>Novo Agendamento</CardTitle>
       </CardHeader>
       
       <FormProvider {...methods}>
