@@ -16,17 +16,11 @@ import ProductsPage from "@/pages/ProductsPage";
 import BudgetsPage from "@/pages/BudgetsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import ProfilePage from "@/pages/ProfilePage";
-import SchedulePage from "@/pages/SchedulePage";
 import IASupportPage from "@/pages/IASupportPage";
 
 // Components
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminGuard from "@/components/auth/AdminGuard";
-import AppLayout from "@/components/layout/AppLayout";
-
-// Admin Pages
-import AdminLoginPage from "@/pages/admin/AdminLoginPage";
-import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -42,25 +36,12 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               
-              {/* Admin routes */}
-              <Route path="/admin/login" element={<AdminLoginPage />} />
-              <Route 
-                path="/admin" 
-                element={
-                  <AdminGuard>
-                    <AdminDashboardPage />
-                  </AdminGuard>
-                } 
-              />
-              
-              {/* Protected routes with layout */}
+              {/* Protected routes */}
               <Route 
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <DashboardPage />
-                    </AppLayout>
+                    <DashboardPage />
                   </ProtectedRoute>
                 } 
               />
@@ -68,9 +49,7 @@ function App() {
                 path="/clientes" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <ClientsPage />
-                    </AppLayout>
+                    <ClientsPage />
                   </ProtectedRoute>
                 } 
               />
@@ -78,9 +57,7 @@ function App() {
                 path="/servicos" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <ServicesPage />
-                    </AppLayout>
+                    <ServicesPage />
                   </ProtectedRoute>
                 } 
               />
@@ -88,9 +65,7 @@ function App() {
                 path="/produtos" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <ProductsPage />
-                    </AppLayout>
+                    <ProductsPage />
                   </ProtectedRoute>
                 } 
               />
@@ -98,9 +73,7 @@ function App() {
                 path="/orcamentos/*" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <BudgetsPage />
-                    </AppLayout>
+                    <BudgetsPage />
                   </ProtectedRoute>
                 } 
               />
@@ -108,9 +81,7 @@ function App() {
                 path="/relatorios" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <ReportsPage />
-                    </AppLayout>
+                    <ReportsPage />
                   </ProtectedRoute>
                 } 
               />
@@ -118,19 +89,7 @@ function App() {
                 path="/perfil" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <ProfilePage />
-                    </AppLayout>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/agendamentos" 
-                element={
-                  <ProtectedRoute>
-                    <AppLayout>
-                      <SchedulePage />
-                    </AppLayout>
+                    <ProfilePage />
                   </ProtectedRoute>
                 } 
               />
@@ -138,9 +97,7 @@ function App() {
                 path="/ia-suporte-inteligente" 
                 element={
                   <ProtectedRoute>
-                    <AppLayout>
-                      <IASupportPage />
-                    </AppLayout>
+                    <IASupportPage />
                   </ProtectedRoute>
                 } 
               />

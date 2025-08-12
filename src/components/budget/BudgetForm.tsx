@@ -16,7 +16,7 @@ import ServicesField from './form-sections/ServicesField';
 
 const BudgetForm: React.FC = () => {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
-  const { isLoading, handleSubmit: onSubmit, skipStep } = useBudgetForm();
+  const { isLoading, handleSubmit: handleBudgetSubmit, skipStep } = useBudgetForm();
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -24,8 +24,7 @@ const BudgetForm: React.FC = () => {
       cliente: '',
       veiculo: '',
       descricao: '',
-      valor_total: '',
-      itens: []
+      valor_total: ''
     },
   });
 
@@ -35,7 +34,7 @@ const BudgetForm: React.FC = () => {
   };
 
   const onSubmit = async (values: BudgetFormValues) => {
-    await handleSubmit(values);
+    await handleBudgetSubmit(values);
   };
 
   return (
@@ -53,8 +52,7 @@ const BudgetForm: React.FC = () => {
               />
               
               <VehicleField 
-                form={form} 
-                selectedClientId={selectedClientId}
+                form={form}
               />
               
               <DescriptionField form={form} />

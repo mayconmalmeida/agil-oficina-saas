@@ -38,19 +38,33 @@ export const useLogin = () => {
       if (data.session && data.user) {
         console.log("✅ Login bem-sucedido:", data.user.email);
         
-        // Buscar ou criar oficina para o usuário logado
+        // Check if oficina exists for this user
         try {
-          const { data: oficinaData, error: oficinaError } = await supabase.rpc('get_or_create_oficina', {
-            p_user_id: data.user.id,
-            p_email: data.user.email,
-            p_nome_oficina: null,
-            p_telefone: null
-          });
+          const { data: oficinaData, error: oficinaError } = await supabase
+            .from('oficinas')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single();
 
-          if (oficinaError) {
-            console.error("⚠️ Erro ao buscar/criar oficina:", oficinaError);
-          } else {
-            console.log("✅ Oficina configurada:", oficinaData);
+          if (oficinaError && oficinaError.code === 'PGRST116') {
+            // No oficina found, create one
+            const { error: insertError } = await supabase
+              .from('oficinas')
+              .insert({
+                user_id: data.user.id,
+                email: data.user.email,
+                nome_oficina: 'Nova Oficina',
+                is_active: true,
+                ativo: true
+              });
+
+            if (insertError) {
+              console.error("⚠️ Erro ao criar oficina:", insertError);
+            } else {
+              console.log("✅ Nova oficina criada");
+            }
+          } else if (!oficinaError) {
+            console.log("✅ Oficina existente encontrada:", oficinaData);
           }
         } catch (err) {
           console.error("⚠️ Erro na configuração da oficina:", err);
