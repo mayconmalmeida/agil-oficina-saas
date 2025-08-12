@@ -28,8 +28,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AdminProvider>
-          <Router>
+        <Router>
+          <AdminProvider>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
@@ -103,8 +103,8 @@ function App() {
               />
             </Routes>
             <Toaster />
-          </Router>
-        </AdminProvider>
+          </AdminProvider>
+        </Router>
       </AuthProvider>
     </QueryClientProvider>
   );
