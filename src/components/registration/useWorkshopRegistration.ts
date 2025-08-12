@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { validateOficinaUniqueness, checkExistingOficina } from '@/utils/oficinasValidation';
 import { WorkshopRegistrationFormValues } from './workshopRegistrationSchema';
 
 export function useWorkshopRegistration() {
@@ -50,7 +49,7 @@ export function useWorkshopRegistration() {
         // Atualização incremental do perfil
         const updateObj: any = {};
         if ('businessName' in data) updateObj.nome_oficina = data.businessName;
-        if ('tradingName' in data) updateObj.trading_name = data.tradingName;
+        if ('tradingName' in data) updateObj.trading_name = data.tradingName; // Cuidado: só atualize se existir coluna
         if ('documentType' in data && data.documentType === 'CNPJ') updateObj.cnpj = data.documentNumber;
         if ('responsiblePerson' in data) updateObj.responsavel = data.responsiblePerson;
         if ('phone' in data) updateObj.telefone = data.phone;
@@ -92,25 +91,7 @@ export function useWorkshopRegistration() {
   ) => {
     setIsLoading(true);
     try {
-      console.log('🚀 Iniciando registro de oficina:', { email: data.email, businessName: data.businessName });
-
-      // 1. VALIDAR UNICIDADE ANTES DE CRIAR USUÁRIO
-      const validation = await validateOficinaUniqueness(
-        data.email, 
-        data.documentType === 'CNPJ' ? data.documentNumber : ''
-      );
-
-      if (!validation.valid) {
-        toast({
-          variant: "destructive",
-          title: "Email já cadastrado",
-          description: validation.message,
-        });
-        return;
-      }
-
-      // 2. Criação do usuário no Auth
-      console.log('✅ Validação passou, criando usuário Auth...');
+      // 1. Criação do usuário no Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -122,95 +103,48 @@ export function useWorkshopRegistration() {
           }
         }
       });
-      
-      if (authError) {
-        console.error('❌ Erro ao criar usuário Auth:', authError);
-        throw authError;
-      }
+      if (authError) throw authError;
       if (!authData.user) throw new Error("Falha ao criar usuário");
 
-      console.log('✅ Usuário Auth criado:', authData.user.id);
-
-      // 3. VERIFICAR SE JÁ EXISTE OFICINA PARA ESTE USUÁRIO
-      const existingCheck = await checkExistingOficina(authData.user.id);
-      if (existingCheck.exists) {
-        console.log('⚠️ Oficina já existe, atualizando...');
-        toast({
-          title: "Oficina já existe",
-          description: "Atualizando dados da oficina existente.",
-        });
+      // 2. Atualiza o perfil parcial com o id Auth (caso profile tenha sido criado com id random)
+      if (profileId) {
+        await supabase
+          .from('profiles')
+          .update({ id: authData.user.id, is_active: true })
+          .eq('id', profileId);
       }
 
-      // 4. Criar/Atualizar oficina na tabela oficinas
-      const oficinaData = {
-        user_id: authData.user.id,
-        nome_oficina: data.businessName,
-        cnpj: data.documentType === 'CNPJ' ? data.documentNumber : null,
-        telefone: data.phone,
-        email: data.email,
-        responsavel: data.responsiblePerson,
-        endereco: data.address,
-        cidade: data.city,
-        estado: data.state,
-        cep: data.zipCode,
-        plano: selectedPlan,
-        is_active: true,
-        ativo: true,
-        trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias de trial
-      };
-
-      console.log('📝 Inserindo/atualizando oficina:', oficinaData);
-
-      const { error: oficinaError } = await supabase
-        .from('oficinas')
-        .upsert(oficinaData, { 
-          onConflict: 'user_id',
-          ignoreDuplicates: false 
-        });
-
-      if (oficinaError) {
-        console.error('❌ Erro ao criar/atualizar oficina:', oficinaError);
-        throw new Error(`Erro ao cadastrar oficina: ${oficinaError.message}`);
-      }
-
-      console.log('✅ Oficina criada/atualizada com sucesso');
-
-      // 5. Atualizar perfil com dados finais
+      // 3. Atualiza perfil com todos os dados finais
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 7);
 
       await supabase
         .from('profiles')
-        .upsert({
-          id: authData.user.id,
+        .update({
           email: data.email,
           responsavel: data.responsiblePerson,
           telefone: data.phone,
-          nome_oficina: data.businessName,
-          cnpj: data.documentType === 'CNPJ' ? data.documentNumber : null,
           plano: selectedPlan,
           trial_ends_at: trialEndDate.toISOString(),
           is_active: true,
-          role: 'oficina'
-        }, {
-          onConflict: 'id'
-        });
+        })
+        .eq('id', authData.user.id);
 
-      // 6. Onboarding
+      // 4. Onboarding
       await supabase
         .from('onboarding_status')
-        .upsert([{ 
-          user_id: authData.user.id, 
-          profile_completed: true 
-        }], {
-          onConflict: 'user_id'
-        });
-
-      console.log('✅ Cadastro concluído com sucesso!');
+        .insert([{ user_id: authData.user.id, profile_completed: true }]);
+      await supabase.rpc('create_subscription', {
+        user_id: authData.user.id,
+        plan_type: selectedPlan.toLowerCase(),
+        start_date: new Date().toISOString(),
+        end_date: trialEndDate.toISOString()
+      });
 
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Oficina criada no sistema! Aguarde redirecionamento…",
+        description:
+          "Oficina criada no sistema! Aguarde redirecionamento…",
       });
 
       setTimeout(async () => {
@@ -220,16 +154,12 @@ export function useWorkshopRegistration() {
         });
 
         if (signInError) {
-          console.error('❌ Erro no login automático:', signInError);
           navigate('/login');
         } else {
-          console.log('✅ Login automático realizado');
           navigate('/dashboard');
         }
-      }, 2000);
-
+      }, 3000);
     } catch (error: any) {
-      console.error('💥 Erro no cadastro:', error);
       toast({
         variant: "destructive",
         title: "Erro no cadastro",

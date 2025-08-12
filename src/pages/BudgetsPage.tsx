@@ -1,207 +1,103 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Plus, Eye, Edit, Trash2, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-
-interface Budget {
-  id: string;
-  cliente: string;
-  veiculo: string;
-  descricao: string;
-  valor_total: number;
-  status: string;
-  created_at: string;
-}
+import { Search, Plus, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import BudgetList from '@/components/budgets/BudgetList';
+import BudgetForm from '@/components/budget/BudgetForm';
+import { Input } from '@/components/ui/input';
+import { useBudgetForm } from '@/hooks/useBudgetForm';
+import { useNavigate } from 'react-router-dom';
 
 const BudgetsPage: React.FC = () => {
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadBudgets();
-  }, []);
-
-  const loadBudgets = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('orcamentos')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao carregar orçamentos:', error);
-        throw error;
-      }
-
-      setBudgets(data || []);
-    } catch (error: any) {
-      console.error('Erro ao carregar orçamentos:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar os orçamentos."
-      });
-    } finally {
-      setLoading(false);
-    }
+  const [activeTab, setActiveTab] = useState('lista');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState('todos');
+  const { isLoading, handleSubmit, skipStep } = useBudgetForm();
+  const navigate = useNavigate();
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Searching for:", searchQuery);
   };
-
-  const deleteBudget = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('orcamentos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Orçamento excluído com sucesso."
-      });
-
-      loadBudgets();
-    } catch (error: any) {
-      console.error('Erro ao excluir orçamento:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível excluir o orçamento."
-      });
-    }
+  
+  const handleNewBudget = () => {
+    navigate('/dashboard/orcamentos/novo');
   };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'aprovado':
-        return 'text-green-600 bg-green-100';
-      case 'rejeitado':
-        return 'text-red-600 bg-red-100';
-      case 'pendente':
-        return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-lg">Carregando orçamentos...</div>
-        </div>
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <FileText className="h-8 w-8 text-blue-600" />
-            Orçamentos
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie seus orçamentos e propostas
-          </p>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Gerenciar Orçamentos</h1>
+          <Button onClick={handleNewBudget}>
+            <Plus className="mr-2 h-4 w-4" /> Novo Orçamento
+          </Button>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Orçamento
-        </Button>
-      </div>
-
-      {budgets.length === 0 ? (
+        
         <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum orçamento encontrado</h3>
-              <p className="text-muted-foreground mb-4">
-                Comece criando seu primeiro orçamento
-              </p>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Criar Primeiro Orçamento
-              </Button>
-            </div>
+          <CardContent className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                <TabsList>
+                  <TabsTrigger value="lista" className="flex items-center">
+                    <FileText className="mr-2 h-4 w-4" /> 
+                    Lista de Orçamentos
+                  </TabsTrigger>
+                  <TabsTrigger value="novo" className="flex items-center">
+                    <Plus className="mr-2 h-4 w-4" /> 
+                    Novo Orçamento
+                  </TabsTrigger>
+                </TabsList>
+                
+                {activeTab === 'lista' && (
+                  <div className="flex flex-col md:flex-row gap-2 w-full md:max-w-lg">
+                    <form onSubmit={handleSearch} className="flex items-center space-x-2 flex-1">
+                      <Input
+                        type="text"
+                        placeholder="Buscar orçamentos..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button type="submit" size="icon">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </form>
+                    
+                    <Select value={filter} onValueChange={setFilter}>
+                      <SelectTrigger className="md:w-[180px]">
+                        <SelectValue placeholder="Filtrar por" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="pendentes">Pendentes</SelectItem>
+                        <SelectItem value="aprovados">Aprovados</SelectItem>
+                        <SelectItem value="rejeitados">Rejeitados</SelectItem>
+                        <SelectItem value="convertidos">Convertidos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              
+              <TabsContent value="lista" className="mt-0">
+                <BudgetList searchQuery={searchQuery} filter={filter} />
+              </TabsContent>
+              
+              <TabsContent value="novo" className="mt-0">
+                <BudgetForm 
+                  onSubmit={handleSubmit}
+                  onSkip={skipStep}
+                  isLoading={isLoading}
+                />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-4">
-          {budgets.map((budget) => (
-            <Card key={budget.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{budget.cliente}</CardTitle>
-                    <CardDescription>{budget.veiculo}</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(budget.status)}`}>
-                      {budget.status}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => deleteBudget(budget.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Descrição</p>
-                    <p className="font-medium">{budget.descricao}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valor Total</p>
-                    <p className="font-bold text-lg text-green-600">
-                      {formatCurrency(budget.valor_total)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Data</p>
-                    <p className="font-medium">{formatDate(budget.created_at)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -1,49 +1,78 @@
-
 import React from 'react';
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import PlanExpiredGuard from '@/components/subscription/PlanExpiredGuard';
+import SubscriptionGuard from '@/components/subscription/SubscriptionGuard';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardPage from '@/pages/DashboardPage';
 import ClientsPage from '@/pages/ClientsPage';
+import NewClientPage from '@/pages/NewClientPage';
 import ServicesPage from '@/pages/ServicesPage';
-import VehiclesPage from '@/pages/VehiclesPage';
-import NewBudgetPage from '@/pages/NewBudgetPage';
+import ServicesListPage from '@/pages/ServicesListPage';
 import BudgetsPage from '@/pages/BudgetsPage';
+import NewBudgetPage from '@/pages/NewBudgetPage';
+import BudgetDetailsPage from '@/pages/BudgetDetailsPage';
+import SchedulesPage from '@/pages/SchedulesPage';
+import NewSchedulePage from '@/pages/NewSchedulePage';
 import SchedulingPage from '@/pages/SchedulingPage';
-import AISupportPage from '@/pages/AISupportPage';
-import ConfiguracoesPage from '@/pages/ConfiguracoesPage';
-import RelatoriosPage from '@/pages/RelatoriosPage';
+import ProductsPage from '@/pages/ProductsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import SuppliersPage from '@/pages/SuppliersPage';
+import SettingsPage from '@/pages/SettingsPage';
+import CompanyPage from '@/pages/CompanyPage';
+import ProfilePage from '@/pages/ProfilePage';
+import SubscriptionPage from '@/pages/SubscriptionPage';
+import VehiclesPage from '@/pages/VehiclesPage';
+import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
+import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import IASuporteInteligentePage from '@/pages/IASuporteInteligentePage';
+import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
+import BackupPage from '@/pages/BackupPage';
+import NewVehiclePage from '@/pages/NewVehiclePage';
 
-export const protectedRoutes = (
-  <>
-    {/* Dashboard Routes */}
-    <Route path="/dashboard/*" element={
+export const protectedRoutes = [
+  <Route
+    key="dashboard"
+    path="/dashboard"
+    element={
       <ProtectedRoute>
-        <PlanExpiredGuard>
-          <DashboardLayout />
-        </PlanExpiredGuard>
+        <DashboardLayout />
       </ProtectedRoute>
-    }>
-      {/* Clients */}
-      <Route path="clientes" element={<ClientsPage />} />
-      
-      {/* Services */}
-      <Route path="servicos" element={<ServicesPage />} />
-      
-      {/* Vehicles */}
-      <Route path="veiculos" element={<VehiclesPage />} />
-      
-      {/* Budgets */}
-      <Route path="orcamentos" element={<BudgetsPage />} />
-      <Route path="orcamentos/novo" element={<NewBudgetPage />} />
-      
-      {/* Scheduling */}
-      <Route path="agendamentos/novo" element={<SchedulingPage />} />
-      
-      {/* New Routes */}
-      <Route path="ia-suporte" element={<AISupportPage />} />
-      <Route path="configuracoes" element={<ConfiguracoesPage />} />
-      <Route path="relatorios" element={<RelatoriosPage />} />
-    </Route>
-  </>
-);
+    }
+  >
+    <Route index element={<DashboardPage />} />
+    <Route path="clientes" element={<ClientsPage />} />
+    <Route path="clientes/novo" element={<NewClientPage />} />
+    <Route path="veiculos" element={<VehiclesPage />} />
+    <Route path="veiculos/novo" element={<NewVehiclePage />} />
+    <Route path="veiculos/:id/editar" element={<NewVehiclePage />} />
+    <Route path="servicos" element={<ServicesListPage />} />
+    <Route path="servicos/novo" element={<ServicesPage />} />
+    <Route path="orcamentos" element={<BudgetsPage />} />
+    <Route path="orcamentos/novo" element={<NewBudgetPage />} />
+    <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
+    <Route path="agendamentos" element={<SchedulesPage />} />
+    <Route path="agendamentos/novo" element={<NewSchedulePage />} />
+    <Route 
+      path="agendamento-premium" 
+      element={
+        <SubscriptionGuard requiredPlan="premium">
+          <SchedulingPage />
+        </SubscriptionGuard>
+      } 
+    />
+    <Route path="produtos" element={<ProductsPage />} />
+    <Route path="categorias" element={<CategoriesPage />} />
+    <Route path="fornecedores" element={<SuppliersPage />} />
+    <Route path="configuracoes" element={<SettingsPage />} />
+    <Route path="empresa" element={<CompanyPage />} />
+    <Route path="perfil" element={<ProfilePage />} />
+    <Route path="assinatura" element={<SubscriptionPage />} />
+    <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
+    <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
+    <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
+    <Route path="ia-suporte" element={<IASuporteInteligentePage />} />
+    <Route path="integracao-contabil" element={<IntegracaoContabilPage />} />
+    <Route path="backup" element={<BackupPage />} />
+  </Route>
+];

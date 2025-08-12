@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -51,15 +52,16 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       form.setValue('cliente', value);
       setSearchTerm(value);
       
-      // Clear selection only if input is completely empty
       if (value === '' && selectedClient) {
         clearSelection();
         form.setValue('veiculo', '');
       }
       
-      // Keep popover open while typing
+      // Open popover if there's input with at least 2 characters
       if (value.length >= 2) {
         setClientSearchOpen(true);
+      } else {
+        setClientSearchOpen(false);
       }
     } catch (error) {
       console.error('Erro ao alterar input:', error);
@@ -85,6 +87,13 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     }
   }, [form, selectedClient, setSearchTerm]);
 
+  // Close popover when clicking outside or when no search term
+  useEffect(() => {
+    if (searchTerm.length < 2) {
+      setClientSearchOpen(false);
+    }
+  }, [searchTerm]);
+
   return (
     <FormField
       control={form.control}
@@ -100,11 +109,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                     {...field} 
                     placeholder="Digite o nome do cliente..." 
                     className="pr-20"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      handleInputChange(e.target.value);
-                    }}
+                    onChange={(e) => handleInputChange(e.target.value)}
                     onFocus={() => {
                       if (field.value && field.value.length >= 2) {
                         setClientSearchOpen(true);
@@ -131,6 +136,12 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
             </PopoverTrigger>
             <PopoverContent className="p-0 w-full" align="start" side="bottom" sideOffset={5}>
               <Command shouldFilter={false}>
+                <CommandInput 
+                  placeholder="Digite o nome do cliente..." 
+                  value={searchTerm}
+                  onValueChange={setSearchTerm}
+                  className="h-9"
+                />
                 <CommandList>
                   <CommandEmpty>
                     {isLoadingClients ? (
@@ -138,7 +149,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Carregando...
                       </div>
-                    ) : searchTerm && searchTerm.length >= 2 ? (
+                    ) : searchTerm.length >= 2 ? (
                       'Nenhum cliente encontrado'
                     ) : (
                       'Digite pelo menos 2 caracteres para buscar'
