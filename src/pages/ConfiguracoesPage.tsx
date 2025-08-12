@@ -73,7 +73,9 @@ const ConfiguracoesPage: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Validar email e CNPJ únicos
+      console.log('🔍 Validando dados antes de salvar configurações...');
+
+      // Validar email e CNPJ únicos (excluindo o próprio usuário)
       const validation = await validateOficinaUniqueness(
         profile.email,
         profile.cnpj,
@@ -89,18 +91,48 @@ const ConfiguracoesPage: React.FC = () => {
         return;
       }
 
-      const { error } = await supabase
+      console.log('✅ Validação passou, salvando perfil...');
+
+      // Atualizar tabela profiles
+      const { error: profileError } = await supabase
         .from('profiles')
         .update(profile)
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (profileError) {
+        console.error('❌ Erro ao atualizar perfil:', profileError);
+        throw profileError;
+      }
+
+      // Atualizar tabela oficinas também
+      const { error: oficinaError } = await supabase
+        .from('oficinas')
+        .update({
+          nome_oficina: profile.nome_oficina,
+          email: profile.email,
+          telefone: profile.telefone,
+          cnpj: profile.cnpj,
+          endereco: profile.endereco,
+          cidade: profile.cidade,
+          estado: profile.estado,
+          cep: profile.cep,
+          responsavel: profile.responsavel
+        })
+        .eq('user_id', user.id);
+
+      if (oficinaError) {
+        console.warn('⚠️ Erro ao atualizar oficina (pode não existir ainda):', oficinaError);
+        // Não bloquear o salvamento se a oficina não existir
+      }
+
+      console.log('✅ Configurações salvas com sucesso');
 
       toast({
         title: "Configurações salvas",
         description: "Suas configurações foram atualizadas com sucesso.",
       });
     } catch (error: any) {
+      console.error('💥 Erro ao salvar configurações:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar",
@@ -161,11 +193,12 @@ const ConfiguracoesPage: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nome_oficina">Nome da Oficina</Label>
+                  <Label htmlFor="nome_oficina">Nome da Oficina *</Label>
                   <Input
                     id="nome_oficina"
                     value={profile.nome_oficina}
                     onChange={(e) => setProfile(prev => ({ ...prev, nome_oficina: e.target.value }))}
+                    placeholder="Digite o nome da oficina"
                   />
                 </div>
                 <div className="space-y-2">
@@ -174,23 +207,29 @@ const ConfiguracoesPage: React.FC = () => {
                     id="responsavel"
                     value={profile.responsavel}
                     onChange={(e) => setProfile(prev => ({ ...prev, responsavel: e.target.value }))}
+                    placeholder="Nome do responsável"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={profile.email}
                     onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@oficina.com"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Este email deve ser único no sistema
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
+                  <Label htmlFor="telefone">Telefone *</Label>
                   <Input
                     id="telefone"
                     value={profile.telefone}
                     onChange={(e) => setProfile(prev => ({ ...prev, telefone: e.target.value }))}
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
                 <div className="space-y-2">
@@ -199,7 +238,11 @@ const ConfiguracoesPage: React.FC = () => {
                     id="cnpj"
                     value={profile.cnpj}
                     onChange={(e) => setProfile(prev => ({ ...prev, cnpj: e.target.value }))}
+                    placeholder="00.000.000/0000-00"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Este CNPJ deve ser único no sistema
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="whatsapp_suporte">WhatsApp Suporte</Label>
@@ -207,6 +250,7 @@ const ConfiguracoesPage: React.FC = () => {
                     id="whatsapp_suporte"
                     value={profile.whatsapp_suporte}
                     onChange={(e) => setProfile(prev => ({ ...prev, whatsapp_suporte: e.target.value }))}
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
               </div>
@@ -217,6 +261,7 @@ const ConfiguracoesPage: React.FC = () => {
                   id="endereco"
                   value={profile.endereco}
                   onChange={(e) => setProfile(prev => ({ ...prev, endereco: e.target.value }))}
+                  placeholder="Rua, Avenida, etc."
                 />
               </div>
               
@@ -227,6 +272,7 @@ const ConfiguracoesPage: React.FC = () => {
                     id="cidade"
                     value={profile.cidade}
                     onChange={(e) => setProfile(prev => ({ ...prev, cidade: e.target.value }))}
+                    placeholder="São Paulo"
                   />
                 </div>
                 <div className="space-y-2">
@@ -235,6 +281,7 @@ const ConfiguracoesPage: React.FC = () => {
                     id="estado"
                     value={profile.estado}
                     onChange={(e) => setProfile(prev => ({ ...prev, estado: e.target.value }))}
+                    placeholder="SP"
                   />
                 </div>
                 <div className="space-y-2">
@@ -243,6 +290,7 @@ const ConfiguracoesPage: React.FC = () => {
                     id="cep"
                     value={profile.cep}
                     onChange={(e) => setProfile(prev => ({ ...prev, cep: e.target.value }))}
+                    placeholder="00000-000"
                   />
                 </div>
               </div>
