@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,9 +56,9 @@ const RelatoriosPage: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 
-      // Faturamento total (soma dos orçamentos)
+      // Faturamento total (soma dos orçamentos) - Fixed type error
       const faturamentoTotal = orcamentos?.reduce((sum, orcamento) => 
-        sum + (parseFloat(orcamento.valor_total) || 0), 0) || 0;
+        sum + (parseFloat(String(orcamento.valor_total)) || 0), 0) || 0;
 
       // Dados simulados para os gráficos (substituir por dados reais)
       const orcamentosPorStatus = [
