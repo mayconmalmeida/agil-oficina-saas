@@ -19,7 +19,7 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     
     // Evitar logs duplicados
     if (lastLogRef.current !== decisionKey) {
-      console.log('PlanExpiredGuard: Verificando acesso uma única vez', {
+      console.log('PlanExpiredGuard: Verificando acesso', {
         hasUser: !!user,
         isAdmin,
         planActive,
@@ -33,19 +33,16 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     }
 
     if (!user) {
-      return 'login';
+      return 'loading'; // Aguarda AuthContext resolver
     }
 
+    // Admin sempre tem acesso
     if (isAdmin) {
-      console.log('PlanExpiredGuard: Admin detectado, liberando acesso');
+      console.log('PlanExpiredGuard: Admin detectado, acesso liberado');
       return 'allowed';
     }
 
-    if (!planActive) {
-      console.log('PlanExpiredGuard: Plano inativo, redirecionando para /plano-expirado');
-      return 'expired';
-    }
-
+    // Oficinas sempre têm acesso (validação já feita no AuthContext)
     console.log('PlanExpiredGuard: Acesso liberado, plano ativo');
     return 'allowed';
   }, [user?.id, isLoadingAuth, isAdmin, planActive]); // Dependências mais específicas
@@ -63,13 +60,7 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
     return <Loading fullscreen text="Verificando plano..." />;
   }
 
-  if (accessDecision === 'login') {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (accessDecision === 'expired') {
-    return <Navigate to="/plano-expirado" replace />;
-  }
+  // Não há mais redirecionamentos - oficinas sempre têm acesso Premium
 
   return <>{children}</>;
 };

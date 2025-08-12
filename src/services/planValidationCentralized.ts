@@ -48,7 +48,30 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       };
     }
 
-    // ✅ SEGUNDO: Verificar assinaturas ativas (user_subscriptions)
+    // ✅ SEGUNDO: Verificar se é oficina (auto-premium)
+    const { data: oficina } = await supabase
+      .from('oficinas')
+      .select('id, plano, is_active, ativo, trial_ends_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (oficina && (oficina.is_active || oficina.ativo)) {
+      console.log('[validatePlanAccess] 🏢 Oficina detectada, liberando acesso Premium automático');
+      return {
+        isActive: true,
+        plan: 'premium',
+        planName: 'Premium (Oficina)',
+        permissions: getPlanPermissions('premium'),
+        daysRemaining: 999,
+        source: 'oficinas',
+        isAdmin: false,
+        isPremium: true,
+        isEssencial: false,
+        canAccessFeatures: true
+      };
+    }
+
+    // ✅ TERCEIRO: Verificar assinaturas ativas (user_subscriptions)
     const { data: subscriptions } = await supabase
       .from('user_subscriptions')
       .select('*')
@@ -121,62 +144,10 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       }
     }
 
-    // ✅ TERCEIRO: Verificar na tabela oficinas
-    const { data: oficina } = await supabase
-      .from('oficinas')
-      .select('plano, is_active, ativo, trial_ends_at')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // ✅ QUARTO: Verificar dados legados na tabela oficinas (apenas como fallback)
+    // Nota: oficinas já são verificadas acima com acesso Premium automático
 
-    if (oficina && (oficina.is_active || oficina.ativo) && oficina.plano) {
-      console.log('[validatePlanAccess] ✅ Plano ativo encontrado na oficina:', oficina.plano);
-      
-      // Verificar se tem trial ativo
-      if (oficina.trial_ends_at) {
-        const trialEnd = new Date(oficina.trial_ends_at);
-        const now = new Date();
-        const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (trialEnd > now) {
-          const planType: PlanType = oficina.plano.toLowerCase() === 'premium' ? 'premium' : 'essencial';
-          const planName = `${planType === 'premium' ? 'Premium' : 'Essencial'} (período de teste)`;
-          const permissions = getPlanPermissions(planType);
-          
-          return {
-            isActive: true,
-            plan: planType,
-            planName,
-            permissions,
-            daysRemaining: Math.max(0, daysRemaining),
-            source: 'oficinas',
-            isAdmin: false,
-            isPremium: planType === 'premium',
-            isEssencial: planType === 'essencial',
-            canAccessFeatures: true
-          };
-        }
-      }
-      
-      // Plano permanente
-      const planType: PlanType = oficina.plano.toLowerCase() === 'premium' ? 'premium' : 'essencial';
-      const planName = `${planType === 'premium' ? 'Premium' : 'Essencial'} Ativo`;
-      const permissions = getPlanPermissions(planType);
-      
-      return {
-        isActive: true,
-        plan: planType,
-        planName,
-        permissions,
-        daysRemaining: 999,
-        source: 'oficinas',
-        isAdmin: false,
-        isPremium: planType === 'premium',
-        isEssencial: planType === 'essencial',
-        canAccessFeatures: true
-      };
-    }
-
-    // ✅ QUARTO: Nenhum plano ativo
+    // ✅ QUINTO: Nenhum plano ativo
     console.log('[validatePlanAccess] ❌ Nenhum plano ativo encontrado');
     return {
       isActive: false,
