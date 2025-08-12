@@ -1,106 +1,98 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { budgetFormSchema, BudgetFormValues } from './budgetSchema';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import ClientSearchField from './form-sections/ClientSearchField';
+import { Loader2 } from 'lucide-react';
+import { budgetFormSchema, BudgetFormValues } from './budgetSchema';
+import { useBudgetForm } from '@/hooks/useBudgetForm';
+import ClientField from './form-sections/ClientField';
 import VehicleField from './form-sections/VehicleField';
 import DescriptionField from './form-sections/DescriptionField';
-import TotalValueField from './form-sections/TotalValueField';
-import FormActions from './form-sections/FormActions';
-import ProductServiceSelector from './form-sections/ProductServiceSelector';
-import XmlUploadField from './form-sections/XmlUploadField';
-import { useState, useEffect } from 'react';
+import ValueField from './form-sections/ValueField';
+import ServicesField from './form-sections/ServicesField';
 
-interface SelectedItem {
-  id: string;
-  nome: string;
-  tipo: 'produto' | 'servico';
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-}
+const BudgetForm: React.FC = () => {
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const { isLoading, handleSubmit: onSubmit, skipStep } = useBudgetForm();
 
-interface BudgetFormProps {
-  onSubmit: (data: BudgetFormValues & { itens?: SelectedItem[] }) => void;
-  onSkip: () => void;
-  isLoading: boolean;
-  initialValues?: {
-    cliente?: string;
-    veiculo?: string;
-    descricao?: string;
-    valor_total?: string;
-  }
-}
-
-const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, initialValues }) => {
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
-  
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      cliente: initialValues?.cliente || '',
-      veiculo: initialValues?.veiculo || '',
-      descricao: initialValues?.descricao || '',
-      valor_total: initialValues?.valor_total || ''
-    }
+      cliente: '',
+      veiculo: '',
+      descricao: '',
+      valor_total: '',
+      itens: []
+    },
   });
 
-  // Update total value when items change
-  useEffect(() => {
-    const total = selectedItems.reduce((sum, item) => sum + item.valor_total, 0);
-    form.setValue('valor_total', total.toFixed(2));
-  }, [selectedItems, form]);
-
-  const handleSubmit = (values: BudgetFormValues) => {
-    onSubmit({
-      ...values,
-      itens: selectedItems
-    });
+  const handleClientChange = (clientId: string, clientName: string) => {
+    setSelectedClientId(clientId);
+    form.setValue('cliente', clientName);
   };
 
-  const handleProductsImported = (products: any[]) => {
-    // Convert imported products to selected items format
-    const importedItems: SelectedItem[] = products.map((product, index) => ({
-      id: `imported-${index}`,
-      nome: product.nome,
-      tipo: 'produto' as const,
-      quantidade: product.quantidade || 1,
-      valor_unitario: product.preco_unitario || 0,
-      valor_total: (product.quantidade || 1) * (product.preco_unitario || 0)
-    }));
-
-    // Add to existing selected items
-    setSelectedItems(prev => [...prev, ...importedItems]);
-  };
-
-  const handleSupplierImported = (supplier: any) => {
-    // You can handle supplier data here if needed
-    console.log('Fornecedor importado:', supplier);
+  const onSubmit = async (values: BudgetFormValues) => {
+    await handleSubmit(values);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <ClientSearchField form={form} />
-        <VehicleField form={form} />
-        <DescriptionField form={form} />
-        
-        <XmlUploadField 
-          onProductsImported={handleProductsImported}
-          onSupplierImported={handleSupplierImported}
-        />
-        
-        <ProductServiceSelector 
-          selectedItems={selectedItems}
-          onItemsChange={setSelectedItems}
-        />
-        
-        <TotalValueField form={form} />
-        <FormActions isLoading={isLoading} onSkip={onSkip} />
-      </form>
-    </Form>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Criar Novo Orçamento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <ClientField 
+                form={form} 
+                onClientChange={handleClientChange}
+              />
+              
+              <VehicleField 
+                form={form} 
+                selectedClientId={selectedClientId}
+              />
+              
+              <DescriptionField form={form} />
+              
+              <ServicesField form={form} />
+              
+              <ValueField form={form} />
+              
+              <div className="flex gap-2">
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="bg-oficina hover:bg-blue-700"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    'Criar Orçamento'
+                  )}
+                </Button>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={skipStep}
+                  disabled={isLoading}
+                >
+                  Pular esta etapa
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
