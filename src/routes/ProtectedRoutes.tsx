@@ -8,6 +8,7 @@ import ClientsPage from '@/pages/ClientsPage';
 import ServicesPage from '@/pages/ServicesPage';
 import VehiclesPage from '@/pages/VehiclesPage';
 import NewBudgetPage from '@/pages/NewBudgetPage';
+import BudgetsPage from '@/pages/BudgetsPage';
 import SchedulingPage from '@/pages/SchedulingPage';
 import AISupportPage from '@/pages/AISupportPage';
 import ConfiguracoesPage from '@/pages/ConfiguracoesPage';
@@ -33,6 +34,7 @@ export const protectedRoutes = (
       <Route path="veiculos" element={<VehiclesPage />} />
       
       {/* Budgets */}
+      <Route path="orcamentos" element={<BudgetsPage />} />
       <Route path="orcamentos/novo" element={<NewBudgetPage />} />
       
       {/* Scheduling */}
