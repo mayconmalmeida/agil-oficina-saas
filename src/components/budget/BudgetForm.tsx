@@ -10,6 +10,7 @@ import DescriptionField from './form-sections/DescriptionField';
 import TotalValueField from './form-sections/TotalValueField';
 import FormActions from './form-sections/FormActions';
 import ProductServiceSelector from './form-sections/ProductServiceSelector';
+import XmlUploadField from './form-sections/XmlUploadField';
 import { useState, useEffect } from 'react';
 
 interface SelectedItem {
@@ -59,12 +60,37 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, in
     });
   };
 
+  const handleProductsImported = (products: any[]) => {
+    // Convert imported products to selected items format
+    const importedItems: SelectedItem[] = products.map((product, index) => ({
+      id: `imported-${index}`,
+      nome: product.nome,
+      tipo: 'produto' as const,
+      quantidade: product.quantidade || 1,
+      valor_unitario: product.preco_unitario || 0,
+      valor_total: (product.quantidade || 1) * (product.preco_unitario || 0)
+    }));
+
+    // Add to existing selected items
+    setSelectedItems(prev => [...prev, ...importedItems]);
+  };
+
+  const handleSupplierImported = (supplier: any) => {
+    // You can handle supplier data here if needed
+    console.log('Fornecedor importado:', supplier);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <ClientSearchField form={form} />
         <VehicleField form={form} />
         <DescriptionField form={form} />
+        
+        <XmlUploadField 
+          onProductsImported={handleProductsImported}
+          onSupplierImported={handleSupplierImported}
+        />
         
         <ProductServiceSelector 
           selectedItems={selectedItems}
