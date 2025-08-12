@@ -118,7 +118,7 @@ const ServicesListPage: React.FC = () => {
     <div className="container mx-auto py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Serviços</h1>
-        <Button onClick={() => navigate('/servicos/novo')}>
+        <Button onClick={() => navigate('/dashboard/servicos/novo')}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Serviço
         </Button>
@@ -150,7 +150,7 @@ const ServicesListPage: React.FC = () => {
               </p>
               {!searchTerm && (
                 <Button
-                  onClick={() => navigate('/servicos/novo')}
+                  onClick={() => navigate('/dashboard/servicos/novo')}
                   className="mt-4"
                 >
                   <Plus className="mr-2 h-4 w-4" />

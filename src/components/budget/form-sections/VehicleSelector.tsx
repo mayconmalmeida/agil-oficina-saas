@@ -9,6 +9,7 @@ import { BudgetFormValues } from '../budgetSchema';
 import { supabase } from '@/lib/supabase';
 import { Car, Edit3, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useOficinaFilters, getOficinaFilter } from '@/hooks/useOficinaFilters';
 
 interface Vehicle {
   id: string;
@@ -32,6 +33,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
   const [editingKm, setEditingKm] = useState(false);
   const [newKm, setNewKm] = useState('');
   const { toast } = useToast();
+  const { oficina_id, user_id, isReady } = useOficinaFilters();
 
   useEffect(() => {
     if (clientId) {
@@ -43,11 +45,20 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
   }, [clientId]);
 
   const loadClientVehicles = async () => {
-    if (!clientId) return;
+    if (!clientId || !isReady) return;
     
-    console.log('Carregando veículos para cliente:', clientId);
+    console.log('[VehicleSelector] 🚗 Carregando veículos para cliente:', clientId);
     setLoading(true);
+    
     try {
+      const filter = getOficinaFilter(oficina_id, user_id);
+      if (!filter) {
+        console.log('[VehicleSelector] ❌ Filtros não disponíveis');
+        setLoading(false);
+        return;
+      }
+
+      // Simple query without complex conditional typing
       const { data, error } = await supabase
         .from('veiculos')
         .select('*')
@@ -59,7 +70,7 @@ const VehicleSelector: React.FC<VehicleSelectorProps> = ({ form, clientId }) => 
         throw error;
       }
       
-      console.log('Veículos carregados:', data?.length || 0);
+      console.log('[VehicleSelector] ✅ Veículos carregados:', data?.length || 0);
       setVehicles(data || []);
     } catch (error) {
       console.error('Erro ao carregar veículos:', error);

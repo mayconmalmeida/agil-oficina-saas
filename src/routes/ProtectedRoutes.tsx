@@ -24,6 +24,10 @@ import SubscriptionPage from '@/pages/SubscriptionPage';
 import VehiclesPage from '@/pages/VehiclesPage';
 import RelatoriosBasicosPage from '@/pages/RelatoriosBasicosPage';
 import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import IASuporteInteligentePage from '@/pages/IASuporteInteligentePage';
+import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
+import BackupPage from '@/pages/BackupPage';
 import NewVehiclePage from '@/pages/NewVehiclePage';
 
 export const protectedRoutes = [
@@ -66,5 +70,9 @@ export const protectedRoutes = [
     <Route path="assinatura" element={<SubscriptionPage />} />
     <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
     <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
+    <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
+    <Route path="ia-suporte" element={<IASuporteInteligentePage />} />
+    <Route path="integracao-contabil" element={<IntegracaoContabilPage />} />
+    <Route path="backup" element={<BackupPage />} />
   </Route>
 ];
