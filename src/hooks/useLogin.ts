@@ -11,8 +11,18 @@ export interface LoginFormValues {
 
 export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  const checkConnection = async () => {
+    try {
+      const { data, error } = await supabase.from('oficinas').select('id').limit(1);
+      return !error;
+    } catch (error) {
+      return false;
+    }
+  };
   
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
@@ -37,17 +47,18 @@ export const useLogin = () => {
 
       if (data.session && data.user) {
         console.log("✅ Login bem-sucedido:", data.user.email);
+        setUserId(data.user.id);
         
         // Check if oficina exists for this user
         try {
           const { data: oficinaData, error: oficinaError } = await supabase
             .from('oficinas')
             .select('*')
-            .eq('user_id', data.user.id)
-            .single();
+            .eq('email', data.user.email)
+            .maybeSingle();
 
-          if (oficinaError && oficinaError.code === 'PGRST116') {
-            // No oficina found, create one
+          if (!oficinaData) {
+            // Create new oficina
             const { error: insertError } = await supabase
               .from('oficinas')
               .insert({
@@ -63,8 +74,13 @@ export const useLogin = () => {
             } else {
               console.log("✅ Nova oficina criada");
             }
-          } else if (!oficinaError) {
-            console.log("✅ Oficina existente encontrada:", oficinaData);
+          } else if (oficinaData.user_id !== data.user.id) {
+            // Update existing oficina with new user_id
+            await supabase
+              .from('oficinas')
+              .update({ user_id: data.user.id })
+              .eq('id', oficinaData.id);
+            console.log("✅ Oficina atualizada com novo user_id");
           }
         } catch (err) {
           console.error("⚠️ Erro na configuração da oficina:", err);
@@ -91,6 +107,9 @@ export const useLogin = () => {
 
   return {
     isLoading,
+    userId,
     handleLogin,
+    setUserId,
+    checkConnection,
   };
 };

@@ -59,7 +59,13 @@ const ProductsPage: React.FC = () => {
         return;
       }
 
-      setProducts(data || []);
+      // Type conversion to ensure tipo is the correct union type
+      const typedProducts: Product[] = (data || []).map(item => ({
+        ...item,
+        tipo: (item.tipo === 'produto' || item.tipo === 'servico') ? item.tipo : 'produto'
+      }));
+
+      setProducts(typedProducts);
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
@@ -278,11 +284,26 @@ const ProductsPage: React.FC = () => {
       )}
 
       {/* Form Dialog */}
-      <ProductForm
-        isOpen={isFormOpen}
-        onClose={handleFormClose}
-        product={selectedProduct}
-      />
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">
+              {selectedProduct ? 'Editar Produto' : 'Novo Produto'}
+            </h2>
+            <ProductForm
+              productId={selectedProduct?.id}
+              onSaveSuccess={handleFormClose}
+            />
+            <Button 
+              variant="outline" 
+              onClick={handleFormClose}
+              className="mt-4"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

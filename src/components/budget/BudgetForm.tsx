@@ -14,17 +14,29 @@ import DescriptionField from './form-sections/DescriptionField';
 import ValueField from './form-sections/ValueField';
 import ServicesField from './form-sections/ServicesField';
 
-const BudgetForm: React.FC = () => {
+interface BudgetFormProps {
+  onSubmit?: (values: BudgetFormValues) => Promise<void>;
+  onSkip?: () => void;
+  isLoading?: boolean;
+  initialValues?: Partial<BudgetFormValues>;
+}
+
+const BudgetForm: React.FC<BudgetFormProps> = ({ 
+  onSubmit: onSubmitProp, 
+  onSkip: onSkipProp, 
+  isLoading: isLoadingProp,
+  initialValues 
+}) => {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
-  const { isLoading, handleSubmit: handleBudgetSubmit, skipStep } = useBudgetForm();
+  const { isLoading: hookLoading, handleSubmit: hookHandleSubmit, skipStep } = useBudgetForm();
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      cliente: '',
-      veiculo: '',
-      descricao: '',
-      valor_total: ''
+      cliente: initialValues?.cliente || '',
+      veiculo: initialValues?.veiculo || '',
+      descricao: initialValues?.descricao || '',
+      valor_total: initialValues?.valor_total || ''
     },
   });
 
@@ -33,9 +45,23 @@ const BudgetForm: React.FC = () => {
     form.setValue('cliente', clientName);
   };
 
-  const onSubmit = async (values: BudgetFormValues) => {
-    await handleBudgetSubmit(values);
+  const handleFormSubmit = async (values: BudgetFormValues) => {
+    if (onSubmitProp) {
+      await onSubmitProp(values);
+    } else {
+      await hookHandleSubmit(values);
+    }
   };
+
+  const handleSkip = () => {
+    if (onSkipProp) {
+      onSkipProp();
+    } else {
+      skipStep();
+    }
+  };
+
+  const isLoading = isLoadingProp ?? hookLoading;
 
   return (
     <div className="space-y-6">
@@ -45,7 +71,7 @@ const BudgetForm: React.FC = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
               <ClientField 
                 form={form} 
                 onClientChange={handleClientChange}
@@ -80,7 +106,7 @@ const BudgetForm: React.FC = () => {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={skipStep}
+                  onClick={handleSkip}
                   disabled={isLoading}
                 >
                   Pular esta etapa
