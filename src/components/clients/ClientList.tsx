@@ -64,7 +64,11 @@ const ClientList: React.FC<ClientListProps> = ({
         .order('created_at', { ascending: false });
 
       // Apply the correct filter based on column and value
-      query = query.eq(filter.column, filter.value);
+      if (filter.column === 'user_id') {
+        query = query.eq('user_id', filter.value);
+      } else if (filter.column === 'oficina_id') {
+        query = query.eq('oficina_id', filter.value);
+      }
 
       const { data, error } = await query;
 
