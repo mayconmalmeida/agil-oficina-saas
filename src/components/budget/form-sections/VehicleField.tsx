@@ -25,15 +25,41 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
 
   // Watch for client field changes to determine if we should show vehicle selector
   const clienteValue = form.watch('cliente');
-  const hasClientSelected = selectedClient && clienteValue && clienteValue.trim() !== '';
+  
+  // Enable vehicle field if client field has content (either typed or selected)
+  const hasClientData = Boolean(clienteValue && clienteValue.trim() !== '');
+
+  console.log('VehicleField - Cliente value:', clienteValue);
+  console.log('VehicleField - Selected client:', selectedClient);
+  console.log('VehicleField - Has client data:', hasClientData);
 
   return (
     <div className="space-y-4">
-      {hasClientSelected ? (
-        <VehicleSelector 
-          form={form} 
-          clientId={selectedClient.id} 
-        />
+      {hasClientData ? (
+        selectedClient ? (
+          <VehicleSelector 
+            form={form} 
+            clientId={selectedClient.id} 
+          />
+        ) : (
+          <FormField
+            control={form.control}
+            name="veiculo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Informações do Veículo</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Digite as informações do veículo (marca, modelo, ano, placa)" 
+                    {...field} 
+                    className="bg-white"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )
       ) : (
         <FormField
           control={form.control}
