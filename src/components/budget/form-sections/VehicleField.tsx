@@ -23,9 +23,13 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
     }
   }, [selectedClient, form]);
 
+  // Watch for client field changes to determine if we should show vehicle selector
+  const clienteValue = form.watch('cliente');
+  const hasClientSelected = selectedClient && clienteValue && clienteValue.trim() !== '';
+
   return (
     <div className="space-y-4">
-      {selectedClient ? (
+      {hasClientSelected ? (
         <VehicleSelector 
           form={form} 
           clientId={selectedClient.id} 
