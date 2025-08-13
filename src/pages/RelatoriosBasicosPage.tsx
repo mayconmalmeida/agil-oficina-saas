@@ -1,155 +1,115 @@
-import React from "react";
-import { useRelatoriosBasicosData } from "@/hooks/useRelatoriosBasicosData";
-import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Users, ClipboardList, Coins } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line, Legend } from "recharts";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
-import { formatCurrency } from "@/utils/supabaseTypes";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { Navigate } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
 
-const bgIcon = "rounded-full bg-gray-50 p-2 border border-gray-100 shadow-sm";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { BarChart3, FileText, Calendar, Download } from 'lucide-react';
 
-function RelatoriosBasicosPage() {
-  const { data, loading } = useRelatoriosBasicosData();
-  const { userProfile } = useUserProfile();
-  const isMobile = useIsMobile();
+const RelatoriosBasicosPage: React.FC = () => {
+  const [tipoRelatorio, setTipoRelatorio] = useState('');
+  const [periodo, setPeriodo] = useState('');
 
-  // Não precisa de role, só verifica se o perfil existe
-  if (!userProfile) {
-    return <Navigate to="/dashboard" />;
-  }
+  const tiposRelatorio = [
+    { value: 'clientes', label: 'Relatório de Clientes' },
+    { value: 'servicos', label: 'Relatório de Serviços' },
+    { value: 'orcamentos', label: 'Relatório de Orçamentos' },
+    { value: 'agendamentos', label: 'Relatório de Agendamentos' },
+    { value: 'financeiro', label: 'Relatório Financeiro' }
+  ];
+
+  const periodos = [
+    { value: '7dias', label: 'Últimos 7 dias' },
+    { value: '30dias', label: 'Últimos 30 dias' },
+    { value: '3meses', label: 'Últimos 3 meses' },
+    { value: 'anual', label: 'Últimos 12 meses' },
+    { value: 'personalizado', label: 'Período personalizado' }
+  ];
+
+  const handleGerarRelatorio = () => {
+    console.log('Gerando relatório:', { tipoRelatorio, periodo });
+  };
 
   return (
-    <div className={`max-w-6xl mx-auto ${isMobile ? 'p-3' : 'p-6'}`}>
-      <h1 className={`font-bold mb-2 ${isMobile ? 'text-xl' : 'text-2xl md:text-3xl'}`}>
-        Relatórios Básicos
-      </h1>
-      <p className="text-muted-foreground mb-6">
-        Tenha uma visão rápida dos principais números do seu dia a dia.
-      </p>
-
-      {/* Métricas principais (cards) */}
-      <div className={`grid gap-4 mb-10 ${
-        isMobile ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-      }`}>
-        <Card>
-          <CardContent className="flex flex-col items-start gap-2 p-4">
-            <span className={bgIcon}><ClipboardList className="h-6 w-6 text-blue-800" /></span>
-            <span className="text-xs text-muted-foreground">Orçamentos Criados</span>
-            <span className="text-2xl font-bold">{loading ? "..." : data?.totalOrcamentos ?? 0}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-start gap-2 p-4">
-            <span className={bgIcon}><BarChart3 className="h-6 w-6 text-orange-700" /></span>
-            <span className="text-xs text-muted-foreground">Serviços Executados</span>
-            <span className="text-2xl font-bold">{loading ? "..." : data?.totalServicos ?? 0}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-start gap-2 p-4">
-            <span className={bgIcon}><Users className="h-6 w-6 text-green-700" /></span>
-            <span className="text-xs text-muted-foreground">Clientes Cadastrados</span>
-            <span className="text-2xl font-bold">{loading ? "..." : data?.totalClientes ?? 0}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-start gap-2 p-4">
-            <span className={bgIcon}><Coins className="h-6 w-6 text-yellow-600" /></span>
-            <span className="text-xs text-muted-foreground">Faturamento Total</span>
-            <span className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>
-              {loading ? "..." : formatCurrency(data?.faturamentoTotal ?? 0)}
-            </span>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Relatórios Básicos</h1>
+        <Badge variant="outline" className="bg-green-50 text-green-700">
+          <BarChart3 className="h-4 w-4 mr-1" />
+          Análises e Dados
+        </Badge>
       </div>
 
-      {/* Gráfico de Barras: Orçamentos e Serviços por mês */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border">
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="h-5 w-5 text-blue-800" />
-          <span className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>
-            Orçamentos e Serviços por mês
-          </span>
-        </div>
-        <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
-          <BarChart data={data?.graficoMensal ?? []} margin={{ left: 0, right: 10 }}>
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="orcamentos" fill="#2563eb" name="Orçamentos" />
-            <Bar dataKey="servicos" fill="#ea580c" name="Serviços" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <FileText className="h-5 w-5 mr-2" />
+            Gerar Relatório
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de Relatório</label>
+              <Select value={tipoRelatorio} onValueChange={setTipoRelatorio}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo de relatório" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiposRelatorio.map((tipo) => (
+                    <SelectItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Gráfico de Linha - Faturamento */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-8 border">
-        <div className="flex items-center gap-3 mb-4">
-          <Coins className="h-5 w-5 text-yellow-600" />
-          <span className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>
-            Evolução do Faturamento (últimos 6 meses)
-          </span>
-        </div>
-        <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
-          <LineChart data={data?.graficoMensal ?? []}>
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
-            <Legend />
-            <Line type="monotone" dataKey="faturamento" stroke="#facc15" strokeWidth={2} name="Faturamento (R$)" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Período</label>
+              <Select value={periodo} onValueChange={setPeriodo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodos.map((per) => (
+                    <SelectItem key={per.value} value={per.value}>
+                      {per.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-      {/* Últimos 10 serviços realizados */}
-      <div className="bg-white rounded-lg shadow-sm p-6 border">
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="h-5 w-5 text-orange-700" />
-          <span className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>
-            Últimos 10 serviços realizados
-          </span>
-        </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className={isMobile ? 'text-xs' : ''}>Cliente</TableHead>
-                <TableHead className={isMobile ? 'text-xs' : ''}>Valor</TableHead>
-                <TableHead className={isMobile ? 'text-xs' : ''}>Status</TableHead>
-                <TableHead className={isMobile ? 'text-xs' : ''}>Data</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4}>Carregando...</TableCell>
-                </TableRow>
-              ) : data?.ultimosServicos && data.ultimosServicos.length > 0 ? (
-                data.ultimosServicos.map(s => (
-                  <TableRow key={s.id}>
-                    <TableCell className={isMobile ? 'text-xs' : ''}>{s.cliente_nome}</TableCell>
-                    <TableCell className={isMobile ? 'text-xs' : ''}>{formatCurrency(s.valor_total)}</TableCell>
-                    <TableCell className={isMobile ? 'text-xs' : ''}>{s.status}</TableCell>
-                    <TableCell className={isMobile ? 'text-xs' : ''}>
-                      {new Date(s.created_at).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4}>Nenhum serviço encontrado.</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+          <Button 
+            onClick={handleGerarRelatorio}
+            disabled={!tipoRelatorio || !periodo}
+            className="w-full sm:w-auto"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Gerar Relatório
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {tiposRelatorio.map((tipo) => (
+          <Card key={tipo.value} className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <FileText className="h-8 w-8 text-blue-600" />
+                <div>
+                  <h3 className="font-medium">{tipo.label}</h3>
+                  <p className="text-sm text-gray-600">Visualizar dados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
-}
+};
 
 export default RelatoriosBasicosPage;

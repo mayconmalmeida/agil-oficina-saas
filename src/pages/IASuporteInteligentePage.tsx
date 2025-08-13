@@ -1,67 +1,117 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, MessageSquare, Clock, TrendingUp } from 'lucide-react';
-import SuporteIA from '@/components/ai/SuporteIA';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { MessageCircle, Brain, Loader2, Send } from 'lucide-react';
+import { callAI } from '@/services/aiService';
+import { useToast } from '@/hooks/use-toast';
 
 const IASuporteInteligentePage: React.FC = () => {
-  const isMobile = useIsMobile();
+  const [pergunta, setPergunta] = useState('');
+  const [resposta, setResposta] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!pergunta.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Por favor, digite sua pergunta.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setResposta('');
+
+    try {
+      const result = await callAI('suporte', pergunta);
+      
+      if (result.success && result.answer) {
+        setResposta(result.answer);
+        toast({
+          title: "Resposta gerada",
+          description: "O IA Suporte analisou sua pergunta.",
+        });
+      } else {
+        throw new Error(result.error || 'Erro desconhecido');
+      }
+    } catch (error) {
+      console.error('Erro ao consultar IA:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro na consulta",
+        description: error instanceof Error ? error.message : "Não foi possível processar sua pergunta.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className={`space-y-6 ${isMobile ? 'px-2' : ''}`}>
-      <div className="flex items-center space-x-2">
-        <Bot className={`text-blue-600 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`} />
-        <h1 className={`font-bold text-gray-900 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-          IA para Suporte Inteligente
-        </h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">IA Suporte Inteligente</h1>
+        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <Brain className="h-4 w-4 mr-1" />
+          Assistente Virtual
+        </Badge>
       </div>
 
-      <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2'}`}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MessageCircle className="h-5 w-5 mr-2" />
+            Faça sua pergunta
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Textarea
+              placeholder="Digite sua pergunta sobre problemas técnicos, dúvidas sobre o sistema, ou qualquer questão relacionada à sua oficina..."
+              value={pergunta}
+              onChange={(e) => setPergunta(e.target.value)}
+              className="min-h-32"
+            />
+            
+            <Button 
+              type="submit" 
+              disabled={isLoading || !pergunta.trim()}
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Enviar Pergunta
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {resposta && (
         <Card>
           <CardHeader>
-            <CardTitle className={isMobile ? 'text-lg' : ''}>Assistente de Suporte</CardTitle>
+            <CardTitle className="text-green-700">Resposta do IA Suporte</CardTitle>
           </CardHeader>
           <CardContent>
-            <SuporteIA />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className={isMobile ? 'text-lg' : ''}>Como usar o Suporte Inteligente</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">💡 Como usar</h4>
-              <p className="text-blue-700 text-sm">
-                Faça perguntas específicas sobre o sistema, funcionalidades ou dúvidas operacionais do OficinaCloud.
-              </p>
-            </div>
-            <div className="p-3 bg-green-50 rounded-lg">
-              <h4 className="font-medium text-green-900 mb-2">🎯 Exemplos de perguntas</h4>
-              <ul className="text-green-700 text-sm space-y-1">
-                <li>• Como cadastrar um novo cliente?</li>
-                <li>• Como gerar um orçamento?</li>
-                <li>• Como configurar relatórios?</li>
-                <li>• Como fazer backup dos dados?</li>
-                <li>• Como adicionar produtos ao estoque?</li>
-              </ul>
-            </div>
-            <div className="p-3 bg-orange-50 rounded-lg">
-              <h4 className="font-medium text-orange-900 mb-2">⚡ Disponibilidade</h4>
-              <p className="text-orange-700 text-sm">
-                A IA está disponível 24/7 para ajudar com suas dúvidas sobre o sistema OficinaCloud.
-              </p>
-            </div>
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <h4 className="font-medium text-purple-900 mb-2">🤖 Inteligência Avançada</h4>
-              <p className="text-purple-700 text-sm">
-                Nosso assistente conhece todas as funcionalidades do sistema e pode orientar sobre processos completos.
-              </p>
+            <div className="prose max-w-none">
+              <p className="whitespace-pre-wrap">{resposta}</p>
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -16,7 +17,7 @@ import NewSchedulePage from '@/pages/NewSchedulePage';
 import SchedulingPage from '@/pages/SchedulingPage';
 import ProductsPage from '@/pages/ProductsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
-import SuppliersPage from '@/pages/SuppliersPage';
+import FornecedoresPage from '@/pages/FornecedoresPage';
 import SettingsPage from '@/pages/SettingsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import ProfilePage from '@/pages/ProfilePage';
@@ -63,7 +64,7 @@ export const protectedRoutes = [
     />
     <Route path="produtos" element={<ProductsPage />} />
     <Route path="categorias" element={<CategoriesPage />} />
-    <Route path="fornecedores" element={<SuppliersPage />} />
+    <Route path="fornecedores" element={<FornecedoresPage />} />
     <Route path="configuracoes" element={<SettingsPage />} />
     <Route path="empresa" element={<CompanyPage />} />
     <Route path="perfil" element={<ProfilePage />} />

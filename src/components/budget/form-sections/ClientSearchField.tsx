@@ -94,6 +94,16 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     }
   }, [searchTerm]);
 
+  // Prevent the popover from closing the screen
+  const handlePopoverOpenChange = (open: boolean) => {
+    // Only allow opening if we have search term
+    if (open && searchTerm.length >= 2) {
+      setClientSearchOpen(true);
+    } else if (!open) {
+      setClientSearchOpen(false);
+    }
+  };
+
   return (
     <FormField
       control={form.control}
@@ -101,88 +111,76 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       render={({ field }) => (
         <FormItem className="flex flex-col">
           <FormLabel>Cliente</FormLabel>
-          <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
-            <PopoverTrigger asChild>
-              <FormControl>
-                <div className="relative">
-                  <Input 
-                    {...field} 
-                    placeholder="Digite o nome do cliente..." 
-                    className="pr-20"
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    onFocus={() => {
-                      if (field.value && field.value.length >= 2) {
-                        setClientSearchOpen(true);
-                      }
-                    }}
-                  />
-                  {field.value && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={handleClearField}
-                      className="absolute right-10 top-0 h-full w-8 p-0 hover:bg-transparent"
-                    >
-                      <X className="h-4 w-4 text-gray-400" />
-                    </Button>
-                  )}
-                  {isLoadingClients ? (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  )}
+          <div className="relative">
+            <FormControl>
+              <Input 
+                {...field} 
+                placeholder="Digite o nome do cliente..." 
+                className="pr-20"
+                onChange={(e) => {
+                  field.onChange(e);
+                  handleInputChange(e.target.value);
+                }}
+                onFocus={() => {
+                  if (field.value && field.value.length >= 2) {
+                    setClientSearchOpen(true);
+                  }
+                }}
+              />
+            </FormControl>
+            {field.value && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClearField}
+                className="absolute right-10 top-0 h-full w-8 p-0 hover:bg-transparent"
+              >
+                <X className="h-4 w-4 text-gray-400" />
+              </Button>
+            )}
+            {isLoadingClients ? (
+              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+          
+          {/* Dropdown de sugestões - apenas quando há resultados */}
+          {clientSearchOpen && searchTerm.length >= 2 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+              {isLoadingClients ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Carregando...
                 </div>
-              </FormControl>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 w-full" align="start" side="bottom" sideOffset={5}>
-              <Command shouldFilter={false}>
-                <CommandInput 
-                  placeholder="Digite o nome do cliente..." 
-                  value={searchTerm}
-                  onValueChange={setSearchTerm}
-                  className="h-9"
-                />
-                <CommandList>
-                  <CommandEmpty>
-                    {isLoadingClients ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Carregando...
+              ) : clients.length > 0 ? (
+                <div className="py-1">
+                  {clients.map((client) => {
+                    if (!client || !client.id) return null;
+                    
+                    return (
+                      <div
+                        key={client.id}
+                        onClick={() => handleSelectClient(client)}
+                        className="px-3 py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="font-medium">{client.nome || 'Nome não informado'}</div>
+                        <div className="text-xs text-gray-500 flex justify-between">
+                          <span>{client.telefone || 'Telefone não informado'}</span>
+                          <span>{client.veiculo || 'Veículo não informado'}</span>
+                        </div>
                       </div>
-                    ) : searchTerm.length >= 2 ? (
-                      'Nenhum cliente encontrado'
-                    ) : (
-                      'Digite pelo menos 2 caracteres para buscar'
-                    )}
-                  </CommandEmpty>
-                  <CommandGroup>
-                    <ScrollArea className="h-48">
-                      {Array.isArray(clients) && clients.map((client) => {
-                        if (!client || !client.id) return null;
-                        
-                        return (
-                          <CommandItem
-                            key={client.id}
-                            value={client.id}
-                            onSelect={() => handleSelectClient(client)}
-                            className="cursor-pointer hover:bg-gray-50"
-                          >
-                            <div className="w-full">
-                              <div className="font-medium">{client.nome || 'Nome não informado'}</div>
-                              <div className="text-xs text-muted-foreground flex justify-between">
-                                <span>{client.telefone || 'Telefone não informado'}</span>
-                                <span>{client.veiculo || 'Veículo não informado'}</span>
-                              </div>
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </ScrollArea>
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="px-3 py-4 text-center text-gray-500">
+                  Nenhum cliente encontrado
+                </div>
+              )}
+            </div>
+          )}
+          
           <FormMessage />
           
           {selectedClient && (
