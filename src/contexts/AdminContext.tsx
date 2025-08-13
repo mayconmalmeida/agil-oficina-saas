@@ -70,8 +70,15 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     }
   };
 
-  const validateAdminUser = async (email: string) => {
+  const validateAdminUser = async (email: string | null) => {
     try {
+      if (!email) {
+        setUser(null);
+        setError(null);
+        setIsLoading(false);
+        return;
+      }
+
       console.log('AdminContext: Validando admin na tabela admins:', email);
       
       // Verificar na tabela admins
@@ -83,13 +90,16 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
       if (adminError) {
         console.error('AdminContext: Erro ao buscar admin:', adminError);
-        throw new Error('Erro ao verificar permissões de admin');
+        setUser(null);
+        setError('Erro ao verificar permissões de admin');
+        setIsLoading(false);
+        return;
       }
 
       if (!adminData) {
         console.log('AdminContext: Email não é admin:', email);
         setUser(null);
-        setError('Usuário não é administrador');
+        setError(null); // Não é erro, apenas não é admin
         setIsLoading(false);
         return;
       }
