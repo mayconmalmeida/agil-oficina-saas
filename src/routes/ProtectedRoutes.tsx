@@ -65,14 +65,14 @@ export const protectedRoutes = [
     <Route path="produtos" element={<ProductsPage />} />
     <Route path="categorias" element={<CategoriesPage />} />
     <Route path="fornecedores" element={<FornecedoresPage />} />
+    <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
+    <Route path="ia-suporte" element={<IASuporteInteligentePage />} />
     <Route path="configuracoes" element={<SettingsPage />} />
     <Route path="empresa" element={<CompanyPage />} />
     <Route path="perfil" element={<ProfilePage />} />
     <Route path="assinatura" element={<SubscriptionPage />} />
     <Route path="relatorios-basicos" element={<RelatoriosBasicosPage />} />
     <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
-    <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
-    <Route path="ia-suporte" element={<IASuporteInteligentePage />} />
     <Route path="integracao-contabil" element={<IntegracaoContabilPage />} />
     <Route path="backup" element={<BackupPage />} />
   </Route>
