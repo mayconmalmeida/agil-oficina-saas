@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { parseXmlProducts } from '@/components/products/import/xmlParser';
 
 interface ImportXmlDialogProps {
   onImportSuccess: () => void;
@@ -48,49 +49,6 @@ const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) =>
     }
   };
 
-  const parseXmlFile = async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const xmlText = e.target?.result as string;
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-          
-          // Verificar se há erros de parsing
-          const parseError = xmlDoc.querySelector('parsererror');
-          if (parseError) {
-            throw new Error('Erro ao fazer parse do XML');
-          }
-
-          // Extrair produtos da NFCe (estrutura simplificada)
-          const produtos: any[] = [];
-          const itens = xmlDoc.querySelectorAll('det');
-          
-          itens.forEach((item) => {
-            const prod = item.querySelector('prod');
-            if (prod) {
-              const produto = {
-                codigo: prod.querySelector('cProd')?.textContent || '',
-                nome: prod.querySelector('xProd')?.textContent || '',
-                quantidade: parseInt(prod.querySelector('qCom')?.textContent || '1'),
-                preco_unitario: parseFloat(prod.querySelector('vUnCom')?.textContent || '0'),
-                descricao: prod.querySelector('xProd')?.textContent || ''
-              };
-              produtos.push(produto);
-            }
-          });
-
-          resolve(produtos);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
-      reader.readAsText(file);
-    });
-  };
-
   const handleImport = async () => {
     if (!xmlFile) {
       toast({
@@ -116,9 +74,10 @@ const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) =>
       }
 
       // Parse do arquivo XML
-      const produtos = await parseXmlFile(xmlFile);
+      const xmlText = await xmlFile.text();
+      const parseResult = parseXmlProducts(xmlText);
 
-      if (produtos.length === 0) {
+      if (parseResult.products.length === 0) {
         toast({
           variant: "destructive",
           title: "Nenhum produto encontrado",
@@ -127,19 +86,48 @@ const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) =>
         return;
       }
 
+      // Se há fornecedor no XML, cadastrar automaticamente
+      if (parseResult.supplier) {
+        try {
+          await supabase
+            .from('suppliers')
+            .insert({
+              user_id: session.user.id,
+              name: parseResult.supplier.name,
+              cnpj: parseResult.supplier.cnpj,
+              email: parseResult.supplier.email,
+              phone: parseResult.supplier.phone,
+              address: parseResult.supplier.address,
+              city: parseResult.supplier.city,
+              state: parseResult.supplier.state,
+              cep: parseResult.supplier.cep
+            });
+        } catch (supplierError) {
+          console.log('Fornecedor pode já existir:', supplierError);
+        }
+      }
+
       // Chamar função RPC do Supabase para processar produtos
       const { data, error } = await supabase.rpc('process_nfce_xml', {
         p_user_id: session.user.id,
-        p_produtos: produtos
+        p_produtos: parseResult.products
       });
 
       if (error) throw error;
 
-      const result = data as ProcessResult;
+      // Type assertion with proper error handling
+      const result = data as unknown as ProcessResult;
+      
+      if (!result || typeof result !== 'object') {
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      const produtosProcessados = result.produtos_processados || [];
+      const novosProdutos = result.novos_produtos || [];
       
       toast({
         title: "Importação concluída",
-        description: `${result.produtos_processados.length} produtos processados. ${result.novos_produtos.length} novos produtos adicionados.`
+        description: `${produtosProcessados.length} produtos processados. ${novosProdutos.length} novos produtos adicionados.`
       });
 
       setIsOpen(false);
