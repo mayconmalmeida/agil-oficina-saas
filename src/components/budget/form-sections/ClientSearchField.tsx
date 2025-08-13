@@ -4,9 +4,6 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, Loader2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { UseFormReturn } from 'react-hook-form';
 import { BudgetFormValues } from '../budgetSchema';
 import { useClientSearch, Client } from '@/hooks/useClientSearch';
@@ -57,7 +54,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
         form.setValue('veiculo', '');
       }
       
-      // Open popover if there's input with at least 2 characters
+      // Open dropdown if there's input with at least 2 characters
       if (value.length >= 2) {
         setClientSearchOpen(true);
       } else {
@@ -87,22 +84,12 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     }
   }, [form, selectedClient, setSearchTerm]);
 
-  // Close popover when clicking outside or when no search term
+  // Close dropdown when clicking outside or when no search term
   useEffect(() => {
     if (searchTerm.length < 2) {
       setClientSearchOpen(false);
     }
   }, [searchTerm]);
-
-  // Prevent the popover from closing the screen
-  const handlePopoverOpenChange = (open: boolean) => {
-    // Only allow opening if we have search term
-    if (open && searchTerm.length >= 2) {
-      setClientSearchOpen(true);
-    } else if (!open) {
-      setClientSearchOpen(false);
-    }
-  };
 
   return (
     <FormField
@@ -167,7 +154,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                         <div className="font-medium">{client.nome || 'Nome não informado'}</div>
                         <div className="text-xs text-gray-500 flex justify-between">
                           <span>{client.telefone || 'Telefone não informado'}</span>
-                          <span>{client.veiculo || 'Veículo não informado'}</span>
+                          <span>{client.email || 'Email não informado'}</span>
                         </div>
                       </div>
                     );
@@ -175,7 +162,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                 </div>
               ) : (
                 <div className="px-3 py-4 text-center text-gray-500">
-                  Nenhum cliente encontrado
+                  Nenhum cliente encontrado para "{searchTerm}"
                 </div>
               )}
             </div>

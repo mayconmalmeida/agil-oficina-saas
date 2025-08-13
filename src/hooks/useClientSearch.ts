@@ -54,12 +54,14 @@ export const useClientSearch = () => {
         return;
       }
 
+      console.log('🔍 Buscando clientes com termo:', term);
+
       const { data, error } = await supabase
         .from('clients')
         .select('id, nome, telefone, email, veiculo')
         .eq('user_id', session.user.id)
         .eq('is_active', true)
-        .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,email.ilike.%${term}%,veiculo.ilike.%${term}%`)
+        .or(`nome.ilike.%${term}%,telefone.ilike.%${term}%,email.ilike.%${term}%`)
         .order('nome')
         .limit(10);
 
@@ -73,7 +75,7 @@ export const useClientSearch = () => {
         return;
       }
 
-      console.log('Clientes encontrados:', data?.length || 0);
+      console.log('✅ Clientes encontrados:', data?.length || 0, data);
       setClients(data || []);
     } catch (error) {
       console.error('Erro inesperado na busca:', error);
