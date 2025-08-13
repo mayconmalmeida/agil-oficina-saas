@@ -12,6 +12,21 @@ interface ImportXmlDialogProps {
   onImportSuccess: () => void;
 }
 
+interface ProcessResult {
+  produtos_processados: Array<{
+    nome: string;
+    codigo: string;
+    quantidade: string;
+    status: 'novo' | 'atualizado';
+  }>;
+  novos_produtos: Array<{
+    nome: string;
+    codigo: string;
+    quantidade: string;
+    status: 'novo';
+  }>;
+}
+
 const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,9 +135,11 @@ const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) =>
 
       if (error) throw error;
 
+      const result = data as ProcessResult;
+      
       toast({
         title: "Importação concluída",
-        description: `${data.produtos_processados.length} produtos processados. ${data.novos_produtos.length} novos produtos adicionados.`
+        description: `${result.produtos_processados.length} produtos processados. ${result.novos_produtos.length} novos produtos adicionados.`
       });
 
       setIsOpen(false);

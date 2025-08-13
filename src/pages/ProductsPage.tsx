@@ -9,6 +9,7 @@ import { Search, Package, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ImportXmlDialog from '@/components/products/ImportXmlDialog';
+import ProductForm from '@/components/products/ProductForm';
 
 interface Product {
   id: string;
@@ -27,6 +28,8 @@ const ProductsPage: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,6 +65,17 @@ const ProductsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    loadProducts();
+    setDialogOpen(false);
+    setEditingProduct(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -117,10 +131,25 @@ const ProductsPage: React.FC = () => {
             {products.length} produtos cadastrados
           </Badge>
           <ImportXmlDialog onImportSuccess={loadProducts} />
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Produto
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingProduct(null)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Produto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+                </DialogTitle>
+              </DialogHeader>
+              <ProductForm
+                productId={editingProduct?.id}
+                onSaveSuccess={handleSave}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -158,7 +187,11 @@ const ProductsPage: React.FC = () => {
                           )}
                         </div>
                         <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(product)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
