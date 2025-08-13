@@ -107,10 +107,18 @@ const ImportXmlDialog: React.FC<ImportXmlDialogProps> = ({ onImportSuccess }) =>
         }
       }
 
+      // Convert ParsedProduct[] to plain objects compatible with Json type
+      const productsForRpc = parseResult.products.map(product => ({
+        codigo: product.codigo,
+        nome: product.nome,
+        quantidade: product.quantidade,
+        preco_unitario: product.preco_unitario
+      }));
+
       // Chamar função RPC do Supabase para processar produtos
       const { data, error } = await supabase.rpc('process_nfce_xml', {
         p_user_id: session.user.id,
-        p_produtos: parseResult.products
+        p_produtos: productsForRpc
       });
 
       if (error) throw error;
