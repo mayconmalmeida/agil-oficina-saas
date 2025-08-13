@@ -21,7 +21,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
   useEffect(() => {
     if (selectedClient) {
       form.setValue('veiculo', '');
-      console.log('Cliente selecionado para veículos:', selectedClient);
+      console.log('🚗 Cliente selecionado, limpando veículo anterior. Cliente:', selectedClient);
     }
   }, [selectedClient, form]);
 
@@ -30,7 +30,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
     if (selectedVehicle) {
       const vehicleInfo = formatVehicleDisplay(selectedVehicle);
       form.setValue('veiculo', vehicleInfo);
-      console.log('Veículo selecionado:', selectedVehicle);
+      console.log('✅ Veículo selecionado:', selectedVehicle);
     }
   };
 

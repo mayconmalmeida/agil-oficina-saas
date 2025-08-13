@@ -45,14 +45,14 @@ export const useClientVehicles = (clientId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao carregar veículos:', error);
+        console.error('❌ Erro ao carregar veículos:', error);
         throw error;
       }
       
       console.log('✅ Veículos carregados:', data?.length || 0, data);
       setVehicles(data || []);
     } catch (error) {
-      console.error('Erro ao carregar veículos:', error);
+      console.error('💥 Erro ao carregar veículos:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar veículos",

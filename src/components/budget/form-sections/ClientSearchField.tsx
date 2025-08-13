@@ -28,9 +28,9 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
 
   // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
-    console.log('Selecionando cliente no formulário:', client);
+    console.log('📝 Selecionando cliente no formulário:', client);
     if (!client || !client.nome) {
-      console.error('Cliente inválido selecionado:', client);
+      console.error('❌ Cliente inválido selecionado:', client);
       return;
     }
 
@@ -39,12 +39,12 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       form.setValue('cliente', client.nome);
       setClientSearchOpen(false);
     } catch (error) {
-      console.error('Erro ao selecionar cliente:', error);
+      console.error('💥 Erro ao selecionar cliente:', error);
     }
   };
 
   const handleInputChange = (value: string) => {
-    console.log('Mudança no input de cliente:', value);
+    console.log('⌨️ Mudança no input de cliente:', value);
     try {
       form.setValue('cliente', value);
       setSearchTerm(value);
@@ -61,7 +61,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
         setClientSearchOpen(false);
       }
     } catch (error) {
-      console.error('Erro ao alterar input:', error);
+      console.error('💥 Erro ao alterar input:', error);
     }
   };
 
@@ -72,7 +72,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       clearSelection();
       setClientSearchOpen(false);
     } catch (error) {
-      console.error('Erro ao limpar campo:', error);
+      console.error('💥 Erro ao limpar campo:', error);
     }
   };
 
@@ -113,6 +113,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                     setClientSearchOpen(true);
                   }
                 }}
+                autoComplete="off"
               />
             </FormControl>
             {field.value && (
@@ -138,7 +139,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
               {isLoadingClients ? (
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Carregando...
+                  Carregando clientes...
                 </div>
               ) : clients.length > 0 ? (
                 <div className="py-1">

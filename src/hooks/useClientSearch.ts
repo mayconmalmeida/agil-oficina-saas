@@ -46,6 +46,7 @@ export const useClientSearch = () => {
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.error('❌ Usuário não autenticado');
         toast({
           variant: "destructive",
           title: "Erro de autenticação",
@@ -55,6 +56,7 @@ export const useClientSearch = () => {
       }
 
       console.log('🔍 Buscando clientes com termo:', term);
+      console.log('👤 User ID:', session.user.id);
 
       const { data, error } = await supabase
         .from('clients')
@@ -66,7 +68,7 @@ export const useClientSearch = () => {
         .limit(10);
 
       if (error) {
-        console.error('Erro ao buscar clientes:', error);
+        console.error('❌ Erro ao buscar clientes:', error);
         toast({
           variant: "destructive",
           title: "Erro ao buscar clientes",
@@ -78,7 +80,7 @@ export const useClientSearch = () => {
       console.log('✅ Clientes encontrados:', data?.length || 0, data);
       setClients(data || []);
     } catch (error) {
-      console.error('Erro inesperado na busca:', error);
+      console.error('💥 Erro inesperado na busca:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -90,13 +92,14 @@ export const useClientSearch = () => {
   };
 
   const selectClient = (client: Client) => {
-    console.log('Cliente selecionado:', client);
+    console.log('✅ Cliente selecionado:', client);
     setSelectedClient(client);
     setSearchTerm(client.nome);
+    setClients([]); // Clear the dropdown after selection
   };
 
   const clearSelection = () => {
-    console.log('Limpando seleção de cliente');
+    console.log('🗑️ Limpando seleção de cliente');
     setSelectedClient(null);
     setSearchTerm('');
     setClients([]);
