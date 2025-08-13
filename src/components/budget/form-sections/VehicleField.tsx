@@ -67,7 +67,11 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Selecionar Veículo</FormLabel>
-            <Select onValueChange={handleVehicleSelect} disabled={isLoadingVehicles}>
+            <Select 
+              onValueChange={handleVehicleSelect} 
+              disabled={isLoadingVehicles}
+              value={vehicles.length > 0 ? undefined : ""}
+            >
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder={
