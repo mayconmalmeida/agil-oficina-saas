@@ -32,7 +32,7 @@ const AppRoutes: React.FC = () => {
       {/* Rota especial para plano expirado */}
       <Route path="/plano-expirado" element={<PlanoExpirado />} />
       
-      {/* Rotas administrativas - chamando a função para obter o Route */}
+      {/* Rotas administrativas - renderizando o array de routes */}
       {AdminRoutes()}
       
       {/* Rotas protegidas */}
@@ -51,7 +51,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={
         user ? (
           isAdmin ? (
-            <Navigate to="/admin/dashboard" replace />
+            <Navigate to="/admin" replace />
           ) : (
             <Navigate to="/dashboard" replace />
           )
