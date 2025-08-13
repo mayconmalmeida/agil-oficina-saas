@@ -8,6 +8,7 @@ import { Search, Users, Plus, Edit, Trash2, Car, Phone, Mail, MapPin } from 'luc
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import ClientEditDialog from '@/components/clients/ClientEditDialog';
 
 interface Client {
   id: string;
@@ -32,6 +33,7 @@ const ClientsPage: React.FC = () => {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingClientId, setEditingClientId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,6 +86,23 @@ const ClientsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (clientId: string) => {
+    setEditingClientId(clientId);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingClientId(null);
+  };
+
+  const handleSaveEdit = () => {
+    loadClients(); // Reload clients after edit
+    setEditingClientId(null);
+    toast({
+      title: "Cliente atualizado",
+      description: "As alterações foram salvas com sucesso!"
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -180,7 +199,11 @@ const ClientsPage: React.FC = () => {
                           <p className="text-sm text-gray-600">{client.telefone}</p>
                         </div>
                         <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(client.id)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
@@ -241,6 +264,14 @@ const ClientsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {editingClientId && (
+        <ClientEditDialog
+          clientId={editingClientId}
+          onClose={handleCloseEdit}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };
