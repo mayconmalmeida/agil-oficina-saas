@@ -32,8 +32,8 @@ const AppRoutes: React.FC = () => {
       {/* Rota especial para plano expirado */}
       <Route path="/plano-expirado" element={<PlanoExpirado />} />
       
-      {/* Rotas administrativas */}
-      <AdminRoutes />
+      {/* Rotas administrativas - chamando a função para obter o Route */}
+      {AdminRoutes()}
       
       {/* Rotas protegidas */}
       {protectedRoutes}
