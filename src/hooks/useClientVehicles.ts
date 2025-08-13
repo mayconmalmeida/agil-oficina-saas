@@ -19,24 +19,27 @@ export const useClientVehicles = (clientId?: string) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🚗 useClientVehicles - clientId mudou:', clientId);
     if (clientId) {
       loadClientVehicles(clientId);
     } else {
+      console.log('🚗 useClientVehicles - Sem clientId, limpando veículos');
       setVehicles([]);
     }
   }, [clientId]);
 
   const loadClientVehicles = async (clientId: string) => {
-    console.log('🚗 Carregando veículos para cliente:', clientId);
+    console.log('🚗 useClientVehicles - Carregando veículos para cliente:', clientId);
     setIsLoading(true);
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.log('❌ Usuário não autenticado');
+        console.log('❌ useClientVehicles - Usuário não autenticado');
         return;
       }
 
+      console.log('🚗 useClientVehicles - Fazendo query na tabela veiculos');
       const { data, error } = await supabase
         .from('veiculos')
         .select('*')
@@ -45,14 +48,14 @@ export const useClientVehicles = (clientId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Erro ao carregar veículos:', error);
+        console.error('❌ useClientVehicles - Erro ao carregar veículos:', error);
         throw error;
       }
       
-      console.log('✅ Veículos carregados:', data?.length || 0, data);
+      console.log('✅ useClientVehicles - Veículos encontrados:', data?.length || 0, data);
       setVehicles(data || []);
     } catch (error) {
-      console.error('💥 Erro ao carregar veículos:', error);
+      console.error('💥 useClientVehicles - Erro ao carregar veículos:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar veículos",

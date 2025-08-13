@@ -19,18 +19,20 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
 
   // Clear previous vehicle selection when client changes
   useEffect(() => {
+    console.log('🚗 VehicleField - Cliente mudou:', selectedClient);
     if (selectedClient) {
       form.setValue('veiculo', '');
-      console.log('🚗 Cliente selecionado, limpando veículo anterior. Cliente:', selectedClient);
+      console.log('🚗 VehicleField - Limpando veículo anterior para novo cliente');
     }
   }, [selectedClient, form]);
 
   const handleVehicleSelect = (vehicleId: string) => {
+    console.log('🚗 VehicleField - Veículo selecionado ID:', vehicleId);
     const selectedVehicle = vehicles.find(v => v.id === vehicleId);
     if (selectedVehicle) {
       const vehicleInfo = formatVehicleDisplay(selectedVehicle);
       form.setValue('veiculo', vehicleInfo);
-      console.log('✅ Veículo selecionado:', selectedVehicle);
+      console.log('✅ VehicleField - Veículo formatado:', vehicleInfo);
     }
   };
 
@@ -94,7 +96,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
             </Select>
             <FormMessage />
             
-            {/* Show manual input if no vehicles found */}
+            {/* Mostrar input manual se não há veículos */}
             {vehicles.length === 0 && !isLoadingVehicles && (
               <div className="mt-2">
                 <FormLabel>Ou digite as informações do veículo:</FormLabel>

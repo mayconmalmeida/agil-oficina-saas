@@ -21,15 +21,19 @@ export const useClientSearch = () => {
 
   // Search for clients based on search term
   useEffect(() => {
+    console.log('🔍 useClientSearch - searchTerm mudou:', searchTerm);
+    
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     if (searchTerm.length >= 2) {
+      console.log('🔍 useClientSearch - Iniciando busca com delay para:', searchTerm);
       searchTimeoutRef.current = setTimeout(() => {
         searchClients(searchTerm);
       }, 300);
     } else {
+      console.log('🔍 useClientSearch - Limpando resultados (termo muito curto)');
       setClients([]);
     }
 
@@ -43,10 +47,11 @@ export const useClientSearch = () => {
   const searchClients = async (term: string) => {
     try {
       setIsLoading(true);
+      console.log('🔍 useClientSearch - Executando busca para:', term);
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.error('❌ Usuário não autenticado');
+        console.error('❌ useClientSearch - Usuário não autenticado');
         toast({
           variant: "destructive",
           title: "Erro de autenticação",
@@ -55,8 +60,8 @@ export const useClientSearch = () => {
         return;
       }
 
-      console.log('🔍 Buscando clientes com termo:', term);
-      console.log('👤 User ID:', session.user.id);
+      console.log('🔍 useClientSearch - Fazendo query no Supabase para:', term);
+      console.log('👤 useClientSearch - User ID:', session.user.id);
 
       const { data, error } = await supabase
         .from('clients')
@@ -68,7 +73,7 @@ export const useClientSearch = () => {
         .limit(10);
 
       if (error) {
-        console.error('❌ Erro ao buscar clientes:', error);
+        console.error('❌ useClientSearch - Erro na query:', error);
         toast({
           variant: "destructive",
           title: "Erro ao buscar clientes",
@@ -77,10 +82,10 @@ export const useClientSearch = () => {
         return;
       }
 
-      console.log('✅ Clientes encontrados:', data?.length || 0, data);
+      console.log('✅ useClientSearch - Resultados encontrados:', data?.length || 0, data);
       setClients(data || []);
     } catch (error) {
-      console.error('💥 Erro inesperado na busca:', error);
+      console.error('💥 useClientSearch - Erro inesperado:', error);
       toast({
         variant: "destructive",
         title: "Erro inesperado",
@@ -92,14 +97,14 @@ export const useClientSearch = () => {
   };
 
   const selectClient = (client: Client) => {
-    console.log('✅ Cliente selecionado:', client);
+    console.log('✅ useClientSearch - Cliente selecionado:', client);
     setSelectedClient(client);
     setSearchTerm(client.nome);
     setClients([]); // Clear the dropdown after selection
   };
 
   const clearSelection = () => {
-    console.log('🗑️ Limpando seleção de cliente');
+    console.log('🗑️ useClientSearch - Limpando seleção de cliente');
     setSelectedClient(null);
     setSearchTerm('');
     setClients([]);

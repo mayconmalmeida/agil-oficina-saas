@@ -15,7 +15,6 @@ interface ClientSearchFieldProps {
 const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
 
-  // Integration with client search
   const { 
     searchTerm, 
     setSearchTerm,
@@ -28,63 +27,42 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
 
   // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
-    console.log('📝 Selecionando cliente no formulário:', client);
-    if (!client || !client.nome) {
-      console.error('❌ Cliente inválido selecionado:', client);
-      return;
-    }
-
-    try {
-      selectClient(client);
-      form.setValue('cliente', client.nome);
-      setClientSearchOpen(false);
-    } catch (error) {
-      console.error('💥 Erro ao selecionar cliente:', error);
-    }
+    console.log('📝 ClientSearchField - Selecionando cliente no formulário:', client);
+    
+    selectClient(client);
+    form.setValue('cliente', client.nome);
+    setClientSearchOpen(false);
   };
 
   const handleInputChange = (value: string) => {
-    console.log('⌨️ Mudança no input de cliente:', value);
-    try {
-      form.setValue('cliente', value);
-      setSearchTerm(value);
-      
-      if (value === '' && selectedClient) {
-        clearSelection();
-        form.setValue('veiculo', '');
-      }
-      
-      // Open dropdown if there's input with at least 2 characters
-      if (value.length >= 2) {
-        setClientSearchOpen(true);
-      } else {
-        setClientSearchOpen(false);
-      }
-    } catch (error) {
-      console.error('💥 Erro ao alterar input:', error);
+    console.log('⌨️ ClientSearchField - Input mudou:', value);
+    
+    form.setValue('cliente', value);
+    setSearchTerm(value);
+    
+    // Se o campo foi limpo e havia um cliente selecionado, limpar tudo
+    if (value === '' && selectedClient) {
+     clearSelection();
+     form.setValue('veiculo', '');
+    }
+    
+    // Abrir dropdown se há input com pelo menos 2 caracteres
+    if (value.length >= 2) {
+      setClientSearchOpen(true);
+    } else {
+      setClientSearchOpen(false);
     }
   };
 
   const handleClearField = () => {
-    try {
-      form.setValue('cliente', '');
-      form.setValue('veiculo', '');
-      clearSelection();
-      setClientSearchOpen(false);
-    } catch (error) {
-      console.error('💥 Erro ao limpar campo:', error);
-    }
+    console.log('🗑️ ClientSearchField - Limpando campo');
+    form.setValue('cliente', '');
+    form.setValue('veiculo', '');
+    clearSelection();
+    setClientSearchOpen(false);
   };
 
-  // Auto-trigger search when component mounts with existing value
-  useEffect(() => {
-    const currentValue = form.getValues('cliente');
-    if (currentValue && currentValue.length >= 2 && !selectedClient) {
-      setSearchTerm(currentValue);
-    }
-  }, [form, selectedClient, setSearchTerm]);
-
-  // Close dropdown when clicking outside or when no search term
+  // Fechar dropdown quando não há termo de busca
   useEffect(() => {
     if (searchTerm.length < 2) {
       setClientSearchOpen(false);
@@ -96,7 +74,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
       control={form.control}
       name="cliente"
       render={({ field }) => (
-        <FormItem className="flex flex-col">
+        <FormItem className="flex flex-col relative">
           <FormLabel>Cliente</FormLabel>
           <div className="relative">
             <FormControl>
@@ -109,6 +87,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                   handleInputChange(e.target.value);
                 }}
                 onFocus={() => {
+                  console.log('👁️ ClientSearchField - Campo focado com valor:', field.value);
                   if (field.value && field.value.length >= 2) {
                     setClientSearchOpen(true);
                   }
@@ -133,7 +112,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
             )}
           </div>
           
-          {/* Dropdown de sugestões - apenas quando há resultados */}
+          {/* Dropdown de sugestões */}
           {clientSearchOpen && searchTerm.length >= 2 && (
             <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
               {isLoadingClients ? (
@@ -143,23 +122,19 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
                 </div>
               ) : clients.length > 0 ? (
                 <div className="py-1">
-                  {clients.map((client) => {
-                    if (!client || !client.id) return null;
-                    
-                    return (
-                      <div
-                        key={client.id}
-                        onClick={() => handleSelectClient(client)}
-                        className="px-3 py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                      >
-                        <div className="font-medium">{client.nome || 'Nome não informado'}</div>
-                        <div className="text-xs text-gray-500 flex justify-between">
-                          <span>{client.telefone || 'Telefone não informado'}</span>
-                          <span>{client.email || 'Email não informado'}</span>
-                        </div>
+                  {clients.map((client) => (
+                    <div
+                      key={client.id}
+                      onClick={() => handleSelectClient(client)}
+                      className="px-3 py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium">{client.nome}</div>
+                      <div className="text-xs text-gray-500 flex justify-between">
+                        <span>{client.telefone}</span>
+                        {client.email && <span>{client.email}</span>}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="px-3 py-4 text-center text-gray-500">
@@ -171,6 +146,7 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
           
           <FormMessage />
           
+          {/* Mostrar cliente selecionado */}
           {selectedClient && (
             <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="text-sm font-medium text-blue-900">Cliente Selecionado</h4>
