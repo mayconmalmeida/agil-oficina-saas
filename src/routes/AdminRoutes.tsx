@@ -33,9 +33,8 @@ const AdminRouteContent = () => {
   );
 };
 
-export const adminRoutes = [
+export const AdminRoutes = () => (
   <Route
-    key="admin-routes"
     path="/admin/*"
     element={
       <AdminProvider>
@@ -43,4 +42,4 @@ export const adminRoutes = [
       </AdminProvider>
     }
   />
-];
+);

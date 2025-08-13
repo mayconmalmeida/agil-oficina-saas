@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import PlanExpiredGuard from '@/components/subscription/PlanExpiredGuard';
-import { adminRoutes } from '@/routes/AdminRoutes';
+import { AdminRoutes } from '@/routes/AdminRoutes';
 import { publicRoutes } from '@/routes/PublicRoutes';
 import { protectedRoutes } from '@/routes/ProtectedRoutes';
 import UserDashboard from '@/pages/UserDashboard';
@@ -33,7 +33,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/plano-expirado" element={<PlanoExpirado />} />
       
       {/* Rotas administrativas */}
-      {adminRoutes}
+      <AdminRoutes />
       
       {/* Rotas protegidas */}
       {protectedRoutes}
