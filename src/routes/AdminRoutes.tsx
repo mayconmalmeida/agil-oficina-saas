@@ -11,18 +11,6 @@ import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import AdminSettingsPage from '@/pages/AdminSettingsPage';
 
-export const adminRoutes = [
-  <Route
-    key="admin-routes"
-    path="/admin/*"
-    element={
-      <AdminProvider>
-        <AdminRouteContent />
-      </AdminProvider>
-    }
-  />
-];
-
 const AdminRouteContent = () => {
   return (
     <>
@@ -44,3 +32,15 @@ const AdminRouteContent = () => {
     </>
   );
 };
+
+export const adminRoutes = [
+  <Route
+    key="admin-routes"
+    path="/admin/*"
+    element={
+      <AdminProvider>
+        <AdminRouteContent />
+      </AdminProvider>
+    }
+  />
+];
