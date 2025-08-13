@@ -17,12 +17,15 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
   const { selectedClient } = useClientSearch();
   const { vehicles, isLoading: isLoadingVehicles, formatVehicleDisplay } = useClientVehicles(selectedClient?.id);
 
-  // Clear previous vehicle selection when client changes
+  // Clear vehicle field when client changes
   useEffect(() => {
     console.log('🚗 VehicleField - Cliente mudou:', selectedClient);
     if (selectedClient) {
       form.setValue('veiculo', '');
-      console.log('🚗 VehicleField - Limpando veículo anterior para novo cliente');
+      console.log('🚗 VehicleField - Limpando campo veículo para novo cliente');
+    } else {
+      form.setValue('veiculo', '');
+      console.log('🚗 VehicleField - Limpando campo veículo (sem cliente)');
     }
   }, [selectedClient, form]);
 
@@ -35,6 +38,14 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
       console.log('✅ VehicleField - Veículo formatado:', vehicleInfo);
     }
   };
+
+  // Debug logs
+  console.log('🔧 VehicleField - Debug:', {
+    selectedClient: selectedClient ? { id: selectedClient.id, nome: selectedClient.nome } : null,
+    vehiclesCount: vehicles.length,
+    isLoadingVehicles,
+    vehicles
+  });
 
   if (!selectedClient) {
     return (
@@ -70,7 +81,6 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
             <Select 
               onValueChange={handleVehicleSelect} 
               disabled={isLoadingVehicles}
-              value={vehicles.length > 0 ? undefined : ""}
             >
               <FormControl>
                 <SelectTrigger>
@@ -100,7 +110,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
             </Select>
             <FormMessage />
             
-            {/* Mostrar input manual se não há veículos */}
+            {/* Manual input fallback if no vehicles */}
             {vehicles.length === 0 && !isLoadingVehicles && (
               <div className="mt-2">
                 <FormLabel>Ou digite as informações do veículo:</FormLabel>
