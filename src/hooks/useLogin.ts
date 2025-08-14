@@ -145,13 +145,18 @@ export const useLogin = () => {
           description: "Bem-vindo ao OficinaÁgil!",
         });
 
-        console.log('useLogin: Redirecionando para dashboard');
-        navigate('/dashboard', { replace: true });
+        console.log('useLogin: Redirecionando para dashboard principal');
+        // Aguardar um pouco para garantir que o contexto de auth seja atualizado
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
 
       } catch (adminCheckError) {
         console.error('useLogin: Erro ao verificar dados do usuário:', adminCheckError);
-        // Em caso de erro, redirecionar para setup
-        navigate('/perfil-setup', { replace: true });
+        // Em caso de erro, redirecionar para dashboard mesmo assim
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 100);
       }
 
     } catch (error) {
