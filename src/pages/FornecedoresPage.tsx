@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, Building2, Phone, Mail, MapPin, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 interface Fornecedor {
   id: string;
@@ -28,6 +29,17 @@ const FornecedoresPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
+  const [formData, setFormData] = useState({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    cep: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,15 +57,22 @@ const FornecedoresPage: React.FC = () => {
 
   const loadFornecedores = async () => {
     try {
+      console.log("🔍 Carregando fornecedores...");
+      
       const { data, error } = await supabase
         .from('fornecedores')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Erro ao carregar fornecedores:", error);
+        throw error;
+      }
 
+      console.log("✅ Fornecedores carregados:", data?.length || 0);
       setFornecedores(data || []);
     } catch (error: any) {
+      console.error("💥 Erro no loadFornecedores:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar fornecedores",
@@ -62,6 +81,67 @@ const FornecedoresPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingFornecedor) {
+        // Atualizar fornecedor existente
+        const { error } = await supabase
+          .from('fornecedores')
+          .update(formData)
+          .eq('id', editingFornecedor.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Fornecedor atualizado",
+          description: "Fornecedor atualizado com sucesso!"
+        });
+      } else {
+        // Criar novo fornecedor
+        const { error } = await supabase
+          .from('fornecedores')
+          .insert([{
+            ...formData,
+            user_id: (await supabase.auth.getUser()).data.user?.id
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Fornecedor criado",
+          description: "Fornecedor criado com sucesso!"
+        });
+      }
+
+      setDialogOpen(false);
+      resetForm();
+      loadFornecedores();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar fornecedor",
+        description: error.message
+      });
+    }
+  };
+
+  const handleEdit = (fornecedor: Fornecedor) => {
+    setEditingFornecedor(fornecedor);
+    setFormData({
+      nome: fornecedor.nome,
+      cnpj: fornecedor.cnpj || '',
+      email: fornecedor.email || '',
+      telefone: fornecedor.telefone || '',
+      endereco: fornecedor.endereco || '',
+      cidade: fornecedor.cidade || '',
+      estado: fornecedor.estado || '',
+      cep: fornecedor.cep || ''
+    });
+    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -88,6 +168,20 @@ const FornecedoresPage: React.FC = () => {
         description: error.message
       });
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      cnpj: '',
+      email: '',
+      telefone: '',
+      endereco: '',
+      cidade: '',
+      estado: '',
+      cep: ''
+    });
+    setEditingFornecedor(null);
   };
 
   const formatCNPJ = (cnpj?: string) => {
@@ -117,10 +211,110 @@ const FornecedoresPage: React.FC = () => {
           <Badge variant="outline">
             {fornecedores.length} fornecedores cadastrados
           </Badge>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Fornecedor
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Fornecedor
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingFornecedor ? 'Editar Fornecedor' : 'Novo Fornecedor'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="nome">Nome *</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="endereco">Endereço</Label>
+                  <Input
+                    id="endereco"
+                    value={formData.endereco}
+                    onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="cidade">Cidade</Label>
+                    <Input
+                      id="cidade"
+                      value={formData.cidade}
+                      onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="estado">Estado</Label>
+                    <Input
+                      id="estado"
+                      value={formData.estado}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                      placeholder="SP"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input
+                    id="cep"
+                    value={formData.cep}
+                    onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                    placeholder="00000-000"
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    {editingFornecedor ? 'Atualizar' : 'Criar'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -143,6 +337,16 @@ const FornecedoresPage: React.FC = () => {
               <p className="text-gray-600">
                 {searchTerm ? 'Nenhum fornecedor encontrado' : 'Nenhum fornecedor cadastrado'}
               </p>
+              {!searchTerm && (
+                <Button 
+                  onClick={() => setDialogOpen(true)} 
+                  className="mt-4"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Cadastrar primeiro fornecedor
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -158,7 +362,11 @@ const FornecedoresPage: React.FC = () => {
                           </p>
                         </div>
                         <div className="flex space-x-1">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(fornecedor)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
