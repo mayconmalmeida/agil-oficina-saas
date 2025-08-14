@@ -1,196 +1,127 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Users, 
-  Car, 
-  Package, 
-  Wrench, 
-  Calendar, 
   FileText, 
-  Settings,
-  LogOut,
-  Bot,
-  BarChart3,
-  CreditCard,
+  Settings, 
+  Car,
+  Calendar,
+  Brain,
   MessageCircle,
-  Shield,
-  Database
+  BarChart3,
+  Package,
+  Building2,
+  LogOut,
+  CreditCard
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
+
+const navigationItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
+  { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
+  { name: 'Serviços', href: '/dashboard/servicos', icon: Settings },
+  { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
+  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
+  { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
+  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
+  { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain, isPremium: true },
+  { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle, isPremium: true },
+  { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+];
 
 interface SidebarNavigationProps {
   onLogout: () => void;
+  onNavigate?: () => void;
 }
 
-const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout }) => {
+const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavigate }) => {
   const location = useLocation();
-  const { hasPermission, canAccessPremiumFeatures, isPremium } = usePermissions();
+  const { subscriptionStatus } = useSubscription();
 
-  const navigationItems = [
-    {
-      href: '/dashboard',
-      icon: Home,
-      label: 'Dashboard',
-      permission: null
-    },
-    {
-      href: '/dashboard/clientes',
-      icon: Users,
-      label: 'Clientes',
-      permission: 'clientes'
-    },
-    {
-      href: '/dashboard/orcamentos',
-      icon: FileText,
-      label: 'Orçamentos',
-      permission: 'orcamentos'
-    },
-    {
-      href: '/dashboard/servicos',
-      icon: Wrench,
-      label: 'Serviços',
-      permission: 'servicos'
-    },
-    {
-      href: '/dashboard/produtos',
-      icon: Package,
-      label: 'Produtos',
-      permission: 'produtos'
-    },
-    {
-      href: '/dashboard/veiculos',
-      icon: Car,
-      label: 'Veículos',
-      permission: 'veiculos'
-    },
-    {
-      href: '/dashboard/agendamentos',
-      icon: Calendar,
-      label: 'Agendamentos',
-      permission: 'agendamentos',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/ia-diagnostico',
-      icon: Bot,
-      label: 'IA Diagnóstico',
-      permission: 'diagnostico_ia',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/ia-suporte-inteligente',
-      icon: MessageCircle,
-      label: 'IA Suporte',
-      permission: 'suporte_prioritario',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/relatorios',
-      icon: BarChart3,
-      label: 'Relatórios',
-      permission: 'relatorios_avancados',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/integracao-contabil',
-      icon: Database,
-      label: 'Integração Contábil',
-      permission: 'integracao_contabil',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/backup',
-      icon: Shield,
-      label: 'Backup',
-      permission: 'backup',
-      isPremium: true
-    },
-    {
-      href: '/dashboard/assinatura',
-      icon: CreditCard,
-      label: 'Assinatura',
-      permission: null
-    },
-    {
-      href: '/dashboard/configuracoes',
-      icon: Settings,
-      label: 'Configurações',
-      permission: 'configuracoes'
+  const handleNavClick = () => {
+    if (onNavigate) {
+      onNavigate();
     }
-  ];
-
-  const isCurrentPath = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const canAccessItem = (item: any) => {
-    if (!item.permission) return true;
-    if (item.isPremium && !canAccessPremiumFeatures()) return false;
-    return hasPermission(item.permission);
   };
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
       {/* Logo */}
-      <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-        <Link to="/dashboard" className="flex items-center space-x-2">
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">O</span>
+            <span className="text-white font-bold text-sm">O</span>
           </div>
-          <span className="hidden lg:block text-xl font-bold text-gray-900">Oficina Go</span>
-        </Link>
+          <span className="font-semibold text-lg text-gray-900">Oficina Go</span>
+        </div>
       </div>
-
+      
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navigationItems.map((item) => {
-          const isActive = isCurrentPath(item.href);
-          const canAccess = canAccessItem(item);
           const Icon = item.icon;
-
+          const isActive = location.pathname === item.href || 
+                         (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+          
+          const isPremiumFeature = item.isPremium;
+          const hasAccess = !isPremiumFeature || subscriptionStatus.isPremium || subscriptionStatus.isTrialActive;
+          
           return (
-            <Link
-              key={item.href}
+            <NavLink
+              key={item.name}
               to={item.href}
-              className={`
-                flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
-                ${isActive 
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                  : canAccess
-                    ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                    : 'text-gray-400 cursor-not-allowed opacity-60'
-                }
-                ${!canAccess ? 'pointer-events-none' : ''}
-              `}
+              onClick={handleNavClick}
+              className={cn(
+                'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                isActive 
+                  ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
+                  : hasAccess
+                    ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    : 'text-gray-400 cursor-not-allowed'
+              )}
+              style={!hasAccess ? { pointerEvents: 'none' } : {}}
             >
-              <Icon className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-blue-700' : ''}`} />
-              <span className="truncate">{item.label}</span>
-              {item.isPremium && !isPremium() && (
-                <Badge variant="secondary" className="ml-auto text-xs">
+              <div className="flex items-center space-x-3">
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                <span>{item.name}</span>
+              </div>
+              {isPremiumFeature && !hasAccess && (
+                <Badge variant="secondary" className="text-xs">
                   Premium
                 </Badge>
               )}
-            </Link>
+            </NavLink>
           );
         })}
       </nav>
 
-      {/* Logout */}
+      {/* Subscription info */}
+      <div className="p-4 border-t border-gray-200">
+        <NavLink
+          to="/dashboard/assinatura"
+          onClick={handleNavClick}
+          className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
+          <CreditCard className="h-5 w-5" />
+          <span>Assinatura</span>
+        </NavLink>
+      </div>
+
+      {/* Logout button */}
       <div className="p-4 border-t border-gray-200">
         <Button
-          onClick={onLogout}
           variant="ghost"
-          className="w-full justify-start text-gray-700 hover:text-red-600 hover:bg-red-50"
+          onClick={onLogout}
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
         >
-          <LogOut className="mr-3 h-5 w-5" />
-          <span>Sair</span>
+          <LogOut className="h-5 w-5 mr-3" />
+          Sair
         </Button>
       </div>
     </div>

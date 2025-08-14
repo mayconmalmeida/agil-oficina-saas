@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -40,6 +41,16 @@ const DashboardLayout = () => {
     setSidebarOpen(false);
   };
 
+  const handleMenuToggle = () => {
+    console.log('Menu toggle clicked, current state:', sidebarOpen);
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleCloseSidebar = () => {
+    console.log('Closing sidebar');
+    setSidebarOpen(false);
+  };
+
   return (
     <SubscriptionGuard>
       <div className="flex h-screen bg-gray-100">
@@ -48,33 +59,46 @@ const DashboardLayout = () => {
           <SidebarNavigation onLogout={handleLogout} />
         </div>
 
-        {/* Sidebar Mobile */}
+        {/* Sidebar Mobile - Fixed overlay */}
         {sidebarOpen && (
-          <div className="fixed inset-0 flex z-40 lg:hidden">
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+          <div className="fixed inset-0 flex z-50 lg:hidden">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" 
+              onClick={handleCloseSidebar}
+              aria-hidden="true"
+            />
+            
+            {/* Sidebar panel */}
+            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white transform transition-transform duration-300 ease-in-out">
+              {/* Close button */}
               <div className="absolute top-0 right-0 -mr-12 pt-2">
                 <button
-                  className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                  onClick={() => setSidebarOpen(false)}
+                  type="button"
+                  className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white hover:bg-gray-600 hover:bg-opacity-25 transition-colors"
+                  onClick={handleCloseSidebar}
                 >
                   <span className="sr-only">Fechar menu</span>
                   <X className="h-6 w-6 text-white" />
                 </button>
               </div>
-              <SidebarNavigation onLogout={handleLogout} />
+              
+              {/* Sidebar content */}
+              <SidebarNavigation 
+                onLogout={handleLogout} 
+                onNavigate={handleCloseSidebar}
+              />
             </div>
           </div>
         )}
 
-        {/* Conteúdo principal centralizado */}
+        {/* Conteúdo principal */}
         <div className="flex flex-col w-0 flex-1 overflow-hidden">
           <MobileHeader 
-            onMenuClick={() => setSidebarOpen(true)}
+            onMenuClick={handleMenuToggle}
             onLogout={handleLogout}
           />
 
-          {/* Usando componente novo para o main content */}
           <DashboardMainContent />
         </div>
       </div>
