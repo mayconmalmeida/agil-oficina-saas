@@ -26,8 +26,8 @@ const navigationItems = [
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
   { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
   { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
-  { name: 'IA Suporte', href: '/dashboard/ia-suporte', icon: MessageCircle },
-  { name: 'Relatórios', href: '/dashboard/relatorios-basicos', icon: BarChart3 },
+  { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
+  { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
 ];
 
 const Sidebar: React.FC = () => {
