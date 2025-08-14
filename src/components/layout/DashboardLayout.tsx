@@ -33,10 +33,6 @@ const DashboardLayout = () => {
   const { subscriptionStatus } = useSubscription();
 
   const handleNavigation = (href: string, isPremium?: boolean) => {
-    // Se é premium e usuário não tem plano premium, bloquear
-    if (isPremium && !subscriptionStatus.isPremium && !subscriptionStatus.isTrialActive) {
-      return;
-    }
     navigate(href);
     setSidebarOpen(false);
   };
@@ -54,7 +50,7 @@ const DashboardLayout = () => {
   return (
     <SubscriptionGuard>
       <div className="flex h-screen bg-gray-100">
-        {/* Sidebar Desktop */}
+        {/* Sidebar Desktop - SEMPRE VISÍVEL */}
         <div className="hidden lg:flex lg:w-64 lg:flex-col">
           <SidebarNavigation onLogout={handleLogout} />
         </div>

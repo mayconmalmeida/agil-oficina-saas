@@ -30,8 +30,8 @@ const navigationItems = [
   { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
   { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
-  { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain, isPremium: true },
-  { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle, isPremium: true },
+  { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
+  { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
 ];
 
@@ -69,9 +69,6 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
           const isActive = location.pathname === item.href || 
                          (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
           
-          const isPremiumFeature = item.isPremium;
-          const hasAccess = !isPremiumFeature || subscriptionStatus.isPremium || subscriptionStatus.isTrialActive;
-          
           return (
             <NavLink
               key={item.name}
@@ -81,21 +78,13 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
                 'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isActive 
                   ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
-                  : hasAccess
-                    ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    : 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )}
-              style={!hasAccess ? { pointerEvents: 'none' } : {}}
             >
               <div className="flex items-center space-x-3">
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 <span>{item.name}</span>
               </div>
-              {isPremiumFeature && !hasAccess && (
-                <Badge variant="secondary" className="text-xs">
-                  Premium
-                </Badge>
-              )}
             </NavLink>
           );
         })}
