@@ -21,12 +21,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form, selectedClient }) => 
   useEffect(() => {
     console.log('🚗 VehicleField - Cliente mudou:', selectedClient);
     form.setValue('veiculo', '');
-    if (selectedClient) {
-      console.log('🚗 VehicleField - Limpando campo veículo para novo cliente');
-    } else {
-      console.log('🚗 VehicleField - Limpando campo veículo (sem cliente)');
-    }
-  }, [selectedClient, form]);
+  }, [selectedClient?.id, form]);
 
   const handleVehicleSelect = (vehicleId: string) => {
     console.log('🚗 VehicleField - Veículo selecionado ID:', vehicleId);
@@ -80,6 +75,7 @@ const VehicleField: React.FC<VehicleFieldProps> = ({ form, selectedClient }) => 
             <Select 
               onValueChange={handleVehicleSelect} 
               disabled={isLoadingVehicles}
+              value=""
             >
               <FormControl>
                 <SelectTrigger>

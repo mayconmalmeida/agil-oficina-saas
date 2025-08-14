@@ -54,6 +54,14 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, in
     form.setValue('valor_total', total.toFixed(2));
   }, [selectedItems, form]);
 
+  // Clear vehicle when client changes
+  useEffect(() => {
+    if (selectedClient) {
+      console.log('🔄 BudgetForm - Cliente mudou, limpando campo veículo');
+      form.setValue('veiculo', '');
+    }
+  }, [selectedClient, form]);
+
   const handleSubmit = (values: BudgetFormValues) => {
     onSubmit({
       ...values,
