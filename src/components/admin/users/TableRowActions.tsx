@@ -82,7 +82,7 @@ const TableRowActions = ({
         <Switch
           checked={user.is_active}
           className="scale-75"
-          readOnly
+          disabled
         />
       </Button>
 
