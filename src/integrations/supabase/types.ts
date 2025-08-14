@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -884,14 +884,14 @@ export type Database = {
     Functions: {
       create_agendamento: {
         Args: {
-          p_user_id: string
+          p_cliente_id: string
           p_data: string
           p_horario: string
-          p_cliente_id: string
-          p_veiculo_id: string
-          p_servico_id: string
           p_observacoes: string
+          p_servico_id: string
           p_status: string
+          p_user_id: string
+          p_veiculo_id: string
         }
         Returns: undefined
       }
@@ -901,42 +901,42 @@ export type Database = {
       }
       create_budget: {
         Args: {
-          p_user_id: string
           p_cliente: string
-          p_veiculo: string
           p_descricao: string
+          p_user_id: string
           p_valor_total: number
+          p_veiculo: string
         }
         Returns: undefined
       }
       create_client: {
         Args:
           | {
-              p_user_id: string
-              p_nome: string
-              p_telefone: string
+              p_ano: string
               p_email: string
+              p_marca: string
+              p_modelo: string
+              p_nome: string
+              p_placa: string
+              p_telefone: string
+              p_user_id: string
               p_veiculo: string
             }
           | {
-              p_user_id: string
+              p_email: string
               p_nome: string
               p_telefone: string
-              p_email: string
+              p_user_id: string
               p_veiculo: string
-              p_marca: string
-              p_modelo: string
-              p_ano: string
-              p_placa: string
             }
         Returns: undefined
       }
       create_manual_subscription: {
-        Args: { p_user_id: string; p_plan_type: string; p_amount?: number }
+        Args: { p_amount?: number; p_plan_type: string; p_user_id: string }
         Returns: Json
       }
       create_profile: {
-        Args: { user_id: string; user_email: string; user_full_name: string }
+        Args: { user_email: string; user_full_name: string; user_id: string }
         Returns: undefined
       }
       create_profile_table: {
@@ -949,20 +949,20 @@ export type Database = {
       }
       create_service: {
         Args: {
-          p_user_id: string
+          p_descricao: string
           p_nome: string
           p_tipo: string
+          p_user_id: string
           p_valor: number
-          p_descricao: string
         }
         Returns: undefined
       }
       create_subscription: {
         Args: {
-          user_id: string
+          end_date: string
           plan_type: string
           start_date: string
-          end_date: string
+          user_id: string
         }
         Returns: undefined
       }
@@ -991,7 +991,7 @@ export type Database = {
         Returns: boolean
       }
       process_nfce_xml: {
-        Args: { p_user_id: string; p_produtos: Json }
+        Args: { p_produtos: Json; p_user_id: string }
         Returns: Json
       }
       start_free_trial: {
@@ -1004,17 +1004,17 @@ export type Database = {
       }
       update_subscription_after_payment: {
         Args:
-          | { p_user_id: string; p_plan_type: string }
           | {
-              p_user_id: string
               p_plan_type: string
               p_stripe_customer_id?: string
               p_stripe_subscription_id?: string
+              p_user_id: string
             }
+          | { p_plan_type: string; p_user_id: string }
         Returns: Json
       }
       update_user_plan: {
-        Args: { user_profile_id: string; new_plan: string }
+        Args: { new_plan: string; user_profile_id: string }
         Returns: undefined
       }
     }
