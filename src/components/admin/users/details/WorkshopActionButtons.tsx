@@ -8,6 +8,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionMenu } from "@/components/ui/action-menu";
 import { WorkshopDetails } from '@/components/admin/users/UserDetailsDialog';
 
 interface WorkshopActionButtonsProps {
@@ -27,8 +28,27 @@ const WorkshopActionButtons = ({
   onToggleStatus,
   onGeneratePDF
 }: WorkshopActionButtonsProps) => {
+  const quickActionItems = [
+    {
+      label: "Alterar Plano",
+      icon: UserCheck,
+      onClick: () => onChangePlan(workshop)
+    },
+    {
+      label: "Renovar Vencimento",
+      icon: CalendarPlus,
+      onClick: () => onRenewSubscription(workshop)
+    },
+    {
+      label: "Gerar Fatura PDF",
+      icon: FileText,
+      onClick: () => onGeneratePDF(workshop)
+    }
+  ];
+
   return (
     <div className="flex flex-wrap gap-2 pt-4">
+      {/* Botões principais sempre visíveis */}
       <Button 
         variant="outline" 
         onClick={() => onEdit(workshop)}
@@ -39,24 +59,6 @@ const WorkshopActionButtons = ({
       </Button>
       
       <Button 
-        variant="outline" 
-        onClick={() => onChangePlan(workshop)}
-        className="flex items-center gap-2"
-      >
-        <UserCheck className="h-4 w-4" />
-        Alterar Plano
-      </Button>
-      
-      <Button 
-        variant="outline" 
-        onClick={() => onRenewSubscription(workshop)}
-        className="flex items-center gap-2"
-      >
-        <CalendarPlus className="h-4 w-4" />
-        Renovar Vencimento
-      </Button>
-      
-      <Button 
         variant={workshop.is_active ? "destructive" : "outline"}
         onClick={() => onToggleStatus(workshop.id, workshop.is_active)}
         className="flex items-center gap-2"
@@ -64,15 +66,11 @@ const WorkshopActionButtons = ({
         <Ban className="h-4 w-4" />
         {workshop.is_active ? 'Desativar Oficina' : 'Ativar Oficina'}
       </Button>
-      
-      <Button 
-        variant="outline" 
-        onClick={() => onGeneratePDF(workshop)}
-        className="flex items-center gap-2"
-      >
-        <FileText className="h-4 w-4" />
-        Gerar Fatura PDF
-      </Button>
+
+      {/* Menu dropdown para ações secundárias */}
+      <div className="flex items-center">
+        <ActionMenu items={quickActionItems} triggerClassName="h-10" />
+      </div>
     </div>
   );
 };
