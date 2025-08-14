@@ -5,26 +5,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { BudgetFormValues } from '../budgetSchema';
-import { useClientSearch } from '@/hooks/useClientSearch';
+import { Client } from '@/hooks/useClientSearch';
 import { useClientVehicles } from '@/hooks/useClientVehicles';
 import { Car } from 'lucide-react';
 
 interface VehicleFieldProps {
   form: UseFormReturn<BudgetFormValues>;
+  selectedClient: Client | null;
 }
 
-const VehicleField: React.FC<VehicleFieldProps> = ({ form }) => {
-  const { selectedClient } = useClientSearch();
+const VehicleField: React.FC<VehicleFieldProps> = ({ form, selectedClient }) => {
   const { vehicles, isLoading: isLoadingVehicles, formatVehicleDisplay } = useClientVehicles(selectedClient?.id);
 
   // Clear vehicle field when client changes
   useEffect(() => {
     console.log('🚗 VehicleField - Cliente mudou:', selectedClient);
+    form.setValue('veiculo', '');
     if (selectedClient) {
-      form.setValue('veiculo', '');
       console.log('🚗 VehicleField - Limpando campo veículo para novo cliente');
     } else {
-      form.setValue('veiculo', '');
       console.log('🚗 VehicleField - Limpando campo veículo (sem cliente)');
     }
   }, [selectedClient, form]);

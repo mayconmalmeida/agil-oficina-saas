@@ -11,6 +11,7 @@ import TotalValueField from './form-sections/TotalValueField';
 import FormActions from './form-sections/FormActions';
 import ProductServiceSelector from './form-sections/ProductServiceSelector';
 import { useState, useEffect } from 'react';
+import { Client } from '@/hooks/useClientSearch';
 
 interface SelectedItem {
   id: string;
@@ -35,6 +36,7 @@ interface BudgetFormProps {
 
 const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, initialValues }) => {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -62,8 +64,14 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, in
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <ClientSearchField form={form} />
-        <VehicleField form={form} />
+        <ClientSearchField 
+          form={form} 
+          onClientSelect={setSelectedClient}
+        />
+        <VehicleField 
+          form={form} 
+          selectedClient={selectedClient}
+        />
         <DescriptionField form={form} />
         
         <ProductServiceSelector 

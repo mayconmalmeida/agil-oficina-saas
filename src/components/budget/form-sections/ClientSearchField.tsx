@@ -10,9 +10,10 @@ import { useClientSearch, Client } from '@/hooks/useClientSearch';
 
 interface ClientSearchFieldProps {
   form: UseFormReturn<BudgetFormValues>;
+  onClientSelect?: (client: Client | null) => void;
 }
 
-const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
+const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form, onClientSelect }) => {
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
 
   const { 
@@ -24,6 +25,13 @@ const ClientSearchField: React.FC<ClientSearchFieldProps> = ({ form }) => {
     selectedClient,
     clearSelection
   } = useClientSearch();
+
+  // Notify parent component when client changes
+  useEffect(() => {
+    if (onClientSelect) {
+      onClientSelect(selectedClient);
+    }
+  }, [selectedClient, onClientSelect]);
 
   // When a client is selected, update the form
   const handleSelectClient = (client: Client) => {
