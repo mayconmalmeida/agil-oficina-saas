@@ -1,18 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AdminUser, AdminContextValue, AdminRole } from '@/types/admin';
-import { useNavigate } from 'react-router-dom';
+import { AdminUser, AdminContextValue } from '@/types/admin';
 
 const AdminContext = createContext<AdminContextValue | undefined>(undefined);
-
-export const useAdminContext = (): AdminContextValue => {
-  const context = useContext(AdminContext);
-  if (!context) {
-    throw new Error('useAdminContext must be used within an AdminProvider');
-  }
-  return context;
-};
 
 interface AdminProviderProps {
   children: ReactNode;
@@ -22,147 +13,150 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    checkAdminSession();
-    
-    // Escutar mudanças na sessão do Supabase
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('AdminContext: Auth state change:', event, session?.user?.email);
-        
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setIsLoading(false);
-          setError(null);
-        } else if (session?.user) {
-          await validateAdminUser(session.user.email);
-        } else {
-          setUser(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const checkAdminSession = async () => {
+    console.log('AdminContext: Verificando sessão admin existente...');
     try {
-      setIsLoading(true);
-      console.log('AdminContext: Verificando sessão admin existente...');
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user?.email) {
-        console.log('AdminContext: Sessão encontrada, validando admin:', session.user.email);
-        await validateAdminUser(session.user.email);
-      } else {
-        console.log('AdminContext: Nenhuma sessão encontrada');
-        setUser(null);
-        setIsLoading(false);
+      // Verificar se existe uma sessão ativa no localStorage
+      const adminSession = localStorage.getItem('admin_session');
+      if (adminSession) {
+        const sessionData = JSON.parse(adminSession);
+        
+        // Verificar se a sessão ainda é válida (não expirada)
+        if (sessionData.expiresAt && new Date(sessionData.expiresAt) > new Date()) {
+          console.log('AdminContext: Sessão admin válida encontrada');
+          setUser(sessionData.user);
+          setIsLoading(false);
+          return;
+        } else {
+          // Sessão expirada, remover
+          localStorage.removeItem('admin_session');
+        }
       }
+
+      console.log('AdminContext: Nenhuma sessão admin válida encontrada');
+      setUser(null);
+      setIsLoading(false);
     } catch (error) {
       console.error('AdminContext: Erro ao verificar sessão:', error);
-      setError('Erro ao verificar sessão');
+      setError('Erro ao verificar sessão de administrador');
+      setUser(null);
       setIsLoading(false);
     }
   };
 
-  const validateAdminUser = async (email: string | null) => {
-    try {
-      if (!email) {
-        setUser(null);
-        setError(null);
-        setIsLoading(false);
-        return;
-      }
+  const loginAdmin = async (email: string, password: string): Promise<boolean> => {
+    console.log('AdminContext: Iniciando login admin para:', email);
+    setIsLoading(true);
+    setError(null);
 
-      console.log('AdminContext: Validando admin na tabela admins:', email);
-      
-      // Verificar na tabela admins
-      const { data: adminData, error: adminError } = await supabase
+    try {
+      // Buscar admin na tabela admins
+      const { data: admin, error: adminError } = await supabase
         .from('admins')
-        .select('id, email, is_superadmin')
+        .select('id, email, password, is_superadmin')
         .eq('email', email)
         .maybeSingle();
 
       if (adminError) {
         console.error('AdminContext: Erro ao buscar admin:', adminError);
-        setUser(null);
-        setError('Erro ao verificar permissões de admin');
-        setIsLoading(false);
-        return;
+        throw new Error('Erro ao verificar credenciais de administrador');
       }
 
-      if (!adminData) {
-        console.log('AdminContext: Email não é admin:', email);
-        setUser(null);
-        setError(null); // Não é erro, apenas não é admin
-        setIsLoading(false);
-        return;
+      if (!admin) {
+        console.log('AdminContext: Admin não encontrado para email:', email);
+        throw new Error('Email não encontrado no sistema de administração');
+      }
+
+      console.log('AdminContext: Admin encontrado:', { email: admin.email, id: admin.id });
+
+      // Verificar senha - assumindo que pode ser texto simples ou hash bcrypt
+      let passwordValid = false;
+      
+      // Verificar se é um hash bcrypt
+      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password);
+      
+      if (isBcryptHash) {
+        try {
+          // Usar bcrypt para comparar
+          const bcrypt = await import('bcryptjs');
+          passwordValid = await bcrypt.compare(password, admin.password);
+          console.log('AdminContext: Verificação bcrypt:', passwordValid);
+        } catch (bcryptError) {
+          console.error('AdminContext: Erro ao verificar hash bcrypt:', bcryptError);
+          // Fallback para comparação direta
+          passwordValid = password === admin.password;
+        }
+      } else {
+        // Comparação direta
+        passwordValid = password === admin.password;
+        console.log('AdminContext: Verificação direta de senha:', passwordValid);
+      }
+
+      if (!passwordValid) {
+        console.log('AdminContext: Senha incorreta');
+        throw new Error('Senha incorreta');
       }
 
       // Criar usuário admin
       const adminUser: AdminUser = {
-        id: adminData.id,
-        email: adminData.email,
-        role: adminData.is_superadmin ? 'superadmin' : 'admin',
+        id: admin.id,
+        email: admin.email,
+        role: admin.is_superadmin ? 'superadmin' : 'admin',
         isAdmin: true,
         canAccessFeatures: true
       };
 
-      console.log('AdminContext: Admin validado com sucesso:', adminUser);
+      // Salvar sessão no localStorage (válida por 8 horas)
+      const sessionData = {
+        user: adminUser,
+        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() // 8 horas
+      };
+      localStorage.setItem('admin_session', JSON.stringify(sessionData));
+
       setUser(adminUser);
       setError(null);
-      setIsLoading(false);
+      console.log('AdminContext: Login admin bem-sucedido');
+      return true;
 
-    } catch (error) {
-      console.error('AdminContext: Erro na validação de admin:', error);
+    } catch (err: any) {
+      console.error('AdminContext: Erro no login admin:', err);
+      setError(err.message || 'Erro durante o login');
       setUser(null);
-      setError(error instanceof Error ? error.message : 'Erro na validação');
+      return false;
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const checkAdminPermissions = (requiredRole?: AdminRole): boolean => {
-    if (!user || !user.isAdmin) {
-      return false;
-    }
+  const signOut = async () => {
+    console.log('AdminContext: Fazendo logout admin');
+    localStorage.removeItem('admin_session');
+    setUser(null);
+    setError(null);
+  };
 
-    if (!requiredRole) {
-      return true; // Qualquer admin pode acessar
-    }
-
+  const checkAdminPermissions = (requiredRole?: 'admin' | 'superadmin'): boolean => {
+    if (!user || !user.isAdmin) return false;
+    
     if (requiredRole === 'superadmin') {
       return user.role === 'superadmin';
     }
-
+    
     return user.role === 'admin' || user.role === 'superadmin';
   };
 
-  const signOut = async (): Promise<void> => {
-    try {
-      console.log('AdminContext: Fazendo logout...');
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      setError(null);
-      navigate('/admin/login');
-    } catch (error) {
-      console.error('AdminContext: Erro no logout:', error);
-      throw error;
-    }
-  };
+  useEffect(() => {
+    checkAdminSession();
+  }, []);
 
   const contextValue: AdminContextValue = {
     user,
     isLoading,
     error,
     checkAdminPermissions,
-    signOut
+    signOut,
+    loginAdmin
   };
 
   return (
@@ -170,4 +164,12 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       {children}
     </AdminContext.Provider>
   );
+};
+
+export const useAdminContext = (): AdminContextValue => {
+  const context = useContext(AdminContext);
+  if (context === undefined) {
+    throw new Error('useAdminContext must be used within an AdminProvider');
+  }
+  return context;
 };

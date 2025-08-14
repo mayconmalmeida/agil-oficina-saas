@@ -1,15 +1,21 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAdminLogin } from '@/hooks/admin/useAdminLogin';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAdminContext } from '@/contexts/AdminContext';
-import LoginForm from '@/components/admin/auth/LoginForm';
+import { Loader2, Shield } from 'lucide-react';
 
 const AdminLoginPage: React.FC = () => {
-  const { isLoading, errorMessage, handleLogin } = useAdminLogin();
-  const { user, isLoading: isLoadingContext } = useAdminContext();
+  const { user, isLoading: isLoadingContext, error, loginAdmin } = useAdminContext();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   console.log('AdminLoginPage: Estado:', {
     user: user?.email,
@@ -28,18 +34,38 @@ const AdminLoginPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <Loader2 className="animate-spin h-8 w-8 text-blue-600 mx-auto" />
           <p className="mt-2 text-sm text-gray-600">Verificando sessão...</p>
         </div>
       </div>
     );
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setLoginError(null);
+
+    try {
+      const success = await loginAdmin(email, password);
+      if (success) {
+        console.log('AdminLoginPage: Login bem-sucedido, redirecionando');
+        navigate('/admin');
+      }
+    } catch (err: any) {
+      console.error('AdminLoginPage: Erro no submit:', err);
+      setLoginError(err.message || 'Erro durante o login');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Painel Administrativo</h2>
+          <Shield className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">Painel Administrativo</h2>
           <p className="mt-2 text-sm text-gray-600">
             Faça login para acessar o painel de administração
           </p>
@@ -53,17 +79,54 @@ const AdminLoginPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {errorMessage && (
+            {(error || loginError) && (
               <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{errorMessage}</AlertDescription>
+                <AlertDescription>{error || loginError}</AlertDescription>
               </Alert>
             )}
             
-            <LoginForm
-              onSubmit={handleLogin}
-              isLoading={isLoading}
-              isConnectionChecking={false}
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@oficinagil.com.br"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar como Admin'
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
         

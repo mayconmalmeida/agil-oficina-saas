@@ -29,4 +29,5 @@ export interface AdminContextValue {
   error: string | null;
   checkAdminPermissions: (requiredRole?: AdminRole) => boolean;
   signOut: () => Promise<void>;
+  loginAdmin: (email: string, password: string) => Promise<boolean>;
 }
