@@ -20,26 +20,47 @@ const BudgetEditPage: React.FC = () => {
   
   useEffect(() => {
     const fetchBudgetDetails = async () => {
-      if (!id) return;
+      if (!id) {
+        toast({
+          variant: "destructive",
+          title: "ID do orçamento não encontrado",
+          description: "Não foi possível identificar o orçamento a ser editado.",
+        });
+        navigate('/dashboard/orcamentos');
+        return;
+      }
       
       setIsLoading(true);
       try {
+        console.log('Buscando orçamento com ID:', id);
+        
         const { data, error } = await supabase
           .from('orcamentos')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Erro ao buscar orçamento:', error);
           toast({
             variant: "destructive",
             title: "Erro ao carregar orçamento",
-            description: "Não foi possível carregar os detalhes do orçamento.",
+            description: error.message || "Não foi possível carregar os detalhes do orçamento.",
           });
           return;
         }
         
+        if (!data) {
+          toast({
+            variant: "destructive",
+            title: "Orçamento não encontrado",
+            description: "O orçamento solicitado não foi encontrado.",
+          });
+          navigate('/dashboard/orcamentos');
+          return;
+        }
+        
+        console.log('Orçamento carregado:', data);
         setBudget(data);
       } catch (error) {
         console.error('Erro inesperado:', error);
@@ -54,7 +75,7 @@ const BudgetEditPage: React.FC = () => {
     };
     
     fetchBudgetDetails();
-  }, [id, toast]);
+  }, [id, toast, navigate]);
   
   const handleSubmit = async (values: BudgetFormValues) => {
     if (!id) return;
@@ -62,7 +83,9 @@ const BudgetEditPage: React.FC = () => {
     setIsSaving(true);
     try {
       // Converter o valor para número antes de salvar
-      const valorTotal = parseFloat(values.valor_total.replace(',', '.'));
+      const valorTotal = parseFloat(values.valor_total.replace(/[^\d,]/g, '').replace(',', '.'));
+      
+      console.log('Atualizando orçamento:', { id, values, valorTotal });
       
       const { error } = await supabase
         .from('orcamentos')
@@ -89,8 +112,8 @@ const BudgetEditPage: React.FC = () => {
         description: "As alterações foram salvas com sucesso.",
       });
       
-      // Redirecionar para a página de detalhes
-      navigate(`/orcamentos/${id}`);
+      // Redirecionar para a página de orçamentos
+      navigate('/dashboard/orcamentos');
     } catch (error) {
       console.error('Erro inesperado:', error);
       toast({
@@ -104,11 +127,11 @@ const BudgetEditPage: React.FC = () => {
   };
   
   const handleBack = () => {
-    navigate(-1);
+    navigate('/dashboard/orcamentos');
   };
   
   const handleSkip = () => {
-    navigate(`/orcamentos/${id}`);
+    navigate('/dashboard/orcamentos');
   };
   
   if (isLoading) {
@@ -135,11 +158,13 @@ const BudgetEditPage: React.FC = () => {
   
   // Prepara os valores iniciais para o formulário
   const initialValues = {
-    cliente: budget.cliente,
-    veiculo: budget.veiculo,
-    descricao: budget.descricao,
-    valor_total: budget.valor_total.toString()
+    cliente: budget.cliente || '',
+    veiculo: budget.veiculo || '',
+    descricao: budget.descricao || '',
+    valor_total: budget.valor_total ? budget.valor_total.toString() : '0'
   };
+  
+  console.log('Valores iniciais do formulário:', initialValues);
   
   return (
     <div className="container mx-auto px-4 py-8">

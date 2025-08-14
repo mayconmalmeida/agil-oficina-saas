@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Search, Building2, Phone, Mail, MapPin, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import FornecedorForm from '@/components/fornecedores/FornecedorForm';
 
 interface Fornecedor {
   id: string;
@@ -29,7 +28,6 @@ const FornecedoresPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingFornecedor, setEditingFornecedor] = useState<Fornecedor | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,17 +62,6 @@ const FornecedoresPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSave = () => {
-    loadFornecedores();
-    setDialogOpen(false);
-    setEditingFornecedor(null);
-  };
-
-  const handleEdit = (fornecedor: Fornecedor) => {
-    setEditingFornecedor(fornecedor);
-    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -122,31 +109,18 @@ const FornecedoresPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Fornecedores</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Fornecedores</h1>
+          <p className="text-muted-foreground">Gerencie os fornecedores da sua oficina</p>
+        </div>
         <div className="flex items-center space-x-4">
           <Badge variant="outline">
             {fornecedores.length} fornecedores cadastrados
           </Badge>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingFornecedor(null)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Fornecedor
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingFornecedor ? 'Editar Fornecedor' : 'Novo Fornecedor'}
-                </DialogTitle>
-              </DialogHeader>
-              <FornecedorForm
-                fornecedor={editingFornecedor}
-                onSave={handleSave}
-                onCancel={() => setDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Fornecedor
+          </Button>
         </div>
       </div>
 
@@ -184,11 +158,7 @@ const FornecedoresPage: React.FC = () => {
                           </p>
                         </div>
                         <div className="flex space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(fornecedor)}
-                          >
+                          <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
