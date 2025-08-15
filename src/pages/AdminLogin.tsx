@@ -77,75 +77,54 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      console.log("[AdminLogin] 🔐 Tentando login admin com tabela admins...");
+      console.log("[AdminLogin] 🔐 Tentando login admin com autenticação Supabase...");
       
-      // Buscar admin na tabela admins
-      const { data: admin, error: adminError } = await supabase
-        .from('admins')
-        .select('id, email, password, is_superadmin')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (adminError) {
-        console.error("[AdminLogin] ❌ Erro ao buscar admin:", adminError);
-        throw new Error("Erro ao verificar credenciais");
-      }
-
-      if (!admin) {
-        console.log("[AdminLogin] ❌ Admin não encontrado para email:", email);
-        throw new Error("Email não encontrado no sistema de administração");
-      }
-
-      console.log("[AdminLogin] ✅ Admin encontrado:", {
-        email: admin.email,
-        id: admin.id,
-        is_superadmin: admin.is_superadmin
+      // Fazer login com Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
       });
 
-      // Verificar senha (assumindo que está em texto simples na tabela)
-      if (password !== admin.password) {
-        console.log("[AdminLogin] ❌ Senha incorreta");
-        throw new Error("Senha incorreta");
+      if (authError) {
+        console.error("[AdminLogin] ❌ Erro de autenticação:", authError);
+        throw new Error(authError.message);
       }
 
-      console.log("[AdminLogin] ✅ Senha validada");
-
-      // Criar/atualizar perfil admin na tabela profiles
-      const adminRole = admin.is_superadmin ? 'superadmin' : 'admin';
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: admin.id,
-          email: admin.email,
-          role: adminRole,
-          is_active: true,
-          created_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
-        });
-
-      if (profileError) {
-        console.error("[AdminLogin] ❌ Erro ao criar perfil admin:", profileError);
-      } else {
-        console.log("[AdminLogin] ✅ Perfil admin criado/atualizado");
+      if (!authData.user) {
+        throw new Error("Dados do usuário não encontrados");
       }
 
-      // Tentar autenticação Supabase (opcional)
-      try {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password,
-        });
+      console.log("[AdminLogin] ✅ Autenticação bem-sucedida, verificando permissões admin...");
 
-        if (!authError && authData.session) {
-          console.log("[AdminLogin] ✅ Autenticação Supabase bem-sucedida");
-        } else {
-          console.log("[AdminLogin] ⚠️ Autenticação Supabase falhou, mas prosseguindo com login admin");
-        }
-      } catch (authAttemptError) {
-        console.log("[AdminLogin] ⚠️ Erro na autenticação Supabase, mas prosseguindo");
+      // Verificar se é admin usando RPC segura
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_user_admin', {
+        user_email: email
+      });
+
+      if (adminError) {
+        console.error("[AdminLogin] ❌ Erro ao verificar permissões:", adminError);
+        throw new Error("Erro ao verificar permissões de administrador");
       }
+
+      if (!isAdmin) {
+        console.log("[AdminLogin] ❌ Usuário não é admin");
+        await supabase.auth.signOut();
+        throw new Error("Acesso negado: usuário não é administrador");
+      }
+
+      // Buscar role específica
+      const { data: role, error: roleError } = await supabase.rpc('get_admin_role', {
+        user_email: email
+      });
+
+      if (roleError) {
+        console.warn("[AdminLogin] ⚠️ Erro ao buscar role:", roleError);
+      }
+
+      console.log("[AdminLogin] ✅ Admin autenticado com sucesso:", {
+        email: email,
+        role: role || 'admin'
+      });
 
       console.log("[AdminLogin] ➡️ Redirecionando para dashboard admin");
       navigate('/admin');
@@ -206,11 +185,11 @@ const AdminLogin = () => {
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <AlertTriangle className="h-4 w-4 text-blue-600 mr-2" />
-                <span className="text-sm font-medium text-blue-800">Sistema Admin</span>
+                <span className="text-sm font-medium text-blue-800">Sistema Admin Seguro</span>
               </div>
               <p className="text-xs text-blue-700">
-                Login de administradores usando a tabela 'admins'. 
-                Credenciais devem estar cadastradas nesta tabela.
+                Login de administradores usando autenticação Supabase com verificação de role.
+                Credenciais devem estar registradas no sistema de autenticação.
               </p>
             </div>
 

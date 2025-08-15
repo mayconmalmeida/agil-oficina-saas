@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * ✅ NOVA FUNÇÃO: Verifica se o usuário tem permissões de admin através da tabela admins
+ * ✅ SECURE FUNCTION: Verifica se o usuário tem permissões de admin através da tabela profiles
  */
 export const checkAdminStatus = async (session: any) => {
   try {
@@ -13,39 +13,28 @@ export const checkAdminStatus = async (session: any) => {
 
     console.log("Verificando status admin para email:", session.user.email);
     
-    // ✅ Buscar na tabela admins pelo email
-    const { data: adminData, error: adminError } = await supabase
-      .from('admins')
-      .select('email, is_superadmin')
-      .eq('email', session.user.email)
-      .maybeSingle();
+    // ✅ Usar RPC function segura para verificar admin
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_user_admin', {
+      user_email: session.user.email
+    });
     
     if (adminError) {
-      console.error("Erro ao verificar admin na tabela admins:", adminError);
+      console.error("Erro ao verificar admin:", adminError);
       return false;
     }
       
-    if (adminData) {
-      console.log("Usuário é administrador:", session.user.email, "is_superadmin:", adminData.is_superadmin);
+    if (isAdmin) {
+      console.log("Usuário é administrador:", session.user.email);
       
-      // ✅ Criar/atualizar perfil na tabela profiles para compatibilidade
-      const adminRole = adminData.is_superadmin ? 'superadmin' : 'admin';
+      // ✅ Buscar role específica do admin
+      const { data: role, error: roleError } = await supabase.rpc('get_admin_role', {
+        user_email: session.user.email
+      });
       
-      try {
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: session.user.id,
-            email: adminData.email,
-            role: adminRole,
-            is_active: true,
-            created_at: new Date().toISOString()
-          });
-        
-        console.log("Perfil admin sincronizado com sucesso");
-      } catch (syncError) {
-        console.warn("Erro ao sincronizar perfil admin:", syncError);
-        // Não bloquear o login por isso
+      if (roleError) {
+        console.warn("Erro ao buscar role admin:", roleError);
+      } else {
+        console.log("Role do admin:", role);
       }
       
       return true;
@@ -60,22 +49,20 @@ export const checkAdminStatus = async (session: any) => {
 };
 
 /**
- * ✅ NOVA FUNÇÃO: Função para verificar se o usuário é super admin através da tabela admins
+ * ✅ SECURE FUNCTION: Função para verificar se o usuário é super admin através da tabela profiles
  */
 export const checkSuperAdminStatus = async (userEmail: string) => {
   try {
-    const { data: adminData, error: adminError } = await supabase
-      .from('admins')
-      .select('is_superadmin')
-      .eq('email', userEmail)
-      .maybeSingle();
+    const { data: role, error: roleError } = await supabase.rpc('get_admin_role', {
+      user_email: userEmail
+    });
     
-    if (adminError) {
-      console.error("Erro ao verificar super admin:", adminError);
+    if (roleError) {
+      console.error("Erro ao verificar super admin:", roleError);
       return false;
     }
       
-    return adminData?.is_superadmin === true;
+    return role === 'superadmin';
   } catch (error) {
     console.error("Erro ao verificar status de super admin:", error);
     return false;

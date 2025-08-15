@@ -1,5 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 /**
  * NOTA: A função createPredefinedAdmin foi removida porque agora
