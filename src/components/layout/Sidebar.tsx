@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,7 +43,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className="flex flex-col w-64 bg-gray-50 border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <span className="text-lg font-semibold">Oficina Ágil</span>
+        <span className="text-lg font-semibold">Oficina Go</span>
       </div>
       <div className="flex-1 p-4">
         <nav className="space-y-1">

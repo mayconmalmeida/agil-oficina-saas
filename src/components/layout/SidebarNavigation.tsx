@@ -14,7 +14,10 @@ import {
   Package,
   Building2,
   LogOut,
-  CreditCard
+  CreditCard,
+  ClipboardList,
+  Truck,
+  Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,15 +27,19 @@ import { Badge } from '@/components/ui/badge';
 const navigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
+  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
   { name: 'Serviços', href: '/dashboard/servicos', icon: Settings },
   { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
-  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
+  { name: 'Categorias', href: '/dashboard/categorias', icon: Layers },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
-  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
+  { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
+  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Truck },
+  { name: 'Empresa', href: '/dashboard/empresa', icon: Building2 },
   { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
   { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+  { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ];
 
 interface SidebarNavigationProps {

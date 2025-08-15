@@ -18,7 +18,9 @@ import {
   LifeBuoy,
   FileX,
   TrendingUp,
-  Car
+  Car,
+  ClipboardList,
+  Truck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDaysRemaining } from '@/hooks/useDaysRemaining';
@@ -42,9 +44,10 @@ const NavigationLinks: React.FC<NavigationLinksProps> = ({
     { name: 'Serviços', href: '/dashboard/servicos', icon: Wrench },
     { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
     { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
+    { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
     { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
     { name: 'Categorias', href: '/dashboard/categorias', icon: Layers },
-    { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: UserPlus },
+    { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Truck },
     { name: 'Empresa', href: '/dashboard/empresa', icon: Building2 },
     { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
   ];

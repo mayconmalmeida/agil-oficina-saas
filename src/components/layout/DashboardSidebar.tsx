@@ -19,7 +19,8 @@ import {
   Car,
   Truck,
   Headphones,
-  Database
+  Database,
+  Layers
 } from 'lucide-react';
 
 const DashboardSidebar: React.FC = () => {
@@ -28,13 +29,15 @@ const DashboardSidebar: React.FC = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Users, label: 'Clientes', path: '/dashboard/clientes' },
+    { icon: Car, label: 'Veículos', path: '/dashboard/veiculos' },
     { icon: FileText, label: 'Orçamentos', path: '/dashboard/orcamentos' },
     { icon: Wrench, label: 'Serviços', path: '/dashboard/servicos' },
     { icon: Package, label: 'Produtos', path: '/dashboard/produtos' },
-    { icon: Car, label: 'Veículos', path: '/dashboard/veiculos' },
+    { icon: Layers, label: 'Categorias', path: '/dashboard/categorias' },
     { icon: Calendar, label: 'Agendamentos', path: '/dashboard/agendamentos' },
     { icon: ClipboardList, label: 'Ordem de Serviço', path: '/dashboard/ordem-servico' },
     { icon: Truck, label: 'Fornecedores', path: '/dashboard/fornecedores' },
+    { icon: Building2, label: 'Empresa', path: '/dashboard/empresa' },
     { icon: Bot, label: 'IA Diagnóstico', path: '/dashboard/ia-diagnostico' },
     { icon: MessageCircle, label: 'IA Suporte', path: '/dashboard/ia-suporte-inteligente' },
     { icon: Headphones, label: 'Suporte', path: '/dashboard/suporte' },

@@ -98,7 +98,7 @@ const OptimizedAdminLayout: React.FC = () => {
       <div className="hidden md:flex md:w-64 md:flex-col">
         <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Ágil</h1>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Go</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">Painel Admin</p>
           </div>
           
@@ -158,7 +158,7 @@ const OptimizedAdminLayout: React.FC = () => {
             </div>
             <div className="pt-5 pb-4">
               <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Ágil</h1>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white">Oficina Go</h1>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {menuItems.map((item) => (
