@@ -1,195 +1,188 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Check } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
-// Define the form schema with Zod
-const serviceFormSchema = z.object({
-  nome: z.string().min(2, {
-    message: "O nome deve ter pelo menos 2 caracteres.",
-  }),
-  tipo: z.enum(["produto", "servico"], {
-    required_error: "Por favor selecione o tipo.",
-  }),
-  valor: z.string().min(1, {
-    message: "Por favor insira um valor.",
-  }).refine((val) => /^\d+([,.]\d{1,2})?$/.test(val), {
-    message: "Formato inválido. Use apenas números com até 2 casas decimais."
-  }),
+const serviceSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  valor: z.string().min(1, 'Valor é obrigatório'),
   descricao: z.string().optional(),
 });
 
-// Export the type
-export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+type ServiceFormValues = z.infer<typeof serviceSchema>;
 
-export interface ServiceFormProps {
-  onSubmit: (values: ServiceFormValues) => void;
-  onSkip: () => void;
-  isLoading?: boolean;
-  saveSuccess?: boolean;
+interface ServiceFormProps {
+  service?: any;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
-export const ServiceForm: React.FC<ServiceFormProps> = ({
-  onSubmit,
-  onSkip,
-  isLoading = false,
-  saveSuccess = false,
-}) => {
+const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSuccess, onCancel }) => {
+  const { toast } = useToast();
+  const isEditing = !!service;
+
   const form = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceFormSchema),
+    resolver: zodResolver(serviceSchema),
     defaultValues: {
-      nome: '',
-      tipo: 'servico',
-      valor: '',
-      descricao: '',
+      nome: service?.nome || '',
+      valor: service?.valor?.toString() || '',
+      descricao: service?.descricao || '',
     },
   });
 
-  // Format number to currency as user types
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
-    
-    // Remove non-numeric characters except commas and dots
-    value = value.replace(/[^\d,.]/g, '');
-    
-    // Replace commas with dots for calculation
-    const numericValue = value.replace(',', '.');
-    
-    // Check if it's a valid number
-    if (!isNaN(parseFloat(numericValue))) {
-      // Format with max 2 decimal places
-      form.setValue('valor', value);
-    } else if (value === '' || value === ',' || value === '.') {
-      // Allow empty value or single comma/dot
-      form.setValue('valor', value);
+  const onSubmit = async (values: ServiceFormValues) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const serviceData = {
+        nome: values.nome,
+        tipo: 'servico',
+        valor: parseFloat(values.valor.replace(/[^\d,]/g, '').replace(',', '.')),
+        descricao: values.descricao || null,
+        user_id: user.id,
+        is_active: true,
+      };
+
+      if (isEditing) {
+        const { error } = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', service.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Serviço atualizado",
+          description: "O serviço foi atualizado com sucesso.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('services')
+          .insert([serviceData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Serviço criado",
+          description: "O serviço foi criado com sucesso.",
+        });
+      }
+
+      onSuccess();
+    } catch (error: any) {
+      console.error('Error saving service:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar serviço",
+        description: error.message,
+      });
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="nome"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do Serviço/Produto</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Troca de óleo" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="tipo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="servico">Serviço</SelectItem>
-                  <SelectItem value="produto">Produto</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="valor"
-          render={({ field: { value, onChange, ...restField } }) => (
-            <FormItem>
-              <FormLabel>Valor (R$)</FormLabel>
-              <FormControl>
-                <Input
-                  type="text"
-                  placeholder="Ex: 150,00"
-                  value={value}
-                  onChange={(e) => {
-                    onChange(e);
-                    handleValorChange(e);
-                  }}
-                  {...restField}
-                />
-              </FormControl>
-              <FormDescription>
-                Informe o valor em reais (ex: 99,90)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="descricao"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição (opcional)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Descreva mais detalhes sobre o serviço ou produto"
-                  className="resize-none"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 pt-2">
-          <Button 
-            type="submit" 
-            disabled={isLoading || saveSuccess}
-            className="flex-1"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : saveSuccess ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Salvo!
-              </>
-            ) : (
-              'Adicionar'
-            )}
-          </Button>
-          
-          <Button 
-            type="button"
-            variant="outline"
-            onClick={onSkip}
-            disabled={isLoading || saveSuccess}
-            className="flex-1"
-          >
-            Pular esta etapa
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="outline" onClick={onCancel}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">
+            {isEditing ? 'Editar Serviço' : 'Novo Serviço'}
+          </h1>
+          <p className="text-gray-600">
+            {isEditing ? 'Atualize as informações do serviço' : 'Adicione um novo serviço'}
+          </p>
         </div>
-      </form>
-    </Form>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados do Serviço</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Serviço</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Troca de óleo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="valor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: 50,00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Descreva o serviço..."
+                        rows={3}
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex gap-4 pt-4">
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    isEditing ? 'Atualizar Serviço' : 'Criar Serviço'
+                  )}
+                </Button>
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
+
+export default ServiceForm;

@@ -1,167 +1,163 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Edit, Trash2, Search, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Package, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import ImportXmlDialog from '@/components/products/ImportXmlDialog';
 import ProductForm from '@/components/products/ProductForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import Loading from '@/components/ui/loading';
 
 interface Product {
   id: string;
   nome: string;
-  codigo?: string;
   tipo: string;
   valor: number;
+  codigo?: string;
+  descricao?: string;
   quantidade_estoque?: number;
   preco_custo?: number;
-  descricao?: string;
+  is_active: boolean;
   created_at: string;
 }
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadProducts();
+    fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const filtered = products.filter(product =>
-      product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.tipo.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  }, [searchTerm, products]);
-
-  const loadProducts = async () => {
+  const fetchProducts = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('tipo', 'produto')
-        .order('created_at', { ascending: false });
+        .eq('tipo', 'produto') // Apenas produtos
+        .eq('is_active', true)
+        .order('nome', { ascending: true });
 
       if (error) throw error;
-
       setProducts(data || []);
     } catch (error: any) {
+      console.error('Error fetching products:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar produtos",
-        description: error.message
+        description: error.message,
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setDialogOpen(true);
-  };
-
-  const handleSave = () => {
-    loadProducts();
-    setDialogOpen(false);
-    setEditingProduct(null);
-  };
-
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
-
     try {
       const { error } = await supabase
         .from('services')
-        .delete()
+        .update({ is_active: false })
         .eq('id', id);
 
       if (error) throw error;
 
       toast({
-        title: "Produto excluído",
-        description: "Produto excluído com sucesso!"
+        title: "Produto removido",
+        description: "O produto foi removido com sucesso.",
       });
 
-      loadProducts();
+      fetchProducts();
     } catch (error: any) {
+      console.error('Error deleting product:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao excluir produto",
-        description: error.message
+        title: "Erro ao remover produto",
+        description: error.message,
       });
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
+  const handleFormSuccess = () => {
+    setShowForm(false);
+    setEditingProduct(null);
+    fetchProducts();
   };
 
-  if (loading) {
+  const filteredProducts = products.filter(product =>
+    product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoading) {
+    return <Loading text="Carregando produtos..." />;
+  }
+
+  if (showForm) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando produtos...</p>
-        </div>
-      </div>
+      <ProductForm
+        product={editingProduct}
+        onSuccess={handleFormSuccess}
+        onCancel={() => {
+          setShowForm(false);
+          setEditingProduct(null);
+        }}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Produtos</h1>
-        <div className="flex items-center space-x-4">
-          <Badge variant="outline">
-            {products.length} produtos cadastrados
-          </Badge>
-          <ImportXmlDialog onImportSuccess={loadProducts} />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingProduct(null)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Produto
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-                </DialogTitle>
-              </DialogHeader>
-              <ProductForm
-                productId={editingProduct?.id}
-                onSaveSuccess={handleSave}
-              />
-            </DialogContent>
-          </Dialog>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Package className="h-8 w-8" />
+            Produtos
+          </h1>
+          <p className="text-gray-600">Gerencie o estoque de produtos da sua oficina</p>
         </div>
+        <Button onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Produto
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4" />
+          <CardTitle>Estoque de Produtos</CardTitle>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por nome, código ou tipo..."
+              placeholder="Buscar produtos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
+              className="pl-10"
             />
           </div>
         </CardHeader>
@@ -169,73 +165,102 @@ const ProductsPage: React.FC = () => {
           {filteredProducts.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+              <p className="text-gray-500 mb-2">Nenhum produto encontrado.</p>
+              <p className="text-gray-400 text-sm mb-4">
+                Comece adicionando produtos ao seu estoque
               </p>
+              <Button 
+                onClick={() => setShowForm(true)}
+                variant="outline"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar primeiro produto
+              </Button>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((product) => (
-                <Card key={product.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{product.nome}</h3>
-                          {product.codigo && (
-                            <p className="text-sm text-gray-600">Código: {product.codigo}</p>
-                          )}
-                        </div>
-                        <div className="flex space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(product)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Preço de Venda</TableHead>
+                  <TableHead>Preço de Custo</TableHead>
+                  <TableHead>Estoque</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.nome}</TableCell>
+                    <TableCell>{product.codigo || '-'}</TableCell>
+                    <TableCell>
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      }).format(product.valor)}
+                    </TableCell>
+                    <TableCell>
+                      {product.preco_custo ? 
+                        new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(product.preco_custo) : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        (product.quantidade_estoque || 0) > 0 ? 'default' : 'destructive'
+                      }>
+                        {product.quantidade_estoque || 0} un.
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
+                        {product.is_active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingProduct(product);
+                            setShowForm(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover o produto "{product.nome}"?
+                                Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                Confirmar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-
-                      <div className="space-y-1">
-                        <p className="text-lg font-medium text-green-600">
-                          {formatCurrency(product.valor)}
-                        </p>
-                        {product.quantidade_estoque !== undefined && (
-                          <p className="text-sm text-gray-600">
-                            Estoque: {product.quantidade_estoque} unidades
-                          </p>
-                        )}
-                        {product.preco_custo && (
-                          <p className="text-sm text-gray-600">
-                            Custo: {formatCurrency(product.preco_custo)}
-                          </p>
-                        )}
-                      </div>
-
-                      {product.descricao && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {product.descricao}
-                        </p>
-                      )}
-
-                      <div className="pt-2 border-t">
-                        <p className="text-xs text-gray-500">
-                          Cadastrado em: {new Date(product.created_at).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

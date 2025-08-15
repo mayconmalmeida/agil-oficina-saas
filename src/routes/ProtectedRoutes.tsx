@@ -13,6 +13,7 @@ import ServicesPage from '@/pages/ServicesPage';
 import ProductsPage from '@/pages/ProductsPage';
 import VehiclesPage from '@/pages/VehiclesPage';
 import AgendamentosPage from '@/pages/AgendamentosPage';
+import NewSchedulePage from '@/pages/NewSchedulePage';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import IASuportePage from '@/pages/IASuportePage';
 import RelatoriosPage from '@/pages/RelatoriosPage';
@@ -36,6 +37,7 @@ export const protectedRoutes = [
     <Route path="produtos" element={<ProductsPage />} />
     <Route path="veiculos" element={<VehiclesPage />} />
     <Route path="agendamentos" element={<AgendamentosPage />} />
+    <Route path="agendamentos/novo" element={<NewSchedulePage />} />
     <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
     <Route path="ia-suporte-inteligente" element={<IASuportePage />} />
     <Route path="relatorios" element={<RelatoriosPage />} />
