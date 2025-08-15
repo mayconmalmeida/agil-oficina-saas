@@ -13,15 +13,17 @@ import { useToast } from '@/hooks/use-toast';
 
 interface BudgetFormProps {
   onSubmit: (values: BudgetFormValues & { itens?: SelectedItem[] }) => Promise<void>;
+  onSkip?: () => void;
   isLoading?: boolean;
-  initialData?: Partial<BudgetFormValues>;
+  initialValues?: Partial<BudgetFormValues>;
   isEditing?: boolean;
 }
 
 const BudgetForm: React.FC<BudgetFormProps> = ({
   onSubmit,
+  onSkip,
   isLoading = false,
-  initialData = {},
+  initialValues = {},
   isEditing = false
 }) => {
   const { toast } = useToast();
@@ -30,18 +32,18 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
     defaultValues: {
-      cliente: initialData.cliente || '',
-      veiculo: initialData.veiculo || '',
-      descricao: initialData.descricao || '',
-      valor_total: initialData.valor_total || 0,
-      status: initialData.status || 'Pendente'
+      cliente: initialValues.cliente || '',
+      veiculo: initialValues.veiculo || '',
+      descricao: initialValues.descricao || '',
+      valor_total: initialValues.valor_total || '0',
+      status: initialValues.status || 'Pendente'
     }
   });
 
   // Calculate total value from selected items
   useEffect(() => {
     const total = selectedItems.reduce((sum, item) => sum + item.valor_total, 0);
-    form.setValue('valor_total', total);
+    form.setValue('valor_total', total.toString());
   }, [selectedItems, form]);
 
   const handleSubmit = async (values: BudgetFormValues) => {
@@ -100,12 +102,10 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="valor_total">Valor Total</Label>
+              <Label htmlFor="valor_total">Valor Total (R$)</Label>
               <Input
                 id="valor_total"
-                type="number"
-                step="0.01"
-                {...form.register('valor_total', { valueAsNumber: true })}
+                {...form.register('valor_total')}
                 placeholder="0.00"
               />
             </div>
@@ -131,6 +131,11 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
           </div>
 
           <div className="flex justify-end space-x-2">
+            {onSkip && (
+              <Button type="button" variant="outline" onClick={onSkip}>
+                Pular
+              </Button>
+            )}
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Criar Orçamento')}
             </Button>

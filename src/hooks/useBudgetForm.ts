@@ -56,7 +56,7 @@ export const useBudgetForm = () => {
     
     try {
       // Calculate total value from items if present
-      let totalValue = parseFloat(values.valor_total.replace(',', '.').replace('R$', '').trim());
+      let totalValue = parseFloat(values.valor_total?.replace(',', '.').replace('R$', '').trim() || '0');
       if (values.itens && values.itens.length > 0) {
         totalValue = values.itens.reduce((sum, item) => sum + item.valor_total, 0);
       }

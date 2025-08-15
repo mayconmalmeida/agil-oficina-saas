@@ -82,8 +82,8 @@ const BudgetEditPage: React.FC = () => {
     
     setIsSaving(true);
     try {
-      // Converter o valor para número antes de salvar
-      const valorTotal = parseFloat(values.valor_total.replace(/[^\d,]/g, '').replace(',', '.'));
+      // Convert the value to number before saving
+      const valorTotal = parseFloat(values.valor_total?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
       
       console.log('Atualizando orçamento:', { id, values, valorTotal });
       
@@ -188,9 +188,9 @@ const BudgetEditPage: React.FC = () => {
         <CardContent>
           <BudgetForm 
             onSubmit={handleSubmit}
-            onSkip={handleSkip}
             isLoading={isSaving}
             initialValues={initialValues}
+            isEditing={true}
           />
         </CardContent>
       </Card>

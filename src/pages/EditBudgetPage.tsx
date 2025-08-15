@@ -47,7 +47,7 @@ const EditBudgetPage: React.FC = () => {
           cliente: budget.cliente || '',
           veiculo: budget.veiculo || '',
           descricao: budget.descricao || '',
-          valor_total: budget.valor_total || 0,
+          valor_total: budget.valor_total ? budget.valor_total.toString() : '0',
           status: budget.status || 'Pendente'
         });
 
@@ -73,13 +73,16 @@ const EditBudgetPage: React.FC = () => {
     setIsLoading(true);
     
     try {
+      // Convert valor_total to number for database
+      const valorTotal = parseFloat(values.valor_total?.replace(',', '.') || '0');
+      
       const { error } = await supabase
         .from('orcamentos')
         .update({
           cliente: values.cliente,
           veiculo: values.veiculo,
           descricao: values.descricao,
-          valor_total: values.valor_total,
+          valor_total: valorTotal,
           status: values.status,
           updated_at: new Date().toISOString()
         })

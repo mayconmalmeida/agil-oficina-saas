@@ -5,7 +5,7 @@ export const budgetFormSchema = z.object({
   cliente: z.string().optional(),
   veiculo: z.string().optional(),
   descricao: z.string().optional(),
-  valor_total: z.number().min(0, 'Valor deve ser maior que zero'),
+  valor_total: z.string().min(1, 'Valor total é obrigatório'),
   status: z.string().optional().default('Pendente')
 });
 
