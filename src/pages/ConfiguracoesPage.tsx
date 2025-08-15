@@ -23,6 +23,7 @@ const ConfiguracoesPage: React.FC = () => {
     passwordForm,
     handleUpdateProfile,
     handleChangePassword,
+    handleLogout,
     toggleTheme
   } = useSettingsPage();
 
@@ -79,6 +80,7 @@ const ConfiguracoesPage: React.FC = () => {
               <SecuritySection 
                 passwordForm={passwordForm}
                 onPasswordChange={handleChangePassword}
+                onLogout={handleLogout}
                 isLoading={isLoading}
               />
             </TabsContent>

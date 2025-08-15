@@ -52,8 +52,16 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSuccess, 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
+      // Ensure nome is always included and not undefined
       const fornecedorData = {
-        ...values,
+        nome: values.nome, // Required field
+        cnpj: values.cnpj || '',
+        email: values.email || '',
+        telefone: values.telefone || '',
+        endereco: values.endereco || '',
+        cidade: values.cidade || '',
+        estado: values.estado || '',
+        cep: values.cep || '',
         user_id: user.id,
         oficina_id: oficina_id,
       };
