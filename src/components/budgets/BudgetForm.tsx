@@ -17,8 +17,9 @@ const budgetSchema = z.object({
   veiculo: z.string().min(1, 'Veículo é obrigatório'),
   descricao: z.string().min(1, 'Descrição do serviço é obrigatória'),
   data_validade: z.string().optional(),
-  valor_total: z.string().min(1, 'Valor total é obrigatório'),
+  valor_total: z.number().min(0, 'Valor total deve ser maior que zero'),
   observacoes: z.string().optional(),
+  status: z.string().optional(),
 });
 
 type BudgetFormValues = z.infer<typeof budgetSchema>;
@@ -43,7 +44,7 @@ const BudgetForm: React.FC = () => {
       veiculo: '',
       descricao: '',
       data_validade: '',
-      valor_total: '0',
+      valor_total: 0,
       observacoes: '',
     },
   });
@@ -52,7 +53,7 @@ const BudgetForm: React.FC = () => {
     const safeItems = Array.isArray(items) ? items : [];
     
     if (safeItems.length === 0) {
-      form.setValue('valor_total', '0');
+      form.setValue('valor_total', 0);
       return;
     }
     
@@ -61,7 +62,7 @@ const BudgetForm: React.FC = () => {
       return sum + itemTotal;
     }, 0);
     
-    form.setValue('valor_total', total.toFixed(2));
+    form.setValue('valor_total', total);
   };
 
   const handleItemsChange = (items: SelectedItem[]) => {
@@ -88,6 +89,13 @@ const BudgetForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
   };
   
   return (
@@ -156,7 +164,11 @@ const BudgetForm: React.FC = () => {
               <FormItem>
                 <FormLabel>Valor Total (R$)</FormLabel>
                 <FormControl>
-                  <Input {...field} readOnly className="bg-gray-50 font-medium text-right" />
+                  <Input 
+                    value={formatCurrency(field.value)} 
+                    readOnly 
+                    className="bg-gray-50 font-medium text-right" 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
