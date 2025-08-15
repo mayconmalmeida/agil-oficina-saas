@@ -132,7 +132,7 @@ const EditBudgetPage: React.FC = () => {
         <BudgetForm
           onSubmit={handleSubmit}
           isLoading={isLoading}
-          initialData={budgetData}
+          initialValues={budgetData}
           isEditing={true}
         />
       </div>

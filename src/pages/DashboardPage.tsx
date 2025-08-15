@@ -12,6 +12,7 @@ import { usePremiumFeatures } from '@/hooks/usePremiumFeatures';
 import { useDashboardCharts } from '@/hooks/useDashboardCharts';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { useOnboardingComplete } from '@/hooks/useOnboardingComplete';
 import { allStepsCompleted, getCompletedSteps } from '@/utils/onboardingUtils';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +22,7 @@ const DashboardPage: React.FC = () => {
   const { chartData, isLoading: chartsLoading } = useDashboardCharts();
   const { data: dashboardData, isLoading: dashboardLoading } = useDashboardData(userId);
   const { status: onboardingStatus } = useOnboardingProgress(userId);
+  const { isComplete: onboardingComplete } = useOnboardingComplete();
   const navigate = useNavigate();
 
   const handleUpgradePlan = () => {
@@ -74,11 +76,13 @@ const DashboardPage: React.FC = () => {
         
         <div className="space-y-6">
           <PlanInfoCard />
-          <OnboardingCard 
-            onboardingStatus={onboardingStatus}
-            getCompletedSteps={getCompletedSteps}
-            allStepsCompleted={allStepsCompleted}
-          />
+          {!onboardingComplete && (
+            <OnboardingCard 
+              onboardingStatus={onboardingStatus}
+              getCompletedSteps={getCompletedSteps}
+              allStepsCompleted={allStepsCompleted}
+            />
+          )}
         </div>
       </div>
     </div>
