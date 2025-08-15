@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useOficinaFilters } from '@/hooks/useOficinaFilters';
 
 const fornecedorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -33,6 +33,7 @@ interface FornecedorFormProps {
 const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onCancel }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
+  const { oficina_id, user_id, isReady } = useOficinaFilters();
 
   const form = useForm<FornecedorFormValues>({
     resolver: zodResolver(fornecedorSchema),
@@ -49,35 +50,47 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
   });
 
   const onSubmit = async (values: FornecedorFormValues) => {
+    if (!isReady) {
+      toast({
+        variant: "destructive",
+        title: "Aguarde",
+        description: "Carregando configurações..."
+      });
+      return;
+    }
+
+    if (!oficina_id || !user_id) {
+      toast({
+        variant: "destructive",
+        title: "Erro de configuração",
+        description: "Oficina não encontrada. Entre em contato com o suporte."
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Você precisa estar logado para salvar fornecedores."
-        });
-        return;
-      }
+      const fornecedorData = {
+        nome: values.nome,
+        cnpj: values.cnpj || null,
+        email: values.email || null,
+        telefone: values.telefone || null,
+        endereco: values.endereco || null,
+        cidade: values.cidade || null,
+        estado: values.estado || null,
+        cep: values.cep || null,
+        user_id: user_id,
+        oficina_id: oficina_id
+      };
 
       if (fornecedor) {
         // Atualizar fornecedor existente
         const { error } = await supabase
           .from('fornecedores')
-          .update({
-            nome: values.nome,
-            cnpj: values.cnpj || null,
-            email: values.email || null,
-            telefone: values.telefone || null,
-            endereco: values.endereco || null,
-            cidade: values.cidade || null,
-            estado: values.estado || null,
-            cep: values.cep || null,
-          })
-          .eq('id', fornecedor.id);
+          .update(fornecedorData)
+          .eq('id', fornecedor.id)
+          .eq('oficina_id', oficina_id); // Garantir que só atualiza da própria oficina
 
         if (error) throw error;
 
@@ -89,17 +102,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
         // Criar novo fornecedor
         const { error } = await supabase
           .from('fornecedores')
-          .insert({
-            user_id: session.user.id,
-            nome: values.nome,
-            cnpj: values.cnpj || null,
-            email: values.email || null,
-            telefone: values.telefone || null,
-            endereco: values.endereco || null,
-            cidade: values.cidade || null,
-            estado: values.estado || null,
-            cep: values.cep || null,
-          });
+          .insert([fornecedorData]);
 
         if (error) throw error;
 
@@ -111,6 +114,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
 
       onSave();
     } catch (error: any) {
+      console.error('Erro ao salvar fornecedor:', error);
       toast({
         variant: "destructive",
         title: fornecedor ? "Erro ao atualizar fornecedor" : "Erro ao cadastrar fornecedor",
@@ -120,6 +124,17 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
       setIsLoading(false);
     }
   };
+
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>

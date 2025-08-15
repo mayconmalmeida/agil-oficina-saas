@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Search, Building2, Phone, Mail, MapPin, Plus, Edit, Trash2 } from 'luci
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { useOficinaFilters } from '@/hooks/useOficinaFilters';
 
 interface Fornecedor {
   id: string;
@@ -41,10 +41,13 @@ const FornecedoresPage: React.FC = () => {
     cep: ''
   });
   const { toast } = useToast();
+  const { oficina_id, isReady, user_id } = useOficinaFilters();
 
   useEffect(() => {
-    loadFornecedores();
-  }, []);
+    if (isReady) {
+      loadFornecedores();
+    }
+  }, [isReady, oficina_id]);
 
   useEffect(() => {
     const filtered = fornecedores.filter(fornecedor =>
@@ -56,12 +59,19 @@ const FornecedoresPage: React.FC = () => {
   }, [searchTerm, fornecedores]);
 
   const loadFornecedores = async () => {
+    if (!oficina_id) {
+      console.log('⚠️ Oficina ID não encontrado');
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log("🔍 Carregando fornecedores...");
+      console.log("🔍 Carregando fornecedores para oficina:", oficina_id);
       
       const { data, error } = await supabase
         .from('fornecedores')
         .select('*')
+        .eq('oficina_id', oficina_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -86,12 +96,27 @@ const FornecedoresPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!oficina_id || !user_id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Oficina não encontrada. Tente novamente."
+      });
+      return;
+    }
+    
     try {
+      const fornecedorData = {
+        ...formData,
+        user_id: user_id,
+        oficina_id: oficina_id
+      };
+
       if (editingFornecedor) {
         // Atualizar fornecedor existente
         const { error } = await supabase
           .from('fornecedores')
-          .update(formData)
+          .update(fornecedorData)
           .eq('id', editingFornecedor.id);
 
         if (error) throw error;
@@ -104,10 +129,7 @@ const FornecedoresPage: React.FC = () => {
         // Criar novo fornecedor
         const { error } = await supabase
           .from('fornecedores')
-          .insert([{
-            ...formData,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          }]);
+          .insert([fornecedorData]);
 
         if (error) throw error;
 
@@ -121,6 +143,7 @@ const FornecedoresPage: React.FC = () => {
       resetForm();
       loadFornecedores();
     } catch (error: any) {
+      console.error('Erro ao salvar fornecedor:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar fornecedor",
@@ -151,7 +174,8 @@ const FornecedoresPage: React.FC = () => {
       const { error } = await supabase
         .from('fornecedores')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('oficina_id', oficina_id); // Garantir que só delete da própria oficina
 
       if (error) throw error;
 
@@ -188,6 +212,28 @@ const FornecedoresPage: React.FC = () => {
     if (!cnpj) return 'N/A';
     return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   };
+
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Carregando configurações...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!oficina_id) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Oficina não encontrada. Entre em contato com o suporte.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
