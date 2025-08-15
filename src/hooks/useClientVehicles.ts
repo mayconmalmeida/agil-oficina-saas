@@ -19,27 +19,24 @@ export const useClientVehicles = (clientId?: string) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🚗 useClientVehicles - clientId mudou:', clientId);
     if (clientId) {
-      loadClientVehicles(clientId);
+      loadVehicles();
     } else {
-      console.log('🚗 useClientVehicles - Sem clientId, limpando veículos');
       setVehicles([]);
     }
   }, [clientId]);
 
-  const loadClientVehicles = async (clientId: string) => {
-    console.log('🚗 useClientVehicles - Carregando veículos para cliente:', clientId);
-    setIsLoading(true);
+  const loadVehicles = async () => {
+    if (!clientId) return;
     
+    setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.log('❌ useClientVehicles - Usuário não autenticado');
+        console.log('Usuário não autenticado');
         return;
       }
 
-      console.log('🚗 useClientVehicles - Fazendo query na tabela veiculos');
       const { data, error } = await supabase
         .from('veiculos')
         .select('*')
@@ -48,14 +45,14 @@ export const useClientVehicles = (clientId?: string) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ useClientVehicles - Erro ao carregar veículos:', error);
+        console.error('Erro ao carregar veículos:', error);
         throw error;
       }
       
-      console.log('✅ useClientVehicles - Veículos encontrados:', data?.length || 0, data);
+      console.log('Veículos carregados:', data?.length || 0);
       setVehicles(data || []);
     } catch (error) {
-      console.error('💥 useClientVehicles - Erro ao carregar veículos:', error);
+      console.error('Erro ao carregar veículos:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar veículos",
@@ -68,15 +65,21 @@ export const useClientVehicles = (clientId?: string) => {
   };
 
   const formatVehicleDisplay = (vehicle: Vehicle) => {
-    const kmText = vehicle.kilometragem ? ` - ${vehicle.kilometragem} km` : '';
-    const corText = vehicle.cor ? ` - ${vehicle.cor}` : '';
-    return `${vehicle.marca} ${vehicle.modelo} (${vehicle.ano}) - ${vehicle.placa}${corText}${kmText}`;
+    const baseInfo = `${vehicle.marca} ${vehicle.modelo} (${vehicle.ano}) - ${vehicle.placa}`;
+    const additionalInfo = [];
+    
+    if (vehicle.cor) additionalInfo.push(vehicle.cor);
+    if (vehicle.kilometragem) additionalInfo.push(`${vehicle.kilometragem} km`);
+    
+    return additionalInfo.length > 0 
+      ? `${baseInfo} - ${additionalInfo.join(', ')}`
+      : baseInfo;
   };
 
   return {
     vehicles,
     isLoading,
     formatVehicleDisplay,
-    loadClientVehicles
+    reloadVehicles: loadVehicles
   };
 };

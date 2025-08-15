@@ -1,22 +1,12 @@
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Phone } from 'lucide-react';
-
-// Schema for form validation
-const whatsAppSchema = z.object({
-  whatsapp_suporte: z.string()
-    .min(10, { message: "Número deve ter pelo menos 10 dígitos" })
-    .max(15, { message: "Número não deve exceder 15 dígitos" })
-});
+import { Phone, Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface WhatsAppConfigProps {
   userId?: string;
@@ -24,109 +14,88 @@ interface WhatsAppConfigProps {
 }
 
 const WhatsAppConfig: React.FC<WhatsAppConfigProps> = ({ 
-  userId,
-  initialValue = '46991270777'
+  userId, 
+  initialValue = '46999324779' 
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState(initialValue);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
-  const form = useForm<z.infer<typeof whatsAppSchema>>({
-    resolver: zodResolver(whatsAppSchema),
-    defaultValues: {
-      whatsapp_suporte: initialValue
-    }
-  });
-  
-  const onSubmit = async (values: z.infer<typeof whatsAppSchema>) => {
+
+  const handleSave = async () => {
     if (!userId) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "ID de usuário não encontrado. Faça login novamente.",
+        description: "ID do usuário não encontrado"
       });
       return;
     }
-    
-    setIsLoading(true);
-    
+
+    setIsSaving(true);
     try {
-      console.log('Salvando número do WhatsApp:', values.whatsapp_suporte);
-      
       const { error } = await supabase
         .from('profiles')
-        .update({ 
-          whatsapp_suporte: values.whatsapp_suporte 
-        })
+        .update({ whatsapp_suporte: whatsappNumber })
         .eq('id', userId);
-        
-      if (error) {
-        console.error("Erro ao atualizar configurações:", error);
-        throw error;
-      }
-      
+
+      if (error) throw error;
+
       toast({
-        title: "Configurações salvas",
-        description: "Número do WhatsApp de suporte foi atualizado com sucesso.",
+        title: "Configuração salva",
+        description: "Número do WhatsApp de suporte atualizado com sucesso!"
       });
-    } catch (error: any) {
-      console.error('Erro ao salvar configurações:', error);
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
       toast({
         variant: "destructive",
         title: "Erro ao salvar",
-        description: error.message || "Não foi possível salvar as configurações. Tente novamente.",
+        description: "Não foi possível salvar a configuração do WhatsApp"
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Configurações de Suporte</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Phone className="h-5 w-5" />
+          WhatsApp de Suporte
+        </CardTitle>
         <CardDescription>
-          Defina o número do WhatsApp para suporte aos seus clientes
+          Configure o número do WhatsApp para receber mensagens de suporte dos clientes
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="whatsapp_suporte"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Número do WhatsApp de Suporte</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center">
-                      <Phone className="mr-2 h-4 w-4 text-gray-500" />
-                      <Input
-                        placeholder="46991270777"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </FormControl>
-                  <p className="text-xs text-muted-foreground">
-                    Use o formato com DDD, sem +55 ou outros prefixos
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar Configurações'
-              )}
-            </Button>
-          </form>
-        </Form>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp">Número do WhatsApp (apenas números)</Label>
+          <Input
+            id="whatsapp"
+            type="text"
+            placeholder="46999324779"
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ''))}
+          />
+          <p className="text-sm text-gray-500">
+            Exemplo: 46999324779 (código do país + DDD + número)
+          </p>
+        </div>
+        
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="w-full"
+        >
+          {isSaving ? (
+            "Salvando..."
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar Configuração
+            </>
+          )}
+        </Button>
       </CardContent>
     </Card>
   );
