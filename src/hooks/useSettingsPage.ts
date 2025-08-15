@@ -60,30 +60,9 @@ export const useSettingsPage = () => {
     }
   }, [userProfile, profileForm]);
   
-  // Apply theme globally on initial load and when it changes
+  // Apply theme on initial load and when it changes
   useEffect(() => {
-    const applyThemeGlobally = (isDark: boolean) => {
-      document.documentElement.classList.toggle('dark', isDark);
-      document.body.classList.toggle('dark', isDark);
-      
-      // Apply to all existing elements for immediate effect
-      const allElements = document.querySelectorAll('*');
-      allElements.forEach(el => {
-        if (isDark) {
-          if (el.classList.contains('bg-white')) {
-            el.classList.add('dark:bg-gray-900');
-          }
-          if (el.classList.contains('text-gray-900')) {
-            el.classList.add('dark:text-white');
-          }
-        }
-      });
-      
-      // Dispatch event for components to react to theme change
-      window.dispatchEvent(new CustomEvent('themeChange', { detail: { theme: isDark ? 'dark' : 'light' } }));
-    };
-    
-    applyThemeGlobally(themeSetting === 'dark');
+    document.documentElement.classList.toggle('dark', themeSetting === 'dark');
   }, [themeSetting]);
   
   const handleChangePassword = async (values: PasswordFormValues) => {
@@ -191,22 +170,8 @@ export const useSettingsPage = () => {
   const toggleTheme = () => {
     const newTheme = themeSetting === 'light' ? 'dark' : 'light';
     setThemeSetting(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
     localStorage.setItem('theme', newTheme);
-    
-    // Apply theme globally and immediately
-    const isDark = newTheme === 'dark';
-    document.documentElement.classList.toggle('dark', isDark);
-    document.body.classList.toggle('dark', isDark);
-    
-    // Dispatch global theme change event
-    window.dispatchEvent(new CustomEvent('themeChange', { 
-      detail: { theme: newTheme } 
-    }));
-    
-    toast({
-      title: "Tema alterado",
-      description: `Modo ${isDark ? 'escuro' : 'claro'} aplicado em todo o sistema.`,
-    });
   };
   
   return {
