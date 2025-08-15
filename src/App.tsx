@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
@@ -19,11 +20,11 @@ import IASuporteInteligentePage from '@/pages/IASuporteInteligentePage';
 import RelatoriosPage from '@/pages/RelatoriosPage';
 import AssinaturaPage from '@/pages/AssinaturaPage';
 import AdminLayout from '@/components/admin/AdminLayout';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import UsersPage from '@/pages/admin/UsersPage';
-import SubscriptionsPage from '@/pages/admin/SubscriptionsPage';
-import PlansPage from '@/pages/admin/PlansPage';
-import SettingsPage from '@/pages/admin/SettingsPage';
+import AdminDashboard from '@/pages/AdminDashboard';
+import UsersPage from '@/pages/UsersPage';
+import SubscriptionsPage from '@/pages/SubscriptionsPage';
+import PlansPage from '@/pages/PlansPage';
+import SettingsPage from '@/pages/SettingsPage';
 import OrdemServicoPage from '@/pages/OrdemServicoPage';
 
 function App() {

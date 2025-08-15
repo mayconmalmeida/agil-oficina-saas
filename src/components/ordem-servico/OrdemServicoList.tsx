@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, ClipboardList } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/supabaseTypes';
@@ -35,22 +35,39 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase
+      // First, get the ordens_servico data
+      const { data: ordensData, error: ordensError } = await supabase
         .from('ordens_servico')
-        .select(`
-          *,
-          clients:cliente_id (nome),
-          orcamentos:orcamento_id (descricao)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ordensError) throw ordensError;
 
-      const ordensFormatted = (data || []).map(ordem => ({
-        ...ordem,
-        cliente_nome: ordem.clients?.nome,
-        orcamento_descricao: ordem.orcamentos?.descricao
-      }));
+      // Get clients data separately
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('id, nome');
+
+      if (clientsError) throw clientsError;
+
+      // Get orcamentos data separately
+      const { data: orcamentosData, error: orcamentosError } = await supabase
+        .from('orcamentos')
+        .select('id, descricao');
+
+      if (orcamentosError) throw orcamentosError;
+
+      // Combine the data
+      const ordensFormatted = (ordensData || []).map(ordem => {
+        const cliente = clientsData?.find(c => c.id === ordem.cliente_id);
+        const orcamento = orcamentosData?.find(o => o.id === ordem.orcamento_id);
+        
+        return {
+          ...ordem,
+          cliente_nome: cliente?.nome || 'Cliente não encontrado',
+          orcamento_descricao: orcamento?.descricao || undefined
+        };
+      });
 
       setOrdens(ordensFormatted);
     } catch (error: any) {
