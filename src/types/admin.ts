@@ -13,6 +13,8 @@ export interface AdminUser {
   role: 'admin' | 'superadmin';
   isAdmin: true;
   canAccessFeatures: true;
+  sessionToken?: string;
+  expiresAt?: string;
 }
 
 export interface AdminAuthState {

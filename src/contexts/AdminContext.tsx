@@ -51,66 +51,27 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      // Buscar admin na tabela admins
-      const { data: admin, error: adminError } = await supabase
-        .from('admins')
-        .select('id, email, password, is_superadmin')
-        .eq('email', email)
-        .maybeSingle();
+      // Usar a Edge Function para login seguro
+      const { data, error: functionError } = await supabase.functions.invoke('admin-login', {
+        body: { email, password }
+      });
 
-      if (adminError) {
-        console.error('AdminContext: Erro ao buscar admin:', adminError);
-        throw new Error('Erro ao verificar credenciais de administrador');
+      if (functionError) {
+        console.error('AdminContext: Erro na Edge Function:', functionError);
+        throw new Error('Erro na comunicação com o servidor');
       }
 
-      if (!admin) {
-        console.log('AdminContext: Admin não encontrado para email:', email);
-        throw new Error('Email não encontrado no sistema de administração');
+      if (!data.success) {
+        console.log('AdminContext: Login rejeitado:', data.error);
+        throw new Error(data.error || 'Credenciais inválidas');
       }
 
-      console.log('AdminContext: Admin encontrado:', { email: admin.email, id: admin.id });
+      const adminUser: AdminUser = data.user;
 
-      // Verificar senha - assumindo que pode ser texto simples ou hash bcrypt
-      let passwordValid = false;
-      
-      // Verificar se é um hash bcrypt
-      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password);
-      
-      if (isBcryptHash) {
-        try {
-          // Usar bcrypt para comparar
-          const bcrypt = await import('bcryptjs');
-          passwordValid = await bcrypt.compare(password, admin.password);
-          console.log('AdminContext: Verificação bcrypt:', passwordValid);
-        } catch (bcryptError) {
-          console.error('AdminContext: Erro ao verificar hash bcrypt:', bcryptError);
-          // Fallback para comparação direta
-          passwordValid = password === admin.password;
-        }
-      } else {
-        // Comparação direta
-        passwordValid = password === admin.password;
-        console.log('AdminContext: Verificação direta de senha:', passwordValid);
-      }
-
-      if (!passwordValid) {
-        console.log('AdminContext: Senha incorreta');
-        throw new Error('Senha incorreta');
-      }
-
-      // Criar usuário admin
-      const adminUser: AdminUser = {
-        id: admin.id,
-        email: admin.email,
-        role: admin.is_superadmin ? 'superadmin' : 'admin',
-        isAdmin: true,
-        canAccessFeatures: true
-      };
-
-      // Salvar sessão no localStorage (válida por 8 horas)
+      // Salvar sessão no localStorage
       const sessionData = {
         user: adminUser,
-        expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() // 8 horas
+        expiresAt: adminUser.expiresAt
       };
       localStorage.setItem('admin_session', JSON.stringify(sessionData));
 
