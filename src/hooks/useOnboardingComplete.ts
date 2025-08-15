@@ -14,7 +14,7 @@ export const useOnboardingComplete = () => {
     const checkOnboardingStatus = async () => {
       try {
         const { data, error } = await supabase
-          .from('onboarding_progress')
+          .from('onboarding_status')
           .select('*')
           .eq('user_id', user.id)
           .single();
@@ -24,9 +24,9 @@ export const useOnboardingComplete = () => {
           setIsComplete(false);
         } else {
           // Verifica se todas as etapas estão completas
-          const allComplete = data?.profile_created && 
-                             data?.client_created && 
-                             data?.service_created && 
+          const allComplete = data?.profile_completed && 
+                             data?.clients_added && 
+                             data?.services_added && 
                              data?.budget_created;
           setIsComplete(allComplete);
         }

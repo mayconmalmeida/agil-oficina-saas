@@ -6,7 +6,7 @@ import SidebarNavigation from './SidebarNavigation';
 import DashboardHeader from './DashboardHeader';
 
 const DashboardLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   if (!user) {
@@ -14,7 +14,7 @@ const DashboardLayout: React.FC = () => {
   }
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
   };
 
