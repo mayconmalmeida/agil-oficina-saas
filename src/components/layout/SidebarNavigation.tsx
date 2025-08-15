@@ -1,11 +1,39 @@
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LogOut, CreditCard } from 'lucide-react';
+import { 
+  Home, 
+  Users, 
+  FileText, 
+  Settings, 
+  Car,
+  Calendar,
+  Brain,
+  MessageCircle,
+  BarChart3,
+  Package,
+  Building2,
+  LogOut,
+  CreditCard
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
-import { useMenuPermissions } from '@/hooks/useMenuPermissions';
+
+const navigationItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Clientes', href: '/dashboard/clientes', icon: Users },
+  { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
+  { name: 'Serviços', href: '/dashboard/servicos', icon: Settings },
+  { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
+  { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
+  { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
+  { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
+  { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
+  { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
+  { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+];
 
 interface SidebarNavigationProps {
   onLogout: () => void;
@@ -14,7 +42,7 @@ interface SidebarNavigationProps {
 
 const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavigate }) => {
   const location = useLocation();
-  const { filteredMenuItems, getMenuAccessInfo } = useMenuPermissions();
+  const { subscriptionStatus } = useSubscription();
 
   const handleNavClick = () => {
     if (onNavigate) {
@@ -36,36 +64,27 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
       
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {filteredMenuItems.map((item) => {
+        {navigationItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path || 
-                         (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
-          const accessInfo = getMenuAccessInfo(item);
-          const isAccessible = accessInfo.canAccess;
+          const isActive = location.pathname === item.href || 
+                         (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
           
           return (
             <NavLink
               key={item.name}
-              to={item.path}
+              to={item.href}
               onClick={handleNavClick}
               className={cn(
                 'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isActive 
                   ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
-                  : isAccessible
-                    ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    : 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )}
             >
               <div className="flex items-center space-x-3">
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 <span>{item.name}</span>
               </div>
-              {item.isPremium && accessInfo.isTrialAccess && (
-                <Badge variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300">
-                  Trial
-                </Badge>
-              )}
             </NavLink>
           );
         })}

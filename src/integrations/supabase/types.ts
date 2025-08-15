@@ -312,7 +312,6 @@ export type Database = {
           estado: string | null
           id: string
           nome: string
-          oficina_id: string | null
           telefone: string | null
           updated_at: string | null
           user_id: string
@@ -327,7 +326,6 @@ export type Database = {
           estado?: string | null
           id?: string
           nome: string
-          oficina_id?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id: string
@@ -342,20 +340,11 @@ export type Database = {
           estado?: string | null
           id?: string
           nome?: string
-          oficina_id?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fornecedores_oficina_id_fkey"
-            columns: ["oficina_id"]
-            isOneToOne: false
-            referencedRelation: "oficinas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notas_fiscais: {
         Row: {

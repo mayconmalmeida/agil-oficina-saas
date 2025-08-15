@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Building2, Phone, Mail, MapPin } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Supplier {
   id: string;
@@ -19,7 +18,6 @@ interface Supplier {
   cidade?: string;
   estado?: string;
   cep?: string;
-  oficina_id?: string;
   created_at: string;
 }
 
@@ -29,13 +27,10 @@ const SuppliersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { oficinaId } = useAuth();
 
   useEffect(() => {
-    if (oficinaId) {
-      loadSuppliers();
-    }
-  }, [oficinaId]);
+    loadSuppliers();
+  }, []);
 
   useEffect(() => {
     const filtered = suppliers.filter(supplier =>
@@ -47,30 +42,16 @@ const SuppliersPage: React.FC = () => {
   }, [searchTerm, suppliers]);
 
   const loadSuppliers = async () => {
-    if (!oficinaId) {
-      console.log("❌ Oficina ID não encontrado");
-      setLoading(false);
-      return;
-    }
-
     try {
-      console.log("🔍 Carregando fornecedores para oficina:", oficinaId);
-      
       const { data, error } = await supabase
         .from('fornecedores')
         .select('*')
-        .eq('oficina_id', oficinaId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("❌ Erro ao carregar fornecedores:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("✅ Fornecedores carregados:", data?.length || 0);
       setSuppliers(data || []);
     } catch (error: any) {
-      console.error("💥 Erro no loadSuppliers:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar fornecedores",
@@ -92,17 +73,6 @@ const SuppliersPage: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-2 text-gray-600">Carregando fornecedores...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!oficinaId) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Oficina não encontrada. Por favor, complete seu perfil.</p>
         </div>
       </div>
     );
