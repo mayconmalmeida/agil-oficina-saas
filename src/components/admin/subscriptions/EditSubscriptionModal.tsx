@@ -7,7 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Oficina } from '@/types/subscriptions';
+
+interface Oficina {
+  id: string;
+  user_id: string;
+  nome_oficina: string;
+}
 
 interface EditSubscriptionModalProps {
   subscription?: any;
@@ -42,12 +47,12 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     if (subscription && !isCreating) {
       setFormData({
         user_id: subscription.user_id || '',
-        plan_type: subscription.plan || subscription.plan_type || 'essencial_mensal',
+        plan_type: subscription.plan_type || 'essencial_mensal',
         status: subscription.status || 'active',
-        starts_at: subscription.started_at ? new Date(subscription.started_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        starts_at: subscription.starts_at ? new Date(subscription.starts_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         ends_at: subscription.ends_at ? new Date(subscription.ends_at).toISOString().split('T')[0] : '',
-        trial_ends_at: subscription.expires_at ? new Date(subscription.expires_at).toISOString().split('T')[0] : '',
-        is_manual: subscription.payment_method === 'Manual' || subscription.is_manual || true
+        trial_ends_at: subscription.trial_ends_at ? new Date(subscription.trial_ends_at).toISOString().split('T')[0] : '',
+        is_manual: subscription.is_manual !== false
       });
     } else if (isCreating) {
       setFormData({
@@ -67,7 +72,6 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
     setIsLoading(true);
 
     try {
-      // Validar se user_id está preenchido
       if (!formData.user_id) {
         toast({
           variant: "destructive",
@@ -77,16 +81,16 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         return;
       }
 
-      // Calcular data de fim baseada no tipo de plano
-      let calculatedEndDate = '';
-      if (formData.plan_type.includes('_anual')) {
-        const endDate = new Date(formData.starts_at);
-        endDate.setFullYear(endDate.getFullYear() + 1);
-        calculatedEndDate = endDate.toISOString().split('T')[0];
-      } else {
-        const endDate = new Date(formData.starts_at);
-        endDate.setMonth(endDate.getMonth() + 1);
-        calculatedEndDate = endDate.toISOString().split('T')[0];
+      // Calcular data de fim baseada no tipo de plano se não fornecida
+      let calculatedEndDate = formData.ends_at;
+      if (!calculatedEndDate) {
+        const startDate = new Date(formData.starts_at);
+        if (formData.plan_type.includes('_anual')) {
+          startDate.setFullYear(startDate.getFullYear() + 1);
+        } else {
+          startDate.setMonth(startDate.getMonth() + 1);
+        }
+        calculatedEndDate = startDate.toISOString().split('T')[0];
       }
 
       const subscriptionData = {
@@ -94,11 +98,13 @@ const EditSubscriptionModal: React.FC<EditSubscriptionModalProps> = ({
         plan_type: formData.plan_type,
         status: formData.status,
         starts_at: new Date(formData.starts_at + 'T00:00:00.000Z').toISOString(),
-        ends_at: formData.ends_at ? new Date(formData.ends_at + 'T23:59:59.999Z').toISOString() : new Date(calculatedEndDate + 'T23:59:59.999Z').toISOString(),
+        ends_at: new Date(calculatedEndDate + 'T23:59:59.999Z').toISOString(),
         trial_ends_at: formData.trial_ends_at ? new Date(formData.trial_ends_at + 'T23:59:59.999Z').toISOString() : null,
         is_manual: formData.is_manual,
         updated_at: new Date().toISOString()
       };
+
+      console.log('Salvando assinatura:', subscriptionData);
 
       if (isCreating) {
         const { error } = await supabase

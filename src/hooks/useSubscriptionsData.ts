@@ -2,7 +2,20 @@
 import { useState, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { SubscriptionWithProfile } from '@/types/subscriptions';
+
+export interface SubscriptionWithProfile {
+  id: string;
+  user_id: string;
+  plan_type: string;
+  status: string;
+  starts_at: string;
+  ends_at: string | null;
+  trial_ends_at: string | null;
+  created_at: string;
+  is_manual: boolean;
+  user_email: string;
+  nome_oficina: string;
+}
 
 export const useSubscriptionsData = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithProfile[]>([]);
@@ -15,130 +28,78 @@ export const useSubscriptionsData = () => {
       setIsLoading(true);
       setError(null);
 
-      // Buscar todas as assinaturas da nova tabela user_subscriptions
+      console.log('Buscando assinaturas...');
+      
+      // Buscar assinaturas
       const { data: subscriptionsData, error: subscriptionsError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log('[DEBUG] Assinaturas - subscriptionsData:', subscriptionsData, 'subscriptionsError:', subscriptionsError);
+      if (subscriptionsError) {
+        console.error('Erro ao buscar assinaturas:', subscriptionsError);
+        throw subscriptionsError;
+      }
 
-      if (subscriptionsError) throw subscriptionsError;
+      console.log('Assinaturas encontradas:', subscriptionsData?.length || 0);
 
-      // Para cada assinatura, buscar dados do perfil do usuário e preço do plano
-      const subscriptionsWithProfiles = await Promise.all(
+      // Para cada assinatura, buscar informações da oficina
+      const subscriptionsWithProfile = await Promise.all(
         (subscriptionsData || []).map(async (subscription) => {
-          let profile: any = {};
-          let planPrice = 0;
-
           try {
-            // Primeiro, buscar perfil do usuário na tabela profiles
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('email, nome_oficina, id')
-              .eq('id', subscription.user_id)
-              .maybeSingle();
+            // Buscar oficina pelo user_id
+            const { data: oficina } = await supabase
+              .from('oficinas')
+              .select('nome_oficina, email')
+              .eq('user_id', subscription.user_id)
+              .single();
 
-            console.log('[DEBUG] Profile data for user', subscription.user_id, ':', profileData);
-
-            if (!profileError && profileData) {
-              profile = {
-                email: profileData.email || 'Email não encontrado',
-                nome_oficina: profileData.nome_oficina || 'Nome não definido'
-              };
-            } else {
-              // Se não encontrou no profiles, tentar na tabela oficinas
-              const { data: oficinaData, error: oficinaError } = await supabase
-                .from('oficinas')
-                .select('email, nome_oficina, user_id')
-                .eq('user_id', subscription.user_id)
-                .maybeSingle();
-
-              if (!oficinaError && oficinaData) {
-                profile = {
-                  email: oficinaData.email || 'Email não encontrado',
-                  nome_oficina: oficinaData.nome_oficina || 'Nome não definido'
-                };
-              } else {
-                // Último recurso: buscar na tabela auth.users através de uma função RPC
-                try {
-                  const { data: userData } = await supabase.auth.admin.getUserById(subscription.user_id);
-                  if (userData.user) {
-                    profile = {
-                      email: userData.user.email || 'Email não encontrado',
-                      nome_oficina: userData.user.user_metadata?.nome_oficina || 'Nome não definido'
-                    };
-                  }
-                } catch (authError) {
-                  console.error('[DEBUG] Erro ao buscar dados do auth:', authError);
-                  profile = {
-                    email: 'Email não encontrado',
-                    nome_oficina: 'Nome não definido'
-                  };
-                }
-              }
-            }
-
-            // Buscar preço do plano da tabela plan_configurations
-            const planType = subscription.plan_type.replace('_anual', '').replace('_mensal', '');
-            const billingCycle = subscription.plan_type.includes('_anual') ? 'anual' : 'mensal';
-            
-            const { data: planData, error: planError } = await supabase
-              .from('plan_configurations')
-              .select('price')
-              .eq('plan_type', planType)
-              .eq('billing_cycle', billingCycle)
-              .maybeSingle();
-
-            if (planError) {
-              console.error('[DEBUG] Erro ao buscar plan_configurations:', planError);
-            } else if (planData) {
-              planPrice = planData.price || 0;
-            }
-
-            // Se não encontrou preço nas configurações, usar valores padrão
-            if (planPrice === 0) {
-              if (subscription.plan_type === 'essencial_mensal') planPrice = 49.90;
-              else if (subscription.plan_type === 'essencial_anual') planPrice = 499.00;
-              else if (subscription.plan_type === 'premium_mensal') planPrice = 99.90;
-              else if (subscription.plan_type === 'premium_anual') planPrice = 999.00;
-            }
-
-          } catch (err: any) {
-            console.error('[DEBUG] Erro ao buscar dados adicionais:', err);
-            profile = {
-              email: 'Erro ao carregar email',
-              nome_oficina: 'Erro ao carregar nome'
+            return {
+              id: subscription.id,
+              user_id: subscription.user_id,
+              plan_type: subscription.plan_type,
+              status: subscription.status,
+              starts_at: subscription.starts_at,
+              ends_at: subscription.ends_at,
+              trial_ends_at: subscription.trial_ends_at,
+              created_at: subscription.created_at,
+              is_manual: subscription.is_manual || false,
+              user_email: oficina?.email || 'Email não encontrado',
+              nome_oficina: oficina?.nome_oficina || 'Nome não encontrado'
+            };
+          } catch (error) {
+            console.warn(`Erro ao buscar oficina para assinatura ${subscription.id}:`, error);
+            return {
+              id: subscription.id,
+              user_id: subscription.user_id,
+              plan_type: subscription.plan_type,
+              status: subscription.status,
+              starts_at: subscription.starts_at,
+              ends_at: subscription.ends_at,
+              trial_ends_at: subscription.trial_ends_at,
+              created_at: subscription.created_at,
+              is_manual: subscription.is_manual || false,
+              user_email: 'Email não encontrado',
+              nome_oficina: 'Nome não encontrado'
             };
           }
-
-          return {
-            id: subscription.id,
-            user_id: subscription.user_id,
-            plan: subscription.plan_type,
-            status: subscription.status,
-            started_at: subscription.starts_at,
-            created_at: subscription.created_at,
-            ends_at: subscription.ends_at,
-            expires_at: subscription.trial_ends_at || subscription.ends_at,
-            payment_method: subscription.is_manual ? 'Manual' : 'Stripe',
-            amount: planPrice * 100, // Converter para centavos para manter compatibilidade
-            email: profile.email,
-            nome_oficina: profile.nome_oficina,
-          };
         })
       );
 
-      setSubscriptions(subscriptionsWithProfiles);
+      setSubscriptions(subscriptionsWithProfile);
+      console.log('Assinaturas processadas:', subscriptionsWithProfile.length);
+      
     } catch (error: any) {
-      setError(error.message ?? "Erro desconhecido ao carregar assinaturas.");
+      const errorMessage = error.message || 'Erro ao carregar assinaturas';
+      setError(errorMessage);
       setSubscriptions([]);
+      console.error('Erro completo:', error);
+      
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Não foi possível carregar as assinaturas."
       });
-      console.error('[DEBUG] Erro global ao carregar assinaturas:', error);
     } finally {
       setIsLoading(false);
     }
