@@ -10,7 +10,7 @@ interface SupportButtonProps {
 }
 
 const SupportButton: React.FC<SupportButtonProps> = ({ className }) => {
-  const [whatsappNumber, setWhatsappNumber] = React.useState('46991270777');
+  const [whatsappNumber, setWhatsappNumber] = React.useState('46999324779');
   const { toast } = useToast();
   
   React.useEffect(() => {
@@ -38,11 +38,11 @@ const SupportButton: React.FC<SupportButtonProps> = ({ className }) => {
   }, []);
   
   const handleSupportClick = () => {
-    // Format the WhatsApp number (remove any non-digit characters)
-    const formattedNumber = whatsappNumber.replace(/\D/g, '');
+    // Format the WhatsApp number (remove any non-digit characters and add country code)
+    const formattedNumber = `55${whatsappNumber.replace(/\D/g, '')}`;
     
     // Create WhatsApp URL
-    const whatsappUrl = `https://wa.me/${formattedNumber}?text=Olá,%20preciso%20de%20suporte%20na%20plataforma%20OficinaÁgil.`;
+    const whatsappUrl = `https://wa.me/${formattedNumber}?text=Olá,%20preciso%20de%20suporte%20na%20plataforma%20Oficina%20Go.`;
     
     // Open in new window
     window.open(whatsappUrl, '_blank');

@@ -52,12 +52,12 @@ export default function Contact() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xl font-semibold mb-2">E-mail</h3>
-                  <p>contato@oficinaagil.com.br</p>
+                  <p>contatooficinago@gmail.com</p>
                 </div>
                 
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Telefone</h3>
-                  <p>(XX) XXXX-XXXX</p>
+                  <p>(46) 99932-4779</p>
                 </div>
                 
                 <div>

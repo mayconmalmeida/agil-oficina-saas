@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Headphones, MessageSquare, Phone, Clock, CheckCircle } from 'lucide-react';
+import { Headphones, MessageSquare, Phone, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SupportSettings from '@/components/settings/support/SupportSettings';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 const SuportePage: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+
+  const handleWhatsAppClick = () => {
+    const whatsappNumber = '5546999324779'; // Número formatado para WhatsApp
+    const message = 'Olá,%20preciso%20de%20suporte%20na%20plataforma%20Oficina%20Go.';
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   return (
     <div className="space-y-6">
@@ -25,9 +32,13 @@ const SuportePage: React.FC = () => {
           <CardContent className="space-y-4">
             <Button variant="outline" className="w-full flex items-center space-x-2">
               <Phone className="h-4 w-4" />
-              <span>Telefone: (46) 99932-4779</span>
+              <span>Telefone: (46) 9 9932-4779</span>
             </Button>
-            <Button variant="outline" className="w-full flex items-center space-x-2">
+            <Button 
+              onClick={handleWhatsAppClick}
+              variant="outline" 
+              className="w-full flex items-center space-x-2 hover:bg-green-50"
+            >
               <MessageSquare className="h-4 w-4" />
               <span>WhatsApp Business</span>
             </Button>

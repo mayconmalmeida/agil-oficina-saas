@@ -19,7 +19,7 @@ const SupportSettings: React.FC<SupportSettingsProps> = ({
   
   // Get user ID from profile if not provided via props
   const effectiveUserId = userId || userProfile?.id;
-  const supportPhone = initialValues.whatsapp_suporte || userProfile?.whatsapp_suporte || '46991270777';
+  const supportPhone = initialValues.whatsapp_suporte || userProfile?.whatsapp_suporte || '46999324779';
   
   return (
     <div className="space-y-8">
