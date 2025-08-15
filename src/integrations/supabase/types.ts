@@ -1116,6 +1116,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
+      is_user_admin_by_id: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       process_nfce_xml: {
         Args: { p_produtos: Json; p_user_id: string }
         Returns: Json

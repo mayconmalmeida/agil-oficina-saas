@@ -27,14 +27,17 @@ export const createPredefinedAdmin = async () => {
 export const isUserAdmin = async (userId: string): Promise<boolean> => {
   try {
     // Verificar se o usuário é admin através da tabela profiles usando RPC segura
-    const { data, error } = await supabase.rpc('is_user_admin_by_id', { user_id: userId });
+    const { data, error } = await supabase.rpc('is_user_admin_by_id' as any, { 
+      user_id: userId 
+    });
     
     if (error) {
       console.error("Erro ao verificar status de admin:", error);
       return false;
     }
     
-    return data || false;
+    // Garantir que o retorno seja boolean
+    return Boolean(data);
   } catch (error) {
     console.error("Erro ao verificar status de admin:", error);
     return false;
