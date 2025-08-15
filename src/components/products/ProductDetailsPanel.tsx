@@ -110,8 +110,9 @@ const ProductDetailsPanel: React.FC<ProductDetailsPanelProps> = ({ productId, on
         </CardHeader>
         <CardContent>
           <ProductForm 
-            productId={productId}
-            onSaveSuccess={handleSaveSuccess}
+            product={product}
+            onSuccess={handleSaveSuccess}
+            onCancel={() => setIsEditing(false)}
           />
         </CardContent>
       </Card>
