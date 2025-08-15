@@ -14,30 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admins: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: string
-          is_superadmin: boolean | null
-          password: string
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: string
-          is_superadmin?: boolean | null
-          password: string
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: string
-          is_superadmin?: boolean | null
-          password?: string
-        }
-        Relationships: []
-      }
       agendamentos: {
         Row: {
           cliente_id: string | null
@@ -1120,6 +1096,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_admin_role: {
+        Args: { user_email: string }
+        Returns: string
+      }
       get_user_oficina_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1130,6 +1110,10 @@ export type Database = {
       }
       is_trial_active: {
         Args: { user_profile_id: string }
+        Returns: boolean
+      }
+      is_user_admin: {
+        Args: { user_email: string }
         Returns: boolean
       }
       process_nfce_xml: {
