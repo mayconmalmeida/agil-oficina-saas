@@ -12,7 +12,6 @@ export const useSettingsPage = () => {
   const [activeTab, setActiveTab] = useState('perfil');
   const [isLoading, setIsLoading] = useState(false);
   const [themeSetting, setThemeSetting] = useState(() => {
-    // Get theme from localStorage or default to 'light'
     return localStorage.getItem('theme') || 'light';
   });
   
@@ -59,20 +58,28 @@ export const useSettingsPage = () => {
     }
   }, [userProfile, profileForm]);
   
-  // Apply theme globally on initial load and when it changes
+  // Apply theme on initial load and when it changes
   useEffect(() => {
-    const htmlElement = document.documentElement;
-    const bodyElement = document.body;
+    const applyTheme = (theme: string) => {
+      const htmlElement = document.documentElement;
+      const bodyElement = document.body;
+      
+      // Remove both classes first
+      htmlElement.classList.remove('dark', 'light');
+      bodyElement.classList.remove('dark', 'light');
+      
+      if (theme === 'dark') {
+        htmlElement.classList.add('dark');
+        bodyElement.classList.add('dark');
+        htmlElement.setAttribute('data-theme', 'dark');
+      } else {
+        htmlElement.classList.add('light');
+        bodyElement.classList.add('light');
+        htmlElement.setAttribute('data-theme', 'light');
+      }
+    };
     
-    if (themeSetting === 'dark') {
-      htmlElement.classList.add('dark');
-      bodyElement.classList.add('dark');
-      htmlElement.style.colorScheme = 'dark';
-    } else {
-      htmlElement.classList.remove('dark');
-      bodyElement.classList.remove('dark');
-      htmlElement.style.colorScheme = 'light';
-    }
+    applyTheme(themeSetting);
   }, [themeSetting]);
   
   const handleChangePassword = async (values: PasswordFormValues) => {
@@ -180,22 +187,25 @@ export const useSettingsPage = () => {
   const toggleTheme = () => {
     const newTheme = themeSetting === 'light' ? 'dark' : 'light';
     setThemeSetting(newTheme);
+    localStorage.setItem('theme', newTheme);
     
-    // Apply theme globally to entire SaaS
+    // Apply theme immediately
     const htmlElement = document.documentElement;
     const bodyElement = document.body;
+    
+    // Remove both classes first
+    htmlElement.classList.remove('dark', 'light');
+    bodyElement.classList.remove('dark', 'light');
     
     if (newTheme === 'dark') {
       htmlElement.classList.add('dark');
       bodyElement.classList.add('dark');
-      htmlElement.style.colorScheme = 'dark';
+      htmlElement.setAttribute('data-theme', 'dark');
     } else {
-      htmlElement.classList.remove('dark');
-      bodyElement.classList.remove('dark');
-      htmlElement.style.colorScheme = 'light';
+      htmlElement.classList.add('light');
+      bodyElement.classList.add('light');
+      htmlElement.setAttribute('data-theme', 'light');
     }
-    
-    localStorage.setItem('theme', newTheme);
   };
   
   return {
