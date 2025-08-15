@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 import AppContent from "@/components/app/AppContent";
 import DebugInfo from "@/components/debug/DebugInfo";
 
@@ -17,8 +18,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppContent />
-          <DebugInfo />
+          <AdminProvider>
+            <AppContent />
+            <DebugInfo />
+          </AdminProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

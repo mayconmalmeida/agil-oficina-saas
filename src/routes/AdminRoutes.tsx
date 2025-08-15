@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Route } from 'react-router-dom';
-import { AdminProvider } from '@/contexts/AdminContext';
 import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 import OptimizedAdminLayout from '@/components/layout/OptimizedAdminLayout';
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -16,21 +15,15 @@ export const AdminRoutes = () => {
     <Route 
       key="admin-login" 
       path="/admin/login" 
-      element={
-        <AdminProvider>
-          <AdminLoginPage />
-        </AdminProvider>
-      } 
+      element={<AdminLoginPage />} 
     />,
     <Route
       key="admin-dashboard"
       path="/admin"
       element={
-        <AdminProvider>
-          <OptimizedAdminGuard>
-            <OptimizedAdminLayout />
-          </OptimizedAdminGuard>
-        </AdminProvider>
+        <OptimizedAdminGuard>
+          <OptimizedAdminLayout />
+        </OptimizedAdminGuard>
       }
     >
       <Route index element={<OptimizedAdminDashboard />} />
