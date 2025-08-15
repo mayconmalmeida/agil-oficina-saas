@@ -21,10 +21,10 @@ import RelatoriosPage from '@/pages/RelatoriosPage';
 import AssinaturaPage from '@/pages/AssinaturaPage';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminDashboard from '@/pages/AdminDashboard';
-import UsersPage from '@/pages/UsersPage';
-import SubscriptionsPage from '@/pages/SubscriptionsPage';
-import PlansPage from '@/pages/PlansPage';
-import SettingsPage from '@/pages/SettingsPage';
+import AdminUsers from '@/pages/AdminUsers';
+import AdminSubscriptions from '@/pages/AdminSubscriptions';
+import AdminPlansPage from '@/pages/AdminPlansPage';
+import AdminSettingsPage from '@/pages/AdminSettingsPage';
 import OrdemServicoPage from '@/pages/OrdemServicoPage';
 
 function App() {
@@ -58,10 +58,10 @@ function App() {
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="subscriptions" element={<SubscriptionsPage />} />
-          <Route path="plans" element={<PlansPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="subscriptions" element={<AdminSubscriptions />} />
+          <Route path="plans" element={<AdminPlansPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
       </Routes>
     </Router>
