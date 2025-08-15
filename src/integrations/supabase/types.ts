@@ -357,6 +357,30 @@ export type Database = {
           },
         ]
       }
+      ia_suporte_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_bot: boolean
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_bot?: boolean
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_bot?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       notas_fiscais: {
         Row: {
           cliente_id: string | null

@@ -52,8 +52,9 @@ const IASuporteInteligentePage: React.FC = () => {
     
     setIsLoadingHistory(true);
     try {
+      // Using dynamic query to avoid TypeScript issues with table that might not be in types yet
       const { data, error } = await supabase
-        .from('ia_suporte_messages')
+        .from('ia_suporte_messages' as any)
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
@@ -64,7 +65,7 @@ const IASuporteInteligentePage: React.FC = () => {
       }
 
       if (data && data.length > 0) {
-        const historyMessages = data.map(msg => ({
+        const historyMessages = data.map((msg: any) => ({
           id: msg.id,
           content: msg.content,
           isBot: msg.is_bot,
@@ -86,7 +87,7 @@ const IASuporteInteligentePage: React.FC = () => {
 
     try {
       await supabase
-        .from('ia_suporte_messages')
+        .from('ia_suporte_messages' as any)
         .insert({
           user_id: user.id,
           content: message.content,
