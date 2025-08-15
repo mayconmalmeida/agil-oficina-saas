@@ -1,94 +1,166 @@
 
 import React from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useWatch } from 'react-hook-form';
-import { budgetFormSchema, BudgetFormValues } from './budgetSchema';
-import { Form } from '@/components/ui/form';
-import ClientSearchField from './form-sections/ClientSearchField';
-import VehicleField from './form-sections/VehicleField';
-import DescriptionField from './form-sections/DescriptionField';
-import TotalValueField from './form-sections/TotalValueField';
-import FormActions from './form-sections/FormActions';
-import ProductServiceSelector from './form-sections/ProductServiceSelector';
-import { useState, useEffect } from 'react';
-import { Client } from '@/hooks/useClientSearch';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
-interface SelectedItem {
-  id: string;
-  nome: string;
-  tipo: 'produto' | 'servico';
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-}
+const budgetSchema = z.object({
+  cliente: z.string().min(1, 'Nome do cliente é obrigatório'),
+  veiculo: z.string().min(1, 'Informações do veículo são obrigatórias'),
+  descricao: z.string().min(1, 'Descrição dos serviços é obrigatória'),
+  valor_total: z.number().min(0, 'Valor deve ser maior que zero'),
+  status: z.string().optional(),
+});
+
+export type BudgetFormValues = z.infer<typeof budgetSchema>;
 
 interface BudgetFormProps {
-  onSubmit: (data: BudgetFormValues & { itens?: SelectedItem[] }) => void;
+  onSubmit: (values: BudgetFormValues) => Promise<void>;
   onSkip: () => void;
   isLoading: boolean;
-  initialValues?: {
-    cliente?: string;
-    veiculo?: string;
-    descricao?: string;
-    valor_total?: string;
-  }
+  initialValues?: Partial<BudgetFormValues>;
+  isEditing?: boolean;
 }
 
-const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading, initialValues }) => {
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  
+const BudgetForm: React.FC<BudgetFormProps> = ({ 
+  onSubmit, 
+  onSkip, 
+  isLoading, 
+  initialValues,
+  isEditing = false 
+}) => {
   const form = useForm<BudgetFormValues>({
-    resolver: zodResolver(budgetFormSchema),
+    resolver: zodResolver(budgetSchema),
     defaultValues: {
       cliente: initialValues?.cliente || '',
       veiculo: initialValues?.veiculo || '',
       descricao: initialValues?.descricao || '',
-      valor_total: initialValues?.valor_total || ''
-    }
+      valor_total: initialValues?.valor_total || 0,
+      status: initialValues?.status || 'pendente',
+    },
   });
-
-  // Update total value when items change
-  useEffect(() => {
-    const total = selectedItems.reduce((sum, item) => sum + item.valor_total, 0);
-    form.setValue('valor_total', total.toFixed(2));
-  }, [selectedItems, form]);
-
-  // Clear vehicle when client changes
-  useEffect(() => {
-    if (selectedClient) {
-      console.log('🔄 BudgetForm - Cliente mudou, limpando campo veículo');
-      form.setValue('veiculo', '');
-    }
-  }, [selectedClient, form]);
-
-  const handleSubmit = (values: BudgetFormValues) => {
-    onSubmit({
-      ...values,
-      itens: selectedItems
-    });
-  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <ClientSearchField 
-          form={form} 
-          onClientSelect={setSelectedClient}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="cliente"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do Cliente</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome completo do cliente" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="veiculo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Veículo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Marca, modelo, ano, placa" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="descricao"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição dos Serviços</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Descreva os serviços que serão realizados"
+                  className="min-h-20"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <VehicleField 
-          form={form} 
-          selectedClient={selectedClient}
-        />
-        <DescriptionField form={form} />
-        
-        <ProductServiceSelector 
-          selectedItems={selectedItems}
-          onItemsChange={setSelectedItems}
-        />
-        
-        <TotalValueField form={form} />
-        <FormActions isLoading={isLoading} onSkip={onSkip} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="valor_total"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor Total (R$)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {isEditing && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="aprovado">Aprovado</SelectItem>
+                      <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                      <SelectItem value="concluido">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
+
+        <div className="flex gap-4">
+          <Button type="submit" disabled={isLoading} className="flex-1">
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isEditing ? 'Salvando...' : 'Criando...'}
+              </>
+            ) : (
+              isEditing ? 'Salvar Alterações' : 'Criar Orçamento'
+            )}
+          </Button>
+          
+          <Button type="button" variant="outline" onClick={onSkip}>
+            Cancelar
+          </Button>
+        </div>
       </form>
     </Form>
   );

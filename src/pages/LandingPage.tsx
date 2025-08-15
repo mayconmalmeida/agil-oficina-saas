@@ -7,7 +7,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
       <div className="text-center text-white">
-        <h1 className="text-4xl font-bold mb-6">OficinaCloud</h1>
+        <h1 className="text-4xl font-bold mb-6">Oficina Go</h1>
         <p className="text-xl mb-8">Sistema de gestão para oficinas automotivas</p>
         <div className="space-x-4">
           <Link to="/login">

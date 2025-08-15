@@ -9,6 +9,8 @@ import NewClientPage from '@/pages/NewClientPage';
 import EditClientPage from '@/pages/EditClientPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import NewBudgetPage from '@/pages/NewBudgetPage';
+import EditBudgetPage from '@/pages/EditBudgetPage';
+import BudgetDetailsPage from '@/pages/BudgetDetailsPage';
 import ServicesPage from '@/pages/ServicesPage';
 import ProductsPage from '@/pages/ProductsPage';
 import VehiclesPage from '@/pages/VehiclesPage';
@@ -22,6 +24,8 @@ import AssinaturaPage from '@/pages/AssinaturaPage';
 import FornecedoresPage from '@/pages/FornecedoresPage';
 import OrdemServicoPage from '@/pages/OrdemServicoPage';
 import SettingsPage from '@/pages/SettingsPage';
+import SuportePage from '@/pages/SuportePage';
+import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
 
 export const protectedRoutes = [
   <Route key="dashboard-layout" path="/dashboard/*" element={
@@ -36,6 +40,8 @@ export const protectedRoutes = [
     <Route path="clientes/:id/editar" element={<EditClientPage />} />
     <Route path="orcamentos" element={<BudgetsPage />} />
     <Route path="orcamentos/novo" element={<NewBudgetPage />} />
+    <Route path="orcamentos/editar/:id" element={<EditBudgetPage />} />
+    <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
     <Route path="servicos" element={<ServicesPage />} />
     <Route path="produtos" element={<ProductsPage />} />
     <Route path="veiculos" element={<VehiclesPage />} />
@@ -45,8 +51,10 @@ export const protectedRoutes = [
     <Route path="ordem-servico" element={<OrdemServicoPage />} />
     <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
     <Route path="ia-suporte-inteligente" element={<IASuportePage />} />
+    <Route path="suporte" element={<SuportePage />} />
     <Route path="relatorios" element={<RelatoriosPage />} />
     <Route path="configuracoes" element={<ConfiguracoesPage />} />
+    <Route path="integracao-contabil" element={<IntegracaoContabilPage />} />
     <Route path="settings" element={<SettingsPage />} />
     <Route path="assinatura" element={<AssinaturaPage />} />
   </Route>

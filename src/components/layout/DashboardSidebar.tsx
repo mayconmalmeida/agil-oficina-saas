@@ -17,7 +17,9 @@ import {
   BarChart3,
   Package,
   Car,
-  Truck
+  Truck,
+  Headphones,
+  Database
 } from 'lucide-react';
 
 const DashboardSidebar: React.FC = () => {
@@ -35,7 +37,9 @@ const DashboardSidebar: React.FC = () => {
     { icon: Truck, label: 'Fornecedores', path: '/dashboard/fornecedores' },
     { icon: Bot, label: 'IA Diagnóstico', path: '/dashboard/ia-diagnostico' },
     { icon: MessageCircle, label: 'IA Suporte', path: '/dashboard/ia-suporte-inteligente' },
+    { icon: Headphones, label: 'Suporte', path: '/dashboard/suporte' },
     { icon: BarChart3, label: 'Relatórios', path: '/dashboard/relatorios' },
+    { icon: Database, label: 'Integração Contábil', path: '/dashboard/integracao-contabil' },
     { icon: Settings, label: 'Configurações', path: '/dashboard/configuracoes' },
     { icon: CreditCard, label: 'Assinatura', path: '/dashboard/assinatura' },
   ];
@@ -43,7 +47,7 @@ const DashboardSidebar: React.FC = () => {
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <span className="text-lg font-semibold text-blue-600">Oficina Ágil</span>
+        <span className="text-lg font-semibold text-blue-600">Oficina Go</span>
       </div>
       <div className="flex-1 p-4">
         <nav className="space-y-1">
