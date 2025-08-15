@@ -20,6 +20,8 @@ import NewSchedulePage from '@/pages/NewSchedulePage';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import IASuportePage from '@/pages/IASuportePage';
 import RelatoriosPage from '@/pages/RelatoriosPage';
+import RelatoriosAvancadosPage from '@/pages/RelatoriosAvancadosPage';
+import BackupPage from '@/pages/BackupPage';
 import ConfiguracoesPage from '@/pages/ConfiguracoesPage';
 import AssinaturaPage from '@/pages/AssinaturaPage';
 import FornecedoresPage from '@/pages/FornecedoresPage';
@@ -57,6 +59,8 @@ export const protectedRoutes = [
     <Route path="ia-suporte-inteligente" element={<IASuportePage />} />
     <Route path="suporte" element={<SuportePage />} />
     <Route path="relatorios" element={<RelatoriosPage />} />
+    <Route path="relatorios-avancados" element={<RelatoriosAvancadosPage />} />
+    <Route path="backup" element={<BackupPage />} />
     <Route path="configuracoes" element={<ConfiguracoesPage />} />
     <Route path="integracao-contabil" element={<IntegracaoContabilPage />} />
     <Route path="settings" element={<SettingsPage />} />
