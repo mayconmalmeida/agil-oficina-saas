@@ -19,6 +19,9 @@ import IASuportePage from '@/pages/IASuportePage';
 import RelatoriosPage from '@/pages/RelatoriosPage';
 import ConfiguracoesPage from '@/pages/ConfiguracoesPage';
 import AssinaturaPage from '@/pages/AssinaturaPage';
+import FornecedoresPage from '@/pages/FornecedoresPage';
+import OrdemServicoPage from '@/pages/OrdemServicoPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 export const protectedRoutes = [
   <Route key="dashboard-layout" path="/dashboard/*" element={
@@ -38,10 +41,13 @@ export const protectedRoutes = [
     <Route path="veiculos" element={<VehiclesPage />} />
     <Route path="agendamentos" element={<AgendamentosPage />} />
     <Route path="agendamentos/novo" element={<NewSchedulePage />} />
+    <Route path="fornecedores" element={<FornecedoresPage />} />
+    <Route path="ordem-servico" element={<OrdemServicoPage />} />
     <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
     <Route path="ia-suporte-inteligente" element={<IASuportePage />} />
     <Route path="relatorios" element={<RelatoriosPage />} />
     <Route path="configuracoes" element={<ConfiguracoesPage />} />
+    <Route path="settings" element={<SettingsPage />} />
     <Route path="assinatura" element={<AssinaturaPage />} />
   </Route>
 ];

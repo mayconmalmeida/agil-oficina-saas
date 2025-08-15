@@ -1,14 +1,13 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 import { useOficinaFilters } from '@/hooks/useOficinaFilters';
 
 const fornecedorSchema = z.object({
@@ -26,14 +25,13 @@ type FornecedorFormValues = z.infer<typeof fornecedorSchema>;
 
 interface FornecedorFormProps {
   fornecedor?: any;
-  onSave: () => void;
+  onSuccess: () => void;
   onCancel: () => void;
 }
 
-const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onCancel }) => {
+const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSuccess, onCancel }) => {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const { oficina_id, user_id, isReady } = useOficinaFilters();
+  const { oficina_id } = useOficinaFilters();
 
   const form = useForm<FornecedorFormValues>({
     resolver: zodResolver(fornecedorSchema),
@@ -50,91 +48,50 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
   });
 
   const onSubmit = async (values: FornecedorFormValues) => {
-    if (!isReady) {
-      toast({
-        variant: "destructive",
-        title: "Aguarde",
-        description: "Carregando configurações..."
-      });
-      return;
-    }
-
-    if (!oficina_id || !user_id) {
-      toast({
-        variant: "destructive",
-        title: "Erro de configuração",
-        description: "Oficina não encontrada. Entre em contato com o suporte."
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
       const fornecedorData = {
-        nome: values.nome,
-        cnpj: values.cnpj || null,
-        email: values.email || null,
-        telefone: values.telefone || null,
-        endereco: values.endereco || null,
-        cidade: values.cidade || null,
-        estado: values.estado || null,
-        cep: values.cep || null,
-        user_id: user_id,
-        oficina_id: oficina_id
+        ...values,
+        user_id: user.id,
+        oficina_id: oficina_id,
       };
 
       if (fornecedor) {
-        // Atualizar fornecedor existente
         const { error } = await supabase
           .from('fornecedores')
           .update(fornecedorData)
-          .eq('id', fornecedor.id)
-          .eq('oficina_id', oficina_id); // Garantir que só atualiza da própria oficina
+          .eq('id', fornecedor.id);
 
         if (error) throw error;
-
+        
         toast({
           title: "Fornecedor atualizado",
-          description: "Fornecedor atualizado com sucesso!"
+          description: "Fornecedor foi atualizado com sucesso.",
         });
       } else {
-        // Criar novo fornecedor
         const { error } = await supabase
           .from('fornecedores')
-          .insert([fornecedorData]);
+          .insert(fornecedorData);
 
         if (error) throw error;
-
+        
         toast({
-          title: "Fornecedor cadastrado",
-          description: "Fornecedor cadastrado com sucesso!"
+          title: "Fornecedor criado",
+          description: "Fornecedor foi criado com sucesso.",
         });
       }
 
-      onSave();
+      onSuccess();
     } catch (error: any) {
-      console.error('Erro ao salvar fornecedor:', error);
       toast({
         variant: "destructive",
-        title: fornecedor ? "Erro ao atualizar fornecedor" : "Erro ao cadastrar fornecedor",
-        description: error.message
+        title: "Erro ao salvar fornecedor",
+        description: error.message,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Form {...form}>
@@ -175,7 +132,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="email@fornecedor.com" {...field} />
+                  <Input placeholder="email@fornecedor.com" type="email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -189,7 +146,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
               <FormItem>
                 <FormLabel>Telefone</FormLabel>
                 <FormControl>
-                  <Input placeholder="(11) 99999-9999" {...field} />
+                  <Input placeholder="(00) 00000-0000" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -200,10 +157,10 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
             control={form.control}
             name="endereco"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Endereço</FormLabel>
                 <FormControl>
-                  <Input placeholder="Rua, número" {...field} />
+                  <Input placeholder="Rua, número, bairro" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -231,7 +188,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
               <FormItem>
                 <FormLabel>Estado</FormLabel>
                 <FormControl>
-                  <Input placeholder="SP" {...field} />
+                  <Input placeholder="UF" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -253,19 +210,12 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
           />
         </div>
 
-        <div className="flex justify-end space-x-2 pt-4">
+        <div className="flex justify-end space-x-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              fornecedor ? 'Atualizar' : 'Cadastrar'
-            )}
+          <Button type="submit">
+            {fornecedor ? 'Atualizar' : 'Criar'} Fornecedor
           </Button>
         </div>
       </form>
