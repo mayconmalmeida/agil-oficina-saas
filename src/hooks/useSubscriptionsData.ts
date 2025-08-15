@@ -2,20 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-
-export interface SubscriptionWithProfile {
-  id: string;
-  user_id: string;
-  plan_type: string;
-  status: string;
-  starts_at: string;
-  ends_at: string | null;
-  trial_ends_at: string | null;
-  created_at: string;
-  is_manual: boolean;
-  user_email: string;
-  nome_oficina: string;
-}
+import { SubscriptionWithProfile } from '@/utils/supabaseTypes';
 
 export const useSubscriptionsData = () => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithProfile[]>([]);
@@ -54,34 +41,37 @@ export const useSubscriptionsData = () => {
               .eq('user_id', subscription.user_id)
               .single();
 
+            // Map the user_subscriptions data to match SubscriptionWithProfile interface
             return {
               id: subscription.id,
               user_id: subscription.user_id,
-              plan_type: subscription.plan_type,
+              plan: subscription.plan_type, // Map plan_type to plan
               status: subscription.status,
-              starts_at: subscription.starts_at,
-              ends_at: subscription.ends_at,
-              trial_ends_at: subscription.trial_ends_at,
+              started_at: subscription.starts_at, // Map starts_at to started_at
               created_at: subscription.created_at,
-              is_manual: subscription.is_manual || false,
-              user_email: oficina?.email || 'Email não encontrado',
+              ends_at: subscription.ends_at,
+              expires_at: subscription.ends_at, // Map ends_at to expires_at
+              payment_method: subscription.stripe_subscription_id ? 'stripe' : 'manual', // Infer payment method
+              amount: 0, // Default amount, can be updated based on plan_type
+              email: oficina?.email || 'Email não encontrado',
               nome_oficina: oficina?.nome_oficina || 'Nome não encontrado'
-            };
+            } as SubscriptionWithProfile;
           } catch (error) {
             console.warn(`Erro ao buscar oficina para assinatura ${subscription.id}:`, error);
             return {
               id: subscription.id,
               user_id: subscription.user_id,
-              plan_type: subscription.plan_type,
+              plan: subscription.plan_type,
               status: subscription.status,
-              starts_at: subscription.starts_at,
-              ends_at: subscription.ends_at,
-              trial_ends_at: subscription.trial_ends_at,
+              started_at: subscription.starts_at,
               created_at: subscription.created_at,
-              is_manual: subscription.is_manual || false,
-              user_email: 'Email não encontrado',
+              ends_at: subscription.ends_at,
+              expires_at: subscription.ends_at,
+              payment_method: subscription.stripe_subscription_id ? 'stripe' : 'manual',
+              amount: 0,
+              email: 'Email não encontrado',
               nome_oficina: 'Nome não encontrado'
-            };
+            } as SubscriptionWithProfile;
           }
         })
       );
