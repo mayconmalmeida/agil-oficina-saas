@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { budgetSchema, BudgetFormValues } from './budgetSchema';
+import { budgetSchema, BudgetFormValues, SelectedItem } from './budgetSchema';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -13,22 +13,33 @@ import BudgetDetailsSection from './form-sections/BudgetDetailsSection';
 import { Client } from '@/hooks/useClientSearch';
 
 interface BudgetFormProps {
-  onSubmit: (values: BudgetFormValues) => Promise<void>;
+  onSubmit: (values: BudgetFormValues & { itens?: SelectedItem[] }) => Promise<void>;
   onSkip?: () => void;
   isLoading?: boolean;
+  initialValues?: Partial<BudgetFormValues>;
+  isEditing?: boolean;
 }
 
-const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading = false }) => {
+const BudgetForm: React.FC<BudgetFormProps> = ({ 
+  onSubmit, 
+  onSkip, 
+  isLoading = false,
+  initialValues,
+  isEditing = false
+}) => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedItems, setSelectedItems] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
-      cliente: '',
-      veiculo: '',
-      descricao: '',
-      valor_total: 0,
+      cliente: initialValues?.cliente || '',
+      veiculo: initialValues?.veiculo || '',
+      descricao: initialValues?.descricao || '',
+      valor_total: initialValues?.valor_total || 0,
+      data_validade: initialValues?.data_validade || '',
+      observacoes: initialValues?.observacoes || '',
+      status: initialValues?.status || 'Pendente',
     },
   });
 
@@ -49,7 +60,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading = f
     form.setValue('valor_total', total);
   };
 
-  const handleItemsChange = (items: any[]) => {
+  const handleItemsChange = (items: SelectedItem[]) => {
     setSelectedItems(items);
     calculateTotal();
   };
@@ -85,10 +96,10 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onSkip, isLoading = f
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                Salvando Orçamento...
+                {isEditing ? 'Atualizando...' : 'Salvando Orçamento...'}
               </>
             ) : (
-              'Salvar Orçamento'
+              isEditing ? 'Atualizar Orçamento' : 'Salvar Orçamento'
             )}
           </Button>
           

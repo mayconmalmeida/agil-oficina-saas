@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,8 +60,14 @@ const ServicesProductsSection: React.FC<ServicesProductsSectionProps> = ({
 
       if (error) throw error;
 
-      const servicesData = data?.filter(item => item.tipo === 'servico') || [];
-      const productsData = data?.filter(item => item.tipo === 'produto') || [];
+      // Type cast the data properly
+      const typedData = (data || []).map(item => ({
+        ...item,
+        tipo: item.tipo as 'servico' | 'produto'
+      }));
+
+      const servicesData = typedData.filter(item => item.tipo === 'servico');
+      const productsData = typedData.filter(item => item.tipo === 'produto');
 
       setServices(servicesData);
       setProducts(productsData);

@@ -4,17 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
-import { BudgetFormValues } from '@/components/budget/budgetSchema';
+import { BudgetFormValues, SelectedItem } from '@/components/budget/budgetSchema';
 import { safeRpc } from '@/utils/supabaseTypes';
-
-interface SelectedItem {
-  id: string;
-  nome: string;
-  tipo: 'produto' | 'servico';
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-}
 
 export const useBudgetForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -56,7 +47,7 @@ export const useBudgetForm = () => {
     
     try {
       // Calculate total value from items if present
-      let totalValue = parseFloat(values.valor_total?.replace(',', '.').replace('R$', '').trim() || '0');
+      let totalValue = values.valor_total;
       if (values.itens && values.itens.length > 0) {
         totalValue = values.itens.reduce((sum, item) => sum + item.valor_total, 0);
       }

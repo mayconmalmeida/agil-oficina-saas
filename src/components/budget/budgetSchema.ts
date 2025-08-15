@@ -8,6 +8,16 @@ export const budgetSchema = z.object({
   data_validade: z.string().optional(),
   valor_total: z.number().min(0, 'Valor total deve ser maior que zero'),
   observacoes: z.string().optional(),
+  status: z.string().optional(),
 });
 
 export type BudgetFormValues = z.infer<typeof budgetSchema>;
+
+export interface SelectedItem {
+  id: string;
+  nome: string;
+  tipo: 'produto' | 'servico';
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+}

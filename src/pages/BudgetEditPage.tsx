@@ -82,10 +82,7 @@ const BudgetEditPage: React.FC = () => {
     
     setIsSaving(true);
     try {
-      // Convert the value to number before saving
-      const valorTotal = parseFloat(values.valor_total?.replace(/[^\d,]/g, '').replace(',', '.') || '0');
-      
-      console.log('Atualizando orçamento:', { id, values, valorTotal });
+      console.log('Atualizando orçamento:', { id, values });
       
       const { error } = await supabase
         .from('orcamentos')
@@ -93,7 +90,7 @@ const BudgetEditPage: React.FC = () => {
           cliente: values.cliente,
           veiculo: values.veiculo,
           descricao: values.descricao,
-          valor_total: valorTotal
+          valor_total: values.valor_total
         })
         .eq('id', id);
       
@@ -112,7 +109,6 @@ const BudgetEditPage: React.FC = () => {
         description: "As alterações foram salvas com sucesso.",
       });
       
-      // Redirecionar para a página de orçamentos
       navigate('/dashboard/orcamentos');
     } catch (error) {
       console.error('Erro inesperado:', error);
@@ -127,10 +123,6 @@ const BudgetEditPage: React.FC = () => {
   };
   
   const handleBack = () => {
-    navigate('/dashboard/orcamentos');
-  };
-  
-  const handleSkip = () => {
     navigate('/dashboard/orcamentos');
   };
   
@@ -157,11 +149,11 @@ const BudgetEditPage: React.FC = () => {
   }
   
   // Prepara os valores iniciais para o formulário
-  const initialValues = {
+  const initialValues: Partial<BudgetFormValues> = {
     cliente: budget.cliente || '',
     veiculo: budget.veiculo || '',
     descricao: budget.descricao || '',
-    valor_total: budget.valor_total ? budget.valor_total.toString() : '0'
+    valor_total: budget.valor_total || 0
   };
   
   console.log('Valores iniciais do formulário:', initialValues);
