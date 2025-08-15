@@ -542,6 +542,105 @@ export type Database = {
         }
         Relationships: []
       }
+      ordem_servico_itens: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome_item: string
+          ordem_servico_id: string
+          quantidade: number | null
+          servico_id: string | null
+          tipo: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome_item: string
+          ordem_servico_id: string
+          quantidade?: number | null
+          servico_id?: string | null
+          tipo: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome_item?: string
+          ordem_servico_id?: string
+          quantidade?: number | null
+          servico_id?: string | null
+          tipo?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordem_servico_itens_ordem_servico_id_fkey"
+            columns: ["ordem_servico_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordem_servico_itens_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordens_servico: {
+        Row: {
+          cliente_id: string
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          observacoes: string | null
+          oficina_id: string | null
+          orcamento_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          valor_total: number | null
+          veiculo_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          oficina_id?: string | null
+          orcamento_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          valor_total?: number | null
+          veiculo_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          oficina_id?: string | null
+          orcamento_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valor_total?: number | null
+          veiculo_id?: string | null
+        }
+        Relationships: []
+      }
       plan_configurations: {
         Row: {
           affiliate_link: string | null
@@ -945,6 +1044,14 @@ export type Database = {
       create_manual_subscription: {
         Args: { p_amount?: number; p_plan_type: string; p_user_id: string }
         Returns: Json
+      }
+      create_ordem_servico_from_orcamento: {
+        Args: {
+          p_observacoes?: string
+          p_orcamento_id: string
+          p_user_id: string
+        }
+        Returns: string
       }
       create_profile: {
         Args: { user_email: string; user_full_name: string; user_id: string }

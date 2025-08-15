@@ -12,7 +12,9 @@ import {
   MessageCircle,
   BarChart3,
   Package,
-  Building2
+  Building2,
+  ClipboardList,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,10 +26,12 @@ const navigationItems = [
   { name: 'Produtos', href: '/dashboard/produtos', icon: Package },
   { name: 'Veículos', href: '/dashboard/veiculos', icon: Car },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
+  { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
   { name: 'Fornecedores', href: '/dashboard/fornecedores', icon: Building2 },
   { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
   { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
+  { name: 'Assinatura', href: '/dashboard/assinatura', icon: CreditCard },
 ];
 
 const Sidebar: React.FC = () => {

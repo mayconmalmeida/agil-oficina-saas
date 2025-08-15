@@ -1,31 +1,70 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardPage from '@/pages/DashboardPage';
+import ClientsPage from '@/pages/ClientsPage';
+import BudgetsPage from '@/pages/BudgetsPage';
+import NewBudgetPage from '@/pages/NewBudgetPage';
+import BudgetDetailsPage from '@/pages/BudgetDetailsPage';
+import BudgetEditPage from '@/pages/BudgetEditPage';
+import ServicesPage from '@/pages/ServicesPage';
+import ProductsPage from '@/pages/ProductsPage';
+import VehiclesPage from '@/pages/VehiclesPage';
+import SchedulingPage from '@/pages/SchedulingPage';
+import FornecedoresPage from '@/pages/FornecedoresPage';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import IASuporteInteligentePage from '@/pages/IASuporteInteligentePage';
+import RelatoriosPage from '@/pages/RelatoriosPage';
+import AssinaturaPage from '@/pages/AssinaturaPage';
+import AdminLayout from '@/components/admin/AdminLayout';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import UsersPage from '@/pages/admin/UsersPage';
+import SubscriptionsPage from '@/pages/admin/SubscriptionsPage';
+import PlansPage from '@/pages/admin/PlansPage';
+import SettingsPage from '@/pages/admin/SettingsPage';
+import OrdemServicoPage from '@/pages/OrdemServicoPage';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { AdminProvider } from "@/contexts/AdminContext";
-import AppContent from "@/components/app/AppContent";
-import DebugInfo from "@/components/debug/DebugInfo";
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Dashboard Routes */}
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="clientes" element={<ClientsPage />} />
+          <Route path="orcamentos" element={<BudgetsPage />} />
+          <Route path="orcamentos/novo" element={<NewBudgetPage />} />
+          <Route path="orcamentos/:id" element={<BudgetDetailsPage />} />
+          <Route path="orcamentos/editar/:id" element={<BudgetEditPage />} />
+          <Route path="ordem-servico" element={<OrdemServicoPage />} />
+          <Route path="servicos" element={<ServicesPage />} />
+          <Route path="produtos" element={<ProductsPage />} />
+          <Route path="veiculos" element={<VehiclesPage />} />
+          <Route path="agendamentos" element={<SchedulingPage />} />
+          <Route path="fornecedores" element={<FornecedoresPage />} />
+          <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
+          <Route path="ia-suporte-inteligente" element={<IASuporteInteligentePage />} />
+          <Route path="relatorios" element={<RelatoriosPage />} />
+          <Route path="assinatura" element={<AssinaturaPage />} />
+        </Route>
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AdminProvider>
-            <AppContent />
-            <DebugInfo />
-          </AdminProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="subscriptions" element={<SubscriptionsPage />} />
+          <Route path="plans" element={<PlansPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;
