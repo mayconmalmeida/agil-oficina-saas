@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,9 +59,20 @@ export const useSettingsPage = () => {
     }
   }, [userProfile, profileForm]);
   
-  // Apply theme on initial load and when it changes
+  // Apply theme globally on initial load and when it changes
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', themeSetting === 'dark');
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    
+    if (themeSetting === 'dark') {
+      htmlElement.classList.add('dark');
+      bodyElement.classList.add('dark');
+      htmlElement.style.colorScheme = 'dark';
+    } else {
+      htmlElement.classList.remove('dark');
+      bodyElement.classList.remove('dark');
+      htmlElement.style.colorScheme = 'light';
+    }
   }, [themeSetting]);
   
   const handleChangePassword = async (values: PasswordFormValues) => {
@@ -170,7 +180,21 @@ export const useSettingsPage = () => {
   const toggleTheme = () => {
     const newTheme = themeSetting === 'light' ? 'dark' : 'light';
     setThemeSetting(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    
+    // Apply theme globally to entire SaaS
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    
+    if (newTheme === 'dark') {
+      htmlElement.classList.add('dark');
+      bodyElement.classList.add('dark');
+      htmlElement.style.colorScheme = 'dark';
+    } else {
+      htmlElement.classList.remove('dark');
+      bodyElement.classList.remove('dark');
+      htmlElement.style.colorScheme = 'light';
+    }
+    
     localStorage.setItem('theme', newTheme);
   };
   
