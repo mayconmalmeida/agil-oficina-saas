@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/supabaseTypes';
 import Loading from '@/components/ui/loading';
+import OrdemServicoViewModal from './OrdemServicoViewModal';
+import OrdemServicoEditModal from './OrdemServicoEditModal';
 
 interface OrdemServico {
   id: string;
@@ -29,6 +31,9 @@ interface OrdemServicoListProps {
 const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrdem, setSelectedOrdem] = useState<OrdemServico | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchOrdens = async () => {
@@ -86,6 +91,45 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
     fetchOrdens();
   }, []);
 
+  const handleView = (ordem: OrdemServico) => {
+    setSelectedOrdem(ordem);
+    setViewModalOpen(true);
+  };
+
+  const handleEdit = (ordem: OrdemServico) => {
+    setSelectedOrdem(ordem);
+    setEditModalOpen(true);
+  };
+
+  const handleDelete = async (ordemId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('ordens_servico')
+        .delete()
+        .eq('id', ordemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Ordem de serviço excluída",
+        description: "A ordem de serviço foi excluída com sucesso.",
+      });
+
+      fetchOrdens();
+    } catch (error: any) {
+      console.error('Erro ao excluir ordem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir ordem de serviço",
+        description: error.message,
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aberta': return 'bg-blue-100 text-blue-800';
@@ -121,67 +165,90 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
   }
 
   return (
-    <div className="grid gap-4">
-      {filteredOrdens.map((ordem) => (
-        <Card key={ordem.id}>
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle className="text-lg">
-                  OS #{ordem.id.slice(0, 8)}
-                </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
-                  Cliente: {ordem.cliente_nome || 'N/A'}
-                </p>
-              </div>
-              <Badge className={getStatusColor(ordem.status)}>
-                {ordem.status}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-gray-600">Data de Início:</p>
-                <p className="font-medium">
-                  {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Valor Total:</p>
-                <p className="font-medium text-green-600">
-                  {formatCurrency(ordem.valor_total)}
-                </p>
-              </div>
-              {ordem.orcamento_descricao && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-gray-600">Orçamento Vinculado:</p>
-                  <p className="text-sm">{ordem.orcamento_descricao}</p>
+    <>
+      <div className="grid gap-4">
+        {filteredOrdens.map((ordem) => (
+          <Card key={ordem.id}>
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">
+                    OS #{ordem.id.slice(0, 8)}
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Cliente: {ordem.cliente_nome || 'N/A'}
+                  </p>
                 </div>
-              )}
-              {ordem.observacoes && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-gray-600">Observações:</p>
-                  <p className="text-sm">{ordem.observacoes}</p>
+                <Badge className={getStatusColor(ordem.status)}>
+                  {ordem.status}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-gray-600">Data de Início:</p>
+                  <p className="font-medium">
+                    {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}
+                  </p>
                 </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 mr-1" /> Visualizar
-              </Button>
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-1" /> Editar
-              </Button>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-1" /> Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+                <div>
+                  <p className="text-sm text-gray-600">Valor Total:</p>
+                  <p className="font-medium text-green-600">
+                    {formatCurrency(ordem.valor_total)}
+                  </p>
+                </div>
+                {ordem.orcamento_descricao && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600">Orçamento Vinculado:</p>
+                    <p className="text-sm">{ordem.orcamento_descricao}</p>
+                  </div>
+                )}
+                {ordem.observacoes && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600">Observações:</p>
+                    <p className="text-sm">{ordem.observacoes}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" size="sm" onClick={() => handleView(ordem)}>
+                  <Eye className="h-4 w-4 mr-1" /> Visualizar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleEdit(ordem)}>
+                  <Edit className="h-4 w-4 mr-1" /> Editar
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(ordem.id)}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <OrdemServicoViewModal
+        ordem={selectedOrdem}
+        isOpen={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setSelectedOrdem(null);
+        }}
+      />
+
+      <OrdemServicoEditModal
+        ordem={selectedOrdem}
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedOrdem(null);
+        }}
+        onSuccess={() => {
+          fetchOrdens();
+        }}
+      />
+    </>
   );
 };
 
