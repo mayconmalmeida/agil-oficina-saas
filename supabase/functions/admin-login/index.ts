@@ -34,10 +34,10 @@ serve(async (req) => {
 
     console.log('🔐 Tentativa de login admin para:', email)
 
-    // Buscar admin na tabela admins
+    // Buscar admin na tabela admins - usando 'password' ao invés de 'password_hash'
     const { data: admin, error: adminError } = await supabaseClient
       .from('admins')
-      .select('id, email, password_hash, is_superadmin')
+      .select('id, email, password, is_superadmin')
       .eq('email', email)
       .maybeSingle()
 
@@ -70,14 +70,14 @@ serve(async (req) => {
     
     try {
       // Verificar se é um hash bcrypt válido
-      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password_hash)
+      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password)
       
       if (isBcryptHash) {
-        passwordValid = await bcrypt.compare(password, admin.password_hash)
+        passwordValid = await bcrypt.compare(password, admin.password)
         console.log('🔒 Verificação bcrypt concluída:', passwordValid)
       } else {
         // Fallback para senhas em texto simples (temporário para migração)
-        passwordValid = password === admin.password_hash
+        passwordValid = password === admin.password
         console.log('⚠️ Usando verificação de texto simples (deve ser migrado para bcrypt)')
       }
     } catch (bcryptError) {
