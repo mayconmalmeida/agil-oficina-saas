@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Crown, Calendar, AlertTriangle } from 'lucide-react';
+import { CreditCard, Check, Crown, Calendar, AlertTriangle, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
 
 interface Subscription {
   id: string;
@@ -16,10 +17,24 @@ interface Subscription {
   trial_ends_at?: string;
 }
 
+interface PlanConfig {
+  id: string;
+  plan_type: string;
+  billing_cycle: string;
+  name: string;
+  price: number;
+  currency: string;
+  features: string[];
+  is_active: boolean;
+  display_order: number;
+  affiliate_link?: string;
+}
+
 const AssinaturaPage: React.FC = () => {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { plans, loading: plansLoading } = usePlanConfigurations();
 
   useEffect(() => {
     loadSubscription();
@@ -86,7 +101,32 @@ const AssinaturaPage: React.FC = () => {
     return diff;
   };
 
-  if (loading) {
+  const formatPrice = (price: number, currency: string = 'BRL') => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency
+    }).format(price);
+  };
+
+  const handlePlanClick = (plan: PlanConfig) => {
+    if (plan.affiliate_link) {
+      window.open(plan.affiliate_link, '_blank');
+    } else {
+      toast({
+        title: "Em breve",
+        description: "Sistema de pagamento em desenvolvimento"
+      });
+    }
+  };
+
+  const getPlansGroupedByType = () => {
+    const essencialPlans = plans.filter(p => p.plan_type === 'essencial');
+    const premiumPlans = plans.filter(p => p.plan_type === 'premium');
+    
+    return { essencialPlans, premiumPlans };
+  };
+
+  if (loading || plansLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
@@ -99,6 +139,7 @@ const AssinaturaPage: React.FC = () => {
 
   const daysRemaining = getDaysRemaining(subscription?.ends_at || subscription?.trial_ends_at);
   const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7;
+  const { essencialPlans, premiumPlans } = getPlansGroupedByType();
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -182,90 +223,121 @@ const AssinaturaPage: React.FC = () => {
               <p className="text-gray-600 mb-4">
                 Você não possui uma assinatura ativa no momento.
               </p>
-              <Button>
-                <Crown className="h-4 w-4 mr-2" />
-                Escolher Plano
-              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Planos Disponíveis */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold">Planos Disponíveis</h2>
+        
+        {/* Planos Essencial */}
+        {essencialPlans.length > 0 && (
+          <div>
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Check className="h-5 w-5 text-green-600 mr-2" />
               Plano Essencial
-            </CardTitle>
-            <CardDescription>
-              Recursos básicos para pequenas oficinas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Cadastro de clientes
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Criação de orçamentos
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Controle de serviços
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Agendamentos básicos
-              </p>
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {essencialPlans.map((plan) => (
+                <Card key={plan.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{plan.name}</span>
+                      <Badge variant="outline">{plan.billing_cycle}</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      {formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      {plan.features.map((feature, index) => (
+                        <p key={index} className="flex items-center text-sm">
+                          <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                          {feature}
+                        </p>
+                      ))}
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => handlePlanClick(plan)}
+                    >
+                      {plan.affiliate_link ? (
+                        <>
+                          Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
+                        </>
+                      ) : (
+                        'Em Breve'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <Button variant="outline" className="w-full">
-              R$ 29,90/mês
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
-        <Card className="border-2 border-blue-500">
-          <CardHeader>
-            <CardTitle className="flex items-center">
+        {/* Planos Premium */}
+        {premiumPlans.length > 0 && (
+          <div>
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
               <Crown className="h-5 w-5 text-yellow-500 mr-2" />
               Plano Premium
-            </CardTitle>
-            <CardDescription>
-              Recursos avançados para oficinas completas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 mb-4">
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Todos os recursos do Essencial
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                IA Diagnóstico avançado
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Relatórios detalhados
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Controle de estoque
-              </p>
-              <p className="flex items-center">
-                <Check className="h-4 w-4 text-green-600 mr-2" />
-                Campanhas de marketing
-              </p>
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {premiumPlans.map((plan) => (
+                <Card key={plan.id} className="border-2 border-blue-500 hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex items-center">
+                        <Crown className="h-5 w-5 text-yellow-500 mr-2" />
+                        {plan.name}
+                      </span>
+                      <Badge variant="outline">{plan.billing_cycle}</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      {formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 mb-4">
+                      {plan.features.map((feature, index) => (
+                        <p key={index} className="flex items-center text-sm">
+                          <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
+                          {feature}
+                        </p>
+                      ))}
+                    </div>
+                    <Button 
+                      className="w-full"
+                      onClick={() => handlePlanClick(plan)}
+                    >
+                      {plan.affiliate_link ? (
+                        <>
+                          Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
+                        </>
+                      ) : (
+                        'Em Breve'
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <Button className="w-full">
-              R$ 59,90/mês
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+
+        {/* Fallback quando não há planos */}
+        {essencialPlans.length === 0 && premiumPlans.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-gray-600">Nenhum plano disponível no momento.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Histórico de Pagamentos */}

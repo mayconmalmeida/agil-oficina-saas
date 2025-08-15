@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Package, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import ProductForm from '@/components/products/ProductForm';
+import ImportXmlModal from '@/components/products/ImportXmlModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +48,7 @@ const ProductsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
@@ -60,7 +62,7 @@ const ProductsPage: React.FC = () => {
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('tipo', 'produto') // Apenas produtos
+        .eq('tipo', 'produto')
         .eq('is_active', true)
         .order('nome', { ascending: true });
 
@@ -109,6 +111,11 @@ const ProductsPage: React.FC = () => {
     fetchProducts();
   };
 
+  const handleImportSuccess = () => {
+    setShowImportModal(false);
+    fetchProducts();
+  };
+
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,10 +149,16 @@ const ProductsPage: React.FC = () => {
           </h1>
           <p className="text-gray-600">Gerencie o estoque de produtos da sua oficina</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Produto
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImportModal(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar XML
+          </Button>
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Produto
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -167,15 +180,24 @@ const ProductsPage: React.FC = () => {
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-2">Nenhum produto encontrado.</p>
               <p className="text-gray-400 text-sm mb-4">
-                Comece adicionando produtos ao seu estoque
+                Comece adicionando produtos ao seu estoque ou importe via XML
               </p>
-              <Button 
-                onClick={() => setShowForm(true)}
-                variant="outline"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar primeiro produto
-              </Button>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  onClick={() => setShowForm(true)}
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar produto
+                </Button>
+                <Button 
+                  onClick={() => setShowImportModal(true)}
+                  variant="outline"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar XML
+                </Button>
+              </div>
             </div>
           ) : (
             <Table>
@@ -264,6 +286,12 @@ const ProductsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <ImportXmlModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 };
