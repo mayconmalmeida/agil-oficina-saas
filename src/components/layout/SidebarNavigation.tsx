@@ -17,7 +17,8 @@ import {
   CreditCard,
   ClipboardList,
   Truck,
-  Layers
+  Layers,
+  Headphones
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ const navigationItems = [
   { name: 'Empresa', href: '/dashboard/empresa', icon: Building2 },
   { name: 'IA Diagnóstico', href: '/dashboard/ia-diagnostico', icon: Brain },
   { name: 'IA Suporte', href: '/dashboard/ia-suporte-inteligente', icon: MessageCircle },
+  { name: 'Suporte', href: '/dashboard/suporte', icon: Headphones },
   { name: 'Relatórios', href: '/dashboard/relatorios', icon: BarChart3 },
   { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
 ];

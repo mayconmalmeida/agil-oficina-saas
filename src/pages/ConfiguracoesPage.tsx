@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Building, User, Bell, Palette } from 'lucide-react';
+import { Settings, Building, User, Bell, Palette, Phone } from 'lucide-react';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import LogoSettingsSection from '@/components/settings/LogoSettingsSection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
 import NotificationsSettings from '@/components/settings/NotificationsSettings';
+import SupportSettings from '@/components/settings/support/SupportSettings';
 import { useSettingsPage } from '@/hooks/useSettingsPage';
 
 const ConfiguracoesPage: React.FC = () => {
@@ -45,7 +46,7 @@ const ConfiguracoesPage: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-1">
+            <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-6 gap-1">
               <TabsTrigger value="perfil" className="flex items-center">
                 <Building className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Oficina</span>
@@ -65,6 +66,10 @@ const ConfiguracoesPage: React.FC = () => {
               <TabsTrigger value="notificacoes" className="flex items-center">
                 <Bell className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Notificações</span>
+              </TabsTrigger>
+              <TabsTrigger value="suporte" className="flex items-center">
+                <Phone className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Suporte</span>
               </TabsTrigger>
             </TabsList>
             
@@ -101,6 +106,13 @@ const ConfiguracoesPage: React.FC = () => {
             
             <TabsContent value="notificacoes">
               <NotificationsSettings />
+            </TabsContent>
+
+            <TabsContent value="suporte">
+              <SupportSettings 
+                userId={userId}
+                initialValues={{ whatsapp_suporte: userProfile?.whatsapp_suporte }}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>

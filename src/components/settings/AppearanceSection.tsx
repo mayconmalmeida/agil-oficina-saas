@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 
 interface AppearanceSectionProps {
@@ -11,6 +11,32 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   themeSetting, 
   onToggleTheme 
 }) => {
+  const [isDarkMode, setIsDarkMode] = useState(themeSetting === 'dark');
+
+  useEffect(() => {
+    setIsDarkMode(themeSetting === 'dark');
+    
+    // Apply dark mode to document
+    if (themeSetting === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [themeSetting]);
+
+  const handleToggle = () => {
+    onToggleTheme();
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    
+    // Apply dark mode immediately
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -24,8 +50,8 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
           <span className="text-sm text-gray-500">Habilite o modo escuro para reduzir o cansaço visual à noite</span>
         </div>
         <Switch
-          checked={themeSetting === 'dark'}
-          onCheckedChange={onToggleTheme}
+          checked={isDarkMode}
+          onCheckedChange={handleToggle}
         />
       </div>
     </div>

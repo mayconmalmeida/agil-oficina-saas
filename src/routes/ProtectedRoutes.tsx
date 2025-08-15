@@ -14,6 +14,7 @@ import BudgetDetailsPage from '@/pages/BudgetDetailsPage';
 import ServicesPage from '@/pages/ServicesPage';
 import ProductsPage from '@/pages/ProductsPage';
 import VehiclesPage from '@/pages/VehiclesPage';
+import CategoriesPage from '@/pages/CategoriesPage';
 import AgendamentosPage from '@/pages/AgendamentosPage';
 import NewSchedulePage from '@/pages/NewSchedulePage';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
@@ -26,6 +27,7 @@ import OrdemServicoPage from '@/pages/OrdemServicoPage';
 import SettingsPage from '@/pages/SettingsPage';
 import SuportePage from '@/pages/SuportePage';
 import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
+import CompanyPage from '@/pages/CompanyPage';
 
 export const protectedRoutes = [
   <Route key="dashboard-layout" path="/dashboard/*" element={
@@ -45,10 +47,12 @@ export const protectedRoutes = [
     <Route path="servicos" element={<ServicesPage />} />
     <Route path="produtos" element={<ProductsPage />} />
     <Route path="veiculos" element={<VehiclesPage />} />
+    <Route path="categorias" element={<CategoriesPage />} />
     <Route path="agendamentos" element={<AgendamentosPage />} />
     <Route path="agendamentos/novo" element={<NewSchedulePage />} />
     <Route path="fornecedores" element={<FornecedoresPage />} />
     <Route path="ordem-servico" element={<OrdemServicoPage />} />
+    <Route path="empresa" element={<CompanyPage />} />
     <Route path="ia-diagnostico" element={<IADiagnosticoPage />} />
     <Route path="ia-suporte-inteligente" element={<IASuportePage />} />
     <Route path="suporte" element={<SuportePage />} />

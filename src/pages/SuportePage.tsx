@@ -3,14 +3,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Headphones, MessageSquare, Phone, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SuporteIA from '@/components/ai/SuporteIA';
+import SupportSettings from '@/components/settings/support/SupportSettings';
 
 const SuportePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <Headphones className="h-6 w-6 text-pink-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Suporte Prioritário</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Suporte</h1>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -36,10 +36,10 @@ const SuportePage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Suporte Inteligente</CardTitle>
+            <CardTitle>Configurações de Suporte</CardTitle>
           </CardHeader>
           <CardContent>
-            <SuporteIA />
+            <SupportSettings />
           </CardContent>
         </Card>
       </div>
@@ -52,9 +52,9 @@ const SuportePage: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="text-center p-4 border rounded-lg">
               <MessageSquare className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <h3 className="font-medium mb-1">1. Suporte Inteligente</h3>
+              <h3 className="font-medium mb-1">1. Contato Rápido</h3>
               <p className="text-sm text-gray-600">
-                Use nosso assistente IA para respostas rápidas sobre o sistema
+                Use nossos canais de suporte para tirar dúvidas rapidamente
               </p>
             </div>
             <div className="text-center p-4 border rounded-lg">
