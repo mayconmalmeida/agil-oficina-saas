@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Check, Crown, Calendar, AlertTriangle, ExternalLink } from 'lucide-react';
+import { CreditCard, Check, Crown, Calendar, AlertTriangle, ExternalLink, Copy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
@@ -15,19 +15,6 @@ interface Subscription {
   starts_at: string;
   ends_at?: string;
   trial_ends_at?: string;
-}
-
-interface PlanConfig {
-  id: string;
-  plan_type: string;
-  billing_cycle: string;
-  name: string;
-  price: number;
-  currency: string;
-  features: string[];
-  is_active: boolean;
-  display_order: number;
-  affiliate_link?: string;
 }
 
 const AssinaturaPage: React.FC = () => {
@@ -86,6 +73,13 @@ const AssinaturaPage: React.FC = () => {
     return planType;
   };
 
+  const formatPrice = (price: number, currency: string = 'BRL') => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency
+    }).format(price);
+  };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('pt-BR');
@@ -101,14 +95,7 @@ const AssinaturaPage: React.FC = () => {
     return diff;
   };
 
-  const formatPrice = (price: number, currency: string = 'BRL') => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: currency
-    }).format(price);
-  };
-
-  const handlePlanClick = (plan: PlanConfig) => {
+  const handlePlanClick = (plan: any) => {
     if (plan.affiliate_link) {
       window.open(plan.affiliate_link, '_blank');
     } else {
@@ -119,11 +106,24 @@ const AssinaturaPage: React.FC = () => {
     }
   };
 
+  const copyAffiliateLink = (link: string) => {
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Link copiado!",
+      description: "Link de afiliado copiado para a área de transferência"
+    });
+  };
+
   const getPlansGroupedByType = () => {
     const essencialPlans = plans.filter(p => p.plan_type === 'essencial');
     const premiumPlans = plans.filter(p => p.plan_type === 'premium');
     
     return { essencialPlans, premiumPlans };
+  };
+
+  const isCurrentPlan = (planType: string, billingCycle: string) => {
+    if (!subscription) return false;
+    return subscription.plan_type === `${planType}_${billingCycle}`;
   };
 
   if (loading || plansLoading) {
@@ -145,7 +145,10 @@ const AssinaturaPage: React.FC = () => {
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center space-x-2">
         <CreditCard className="h-8 w-8 text-blue-600" />
-        <h1 className="text-3xl font-bold">Assinatura</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Assinatura</h1>
+          <p className="text-gray-600">Gerencie sua assinatura e explore nossos planos</p>
+        </div>
       </div>
       
       {/* Status da Assinatura Atual */}
@@ -245,10 +248,18 @@ const AssinaturaPage: React.FC = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span>{plan.name}</span>
-                      <Badge variant="outline">{plan.billing_cycle}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{plan.billing_cycle}</Badge>
+                        {isCurrentPlan('essencial', plan.billing_cycle) && (
+                          <Badge className="bg-green-100 text-green-800">Atual</Badge>
+                        )}
+                      </div>
                     </CardTitle>
                     <CardDescription>
-                      {formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}
+                      <div className="flex items-center justify-between">
+                        <span>{formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}</span>
+                        <span className="text-xs text-gray-500">essencial - {plan.billing_cycle}</span>
+                      </div>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -260,12 +271,33 @@ const AssinaturaPage: React.FC = () => {
                         </p>
                       ))}
                     </div>
+                    
+                    {plan.affiliate_link && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Link de Afiliado:</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyAffiliateLink(plan.affiliate_link!)}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copiar
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 truncate">{plan.affiliate_link}</p>
+                      </div>
+                    )}
+                    
                     <Button 
                       className="w-full" 
-                      variant="outline"
+                      variant={isCurrentPlan('essencial', plan.billing_cycle) ? "secondary" : "outline"}
                       onClick={() => handlePlanClick(plan)}
+                      disabled={isCurrentPlan('essencial', plan.billing_cycle)}
                     >
-                      {plan.affiliate_link ? (
+                      {isCurrentPlan('essencial', plan.billing_cycle) ? (
+                        'Plano Atual'
+                      ) : plan.affiliate_link ? (
                         <>
                           Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
                         </>
@@ -296,10 +328,18 @@ const AssinaturaPage: React.FC = () => {
                         <Crown className="h-5 w-5 text-yellow-500 mr-2" />
                         {plan.name}
                       </span>
-                      <Badge variant="outline">{plan.billing_cycle}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{plan.billing_cycle}</Badge>
+                        {isCurrentPlan('premium', plan.billing_cycle) && (
+                          <Badge className="bg-green-100 text-green-800">Atual</Badge>
+                        )}
+                      </div>
                     </CardTitle>
                     <CardDescription>
-                      {formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}
+                      <div className="flex items-center justify-between">
+                        <span>{formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}</span>
+                        <span className="text-xs text-gray-500">premium - {plan.billing_cycle}</span>
+                      </div>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -311,11 +351,33 @@ const AssinaturaPage: React.FC = () => {
                         </p>
                       ))}
                     </div>
+                    
+                    {plan.affiliate_link && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Link de Afiliado:</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyAffiliateLink(plan.affiliate_link!)}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copiar
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 truncate">{plan.affiliate_link}</p>
+                      </div>
+                    )}
+                    
                     <Button 
                       className="w-full"
+                      variant={isCurrentPlan('premium', plan.billing_cycle) ? "secondary" : "default"}
                       onClick={() => handlePlanClick(plan)}
+                      disabled={isCurrentPlan('premium', plan.billing_cycle)}
                     >
-                      {plan.affiliate_link ? (
+                      {isCurrentPlan('premium', plan.billing_cycle) ? (
+                        'Plano Atual'
+                      ) : plan.affiliate_link ? (
                         <>
                           Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
                         </>
