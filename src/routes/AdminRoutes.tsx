@@ -9,6 +9,7 @@ import AdminUsers from '@/pages/AdminUsers';
 import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import AdminSettingsPage from '@/pages/AdminSettingsPage';
+import AdminOficinas from '@/pages/AdminOficinas';
 
 export const AdminRoutes = () => {
   return [
@@ -28,6 +29,7 @@ export const AdminRoutes = () => {
     >
       <Route index element={<OptimizedAdminDashboard />} />
       <Route path="users" element={<AdminUsers />} />
+      <Route path="oficinas" element={<AdminOficinas />} />
       <Route path="subscriptions" element={<AdminSubscriptions />} />
       <Route path="plans" element={<AdminPlansPage />} />
       <Route path="settings" element={<AdminSettingsPage />} />
