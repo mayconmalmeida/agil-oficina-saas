@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const fornecedorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -32,6 +32,7 @@ interface FornecedorFormProps {
 
 const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onCancel }) => {
   const { toast } = useToast();
+  const { oficinaId } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<FornecedorFormValues>({
@@ -49,6 +50,15 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
   });
 
   const onSubmit = async (values: FornecedorFormValues) => {
+    if (!oficinaId) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Oficina não encontrada. Complete seu perfil primeiro."
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -76,6 +86,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
             cidade: values.cidade || null,
             estado: values.estado || null,
             cep: values.cep || null,
+            oficina_id: oficinaId,
           })
           .eq('id', fornecedor.id);
 
@@ -91,6 +102,7 @@ const FornecedorForm: React.FC<FornecedorFormProps> = ({ fornecedor, onSave, onC
           .from('fornecedores')
           .insert({
             user_id: session.user.id,
+            oficina_id: oficinaId,
             nome: values.nome,
             cnpj: values.cnpj || null,
             email: values.email || null,

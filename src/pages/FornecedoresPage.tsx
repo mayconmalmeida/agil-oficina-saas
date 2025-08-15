@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Search, Building2, Phone, Mail, MapPin, Plus, Edit, Trash2 } from 'luci
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Fornecedor {
   id: string;
@@ -20,6 +20,7 @@ interface Fornecedor {
   cidade?: string;
   estado?: string;
   cep?: string;
+  oficina_id?: string;
   created_at: string;
 }
 
@@ -41,10 +42,13 @@ const FornecedoresPage: React.FC = () => {
     cep: ''
   });
   const { toast } = useToast();
+  const { oficinaId } = useAuth();
 
   useEffect(() => {
-    loadFornecedores();
-  }, []);
+    if (oficinaId) {
+      loadFornecedores();
+    }
+  }, [oficinaId]);
 
   useEffect(() => {
     const filtered = fornecedores.filter(fornecedor =>
@@ -56,12 +60,19 @@ const FornecedoresPage: React.FC = () => {
   }, [searchTerm, fornecedores]);
 
   const loadFornecedores = async () => {
+    if (!oficinaId) {
+      console.log("❌ Oficina ID não encontrado");
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log("🔍 Carregando fornecedores...");
+      console.log("🔍 Carregando fornecedores para oficina:", oficinaId);
       
       const { data, error } = await supabase
         .from('fornecedores')
         .select('*')
+        .eq('oficina_id', oficinaId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -86,12 +97,24 @@ const FornecedoresPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!oficinaId) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Oficina não encontrada. Complete seu perfil primeiro."
+      });
+      return;
+    }
+    
     try {
       if (editingFornecedor) {
         // Atualizar fornecedor existente
         const { error } = await supabase
           .from('fornecedores')
-          .update(formData)
+          .update({
+            ...formData,
+            oficina_id: oficinaId
+          })
           .eq('id', editingFornecedor.id);
 
         if (error) throw error;
@@ -102,11 +125,14 @@ const FornecedoresPage: React.FC = () => {
         });
       } else {
         // Criar novo fornecedor
+        const { data: { session } } = await supabase.auth.getSession();
+        
         const { error } = await supabase
           .from('fornecedores')
           .insert([{
             ...formData,
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            user_id: session?.user?.id,
+            oficina_id: oficinaId
           }]);
 
         if (error) throw error;
@@ -195,6 +221,17 @@ const FornecedoresPage: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-2 text-gray-600">Carregando fornecedores...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!oficinaId) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Oficina não encontrada. Por favor, complete seu perfil.</p>
         </div>
       </div>
     );
