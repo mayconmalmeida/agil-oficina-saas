@@ -13,10 +13,7 @@ export type PremiumFeature =
   | 'priority_support';
 
 /**
- * Hook to manage access to premium features based on the user's plan type
- * @param planType User's current plan type ('essencial' or 'premium')
- * @param daysRemaining Days remaining in trial period (0 if trial ended)
- * @returns Object with methods to check access to premium features
+ * Hook simplificado para premium features (agora só temos Premium)
  */
 export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
   const { toast } = useToast();
@@ -24,49 +21,23 @@ export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
   const [premiumFeaturesEnabled, setPremiumFeaturesEnabled] = useState<boolean>(false);
   
   useEffect(() => {
-    // Durante trial, usuário tem acesso premium, ou quando premium plan está ativo
+    // Usuário tem acesso premium ou está em trial ativo
     const isPremium = planType === 'premium';
     const isTrialActive = daysRemaining > 0;
     
-    // MUDANÇA: Durante o trial de 7 dias, usuário tem acesso PREMIUM
-    setPremiumFeaturesEnabled(isPremium || (isTrialActive && isPremiumTrial));
+    setPremiumFeaturesEnabled(isPremium || isTrialActive);
   }, [planType, daysRemaining, isPremiumTrial]);
 
-  // Map premium features to their respective plans
-  const featurePlanMap: Record<PremiumFeature, string> = {
-    reports: 'premium',
-    advanced_scheduling: 'premium',
-    bulk_import: 'premium',
-    marketing_tools: 'premium',
-    integrations: 'premium',
-    export_xml: 'premium',
-    priority_support: 'premium'
-  };
-
   /**
-   * Check if user has access to a specific premium feature
-   * @param feature Premium feature to check access for
-   * @returns True if user has access to the feature
+   * Verificar acesso a feature premium
    */
   const checkAccess = (feature: PremiumFeature): boolean => {
-    // Se feature é disponível em qualquer plano, permitir acesso
-    if (featurePlanMap[feature] === 'essencial') {
-      return true;
-    }
-    
-    // Se usuário tem plano premium OU está em trial premium, permitir acesso
-    if (planType === 'premium' || (daysRemaining > 0 && isPremiumTrial)) {
-      return true;
-    }
-    
-    // Feature requer premium e usuário não tem acesso
-    return false;
+    // Se usuário tem plano premium OU está em trial, permitir acesso
+    return planType === 'premium' || daysRemaining > 0;
   };
   
   /**
-   * Handle access to premium feature with toast notification if not accessible
-   * @param feature Premium feature to check access for
-   * @returns Boolean indicating whether feature is accessible
+   * Lidar com acesso a feature premium
    */
   const handlePremiumFeature = (feature: PremiumFeature) => {
     if (checkAccess(feature)) {
@@ -82,32 +53,26 @@ export const usePremiumFeatures = (planType: string, daysRemaining: number) => {
   };
 
   /**
-   * Get detailed information about premium features availability
-   * @returns Object with information about feature availability based on user's plan
+   * Informações sobre disponibilidade de features
    */
   const getFeatureAvailability = () => {
+    const hasAccess = checkAccess('reports'); // Usar qualquer feature como referência
+    
     return {
-      essencialFeatures: {
-        orcamentos: true,
-        clientes: true,
-        produtos: true,
-        estoque: true,
-        veiculos: true,
-        suporteEmail: true,
-        atualizacoes: true
-      },
       premiumFeatures: {
-        relatorios: checkAccess('reports'),
-        exportacaoXML: checkAccess('export_xml'),
-        marketing: checkAccess('marketing_tools'),
-        agendamentos: checkAccess('advanced_scheduling'),
-        suportePrioritario: checkAccess('priority_support')
+        relatorios: hasAccess,
+        exportacaoXML: hasAccess,
+        marketing: hasAccess,
+        agendamentos: hasAccess,
+        suportePrioritario: hasAccess,
+        diagnosticoIA: hasAccess,
+        integracoes: hasAccess
       }
     };
   };
   
   return {
-    isPremium: planType === 'premium' || (daysRemaining > 0 && isPremiumTrial),
+    isPremium: planType === 'premium' || daysRemaining > 0,
     isTrialActive: daysRemaining > 0,
     premiumFeaturesEnabled,
     checkAccess,

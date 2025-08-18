@@ -13,7 +13,7 @@ const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({ onLogout }) => 
     <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+          <Crown className="h-12 w-12 text-blue-500 mx-auto mb-4" />
           <CardTitle className="text-xl text-gray-900">
             Recurso Premium
           </CardTitle>
@@ -24,17 +24,17 @@ const PremiumUpgradeCard: React.FC<PremiumUpgradeCardProps> = ({ onLogout }) => 
           </p>
           <div className="space-y-2">
             <Button 
-              className="w-full bg-amber-600 hover:bg-amber-700"
+              className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={() => window.open('https://pay.cakto.com.br/premium-mensal', '_blank')}
             >
-              Upgrade para Premium Mensal - R$ 179,90/mês
+              Upgrade para Premium Mensal - R$ 197,00/mês
             </Button>
             <Button 
               variant="outline"
               className="w-full"
               onClick={() => window.open('https://pay.cakto.com.br/premium-anual', '_blank')}
             >
-              Premium Anual - R$ 1.799,00/ano (2 meses grátis)
+              Premium Anual - R$ 1.970,00/ano (2 meses grátis)
             </Button>
           </div>
           <Button 

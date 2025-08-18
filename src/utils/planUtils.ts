@@ -1,51 +1,56 @@
 
 export const getPlanDetails = (planType: string) => {
   const planMap: { [key: string]: any } = {
-    'essencial_mensal': {
-      name: 'Essencial Mensal',
-      type: 'essencial',
-      billing: 'mensal',
-      price: 'R$ 49,90',
-      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
-    },
-    'essencial_anual': {
-      name: 'Essencial Anual',
-      type: 'essencial',
-      billing: 'anual',
-      price: 'R$ 499,00',
-      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
-    },
     'premium_mensal': {
       name: 'Premium Mensal',
       type: 'premium',
       billing: 'mensal',
-      price: 'R$ 99,90',
-      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
+      price: 'R$ 197,00',
+      features: [
+        'Gestão completa de clientes',
+        'Orçamentos digitais profissionais', 
+        'IA para diagnóstico avançado',
+        'Agendamentos inteligentes',
+        'Controle de estoque completo',
+        'Relatórios avançados',
+        'Marketing automático',
+        'Suporte prioritário'
+      ]
     },
     'premium_anual': {
       name: 'Premium Anual',
       type: 'premium',
       billing: 'anual',
-      price: 'R$ 999,00',
-      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
-    },
-    'free_trial_essencial': {
-      name: 'Trial Essencial',
-      type: 'essencial',
-      billing: 'trial',
-      price: 'Grátis',
-      features: ['Gestão de clientes', 'Agendamentos', 'Orçamentos básicos']
+      price: 'R$ 1.970,00',
+      features: [
+        'Tudo do Premium Mensal',
+        '2 meses grátis no plano anual',
+        'Desconto especial de 17%',
+        'Suporte prioritário garantido',
+        'Treinamento personalizado',
+        'Migração gratuita de dados'
+      ]
     },
     'free_trial_premium': {
       name: 'Trial Premium',
       type: 'premium',
       billing: 'trial',
       price: 'Grátis',
-      features: ['Tudo do Essencial', 'Gestão de estoque', 'Relatórios avançados', 'Marketing']
+      features: [
+        'Acesso completo por 7 dias',
+        'Todos os recursos Premium',
+        'Suporte durante o trial'
+      ]
     }
   };
 
-  return planMap[planType] || null;
+  return planMap[planType] || {
+    name: 'Premium',
+    type: 'premium',
+    billing: 'mensal',
+    price: 'R$ 197,00',
+    features: ['Acesso completo aos recursos Premium']
+  };
 };
 
 export const calculateDaysRemaining = (endDate: string): number => {

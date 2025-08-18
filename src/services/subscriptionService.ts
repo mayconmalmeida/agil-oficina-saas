@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { SubscriptionRPCResponse, UserSubscription } from '@/types/subscription';
 
-export const startFreeTrial = async (planType: 'essencial' | 'premium') => {
+export const startFreeTrial = async (planType: 'premium') => {
   try {
     const { data, error } = await supabase.rpc('start_free_trial', {
       selected_plan_type: planType

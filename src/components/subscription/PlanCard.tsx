@@ -9,7 +9,6 @@ interface PlanCardProps {
   price: string;
   period: string;
   features: string[];
-  isPremium?: boolean;
   monthlyUrl: string;
   annualUrl: string;
   annualPrice: string;
@@ -21,22 +20,15 @@ const PlanCard: React.FC<PlanCardProps> = ({
   price,
   period,
   features,
-  isPremium = false,
   monthlyUrl,
   annualUrl,
   annualPrice
 }) => {
-  const cardClass = isPremium 
-    ? "border border-amber-200 bg-amber-50 rounded-lg p-4 space-y-4 relative"
-    : "border rounded-lg p-4 space-y-4";
-
   return (
-    <div className={cardClass}>
-      {isPremium && (
-        <div className="absolute -top-3 right-4 bg-amber-600 text-white text-xs px-3 py-1 rounded-full">
-          RECOMENDADO
-        </div>
-      )}
+    <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-4 relative">
+      <div className="absolute -top-3 right-4 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
+        PREMIUM
+      </div>
       
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -53,21 +45,21 @@ const PlanCard: React.FC<PlanCardProps> = ({
           {features.map((feature, index) => (
             <li key={index} className="flex items-center">
               <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-              <span className={index === 0 && isPremium ? "font-medium" : ""}>{feature}</span>
+              <span>{feature}</span>
             </li>
           ))}
         </ul>
         
         <div className="space-y-2">
           <Button 
-            className={isPremium ? "w-full bg-amber-600 hover:bg-amber-700" : "w-full"}
+            className="w-full bg-blue-600 hover:bg-blue-700"
             onClick={() => window.open(monthlyUrl, '_blank')}
           >
             Assinar Mensal
           </Button>
           <Button 
             variant="outline"
-            className={isPremium ? "w-full border-amber-200 text-amber-700 hover:bg-amber-100" : "w-full"}
+            className="w-full border-blue-200 text-blue-700 hover:bg-blue-100"
             onClick={() => window.open(annualUrl, '_blank')}
           >
             {annualPrice}

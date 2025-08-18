@@ -27,12 +27,12 @@ const SubscriptionExpiredCard: React.FC<SubscriptionExpiredCardProps> = ({
           <div className="text-center">
             {hasSubscription ? (
               <p className="text-gray-600 mb-6">
-                Seu período de teste expirou. Para continuar usando o OficinaÁgil, 
-                escolha um dos nossos planos abaixo:
+                Seu período de teste expirou. Para continuar usando o OficinaGO, 
+                escolha um dos nossos planos Premium abaixo:
               </p>
             ) : (
               <p className="text-gray-600 mb-6">
-                Para acessar o sistema, você precisa de uma assinatura ativa. 
+                Para acessar o sistema, você precisa de uma assinatura Premium ativa. 
                 Escolha o plano ideal para sua oficina:
               </p>
             )}
@@ -40,45 +40,48 @@ const SubscriptionExpiredCard: React.FC<SubscriptionExpiredCardProps> = ({
 
           <div className="grid gap-6 md:grid-cols-2">
             <PlanCard
-              title="Plano Essencial"
-              description="Para oficinas de pequeno porte"
-              price="R$ 89,90"
+              title="Premium Mensal"
+              description="Gestão completa para sua oficina"
+              price="R$ 197,00"
               period="por mês"
               features={[
-                'Cadastro de clientes ilimitado',
-                'Gestão de orçamentos',
-                'Controle de serviços',
-                'Relatórios básicos',
-                'Suporte via e-mail'
+                'Gestão completa de clientes',
+                'Orçamentos digitais profissionais',
+                'IA para diagnóstico avançado',
+                'Agendamentos inteligentes',
+                'Controle de estoque completo',
+                'Relatórios avançados',
+                'Marketing automático',
+                'Suporte prioritário'
               ]}
-              monthlyUrl="https://pay.cakto.com.br/essencial-mensal"
-              annualUrl="https://pay.cakto.com.br/essencial-anual"
-              annualPrice="Anual - R$ 899,00 (2 meses grátis)"
+              monthlyUrl="https://pay.cakto.com.br/premium-mensal"
+              annualUrl="https://pay.cakto.com.br/premium-anual"
+              annualPrice="Anual - R$ 1.970,00 (2 meses grátis)"
             />
 
             <PlanCard
-              title="Plano Premium"
-              description="Para oficinas em crescimento"
-              price="R$ 179,90"
-              period="por mês"
+              title="Premium Anual"
+              description="Economia de 17% no plano anual"
+              price="R$ 1.970,00"
+              period="por ano"
               features={[
-                'Tudo do plano Essencial, mais:',
-                'Módulo de estoque integrado',
-                'Agendamento de serviços',
-                'Relatórios avançados',
-                'Suporte prioritário',
-                'Backup automático'
+                'Tudo do Premium Mensal',
+                '2 meses grátis no plano anual',
+                'Desconto especial de 17%',
+                'Suporte prioritário garantido',
+                'Treinamento personalizado',
+                'Migração gratuita de dados',
+                'Customizações exclusivas'
               ]}
-              isPremium
               monthlyUrl="https://pay.cakto.com.br/premium-mensal"
               annualUrl="https://pay.cakto.com.br/premium-anual"
-              annualPrice="Anual - R$ 1.799,00 (2 meses grátis)"
+              annualPrice="Mensal - R$ 197,00"
             />
           </div>
 
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-500">
-              Dúvidas? Entre em contato conosco pelo e-mail: suporte@oficinaagil.com
+              Dúvidas? Entre em contato conosco pelo e-mail: contatooficinago@gmail.com
             </p>
             
             <Button 

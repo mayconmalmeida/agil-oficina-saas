@@ -10,69 +10,47 @@ export default function Pricing() {
 
   const plans = [
     {
-      name: "Essencial",
-      monthlyPrice: "97",
-      yearlyPrice: "970",
-      period: billingCycle === 'monthly' ? "/mês" : "/ano",
-      description: "Perfeito para oficinas pequenas",
-      popular: false,
-      features: [
-        "Gestão de clientes",
-        "Orçamentos digitais",
-        "Controle de serviços",
-        "Relatórios básicos",
-        "Suporte por email",
-        "Backup automático"
-      ]
-    },
-    {
-      name: "Premium",
+      name: "Premium Mensal",
       monthlyPrice: "197",
       yearlyPrice: "1970",
       period: billingCycle === 'monthly' ? "/mês" : "/ano",
-      description: "Ideal para oficinas em crescimento",
-      popular: true,
+      description: "Gestão completa para sua oficina",
+      popular: false,
       features: [
-        "Tudo do plano Essencial",
-        "IA para diagnóstico",
+        "Gestão completa de clientes",
+        "Orçamentos digitais profissionais",
+        "IA para diagnóstico avançado",
         "Agendamentos inteligentes",
+        "Controle de estoque completo",
         "Relatórios avançados",
         "Marketing automático",
         "Suporte prioritário",
         "Integração contábil",
-        "App mobile"
+        "App mobile",
+        "Backup automático"
       ]
     },
     {
-      name: "Enterprise",
-      monthlyPrice: "Personalizado",
-      yearlyPrice: "Personalizado",
-      period: "",
-      description: "Para redes de oficinas",
-      popular: false,
+      name: "Premium Anual",
+      monthlyPrice: "197",
+      yearlyPrice: "1970",
+      period: billingCycle === 'yearly' ? "/ano" : "/mês",
+      description: "Economia de 17% no plano anual",
+      popular: true,
       features: [
-        "Tudo do plano Premium",
-        "Multi-filiais",
-        "API personalizada",
-        "Treinamento dedicado",
-        "Gerente de conta",
-        "SLA garantido",
-        "Customizações"
+        "Tudo do Premium Mensal",
+        "2 meses grátis no plano anual",
+        "Desconto especial de 17%",
+        "Suporte prioritário garantido",
+        "Treinamento personalizado",
+        "Migração gratuita de dados",
+        "Customizações exclusivas"
       ]
     }
   ];
 
   const getCurrentPrice = (plan: typeof plans[0]) => {
-    if (plan.name === "Enterprise") return plan.monthlyPrice;
     return billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
-  };
-
-  const getSavings = (monthlyPrice: string, yearlyPrice: string) => {
-    if (monthlyPrice === "Personalizado" || yearlyPrice === "Personalizado") return "";
-    const monthly = parseFloat(monthlyPrice) * 12;
-    const yearly = parseFloat(yearlyPrice);
-    const savings = Math.round(((monthly - yearly) / monthly) * 100);
-    return `Economize ${savings}%`;
   };
 
   return (
@@ -80,10 +58,10 @@ export default function Pricing() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 lg:mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            Planos que <span className="text-blue-600">Cabem no seu Bolso</span>
+            Plano <span className="text-blue-600">Premium</span> Completo
           </h2>
           <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Escolha o plano ideal para sua oficina. Comece grátis e evolua conforme seu negócio cresce.
+            Solução completa para gestão da sua oficina. Escolha entre mensal ou anual e economize.
           </p>
 
           {/* Toggle de Billing Cycle */}
@@ -116,7 +94,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
             <Card 
               key={index} 
@@ -130,7 +108,7 @@ export default function Pricing() {
                 <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center py-2">
                   <div className="flex items-center justify-center space-x-1">
                     <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm font-semibold">MAIS POPULAR</span>
+                    <span className="text-sm font-semibold">MAIS ECONÔMICO</span>
                     <Star className="h-4 w-4 fill-current" />
                   </div>
                 </div>
@@ -149,9 +127,9 @@ export default function Pricing() {
                   </span>
                   <span className="text-lg text-gray-600">{plan.period}</span>
                 </div>
-                {billingCycle === 'yearly' && plan.name !== "Enterprise" && (
+                {billingCycle === 'yearly' && (
                   <div className="text-sm text-green-600 font-medium mt-2">
-                    {getSavings(plan.monthlyPrice, plan.yearlyPrice)}
+                    Economize 17% no plano anual
                   </div>
                 )}
               </CardHeader>
@@ -167,27 +145,17 @@ export default function Pricing() {
                 </ul>
                 
                 <Button 
-                  className={`w-full py-3 text-base font-semibold transition-all duration-300 ${
-                    plan.popular
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
-                      : 'bg-gray-100 hover:bg-blue-600 text-gray-900 hover:text-white border border-gray-300 hover:border-blue-600'
-                  }`}
+                  className="w-full py-3 text-base font-semibold transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
                   size="lg"
                 >
-                  {plan.name === "Enterprise" ? (
-                    "Falar com Vendas"
-                  ) : (
-                    <Link to="/workshop-registration">
-                      Começar Teste Grátis
-                    </Link>
-                  )}
+                  <Link to="/workshop-registration">
+                    Começar Teste Grátis
+                  </Link>
                 </Button>
                 
-                {plan.name !== "Enterprise" && (
-                  <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
-                    7 dias grátis • Sem cartão de crédito
-                  </p>
-                )}
+                <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
+                  7 dias grátis • Sem cartão de crédito
+                </p>
               </CardContent>
             </Card>
           ))}

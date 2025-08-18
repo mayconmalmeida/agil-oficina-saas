@@ -1,8 +1,8 @@
 
-export type PlanType = 'Free' | 'Essencial' | 'Premium';
+export type PlanType = 'Free' | 'Premium';
 
 interface Subscription {
-  status: string; // Changed from union type to string to accept any status
+  status: string;
   plan_type: string | null;
   ends_at?: string | null;
   trial_ends_at?: string | null;
@@ -36,17 +36,8 @@ export const validatePlanAccess = (subscription: Subscription | null): {
   else if (status === 'active') {
     if (!ends_at || new Date(ends_at) > now) {
       isActive = true;
-      
-      if (plan_type?.toLowerCase().includes('premium')) {
-        plan = 'Premium';
-        console.log('[validatePlanAccess] Plano Premium ativo');
-      } else if (plan_type?.toLowerCase().includes('essencial')) {
-        plan = 'Essencial';
-        console.log('[validatePlanAccess] Plano Essencial ativo');
-      } else {
-        plan = 'Essencial'; // Fallback para active sem tipo específico
-        console.log('[validatePlanAccess] Plano ativo sem tipo específico → Essencial');
-      }
+      plan = 'Premium'; // Agora só temos Premium
+      console.log('[validatePlanAccess] Plano Premium ativo');
     } else {
       console.log('[validatePlanAccess] Assinatura expirada');
     }
@@ -67,10 +58,6 @@ export const validatePlanAccess = (subscription: Subscription | null): {
 const getPermissions = (plan: PlanType): string[] => {
   const permissions = {
     Free: ['clientes', 'orcamentos'], // Básico após trial expirar
-    Essencial: [
-      'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
-      'relatorios_basicos', 'configuracoes', 'suporte_email'
-    ],
     Premium: [
       'clientes', 'orcamentos', 'produtos', 'servicos', 'veiculos',
       'relatorios_basicos', 'relatorios_avancados', 'agendamentos',

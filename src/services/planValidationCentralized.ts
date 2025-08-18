@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type PlanType = 'free' | 'essencial' | 'premium';
+export type PlanType = 'free' | 'premium';
 
 export interface PlanStatus {
   isActive: boolean;
@@ -11,13 +11,12 @@ export interface PlanStatus {
   source: 'user_subscriptions' | 'oficinas' | 'profiles' | 'admin' | 'none';
   isAdmin: boolean;
   isPremium: boolean;
-  isEssencial: boolean;
   canAccessFeatures: boolean;
 }
 
 /**
  * ✅ FUNÇÃO CENTRALIZADA de validação de plano
- * Esta é a ÚNICA função que deve ser usada para validar planos
+ * Agora simplificada para apenas Premium
  */
 export const validatePlanAccess = async (userId: string): Promise<PlanStatus> => {
   console.log('[validatePlanAccess] 🔍 Validando plano para userId:', userId);
@@ -43,7 +42,6 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
         source: 'admin',
         isAdmin: true,
         isPremium: true,
-        isEssencial: false,
         canAccessFeatures: true
       };
     }
@@ -66,7 +64,6 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
         source: 'oficinas',
         isAdmin: false,
         isPremium: true,
-        isEssencial: false,
         canAccessFeatures: true
       };
     }
@@ -88,30 +85,22 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
 
       // Determinar data de expiração
       let expirationDate: Date;
-      let planType: PlanType;
 
       if (activeSubscription.status === 'trialing' && activeSubscription.trial_ends_at) {
         expirationDate = new Date(activeSubscription.trial_ends_at);
-        planType = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
       } else if (activeSubscription.ends_at) {
         expirationDate = new Date(activeSubscription.ends_at);
-        planType = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
       } else {
         // Sem data de expiração, considerar ativo permanentemente
-        planType = activeSubscription.plan_type.includes('premium') ? 'premium' : 'essencial';
-        const planName = planType === 'premium' ? 'Premium Ativo' : 'Essencial Ativo';
-        const permissions = getPlanPermissions(planType);
-        
         return {
           isActive: true,
-          plan: planType,
-          planName,
-          permissions,
+          plan: 'premium',
+          planName: 'Premium Ativo',
+          permissions: getPlanPermissions('premium'),
           daysRemaining: 999,
           source: 'user_subscriptions',
           isAdmin: false,
-          isPremium: planType === 'premium',
-          isEssencial: planType === 'essencial',
+          isPremium: true,
           canAccessFeatures: true
         };
       }
@@ -124,30 +113,24 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       if (isStillActive) {
         const isTrial = activeSubscription.status === 'trialing';
         const planName = isTrial 
-          ? `${planType === 'premium' ? 'Premium' : 'Essencial'} (período de teste)`
-          : `${planType === 'premium' ? 'Premium' : 'Essencial'} Ativo`;
-        
-        const permissions = getPlanPermissions(planType);
+          ? 'Premium (período de teste)'
+          : 'Premium Ativo';
         
         return {
           isActive: true,
-          plan: planType,
+          plan: 'premium',
           planName,
-          permissions,
+          permissions: getPlanPermissions('premium'),
           daysRemaining: Math.max(0, daysRemaining),
           source: 'user_subscriptions',
           isAdmin: false,
-          isPremium: planType === 'premium',
-          isEssencial: planType === 'essencial',
+          isPremium: true,
           canAccessFeatures: true
         };
       }
     }
 
-    // ✅ QUARTO: Verificar dados legados na tabela oficinas (apenas como fallback)
-    // Nota: oficinas já são verificadas acima com acesso Premium automático
-
-    // ✅ QUINTO: Nenhum plano ativo
+    // ✅ QUARTO: Nenhum plano ativo
     console.log('[validatePlanAccess] ❌ Nenhum plano ativo encontrado');
     return {
       isActive: false,
@@ -158,7 +141,6 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       source: 'none',
       isAdmin: false,
       isPremium: false,
-      isEssencial: false,
       canAccessFeatures: false
     };
 
@@ -173,14 +155,13 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       source: 'none',
       isAdmin: false,
       isPremium: false,
-      isEssencial: false,
       canAccessFeatures: false
     };
   }
 };
 
 /**
- * ✅ Permissões por plano
+ * ✅ Permissões por plano (simplificado)
  */
 export const getPlanPermissions = (plan: PlanType): string[] => {
   switch (plan) {
@@ -190,11 +171,6 @@ export const getPlanPermissions = (plan: PlanType): string[] => {
         'agendamentos', 'estoque', 'relatorios_avancados', 'relatorios_basicos',
         'marketing', 'diagnostico_ia', 'integracao_contabil', 'backup',
         'suporte_prioritario', 'configuracoes'
-      ];
-    case 'essencial':
-      return [
-        'clientes', 'orcamentos', 'servicos', 'produtos', 'veiculos',
-        'relatorios_basicos', 'configuracoes', 'suporte_email'
       ];
     default:
       return ['clientes', 'orcamentos'];
