@@ -1,192 +1,258 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { Crown } from "lucide-react";
-import { useSubscription } from '@/hooks/useSubscription';
-import RegistrationForm from '@/components/auth/RegistrationForm';
-import ConnectionStatus from '@/components/auth/ConnectionStatus';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
-type RegisterFormValues = {
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-const RegisterPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  const { toast } = useToast();
+const RegisterPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [nomeOficina, setNomeOficina] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const selectedPlan = searchParams.get('plan') as 'essencial' | 'premium' | null;
-  const { startFreeTrial } = useSubscription();
+  const { toast } = useToast();
 
-  // Verificar conexão com o Supabase
-  useEffect(() => {
-    const verifyConnection = async () => {
-      try {
-        setConnectionStatus('checking');
-        console.log("Verificando conexão com Supabase na página de registro...");
-        const connected = await testSupabaseConnection();
-        setConnectionStatus(connected ? 'connected' : 'error');
-        
-        if (!connected) {
-          setConnectionError("Não foi possível conectar ao servidor. O sistema funcionará em modo de demonstração.");
-          console.log("Conexão com Supabase falhou, usando modo demo");
-        } else {
-          console.log("Conexão com Supabase estabelecida com sucesso");
-          setConnectionError(null);
-        }
-      } catch (error) {
-        console.error("Erro ao verificar conexão:", error);
-        setConnectionStatus('error');
-        setConnectionError("Erro ao verificar conexão com o servidor: " + 
-          (error instanceof Error ? error.message : "Erro desconhecido"));
-      }
-    };
-    
-    verifyConnection();
-  }, []);
+  const validateForm = () => {
+    if (!email.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Email é obrigatório."
+      });
+      return false;
+    }
 
-  const onSubmit = async (values: RegisterFormValues) => {
-    setIsLoading(true);
+    if (!email.includes('@')) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Digite um email válido."
+      });
+      return false;
+    }
+
+    if (!password) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Senha é obrigatória."
+      });
+      return false;
+    }
+
+    if (password.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres."
+      });
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "As senhas não coincidem."
+      });
+      return false;
+    }
+
+    if (!nomeOficina.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nome da oficina é obrigatório."
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
+    if (!validateForm()) return;
+
+    setLoading(true);
+
     try {
-      if (connectionStatus !== 'connected') {
-        toast({
-          variant: "destructive",
-          title: "Erro de conexão",
-          description: "Não é possível registrar sem uma conexão com o servidor.",
-        });
-        setIsLoading(false);
-        return;
-      }
-
+      // Registrar usuário
       const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
+        email: email.trim(),
+        password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          data: {
+            nome_oficina: nomeOficina.trim()
+          }
         }
       });
 
       if (error) {
-        console.error("Erro ao registrar:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao registrar",
-          description: error.message,
-        });
-        setIsLoading(false);
-        return;
+        console.error('Erro no registro:', error);
+        throw error;
       }
 
-      // Se o registro foi bem-sucedido e há um usuário
       if (data.user) {
-        toast({
-          title: "Registro bem-sucedido!",
-          description: selectedPlan 
-            ? `Conta criada! Iniciando seu teste gratuito do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'}...`
-            : "Conta criada com sucesso!"
+        // Iniciar trial Premium automaticamente após registro
+        const { error: trialError } = await supabase.rpc('start_free_trial', {
+          p_user_id: data.user.id,
+          p_plan_type: 'premium' // Sempre Premium agora
         });
 
-        // Se há um plano selecionado, aguardar um momento para o usuário estar autenticado
-        // e então iniciar o teste gratuito
-        if (selectedPlan) {
-          setTimeout(async () => {
-            try {
-              const result = await startFreeTrial(selectedPlan);
-              if (result.success) {
-                toast({
-                  title: "Teste gratuito ativado!",
-                  description: `Seu teste de 7 dias do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'} foi iniciado.`
-                });
-                navigate('/dashboard');
-              } else {
-                // Se falhar ao iniciar o trial, redirecionar para login
-                navigate('/login');
-              }
-            } catch (error) {
-              console.error("Erro ao iniciar teste:", error);
-              navigate('/login');
-            }
-          }, 2000);
-        } else {
-          // Redirect to login page se não há plano selecionado
-          navigate('/login');
+        if (trialError) {
+          console.error('Erro ao iniciar trial:', trialError);
+          // Não falhar o registro se o trial der erro
         }
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Verifique seu email para confirmar sua conta. Seu teste Premium de 7 dias foi ativado automaticamente."
+        });
+
+        navigate('/dashboard');
       }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+    } catch (error: any) {
+      console.error('Erro no registro:', error);
+      
+      let errorMessage = "Erro ao criar conta. Tente novamente.";
+      
+      if (error.message?.includes('already registered')) {
+        errorMessage = "Este email já está cadastrado.";
+      } else if (error.message?.includes('invalid email')) {
+        errorMessage = "Email inválido.";
+      } else if (error.message?.includes('weak password')) {
+        errorMessage = "Senha muito fraca. Use pelo menos 6 caracteres.";
+      }
+
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro durante o registro. Verifique sua conexão.",
+        title: "Erro no cadastro",
+        description: errorMessage
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Link to="/" className="text-2xl font-bold text-oficina-dark">
-            Oficina<span className="text-oficina-accent">Ágil</span>
-          </Link>
-        </div>
-        
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
-              {selectedPlan ? 'Criar conta e iniciar teste' : 'Criar conta'}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {selectedPlan 
-                ? `Crie sua conta para começar o teste gratuito do plano ${selectedPlan === 'premium' ? 'Premium' : 'Essencial'}`
-                : 'Digite suas informações para criar uma conta'
-              }
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            {selectedPlan && (
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
-                <Crown className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-700">
-                  <strong>Plano selecionado: {selectedPlan === 'premium' ? 'Premium' : 'Essencial'}</strong>
-                  <br />
-                  Você terá 7 dias de teste gratuito com acesso completo aos recursos.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <ConnectionStatus status={connectionStatus} error={connectionError} />
-            
-            <RegistrationForm
-              onSubmit={onSubmit}
-              isLoading={isLoading}
-              isConnected={connectionStatus === 'connected'}
-              selectedPlan={selectedPlan || undefined}
-            />
-          </CardContent>
-          
-          <CardFooter className="flex justify-center">
-            <div className="text-center text-sm">
-              Já tem uma conta?{' '}
-              <Link to="/login" className="text-oficina hover:underline">
-                Faça login aqui
-              </Link>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
+          <CardDescription className="text-center">
+            Cadastre-se e ganhe 7 dias Premium grátis
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nomeOficina">Nome da Oficina</Label>
+              <Input
+                id="nomeOficina"
+                type="text"
+                placeholder="Ex: Auto Center Silva"
+                value={nomeOficina}
+                onChange={(e) => setNomeOficina(e.target.value)}
+                required
+              />
             </div>
-          </CardFooter>
-        </Card>
-      </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mínimo 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Digite a senha novamente"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando conta...
+                </>
+              ) : (
+                'Criar Conta Grátis'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center text-sm">
+            <span className="text-muted-foreground">Já tem uma conta? </span>
+            <Link to="/login" className="text-primary hover:underline">
+              Fazer login
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

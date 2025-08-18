@@ -14,7 +14,6 @@ export const useSubscriptionStatus = () => {
     isPaidActive: false,
     canAccessFeatures: false,
     isPremium: false,
-    isEssencial: false,
     daysRemaining: 0,
     planDetails: null
   });
@@ -39,7 +38,6 @@ export const useSubscriptionStatus = () => {
           isPaidActive: false,
           canAccessFeatures: false,
           isPremium: false,
-          isEssencial: false,
           daysRemaining: 0,
           planDetails: null
         });
@@ -57,7 +55,6 @@ export const useSubscriptionStatus = () => {
           isPaidActive: true, // Admin tem acesso como se fosse pago
           canAccessFeatures: true,
           isPremium: true, // Admin tem acesso premium
-          isEssencial: true,
           daysRemaining: 999, // Valor simbólico para admin
           planDetails: {
             name: 'Administrador',
@@ -107,7 +104,6 @@ export const useSubscriptionStatus = () => {
         const canAccessFeatures = isTrialActive || isPaidActive || isManualActive;
         
         const isPremium = subscription.plan_type?.includes('premium') || false;
-        const isEssencial = subscription.plan_type?.includes('essencial') || false;
         const planDetails = getPlanDetails(subscription.plan_type || '');
         
         // Calcular dias restantes considerando trial, paid e manual
@@ -136,7 +132,6 @@ export const useSubscriptionStatus = () => {
           isPaidActive,
           canAccessFeatures,
           isPremium,
-          isEssencial,
           daysRemaining: Math.max(0, daysRemaining),
           planDetails
         });
@@ -148,7 +143,6 @@ export const useSubscriptionStatus = () => {
           isPaidActive: false,
           canAccessFeatures: false,
           isPremium: false,
-          isEssencial: false,
           daysRemaining: 0,
           planDetails: null
         });

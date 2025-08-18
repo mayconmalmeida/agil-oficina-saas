@@ -15,7 +15,7 @@ export interface AuthUser {
   nome_oficina?: string;
   telefone?: string;
   is_active?: boolean;
-  plan?: 'Essencial' | 'Premium' | 'Enterprise' | 'Free';
+  plan?: 'Premium' | 'Free';
   planActive?: boolean;
   expired?: boolean;
   permissions?: string[];
@@ -32,7 +32,7 @@ export interface AuthState {
   isLoadingAuth: boolean;
   role: string | null;
   isAdmin: boolean;
-  plan: 'Essencial' | 'Premium' | 'Enterprise' | 'Free' | null;
+  plan: 'Premium' | 'Free' | null;
   planActive: boolean;
   permissions: string[];
   canAccessFeatures: boolean;
@@ -46,7 +46,7 @@ export interface AuthContextValue extends AuthState {}
 export interface UserProfileData {
   role: string;
   subscription: UserSubscription | null;
-  plan?: 'Essencial' | 'Premium' | 'Enterprise' | 'Free';
+  plan?: 'Premium' | 'Free';
   planActive?: boolean;
   permissions?: string[];
 }

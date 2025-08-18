@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -121,7 +120,6 @@ export const useManualAuth = (): AuthState => {
     source: 'none',
     isAdmin: false,
     isPremium: false,
-    isEssencial: false,
     canAccessFeatures: false
   });
 
@@ -154,7 +152,6 @@ export const useManualAuth = (): AuthState => {
         source: 'none',
         isAdmin: false,
         isPremium: false,
-        isEssencial: false,
         canAccessFeatures: false
       });
       setLoading(false);
@@ -368,7 +365,6 @@ export const useManualAuth = (): AuthState => {
           source: 'none',
           isAdmin: false,
           isPremium: false,
-          isEssencial: false,
           canAccessFeatures: false
         });
         setLoading(false);
@@ -417,7 +413,6 @@ export const useManualAuth = (): AuthState => {
             source: 'none',
             isAdmin: false,
             isPremium: false,
-            isEssencial: false,
             canAccessFeatures: false
           });
           setLoading(false);
@@ -429,18 +424,17 @@ export const useManualAuth = (): AuthState => {
       if (mountedRef.current) {
         setUser(null);
         setRole(null);
-          setPlanData({
-            isActive: false,
-            plan: 'free',
-            planName: 'Gratuito',
-            permissions: [],
-            daysRemaining: 0,
-            source: 'none',
-            isAdmin: false,
-            isPremium: false,
-            isEssencial: false,
-            canAccessFeatures: false
-          });
+        setPlanData({
+          isActive: false,
+          plan: 'free',
+          planName: 'Gratuito',
+          permissions: [],
+          daysRemaining: 0,
+          source: 'none',
+          isAdmin: false,
+          isPremium: false,
+          canAccessFeatures: false
+        });
         setLoading(false);
         setIsLoadingAuth(false);
       }
@@ -483,7 +477,6 @@ export const useManualAuth = (): AuthState => {
             source: 'none',
             isAdmin: false,
             isPremium: false,
-            isEssencial: false,
             canAccessFeatures: false
           });
           setLoading(false);
@@ -557,8 +550,7 @@ export const useManualAuth = (): AuthState => {
         isLoadingAuth,
         role,
         isAdmin,
-        plan: (planData.plan === 'premium' ? 'Premium' : 
-              planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
+        plan: (planData.plan === 'premium' ? 'Premium' : 'Free') as 'Premium' | 'Free',
         planActive: planData.isActive,
         permissions: planData.permissions,
         canAccessFeatures,
@@ -577,8 +569,7 @@ export const useManualAuth = (): AuthState => {
       isLoadingAuth,
       role,
       isAdmin,
-      plan: (planData.plan === 'premium' ? 'Premium' : 
-            planData.plan === 'essencial' ? 'Essencial' : 'Free') as 'Essencial' | 'Premium' | 'Enterprise' | 'Free',
+      plan: (planData.plan === 'premium' ? 'Premium' : 'Free') as 'Premium' | 'Free',
       planActive: planData.isActive,
       permissions: planData.permissions,
       canAccessFeatures,
