@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -94,14 +93,13 @@ const getUserPlanStatus = async (userId: string) => {
         };
       }
 
-      // Determinar tipo do plano
-      let planType = 'Essencial';
+      // Determinar tipo do plano - agora só Premium ou Free
+      let planType = 'Premium';
       if (plan_type?.toLowerCase().includes('premium')) {
         planType = 'Premium';
-      } else if (plan_type?.toLowerCase().includes('enterprise')) {
-        planType = 'Enterprise';
-      } else if (plan_type?.toLowerCase().includes('essencial')) {
-        planType = 'Essencial';
+      } else {
+        // Qualquer outro plano vira Premium (migração de Essencial/Enterprise)
+        planType = 'Premium';
       }
       
       console.log('[useOptimizedAuth] Plano ativo encontrado:', {
@@ -172,32 +170,6 @@ const validatePlanAccess = (plan: string, planActive: boolean, isAdmin: boolean)
         'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
         'agendamentos', 'backup_automatico', 'integracao_contabil',
         'suporte_prioritario', 'marketing_automatico'
-      ]
-    };
-  } else if (plan === 'Essencial') {
-    console.log('[validatePlanAccess] Plano Essencial ativo');
-    return {
-      isActive: true,
-      plan: 'Essencial' as const,
-      permissionsCount: 8,
-      permissions: [
-        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
-        'backup_automatico', 'suporte_email', 'ia_suporte_inteligente'
-      ]
-    };
-  } else if (plan === 'Enterprise') {
-    console.log('[validatePlanAccess] Plano Enterprise ativo');
-    return {
-      isActive: true,
-      plan: 'Enterprise' as const,
-      permissionsCount: 30,
-      permissions: [
-        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
-        'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
-        'agendamentos', 'backup_automatico', 'integracao_contabil',
-        'suporte_prioritario', 'marketing_automatico', 'multi_filiais',
-        'api_personalizada', 'treinamento_dedicado', 'gerente_conta',
-        'sla_garantido', 'customizacoes'
       ]
     };
   }

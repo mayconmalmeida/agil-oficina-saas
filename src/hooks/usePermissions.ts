@@ -40,30 +40,9 @@ export const usePermissions = () => {
     return result;
   };
 
-  const isEssencial = (): boolean => {
-    // ✅ Admin sempre tem acesso, mas pode retornar false para isPremium lógica
-    const result = plan === 'Essencial' && planActive;
-    console.log('usePermissions: isEssencial check:', { plan, planActive, result });
-    return result;
-  };
-
-  const isEnterprise = (): boolean => {
-    // ✅ Admin sempre tem acesso enterprise se implementado
-    if (isAdmin === true) return true;
-    const result = false; // Enterprise não implementado ainda
-    console.log('usePermissions: isEnterprise check:', { plan, planActive, result });
-    return result;
-  };
-
   const canAccessPremiumFeatures = (): boolean => {
-    const result = isAdmin === true || isPremium() || isEnterprise();
+    const result = isAdmin === true || isPremium();
     console.log('usePermissions: canAccessPremiumFeatures check:', { isAdmin, isPremium: isPremium(), result });
-    return result;
-  };
-
-  const canAccessEnterpriseFeatures = (): boolean => {
-    const result = isAdmin === true || isEnterprise();
-    console.log('usePermissions: canAccessEnterpriseFeatures check:', { isAdmin, isEnterprise: isEnterprise(), result });
     return result;
   };
 
@@ -85,23 +64,17 @@ export const usePermissions = () => {
         'Gestão básica de clientes',
         'Orçamentos simples'
       ],
-      Essencial: [
+      Premium: [
         'Gestão de clientes',
         'Orçamentos digitais',
         'Controle de serviços',
-        'Relatórios básicos',
-        'Suporte por email',
-        'Backup automático',
-        'IA para Suporte Inteligente'
-      ],
-      Premium: [
-        'Todos os recursos do Essencial',
         'IA para diagnóstico',
         'Agendamentos inteligentes',
         'Relatórios avançados',
         'Marketing automático',
         'Suporte prioritário',
-        'Integração contábil'
+        'Integração contábil',
+        'Backup automático'
       ]
     };
 
@@ -114,8 +87,6 @@ export const usePermissions = () => {
     isAdmin,
     permissionsCount: permissions.length,
     isPremium: isPremium(),
-    isEssencial: isEssencial(),
-    isEnterprise: isEnterprise(),
     hasIADiagnostico: hasPermission('diagnostico_ia'),
     hasMarketing: hasPermission('marketing_automatico')
   });
@@ -123,10 +94,7 @@ export const usePermissions = () => {
   return {
     hasPermission,
     isPremium,
-    isEssencial,
-    isEnterprise,
     canAccessPremiumFeatures,
-    canAccessEnterpriseFeatures,
     getAvailableFeatures,
     getPlanFeatures,
     permissions,

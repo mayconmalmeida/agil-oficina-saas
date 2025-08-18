@@ -105,8 +105,7 @@ const RegisterPage: React.FC = () => {
       if (data.user) {
         // Iniciar trial Premium automaticamente após registro
         const { error: trialError } = await supabase.rpc('start_free_trial', {
-          p_user_id: data.user.id,
-          p_plan_type: 'premium' // Sempre Premium agora
+          selected_plan_type: 'premium' // Corrigido: usar selected_plan_type
         });
 
         if (trialError) {
