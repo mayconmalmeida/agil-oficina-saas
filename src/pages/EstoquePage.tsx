@@ -94,7 +94,14 @@ const EstoquePage: React.FC = () => {
         .limit(50);
 
       if (error) throw error;
-      setMovimentacoes(data || []);
+      
+      // Type cast the data to ensure proper typing
+      const typedData = (data || []).map(item => ({
+        ...item,
+        tipo_movimentacao: item.tipo_movimentacao as 'entrada' | 'saida'
+      }));
+      
+      setMovimentacoes(typedData);
     } catch (error) {
       console.error('Erro ao carregar movimentações:', error);
     }
