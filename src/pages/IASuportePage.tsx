@@ -39,15 +39,15 @@ const IASuportePage: React.FC = () => {
             <CardContent className="space-y-3">
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm font-medium text-blue-800">Como criar um orçamento?</p>
-                <p className="text-sm text-blue-600">Acesse Menu > Orçamentos > Novo Orçamento</p>
+                <p className="text-sm text-blue-600">Acesse Menu {'>'} Orçamentos {'>'} Novo Orçamento</p>
               </div>
               <div className="p-3 bg-green-50 rounded-lg">
                 <p className="text-sm font-medium text-green-800">Cadastrar produtos</p>
-                <p className="text-sm text-green-600">Menu > Produtos > Adicionar Produto</p>
+                <p className="text-sm text-green-600">Menu {'>'} Produtos {'>'} Adicionar Produto</p>
               </div>
               <div className="p-3 bg-purple-50 rounded-lg">
                 <p className="text-sm font-medium text-purple-800">Controlar estoque</p>
-                <p className="text-sm text-purple-600">Menu > Estoque > Nova Movimentação</p>
+                <p className="text-sm text-purple-600">Menu {'>'} Estoque {'>'} Nova Movimentação</p>
               </div>
             </CardContent>
           </Card>
