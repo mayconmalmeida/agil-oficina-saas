@@ -38,13 +38,32 @@ const OrdensServicoPage: React.FC = () => {
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
-          *,
-          clients(nome)
+          id,
+          cliente_id,
+          status,
+          valor_total,
+          data_inicio,
+          observacoes,
+          clients!inner(nome)
         `)
         .order('data_inicio', { ascending: false });
 
       if (error) throw error;
-      setOrdens(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        cliente_id: item.cliente_id,
+        status: item.status,
+        valor_total: item.valor_total,
+        data_inicio: item.data_inicio,
+        observacoes: item.observacoes,
+        clients: Array.isArray(item.clients) 
+          ? item.clients[0] 
+          : item.clients
+      }));
+      
+      setOrdens(transformedData);
     } catch (error) {
       console.error('Erro ao carregar ordens de serviço:', error);
       toast({

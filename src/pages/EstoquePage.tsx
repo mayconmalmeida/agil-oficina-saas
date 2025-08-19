@@ -3,16 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Package, TrendingDown, TrendingUp } from 'lucide-react';
+import { Plus, Search, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface Produto {
+interface Product {
   id: string;
   nome: string;
   codigo?: string;
@@ -22,34 +23,53 @@ interface Produto {
   valor: number;
 }
 
+interface MovimentacaoEstoque {
+  id: string;
+  produto_id: string;
+  tipo_movimentacao: 'entrada' | 'saida';
+  quantidade: number;
+  quantidade_anterior: number;
+  quantidade_atual: number;
+  motivo?: string;
+  created_at: string;
+  services?: {
+    nome: string;
+  };
+}
+
 const EstoquePage: React.FC = () => {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<MovimentacaoEstoque[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'produtos' | 'movimentacoes'>('produtos');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     produto_id: '',
-    tipo_movimentacao: '',
+    tipo_movimentacao: 'entrada' as 'entrada' | 'saida',
     quantidade: '',
     motivo: ''
   });
 
   useEffect(() => {
-    carregarProdutos();
+    loadProducts();
+    loadMovimentacoes();
   }, []);
 
-  const carregarProdutos = async () => {
+  const loadProducts = async () => {
     try {
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .eq('tipo', 'produto')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('nome');
 
       if (error) throw error;
-      setProdutos(data || []);
+      setProducts(data || []);
     } catch (error) {
       console.error('Erro ao carregar produtos:', error);
       toast({
@@ -62,48 +82,90 @@ const EstoquePage: React.FC = () => {
     }
   };
 
-  const handleMovimentacao = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const loadMovimentacoes = async () => {
     try {
-      const produto = produtos.find(p => p.id === formData.produto_id);
+      const { data, error } = await supabase
+        .from('movimentacao_estoque')
+        .select(`
+          *,
+          services(nome)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setMovimentacoes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar movimentações:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Usuário não autenticado."
+      });
+      return;
+    }
+
+    try {
+      const produto = products.find(p => p.id === formData.produto_id);
       if (!produto) return;
 
       const quantidade = parseInt(formData.quantidade);
-      const novaQuantidade = formData.tipo_movimentacao === 'entrada' 
-        ? produto.quantidade_estoque + quantidade
-        : produto.quantidade_estoque - quantidade;
+      const quantidadeAnterior = produto.quantidade_estoque;
+      let quantidadeAtual: number;
 
-      // Atualizar estoque do produto
-      const { error: updateError } = await supabase
-        .from('services')
-        .update({ quantidade_estoque: novaQuantidade })
-        .eq('id', formData.produto_id);
+      if (formData.tipo_movimentacao === 'entrada') {
+        quantidadeAtual = quantidadeAnterior + quantidade;
+      } else {
+        quantidadeAtual = quantidadeAnterior - quantidade;
+        if (quantidadeAtual < 0) {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Quantidade insuficiente em estoque."
+          });
+          return;
+        }
+      }
 
-      if (updateError) throw updateError;
-
-      // Registrar movimentação
+      // Inserir movimentação
       const { error: movError } = await supabase
         .from('movimentacao_estoque')
         .insert({
+          user_id: user.id,
           produto_id: formData.produto_id,
           tipo_movimentacao: formData.tipo_movimentacao,
-          quantidade: quantidade,
-          quantidade_anterior: produto.quantidade_estoque,
-          quantidade_atual: novaQuantidade,
+          quantidade,
+          quantidade_anterior: quantidadeAnterior,
+          quantidade_atual: quantidadeAtual,
           motivo: formData.motivo
         });
 
       if (movError) throw movError;
 
+      // Atualizar estoque do produto
+      const { error: updateError } = await supabase
+        .from('services')
+        .update({ quantidade_estoque: quantidadeAtual })
+        .eq('id', formData.produto_id);
+
+      if (updateError) throw updateError;
+
       toast({
-        title: "Sucesso",
-        description: "Movimentação registrada com sucesso!"
+        title: "Movimentação registrada",
+        description: "A movimentação de estoque foi registrada com sucesso.",
       });
 
-      setFormData({ produto_id: '', tipo_movimentacao: '', quantidade: '', motivo: '' });
+      setFormData({ produto_id: '', tipo_movimentacao: 'entrada', quantidade: '', motivo: '' });
       setIsDialogOpen(false);
-      carregarProdutos();
+      loadProducts();
+      loadMovimentacoes();
     } catch (error) {
       console.error('Erro ao registrar movimentação:', error);
       toast({
@@ -114,12 +176,22 @@ const EstoquePage: React.FC = () => {
     }
   };
 
-  const produtosFiltrados = produtos.filter(produto =>
-    produto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    produto.codigo?.toLowerCase().includes(searchTerm.toLowerCase())
+  const getEstoqueStatus = (produto: Product) => {
+    if (produto.quantidade_estoque <= produto.estoque_minimo) {
+      return { status: 'baixo', color: 'bg-red-100 text-red-800', icon: AlertTriangle };
+    }
+    return { status: 'normal', color: 'bg-green-100 text-green-800', icon: null };
+  };
+
+  const productsFiltered = products.filter(product =>
+    product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.codigo && product.codigo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const produtosEstoqueBaixo = produtos.filter(p => p.quantidade_estoque <= p.estoque_minimo);
+  const movimentacoesFiltered = movimentacoes.filter(mov =>
+    mov.services?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mov.motivo?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -135,10 +207,7 @@ const EstoquePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <Package className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Controle de Estoque</h1>
-        </div>
+        <h1 className="text-3xl font-bold">Controle de Estoque</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -148,9 +217,9 @@ const EstoquePage: React.FC = () => {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Registrar Movimentação</DialogTitle>
+              <DialogTitle>Nova Movimentação de Estoque</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleMovimentacao} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="produto_id">Produto</Label>
                 <Select onValueChange={(value) => setFormData({...formData, produto_id: value})}>
@@ -158,9 +227,9 @@ const EstoquePage: React.FC = () => {
                     <SelectValue placeholder="Selecione um produto" />
                   </SelectTrigger>
                   <SelectContent>
-                    {produtos.map((produto) => (
-                      <SelectItem key={produto.id} value={produto.id}>
-                        {produto.nome} (Estoque: {produto.quantidade_estoque})
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {product.nome} - Estoque: {product.quantidade_estoque}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -168,7 +237,7 @@ const EstoquePage: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="tipo_movimentacao">Tipo de Movimentação</Label>
-                <Select onValueChange={(value) => setFormData({...formData, tipo_movimentacao: value})}>
+                <Select onValueChange={(value: 'entrada' | 'saida') => setFormData({...formData, tipo_movimentacao: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
@@ -195,54 +264,42 @@ const EstoquePage: React.FC = () => {
                   id="motivo"
                   value={formData.motivo}
                   onChange={(e) => setFormData({...formData, motivo: e.target.value})}
-                  placeholder="Descreva o motivo da movimentação"
-                  required
+                  placeholder="Ex: Compra, Venda, Ajuste, etc."
                 />
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit">Salvar</Button>
+                <Button type="submit">Registrar</Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {produtosEstoqueBaixo.length > 0 && (
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-600 flex items-center">
-              <TrendingDown className="mr-2 h-5 w-5" />
-              Alerta: Produtos com Estoque Baixo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {produtosEstoqueBaixo.map((produto) => (
-                <div key={produto.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
-                  <p className="font-medium">{produto.nome}</p>
-                  <p className="text-sm text-gray-600">
-                    Estoque atual: <span className="text-red-600 font-medium">{produto.quantidade_estoque}</span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Estoque mínimo: {produto.estoque_minimo}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+        <Button
+          variant={activeTab === 'produtos' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('produtos')}
+        >
+          Produtos
+        </Button>
+        <Button
+          variant={activeTab === 'movimentacoes' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('movimentacoes')}
+        >
+          Movimentações
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Produtos em Estoque</CardTitle>
+          <CardTitle>{activeTab === 'produtos' ? 'Produtos em Estoque' : 'Movimentações de Estoque'}</CardTitle>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar produtos..."
+              placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -250,40 +307,76 @@ const EstoquePage: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Estoque Atual</TableHead>
-                <TableHead>Estoque Mínimo</TableHead>
-                <TableHead>Preço Custo</TableHead>
-                <TableHead>Preço Venda</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {produtosFiltrados.map((produto) => (
-                <TableRow key={produto.id}>
-                  <TableCell>{produto.codigo || '-'}</TableCell>
-                  <TableCell className="font-medium">{produto.nome}</TableCell>
-                  <TableCell>{produto.quantidade_estoque}</TableCell>
-                  <TableCell>{produto.estoque_minimo}</TableCell>
-                  <TableCell>R$ {produto.preco_custo?.toFixed(2) || '0,00'}</TableCell>
-                  <TableCell>R$ {produto.valor.toFixed(2)}</TableCell>
-                  <TableCell>
-                    {produto.quantidade_estoque <= produto.estoque_minimo ? (
-                      <Badge variant="destructive">Estoque Baixo</Badge>
-                    ) : produto.quantidade_estoque <= produto.estoque_minimo * 2 ? (
-                      <Badge variant="secondary">Atenção</Badge>
-                    ) : (
-                      <Badge className="bg-green-100 text-green-800">Normal</Badge>
-                    )}
-                  </TableCell>
+          {activeTab === 'produtos' ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Est. Mínimo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Valor Unit.</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {productsFiltered.map((product) => {
+                  const status = getEstoqueStatus(product);
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.nome}</TableCell>
+                      <TableCell>{product.codigo || '-'}</TableCell>
+                      <TableCell>{product.quantidade_estoque}</TableCell>
+                      <TableCell>{product.estoque_minimo}</TableCell>
+                      <TableCell>
+                        <Badge className={status.color}>
+                          {status.status === 'baixo' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                          {status.status === 'baixo' ? 'Estoque Baixo' : 'Normal'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>R$ {product.valor.toFixed(2)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Ant. / Atual</TableHead>
+                  <TableHead>Motivo</TableHead>
+                  <TableHead>Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {movimentacoesFiltered.map((movimentacao) => (
+                  <TableRow key={movimentacao.id}>
+                    <TableCell className="font-medium">{movimentacao.services?.nome || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge variant={movimentacao.tipo_movimentacao === 'entrada' ? 'default' : 'destructive'}>
+                        {movimentacao.tipo_movimentacao === 'entrada' ? (
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                        )}
+                        {movimentacao.tipo_movimentacao}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{movimentacao.quantidade}</TableCell>
+                    <TableCell>{movimentacao.quantidade_anterior} → {movimentacao.quantidade_atual}</TableCell>
+                    <TableCell>{movimentacao.motivo || '-'}</TableCell>
+                    <TableCell>
+                      {new Date(movimentacao.created_at).toLocaleDateString('pt-BR')} {new Date(movimentacao.created_at).toLocaleTimeString('pt-BR')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ContaReceber {
   id: string;
@@ -42,6 +42,7 @@ const ContasReceber: React.FC<ContasReceberProps> = ({ onUpdateResumo }) => {
   const [clienteSearch, setClienteSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     cliente_id: '',
@@ -126,10 +127,20 @@ const ContasReceber: React.FC<ContasReceberProps> = ({ onUpdateResumo }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Usuário não autenticado."
+      });
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('contas_receber')
         .insert({
+          user_id: user.id,
           cliente_id: formData.cliente_id || null,
           descricao: formData.descricao,
           valor: parseFloat(formData.valor),

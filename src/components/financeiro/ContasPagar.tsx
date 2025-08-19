@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ContaPagar {
   id: string;
@@ -44,6 +44,7 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
   const [fornecedorSearch, setFornecedorSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     fornecedor_id: '',
@@ -139,10 +140,20 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Usuário não autenticado."
+      });
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('contas_pagar')
         .insert({
+          user_id: user.id,
           fornecedor_id: formData.fornecedor_id || null,
           descricao: formData.descricao,
           categoria: formData.categoria,
