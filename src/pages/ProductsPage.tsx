@@ -1,75 +1,52 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Package, Upload } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Package, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import ProductForm from '@/components/products/ProductForm';
-import ImportXmlModal from '@/components/products/ImportXmlModal';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import Loading from '@/components/ui/loading';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
   id: string;
   nome: string;
+  codigo?: string;
   tipo: string;
   valor: number;
-  codigo?: string;
-  descricao?: string;
-  quantidade_estoque?: number;
-  preco_custo?: number;
+  quantidade_estoque: number;
+  estoque_minimo: number;
   is_active: boolean;
-  created_at: string;
 }
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [user?.id]);
 
   const fetchProducts = async () => {
+    if (!user?.id) return;
+
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .eq('user_id', user.id)
         .eq('tipo', 'produto')
-        .eq('is_active', true)
-        .order('nome', { ascending: true });
+        .order('nome');
 
       if (error) throw error;
       setProducts(data || []);
     } catch (error: any) {
-      console.error('Error fetching products:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar produtos",
@@ -80,124 +57,68 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('services')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Produto removido",
-        description: "O produto foi removido com sucesso.",
-      });
-
-      fetchProducts();
-    } catch (error: any) {
-      console.error('Error deleting product:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao remover produto",
-        description: error.message,
-      });
-    }
-  };
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setEditingProduct(null);
-    fetchProducts();
-  };
-
-  const handleImportSuccess = () => {
-    setShowImportModal(false);
-    fetchProducts();
-  };
-
   const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+    product.codigo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
-    return <Loading text="Carregando produtos..." />;
-  }
+  const getStockStatus = (current: number, minimum: number) => {
+    if (current <= 0) return { label: 'Sem estoque', variant: 'destructive' as const };
+    if (current <= minimum) return { label: 'Estoque baixo', variant: 'secondary' as const };
+    return { label: 'Normal', variant: 'default' as const };
+  };
 
-  if (showForm) {
+  if (isLoading) {
     return (
-      <ProductForm
-        product={editingProduct}
-        onSuccess={handleFormSuccess}
-        onCancel={() => {
-          setShowForm(false);
-          setEditingProduct(null);
-        }}
-      />
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Package className="h-8 w-8" />
-            Produtos
-          </h1>
-          <p className="text-gray-600">Gerencie o estoque de produtos da sua oficina</p>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-2">
+          <Package className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowImportModal(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar XML
-          </Button>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Produto
-          </Button>
-        </div>
+        <Button className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Produto
+        </Button>
       </div>
 
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Estoque de Produtos</CardTitle>
+          <CardTitle>Buscar Produtos</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar produtos..."
+              placeholder="Buscar por nome ou código..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Produtos ({filteredProducts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredProducts.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">Nenhum produto encontrado.</p>
-              <p className="text-gray-400 text-sm mb-4">
-                Comece adicionando produtos ao seu estoque ou importe via XML
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button 
-                  onClick={() => setShowForm(true)}
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar produto
-                </Button>
-                <Button 
-                  onClick={() => setShowImportModal(true)}
-                  variant="outline"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar XML
-                </Button>
-              </div>
+              <p className="text-gray-500 mb-4">Nenhum produto encontrado.</p>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Primeiro Produto
+              </Button>
             </div>
           ) : (
             <Table>
@@ -205,93 +126,46 @@ const ProductsPage: React.FC = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Código</TableHead>
-                  <TableHead>Preço de Venda</TableHead>
-                  <TableHead>Preço de Custo</TableHead>
+                  <TableHead>Preço</TableHead>
                   <TableHead>Estoque</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.nome}</TableCell>
-                    <TableCell>{product.codigo || '-'}</TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      }).format(product.valor)}
-                    </TableCell>
-                    <TableCell>
-                      {product.preco_custo ? 
-                        new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        }).format(product.preco_custo) : '-'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        (product.quantidade_estoque || 0) > 0 ? 'default' : 'destructive'
-                      }>
-                        {product.quantidade_estoque || 0} un.
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingProduct(product);
-                            setShowForm(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja remover o produto "{product.nome}"?
-                                Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(product.id)}>
-                                Confirmar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredProducts.map((product) => {
+                  const stockStatus = getStockStatus(product.quantidade_estoque, product.estoque_minimo);
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.nome}</TableCell>
+                      <TableCell>{product.codigo || '-'}</TableCell>
+                      <TableCell>R$ {product.valor.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {product.quantidade_estoque} / {product.estoque_minimo} (mín.)
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={stockStatus.variant}>
+                          {stockStatus.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
-
-      <ImportXmlModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={handleImportSuccess}
-      />
     </div>
   );
 };

@@ -3,18 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Building2, Phone, Mail, MapPin } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Truck, Edit, Trash2, MessageCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useOficinaFilters } from '@/hooks/useOficinaFilters';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Supplier {
   id: string;
   nome: string;
   cnpj?: string;
-  email?: string;
   telefone?: string;
+  email?: string;
   endereco?: string;
   cidade?: string;
   estado?: string;
@@ -24,178 +26,277 @@ interface Supplier {
 
 const SuppliersPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({
+    nome: '',
+    cnpj: '',
+    telefone: '',
+    email: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    cep: ''
+  });
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { oficina_id, isReady } = useOficinaFilters();
 
   useEffect(() => {
-    if (isReady) {
-      loadSuppliers();
-    }
-  }, [isReady, oficina_id]);
+    fetchSuppliers();
+  }, [user?.id]);
 
-  useEffect(() => {
-    const filtered = suppliers.filter(supplier =>
-      supplier.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.cnpj?.includes(searchTerm) ||
-      supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredSuppliers(filtered);
-  }, [searchTerm, suppliers]);
-
-  const loadSuppliers = async () => {
-    if (!oficina_id) {
-      console.log('⚠️ Oficina ID não encontrado');
-      setLoading(false);
-      return;
-    }
+  const fetchSuppliers = async () => {
+    if (!user?.id) return;
 
     try {
-      console.log('🔍 Carregando fornecedores para oficina:', oficina_id);
-
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('fornecedores')
         .select('*')
-        .eq('oficina_id', oficina_id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id)
+        .order('nome');
 
-      if (error) {
-        console.error('❌ Erro ao carregar fornecedores:', error);
-        throw error;
-      }
-
-      console.log('✅ Fornecedores carregados:', data?.length || 0);
+      if (error) throw error;
       setSuppliers(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Erro ao carregar fornecedores",
-        description: error.message
+        description: error.message,
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const formatCNPJ = (cnpj?: string) => {
-    if (!cnpj) return 'N/A';
-    return cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  const handleCreateSupplier = async () => {
+    if (!newSupplier.nome.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('fornecedores')
+        .insert({
+          ...newSupplier,
+          user_id: user?.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Fornecedor criado",
+        description: "O fornecedor foi criado com sucesso.",
+      });
+
+      setNewSupplier({
+        nome: '',
+        cnpj: '',
+        telefone: '',
+        email: '',
+        endereco: '',
+        cidade: '',
+        estado: '',
+        cep: ''
+      });
+      setIsDialogOpen(false);
+      fetchSuppliers();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar fornecedor",
+        description: error.message,
+      });
+    }
   };
 
-  if (!isReady) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando configurações...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleWhatsAppContact = (telefone: string, nome: string) => {
+    const message = encodeURIComponent(`Olá ${nome}, gostaria de solicitar uma cotação.`);
+    const whatsappUrl = `https://wa.me/55${telefone.replace(/\D/g, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
-  if (!oficina_id) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Oficina não encontrada. Entre em contato com o suporte.</p>
-        </div>
-      </div>
-    );
-  }
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.cnpj?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando fornecedores...</p>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Fornecedores</h1>
-        <Badge variant="outline">
-          {suppliers.length} fornecedores cadastrados
-        </Badge>
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-2">
+          <Truck className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Fornecedores</h1>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Fornecedor
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Novo Fornecedor</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nome">Nome</Label>
+                <Input
+                  id="nome"
+                  value={newSupplier.nome}
+                  onChange={(e) => setNewSupplier({...newSupplier, nome: e.target.value})}
+                  placeholder="Nome do fornecedor"
+                />
+              </div>
+              <div>
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                  id="cnpj"
+                  value={newSupplier.cnpj}
+                  onChange={(e) => setNewSupplier({...newSupplier, cnpj: e.target.value})}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={newSupplier.telefone}
+                  onChange={(e) => setNewSupplier({...newSupplier, telefone: e.target.value})}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newSupplier.email}
+                  onChange={(e) => setNewSupplier({...newSupplier, email: e.target.value})}
+                  placeholder="email@fornecedor.com"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={newSupplier.endereco}
+                  onChange={(e) => setNewSupplier({...newSupplier, endereco: e.target.value})}
+                  placeholder="Rua, número, bairro"
+                />
+              </div>
+              <div>
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={newSupplier.cidade}
+                  onChange={(e) => setNewSupplier({...newSupplier, cidade: e.target.value})}
+                  placeholder="Cidade"
+                />
+              </div>
+              <div>
+                <Label htmlFor="estado">Estado</Label>
+                <Input
+                  id="estado"
+                  value={newSupplier.estado}
+                  onChange={(e) => setNewSupplier({...newSupplier, estado: e.target.value})}
+                  placeholder="UF"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateSupplier}>
+                Criar Fornecedor
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Buscar Fornecedores</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar por nome ou CNPJ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Search className="h-4 w-4" />
-            <Input
-              placeholder="Buscar por nome, CNPJ ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
+          <CardTitle>Lista de Fornecedores ({filteredSuppliers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {filteredSuppliers.length === 0 ? (
             <div className="text-center py-8">
-              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                {searchTerm ? 'Nenhum fornecedor encontrado' : 'Nenhum fornecedor cadastrado'}
-              </p>
+              <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">Nenhum fornecedor encontrado.</p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar Primeiro Fornecedor
+              </Button>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredSuppliers.map((supplier) => (
-                <Card key={supplier.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-lg">{supplier.nome}</h3>
-                        <p className="text-sm text-gray-600">
-                          CNPJ: {formatCNPJ(supplier.cnpj)}
-                        </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredSuppliers.map((supplier) => (
+                  <TableRow key={supplier.id}>
+                    <TableCell className="font-medium">{supplier.nome}</TableCell>
+                    <TableCell>{supplier.cnpj || '-'}</TableCell>
+                    <TableCell>{supplier.telefone || '-'}</TableCell>
+                    <TableCell>{supplier.email || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {supplier.telefone && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleWhatsAppContact(supplier.telefone!, supplier.nome)}
+                            title="Enviar WhatsApp"
+                          >
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-
-                      {supplier.email && (
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Mail className="h-4 w-4 text-gray-400" />
-                          <span>{supplier.email}</span>
-                        </div>
-                      )}
-
-                      {supplier.telefone && (
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Phone className="h-4 w-4 text-gray-400" />
-                          <span>{supplier.telefone}</span>
-                        </div>
-                      )}
-
-                      {(supplier.endereco || supplier.cidade) && (
-                        <div className="flex items-start space-x-2 text-sm">
-                          <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                          <div>
-                            {supplier.endereco && <p>{supplier.endereco}</p>}
-                            {supplier.cidade && (
-                              <p>{supplier.cidade}{supplier.estado && ` - ${supplier.estado}`}</p>
-                            )}
-                            {supplier.cep && <p>CEP: {supplier.cep}</p>}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="pt-2 border-t">
-                        <p className="text-xs text-gray-500">
-                          Cadastrado em: {new Date(supplier.created_at).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

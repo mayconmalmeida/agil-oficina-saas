@@ -13,11 +13,18 @@ import OrdensServicoPage from '@/pages/OrdensServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
 
-// Import pages from the correct routes structure
+// Import pages
 import ClientsPage from '@/pages/ClientsPage';
 import ServicesPage from '@/pages/ServicesPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import ProductsPage from '@/pages/ProductsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import SuppliersPage from '@/pages/SuppliersPage';
+import ReportsPage from '@/pages/ReportsPage';
+import CompanyPage from '@/pages/CompanyPage';
+import ConfigurationsPage from '@/pages/ConfigurationsPage';
+import SubscriptionPage from '@/pages/SubscriptionPage';
+import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 
@@ -48,6 +55,18 @@ const AppRoutes: React.FC = () => {
             <Route path="/ordens-servico" element={<OrdensServicoPage />} />
             <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
             <Route path="/financeiro" element={<FinanceiroPage />} />
+            
+            {/* Novas rotas implementadas */}
+            <Route path="/dashboard/produtos" element={<ProductsPage />} />
+            <Route path="/dashboard/categorias" element={<CategoriesPage />} />
+            <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
+            <Route path="/dashboard/relatorios" element={<ReportsPage />} />
+            <Route path="/dashboard/empresa" element={<CompanyPage />} />
+            <Route path="/dashboard/configuracoes" element={<ConfigurationsPage />} />
+            <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
+            <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
+            <Route path="/dashboard/ordem-servico" element={<OrdensServicoPage />} />
+            <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
           </Route>
         </Routes>
   );

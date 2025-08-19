@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Layers, Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import EditCategoryDialog from '@/components/categories/EditCategoryDialog';
-import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Category {
   id: string;
@@ -17,310 +19,217 @@ interface Category {
 
 const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [newCategory, setNewCategory] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingDefaults, setIsCreatingDefaults] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
-  const [isCheckingUsage, setIsCheckingUsage] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const { user } = useAuth();
   const { toast } = useToast();
 
   const defaultCategories = [
-    'Manutenção Preventiva',
-    'Manutenção Corretiva',
-    'Troca de Óleo',
-    'Filtros (Ar, Combustível, Óleo)',
+    'Óleo e Lubrificantes',
+    'Filtros',
+    'Peças do Motor',
     'Sistema de Freios',
-    'Suspensão e Amortecedores',
-    'Pneus e Rodas',
-    'Bateria e Sistema Elétrico',
-    'Ar Condicionado',
-    'Motor e Transmissão',
-    'Embreagem',
-    'Sistema de Escape',
-    'Radiador e Arrefecimento',
-    'Faróis e Lanternas',
-    'Limpador de Para-brisa',
-    'Injeção Eletrônica',
-    'Alinhamento e Balanceamento',
-    'Vidros e Para-brisas',
-    'Estofados e Tapeçaria',
-    'Pintura e Funilaria',
-    'Diagnóstico Automotivo',
-    'Instalação de Acessórios'
+    'Suspensão',
+    'Pneus',
+    'Bateria',
+    'Sistema Elétrico',
+    'Carroceria',
+    'Acessórios'
   ];
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+    createDefaultCategories();
+  }, [user?.id]);
+
+  const createDefaultCategories = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Verificar se já existem categorias
+      const { count } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (count === 0) {
+        // Criar categorias padrão
+        const categoriesToInsert = defaultCategories.map(name => ({
+          name,
+          user_id: user.id
+        }));
+
+        await supabase.from('categories').insert(categoriesToInsert);
+        fetchCategories();
+      }
+    } catch (error) {
+      console.error('Erro ao criar categorias padrão:', error);
+    }
+  };
 
   const fetchCategories = async () => {
+    if (!user?.id) return;
+
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('categories')
         .select('*')
+        .eq('user_id', user.id)
         .order('name');
 
       if (error) throw error;
       setCategories(data || []);
     } catch (error: any) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const createDefaultCategories = async () => {
-    setIsCreatingDefaults(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const categoriesToInsert = defaultCategories.map(name => ({
-        name,
-        user_id: user.id
-      }));
-
-      const { error } = await supabase
-        .from('categories')
-        .insert(categoriesToInsert);
-
-      if (error) throw error;
-
-      toast({
-        title: "Categorias criadas",
-        description: `${defaultCategories.length} categorias padrão foram adicionadas com sucesso.`,
-      });
-
-      fetchCategories();
-    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao criar categorias",
+        title: "Erro ao carregar categorias",
         description: error.message,
       });
     } finally {
-      setIsCreatingDefaults(false);
+      setIsLoading(false);
     }
   };
 
-  const addCategory = async () => {
-    if (!newCategory.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Nome da categoria é obrigatório.",
-      });
-      return;
-    }
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('categories')
-        .insert({ name: newCategory.trim(), user_id: user.id });
-
-      if (error) throw error;
-
-      toast({
-        title: "Categoria adicionada",
-        description: `${newCategory} foi adicionada com sucesso.`,
-      });
-
-      setNewCategory('');
-      fetchCategories();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao adicionar categoria",
-        description: error.message,
-      });
-    }
-  };
-
-  const deleteCategory = async (id: string, name: string) => {
     try {
       const { error } = await supabase
         .from('categories')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Categoria removida",
-        description: `${name} foi removida com sucesso.`,
-      });
-
-      fetchCategories();
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao remover categoria",
-        description: error.message,
-      });
-    }
-  };
-
-  const checkCategoryUsage = async (categoryId: string): Promise<boolean> => {
-    try {
-      // Verificar se a categoria está sendo usada em serviços
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('id')
-        .eq('tipo', categories.find(c => c.id === categoryId)?.name)
-        .limit(1);
-
-      if (servicesError) throw servicesError;
-
-      // Se encontrou serviços usando esta categoria, não pode deletar
-      return services && services.length > 0;
-    } catch (error) {
-      console.error('Erro ao verificar uso da categoria:', error);
-      return true; // Em caso de erro, assumir que está sendo usada (segurança)
-    }
-  };
-
-  const handleDeleteClick = async (category: Category) => {
-    setIsCheckingUsage(true);
-    try {
-      const isInUse = await checkCategoryUsage(category.id);
-      
-      if (isInUse) {
-        toast({
-          variant: "destructive",
-          title: "Categoria em uso",
-          description: "Esta categoria não pode ser excluída pois está sendo usada em serviços.",
+        .insert({
+          name: newCategoryName.trim(),
+          user_id: user?.id
         });
-        return;
-      }
-      
-      setDeletingCategory(category);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao verificar uso da categoria.",
-      });
-    } finally {
-      setIsCheckingUsage(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingCategory) return;
-
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', deletingCategory.id);
 
       if (error) throw error;
 
       toast({
-        title: "Categoria removida",
-        description: `${deletingCategory.name} foi removida com sucesso.`,
+        title: "Categoria criada",
+        description: "A categoria foi criada com sucesso.",
       });
 
+      setNewCategoryName('');
+      setIsDialogOpen(false);
       fetchCategories();
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erro ao remover categoria",
+        title: "Erro ao criar categoria",
         description: error.message,
       });
-    } finally {
-      setDeletingCategory(null);
     }
   };
+
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Categorias de Serviços</h1>
-        {categories.length === 0 && (
-          <Button 
-            onClick={createDefaultCategories} 
-            disabled={isCreatingDefaults}
-            className="bg-oficina hover:bg-blue-700"
-          >
-            {isCreatingDefaults ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Criando...
-              </>
-            ) : (
-              'Criar Categorias Padrão'
-            )}
-          </Button>
-        )}
+        <div className="flex items-center space-x-2">
+          <Layers className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Categorias</h1>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Categoria
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nova Categoria</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nome da Categoria</Label>
+                <Input
+                  id="name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Digite o nome da categoria"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateCategory}>
+                  Criar Categoria
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Adicionar Nova Categoria</CardTitle>
+          <CardTitle>Buscar Categorias</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Nome da categoria"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+              placeholder="Buscar categoria..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
             />
-            <Button onClick={addCategory}>
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar
-            </Button>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Categorias ({categories.length})</CardTitle>
+          <CardTitle>Lista de Categorias ({filteredCategories.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {categories.length === 0 ? (
+          {filteredCategories.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Nenhuma categoria cadastrada.</p>
-              <p className="text-sm text-gray-400">
-                Clique em "Criar Categorias Padrão" para começar com categorias pré-definidas.
-              </p>
+              <Layers className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">Nenhuma categoria encontrada.</p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Criar Primeira Categoria
+              </Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((category) => (
+                {filteredCategories.map((category) => (
                   <TableRow key={category.id}>
-                    <TableCell>{category.name}</TableCell>
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell>
+                      {new Date(category.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setEditingCategory(category)}
-                        >
+                        <Button variant="ghost" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleDeleteClick(category)}
-                          disabled={isCheckingUsage}
-                        >
-                          {isCheckingUsage ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -331,23 +240,6 @@ const CategoriesPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      <EditCategoryDialog
-        category={editingCategory}
-        isOpen={!!editingCategory}
-        onClose={() => setEditingCategory(null)}
-        onSuccess={fetchCategories}
-      />
-
-      <ConfirmDialog
-        isOpen={!!deletingCategory}
-        onClose={() => setDeletingCategory(null)}
-        onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        description={`Tem certeza que deseja excluir a categoria "${deletingCategory?.name}"? Esta ação não pode ser desfeita.`}
-        confirmText="Excluir"
-        variant="destructive"
-      />
     </div>
   );
 };
