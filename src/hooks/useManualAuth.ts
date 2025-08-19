@@ -105,22 +105,56 @@ export const useManualAuth = (): AuthState => {
     }
   }, []);
 
-  // Valores derivados
+  // Valores derivados baseados na UserProfile
   const isAdmin = useMemo(() => {
-    return role === 'admin' || role === 'superadmin' || user?.isAdmin === true;
-  }, [role, user?.isAdmin]);
+    return role === 'admin' || role === 'superadmin';
+  }, [role]);
 
   const plan = useMemo(() => {
-    return user?.plan || 'Free';
-  }, [user?.plan]);
+    // Derivar o plano da subscription ou do campo plano
+    if (user?.subscription?.plan_type) {
+      if (user.subscription.plan_type.includes('premium')) {
+        return 'Premium';
+      }
+    }
+    // Usar o campo plano se disponível, senão usar Free como padrão
+    return user?.plano === 'Premium' ? 'Premium' : 'Free';
+  }, [user?.subscription?.plan_type, user?.plano]);
 
   const planActive = useMemo(() => {
-    return user?.planActive || false;
-  }, [user?.planActive]);
+    // Verificar se a subscription está ativa
+    if (user?.subscription) {
+      const now = new Date();
+      const isActive = user.subscription.status === 'active';
+      const notExpired = !user.subscription.ends_at || new Date(user.subscription.ends_at) > now;
+      const trialNotExpired = !user.subscription.trial_ends_at || new Date(user.subscription.trial_ends_at) > now;
+      
+      return isActive && (notExpired || trialNotExpired);
+    }
+    return false;
+  }, [user?.subscription]);
 
   const permissions = useMemo(() => {
-    return user?.permissions || [];
-  }, [user?.permissions]);
+    // Gerar permissões baseadas no plano e status
+    if (isAdmin) {
+      return ['*']; // Admin tem todas as permissões
+    }
+    
+    if (!planActive) {
+      return ['clientes', 'orcamentos']; // Permissões básicas
+    }
+    
+    if (plan === 'Premium') {
+      return [
+        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
+        'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
+        'agendamentos', 'backup_automatico', 'integracao_contabil',
+        'suporte_prioritario', 'marketing_automatico'
+      ];
+    }
+    
+    return ['clientes', 'orcamentos']; // Padrão para planos não reconhecidos
+  }, [isAdmin, planActive, plan]);
 
   const canAccessFeatures = useMemo(() => {
     return planActive || isAdmin;
