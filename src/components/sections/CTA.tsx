@@ -28,7 +28,7 @@ export default function CTA() {
             size="lg"
             className="bg-oficina-accent text-oficina hover:bg-oficina-accent/90 font-medium shadow-accent px-10 py-7 text-lg"
           >
-            <Link to="/registrar" className="flex items-center">
+            <Link to="/register" className="flex items-center">
               Começar Agora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

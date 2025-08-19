@@ -34,12 +34,12 @@ export default function Pricing() {
       name: "Premium Anual",
       monthlyPrice: "197",
       yearlyPrice: "1970",
-      period: billingCycle === 'yearly' ? "/ano" : "/mês",
-      description: "Economia de 17% no plano anual",
+      period: "/ano",
+      description: "R$ 1.970,00/ano - Economia de 17%",
       popular: true,
       features: [
         "Tudo do Premium Mensal",
-        "2 meses grátis no plano anual",
+        "2 meses grátis no plano anual", 
         "Desconto especial de 17%",
         "Suporte prioritário garantido",
         "Treinamento personalizado",
@@ -50,6 +50,7 @@ export default function Pricing() {
   ];
 
   const getCurrentPrice = (plan: typeof plans[0]) => {
+    if (plan.name === "Premium Anual") return "1.970";
     return billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
   };
 
@@ -127,7 +128,7 @@ export default function Pricing() {
                   </span>
                   <span className="text-lg text-gray-600">{plan.period}</span>
                 </div>
-                {billingCycle === 'yearly' && (
+                {plan.name === "Premium Anual" && (
                   <div className="text-sm text-green-600 font-medium mt-2">
                     Economize 17% no plano anual
                   </div>
@@ -147,8 +148,9 @@ export default function Pricing() {
                 <Button 
                   className="w-full py-3 text-base font-semibold transition-all duration-300 bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl"
                   size="lg"
+                  asChild
                 >
-                  <Link to="/workshop-registration">
+                  <Link to="/register">
                     Começar Teste Grátis
                   </Link>
                 </Button>

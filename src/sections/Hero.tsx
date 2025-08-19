@@ -30,7 +30,7 @@ const Hero = () => {
                 size="lg"
                 className="bg-oficina-accent text-oficina hover:bg-oficina-accent/90 font-medium shadow-accent w-full sm:w-auto"
               >
-                <Link to="/workshop-registration" className="flex items-center justify-center">
+                <Link to="/register" className="flex items-center justify-center">
                   Começar agora
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                 </Link>
