@@ -84,13 +84,15 @@ const CollaboratorsPage: React.FC = () => {
       if (error) throw error;
       
       // Transform the data to match our Collaborator interface
-      const transformedData = (data || []).map(item => ({
+      const transformedData: Collaborator[] = (data || []).map(item => ({
         id: item.id,
         nome: item.nome,
         email: item.email,
         telefone: item.telefone,
         funcao: item.funcao,
-        permissoes: Array.isArray(item.permissoes) ? item.permissoes : [],
+        permissoes: Array.isArray(item.permissoes) 
+          ? item.permissoes.filter((p): p is string => typeof p === 'string')
+          : [],
         ativo: item.ativo,
         created_at: item.created_at
       }));
