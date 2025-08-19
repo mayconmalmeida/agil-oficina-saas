@@ -88,31 +88,31 @@ const RelatoriosFinanceiros: React.FC = () => {
   };
 
   const processarFaturamentoPorMes = (contas: any[]) => {
-    const meses = {};
+    const meses: { [key: string]: number } = {};
     contas.forEach(conta => {
       const mes = new Date(conta.data_pagamento).toLocaleDateString('pt-BR', { 
         month: 'short', 
         year: '2-digit' 
       });
-      meses[mes] = (meses[mes] || 0) + parseFloat(conta.valor);
+      meses[mes] = (meses[mes] || 0) + Number(conta.valor);
     });
 
     return Object.entries(meses).map(([mes, valor]) => ({ mes, valor }));
   };
 
   const processarDespesasPorCategoria = (contas: any[]) => {
-    const categorias = {};
+    const categorias: { [key: string]: number } = {};
     contas.forEach(conta => {
       const categoria = conta.categoria || 'Outros';
-      categorias[categoria] = (categorias[categoria] || 0) + parseFloat(conta.valor);
+      categorias[categoria] = (categorias[categoria] || 0) + Number(conta.valor);
     });
 
     return Object.entries(categorias).map(([categoria, valor]) => ({ categoria, valor }));
   };
 
   const calcularResumoMensal = (contasReceber: any[], contasPagar: any[]) => {
-    const totalEntradas = contasReceber.reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
-    const totalSaidas = contasPagar.reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+    const totalEntradas = contasReceber.reduce((sum, conta) => sum + Number(conta.valor), 0);
+    const totalSaidas = contasPagar.reduce((sum, conta) => sum + Number(conta.valor), 0);
     const saldoLiquido = totalEntradas - totalSaidas;
     
     // Calcular crescimento (simulado - em implementação real, comparar com mês anterior)
@@ -136,6 +136,23 @@ const RelatoriosFinanceiros: React.FC = () => {
       title: "Exportação",
       description: "Funcionalidade de exportação em desenvolvimento."
     });
+  };
+
+  const formatCurrency = (value: number) => `R$ ${value.toFixed(2)}`;
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const value = typeof payload[0].value === 'number' ? payload[0].value : Number(payload[0].value);
+      return (
+        <div className="bg-white p-2 border rounded shadow">
+          <p className="font-medium">{label}</p>
+          <p className="text-blue-600">
+            Valor: {formatCurrency(value)}
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -211,7 +228,7 @@ const RelatoriosFinanceiros: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              R$ {relatorioData.resumoMensal.totalEntradas.toFixed(2)}
+              {formatCurrency(relatorioData.resumoMensal.totalEntradas)}
             </div>
           </CardContent>
         </Card>
@@ -223,7 +240,7 @@ const RelatoriosFinanceiros: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              R$ {relatorioData.resumoMensal.totalSaidas.toFixed(2)}
+              {formatCurrency(relatorioData.resumoMensal.totalSaidas)}
             </div>
           </CardContent>
         </Card>
@@ -235,7 +252,7 @@ const RelatoriosFinanceiros: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${relatorioData.resumoMensal.saldoLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              R$ {relatorioData.resumoMensal.saldoLiquido.toFixed(2)}
+              {formatCurrency(relatorioData.resumoMensal.saldoLiquido)}
             </div>
           </CardContent>
         </Card>
@@ -266,7 +283,7 @@ const RelatoriosFinanceiros: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Faturamento']} />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="valor" fill="#0088FE" />
               </BarChart>
             </ResponsiveContainer>
@@ -294,7 +311,7 @@ const RelatoriosFinanceiros: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Valor']} />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>

@@ -13,7 +13,6 @@ import { ArrowLeft, Printer, Share2, Mail, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { PagamentoManual } from '@/types/financeiro';
 
 interface OrdemServico {
   id: string;
@@ -28,7 +27,7 @@ interface OrdemServico {
     telefone: string;
     email: string;
     veiculo: string;
-  };
+  } | null;
 }
 
 const statusOptions = [
@@ -67,10 +66,18 @@ const OrdemServicoDetailPage: React.FC = () => {
         `)
         .eq('id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      setOrdemServico(data);
+      
+      if (data) {
+        // Type assertion to handle the query result properly
+        const ordemServicoData: OrdemServico = {
+          ...data,
+          clients: Array.isArray(data.clients) ? data.clients[0] : data.clients
+        };
+        setOrdemServico(ordemServicoData);
+      }
     } catch (error: any) {
       console.error('Erro ao carregar ordem de serviço:', error);
       toast({
@@ -283,16 +290,16 @@ const OrdemServicoDetailPage: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <strong>Cliente:</strong> {ordemServico.clients?.nome}
+              <strong>Cliente:</strong> {ordemServico.clients?.nome || 'N/A'}
             </div>
             <div>
-              <strong>Telefone:</strong> {ordemServico.clients?.telefone}
+              <strong>Telefone:</strong> {ordemServico.clients?.telefone || 'N/A'}
             </div>
             <div>
               <strong>E-mail:</strong> {ordemServico.clients?.email || 'N/A'}
             </div>
             <div>
-              <strong>Veículo:</strong> {ordemServico.clients?.veiculo}
+              <strong>Veículo:</strong> {ordemServico.clients?.veiculo || 'N/A'}
             </div>
             <div>
               <strong>Valor Total:</strong> R$ {ordemServico.valor_total.toFixed(2)}
