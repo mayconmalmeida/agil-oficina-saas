@@ -1,72 +1,66 @@
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
-import moment from 'moment';
-import 'moment/locale/pt-br';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Eye } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { Agendamento, CalendarEvent } from '@/types/agenda';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-moment.locale('pt-br');
-const localizer = momentLocalizer(moment);
+const locales = {
+  'pt-BR': ptBR,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
+
+interface Agendamento {
+  id: string;
+  data_agendamento: string;
+  horario: string;
+  observacoes?: string;
+  status: string;
+  clients?: {
+    nome: string;
+  };
+  services?: {
+    nome: string;
+  };
+}
 
 const AgendaPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Agendamento | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const fetchAgendamentos = async () => {
-    if (!user?.id) return;
+  useEffect(() => {
+    carregarAgendamentos();
+  }, []);
 
+  const carregarAgendamentos = async () => {
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           *,
-          clients:cliente_id(nome, telefone, veiculo),
-          services:servico_id(nome, tipo, valor)
+          clients(nome),
+          services(nome)
         `)
-        .eq('user_id', user.id)
         .order('data_agendamento', { ascending: true });
 
       if (error) throw error;
-
       setAgendamentos(data || []);
-
-      // Converter para eventos do calendário
-      const calendarEvents: CalendarEvent[] = (data || []).map(agendamento => {
-        const [hours, minutes] = agendamento.horario.split(':');
-        const startDate = new Date(agendamento.data_agendamento);
-        startDate.setHours(parseInt(hours), parseInt(minutes));
-        
-        const endDate = new Date(startDate);
-        endDate.setHours(startDate.getHours() + 1);
-
-        return {
-          id: agendamento.id,
-          title: `${agendamento.clients?.nome || 'Cliente'} - ${agendamento.services?.nome || 'Serviço'}`,
-          start: startDate,
-          end: endDate,
-          resource: agendamento
-        };
-      });
-
-      setEvents(calendarEvents);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao carregar agendamentos:', error);
       toast({
         variant: "destructive",
@@ -78,130 +72,77 @@ const AgendaPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchAgendamentos();
-  }, [user?.id]);
-
-  const handleSelectEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event.resource);
-    setIsModalOpen(true);
-  };
-
-  const handleViewOS = () => {
-    if (selectedEvent) {
-      navigate(`/ordens-servico/${selectedEvent.id}`);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'agendado': return 'bg-blue-100 text-blue-800';
-      case 'confirmado': return 'bg-green-100 text-green-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const messages = {
-    allDay: 'Dia inteiro',
-    previous: 'Anterior',
-    next: 'Próximo',
-    today: 'Hoje',
-    month: 'Mês',
-    week: 'Semana',
-    day: 'Dia',
-    agenda: 'Agenda',
-    date: 'Data',
-    time: 'Hora',
-    event: 'Evento',
-    noEventsInRange: 'Não há eventos neste período.',
-    showMore: (total: number) => `+${total} mais`
-  };
+  const events = agendamentos.map(agendamento => {
+    const [hours, minutes] = agendamento.horario.split(':').map(Number);
+    const date = new Date(agendamento.data_agendamento);
+    date.setHours(hours, minutes);
+    
+    return {
+      id: agendamento.id,
+      title: `${agendamento.clients?.nome || 'Cliente'} - ${agendamento.services?.nome || 'Serviço'}`,
+      start: date,
+      end: new Date(date.getTime() + 60 * 60 * 1000), // 1 hora de duração
+      resource: agendamento,
+    };
+  });
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Carregando...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Carregando agenda...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Agenda</h1>
+        <div className="flex items-center space-x-2">
+          <CalendarIcon className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold">Agenda</h1>
+        </div>
         <Button onClick={() => navigate('/agendamentos/novo')}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Novo Agendamento
         </Button>
       </div>
 
       <Card>
-        <CardContent className="p-6">
+        <CardHeader>
+          <CardTitle>Calendário de Agendamentos</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div style={{ height: '600px' }}>
             <Calendar
               localizer={localizer}
               events={events}
               startAccessor="start"
               endAccessor="end"
-              messages={messages}
-              onSelectEvent={handleSelectEvent}
-              views={[Views.MONTH, Views.WEEK, Views.DAY]}
-              defaultView={Views.MONTH}
-              popup
-              step={30}
-              showMultiDayTimes
+              culture="pt-BR"
+              messages={{
+                next: "Próximo",
+                previous: "Anterior",
+                today: "Hoje",
+                month: "Mês",
+                week: "Semana",
+                day: "Dia",
+                agenda: "Agenda",
+                date: "Data",
+                time: "Hora",
+                event: "Evento",
+                noEventsInRange: "Não há agendamentos neste período.",
+                showMore: (total) => `+ Ver mais (${total})`
+              }}
+              onSelectEvent={(event) => {
+                navigate(`/ordens-servico/${event.resource.id}`);
+              }}
             />
           </div>
         </CardContent>
       </Card>
-
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Detalhes do Agendamento</DialogTitle>
-          </DialogHeader>
-          {selectedEvent && (
-            <div className="space-y-4">
-              <div>
-                <strong>Cliente:</strong> {selectedEvent.clients?.nome || 'N/A'}
-              </div>
-              <div>
-                <strong>Telefone:</strong> {selectedEvent.clients?.telefone || 'N/A'}
-              </div>
-              <div>
-                <strong>Veículo:</strong> {selectedEvent.clients?.veiculo || 'N/A'}
-              </div>
-              <div>
-                <strong>Serviço:</strong> {selectedEvent.services?.nome || 'N/A'}
-              </div>
-              <div>
-                <strong>Data:</strong> {new Date(selectedEvent.data_agendamento).toLocaleDateString('pt-BR')}
-              </div>
-              <div>
-                <strong>Horário:</strong> {selectedEvent.horario}
-              </div>
-              <div>
-                <strong>Status:</strong>
-                <Badge className={`ml-2 ${getStatusColor(selectedEvent.status)}`}>
-                  {selectedEvent.status}
-                </Badge>
-              </div>
-              {selectedEvent.observacoes && (
-                <div>
-                  <strong>Observações:</strong>
-                  <p className="mt-1 text-sm text-gray-600">{selectedEvent.observacoes}</p>
-                </div>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                  Fechar
-                </Button>
-                <Button onClick={handleViewOS}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Ver OS
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

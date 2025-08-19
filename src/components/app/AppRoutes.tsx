@@ -9,9 +9,11 @@ import DashboardPage from '@/pages/DashboardPage';
 import Layout from '@/components/layout/Layout';
 import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 import AgendaPage from '@/pages/AgendaPage';
+import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdensServicoPage from '@/pages/OrdensServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
+import EstoquePage from '@/pages/EstoquePage';
 
 // Import pages
 import ClientsPage from '@/pages/ClientsPage';
@@ -27,48 +29,57 @@ import SubscriptionPage from '@/pages/SubscriptionPage';
 import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import AdminDashboard from '@/pages/AdminDashboard';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import IASuportePage from '@/pages/IASuportePage';
 
 const AppRoutes: React.FC = () => {
   return (
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/support" element={<SupportPage />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin/*" element={
-            <OptimizedAdminGuard>
-              <AdminDashboard />
-            </OptimizedAdminGuard>
-          } />
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/support" element={<SupportPage />} />
+      
+      {/* Admin Routes */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin/*" element={
+        <OptimizedAdminGuard>
+          <AdminDashboard />
+        </OptimizedAdminGuard>
+      } />
 
-          {/* Protected Routes */}
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/agenda" element={<AgendaPage />} />
-            <Route path="/clientes" element={<ClientsPage />} />
-            <Route path="/servicos" element={<ServicesPage />} />
-            <Route path="/produtos" element={<ProductsPage />} />
-            <Route path="/orcamentos" element={<BudgetsPage />} />
-            <Route path="/ordens-servico" element={<OrdensServicoPage />} />
-            <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
-            <Route path="/financeiro" element={<FinanceiroPage />} />
-            
-            {/* Novas rotas implementadas */}
-            <Route path="/dashboard/produtos" element={<ProductsPage />} />
-            <Route path="/dashboard/categorias" element={<CategoriesPage />} />
-            <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
-            <Route path="/dashboard/relatorios" element={<ReportsPage />} />
-            <Route path="/dashboard/empresa" element={<CompanyPage />} />
-            <Route path="/dashboard/configuracoes" element={<ConfigurationsPage />} />
-            <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
-            <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
-            <Route path="/dashboard/ordem-servico" element={<OrdensServicoPage />} />
-            <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
-          </Route>
-        </Routes>
+      {/* Protected Routes */}
+      <Route element={<Layout />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/agenda" element={<AgendaPage />} />
+        <Route path="/agendamentos/novo" element={<NewSchedulePage />} />
+        <Route path="/clientes" element={<ClientsPage />} />
+        <Route path="/servicos" element={<ServicesPage />} />
+        <Route path="/produtos" element={<ProductsPage />} />
+        <Route path="/orcamentos" element={<BudgetsPage />} />
+        <Route path="/ordens-servico" element={<OrdensServicoPage />} />
+        <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
+        <Route path="/estoque" element={<EstoquePage />} />
+        <Route path="/financeiro" element={<FinanceiroPage />} />
+        <Route path="/colaboradores" element={<CollaboratorsPage />} />
+        <Route path="/relatorios" element={<ReportsPage />} />
+        <Route path="/configuracoes" element={<ConfigurationsPage />} />
+        
+        {/* Dashboard specific routes */}
+        <Route path="/dashboard/produtos" element={<ProductsPage />} />
+        <Route path="/dashboard/categorias" element={<CategoriesPage />} />
+        <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
+        <Route path="/dashboard/relatorios" element={<ReportsPage />} />
+        <Route path="/dashboard/empresa" element={<CompanyPage />} />
+        <Route path="/dashboard/configuracoes" element={<ConfigurationsPage />} />
+        <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
+        <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
+        <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
+        <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
+        <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
+        <Route path="/dashboard/estoque" element={<EstoquePage />} />
+      </Route>
+    </Routes>
   );
 };
 

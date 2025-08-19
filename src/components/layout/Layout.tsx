@@ -1,35 +1,32 @@
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const Layout: React.FC = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Carregando...</p>
-        </div>
-      </div>
-    );
-  }
+  const { user } = useAuth();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <div className="lg:pl-64">
+          <Header />
+          <main className="py-6">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+      </div>
+    </ProtectedRoute>
   );
 };
 

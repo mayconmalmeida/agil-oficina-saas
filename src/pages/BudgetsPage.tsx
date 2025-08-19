@@ -1,103 +1,168 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Search, Plus, FileText } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import BudgetList from '@/components/budgets/BudgetList';
-import BudgetForm from '@/components/budget/BudgetForm';
-import { Input } from '@/components/ui/input';
-import { useBudgetForm } from '@/hooks/useBudgetForm';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, Eye, Edit, FileText } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+
+interface Orcamento {
+  id: string;
+  cliente: string;
+  veiculo: string;
+  descricao: string;
+  valor_total: number;
+  status: string;
+  created_at: string;
+}
 
 const BudgetsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('lista');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('todos');
-  const { isLoading, handleSubmit, skipStep } = useBudgetForm();
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Searching for:", searchQuery);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    carregarOrcamentos();
+  }, []);
+
+  const carregarOrcamentos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOrcamentos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar orçamentos:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar os orçamentos."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleNewBudget = () => {
-    navigate('/dashboard/orcamentos/novo');
+
+  const orcamentosFiltrados = orcamentos.filter(orcamento =>
+    orcamento.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    orcamento.veiculo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    orcamento.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'aprovado': return 'bg-green-100 text-green-800';
+      case 'rejeitado': return 'bg-red-100 text-red-800';
+      case 'enviado': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
-  
-  return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Gerenciar Orçamentos</h1>
-          <Button onClick={handleNewBudget}>
-            <Plus className="mr-2 h-4 w-4" /> Novo Orçamento
-          </Button>
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Carregando orçamentos...</p>
         </div>
-        
-        <Card>
-          <CardContent className="p-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-                <TabsList>
-                  <TabsTrigger value="lista" className="flex items-center">
-                    <FileText className="mr-2 h-4 w-4" /> 
-                    Lista de Orçamentos
-                  </TabsTrigger>
-                  <TabsTrigger value="novo" className="flex items-center">
-                    <Plus className="mr-2 h-4 w-4" /> 
-                    Novo Orçamento
-                  </TabsTrigger>
-                </TabsList>
-                
-                {activeTab === 'lista' && (
-                  <div className="flex flex-col md:flex-row gap-2 w-full md:max-w-lg">
-                    <form onSubmit={handleSearch} className="flex items-center space-x-2 flex-1">
-                      <Input
-                        type="text"
-                        placeholder="Buscar orçamentos..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button type="submit" size="icon">
-                        <Search className="h-4 w-4" />
-                      </Button>
-                    </form>
-                    
-                    <Select value={filter} onValueChange={setFilter}>
-                      <SelectTrigger className="md:w-[180px]">
-                        <SelectValue placeholder="Filtrar por" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todos</SelectItem>
-                        <SelectItem value="pendentes">Pendentes</SelectItem>
-                        <SelectItem value="aprovados">Aprovados</SelectItem>
-                        <SelectItem value="rejeitados">Rejeitados</SelectItem>
-                        <SelectItem value="convertidos">Convertidos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              
-              <TabsContent value="lista" className="mt-0">
-                <BudgetList searchQuery={searchQuery} filter={filter} />
-              </TabsContent>
-              
-              <TabsContent value="novo" className="mt-0">
-                <BudgetForm 
-                  onSubmit={handleSubmit}
-                  onSkip={skipStep}
-                  isLoading={isLoading}
-                />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <FileText className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold">Orçamentos</h1>
+        </div>
+        <Button onClick={() => navigate('/orcamentos/novo')}>
+          <Plus className="mr-2 h-4 w-4" />
+          Novo Orçamento
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Orçamentos</CardTitle>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Buscar orçamentos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Veículo</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orcamentosFiltrados.map((orcamento) => (
+                <TableRow key={orcamento.id}>
+                  <TableCell className="font-medium">
+                    #{orcamento.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell>{orcamento.cliente}</TableCell>
+                  <TableCell>{orcamento.veiculo}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {orcamento.descricao}
+                  </TableCell>
+                  <TableCell>R$ {orcamento.valor_total.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(orcamento.status)}>
+                      {orcamento.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(orcamento.created_at).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/orcamentos/${orcamento.id}`)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/orcamentos/editar/${orcamento.id}`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };

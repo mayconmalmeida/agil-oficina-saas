@@ -11,34 +11,46 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface ContaPagar {
   id: string;
-  fornecedor: string;
+  fornecedor_id?: string;
   descricao: string;
-  categoria: string;
+  categoria?: string;
   valor: number;
-  vencimento: string;
+  data_vencimento: string;
   status: 'pendente' | 'pago' | 'vencido';
   created_at: string;
+  fornecedores?: {
+    nome: string;
+  };
+}
+
+interface Fornecedor {
+  id: string;
+  nome: string;
 }
 
 interface ContasPagarProps {
-  onUpdateResumo: (resumo: any) => void;
+  onUpdateResumo?: (resumo: any) => void;
 }
 
 const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
   const [contas, setContas] = useState<ContaPagar[]>([]);
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [fornecedorSearch, setFornecedorSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    fornecedor: '',
+    fornecedor_id: '',
     descricao: '',
     categoria: '',
     valor: '',
-    vencimento: ''
+    data_vencimento: ''
   });
 
   const categorias = [
@@ -53,88 +65,145 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
   ];
 
   useEffect(() => {
-    // Simular dados iniciais
-    const contasIniciais: ContaPagar[] = [
-      {
-        id: '1',
-        fornecedor: 'Auto Peças Silva',
-        descricao: 'Peças para revisão',
-        categoria: 'Fornecedores',
-        valor: 320.00,
-        vencimento: '2024-02-20',
-        status: 'pendente',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        fornecedor: 'Companhia de Energia',
-        descricao: 'Conta de luz',
-        categoria: 'Energia',
-        valor: 280.00,
-        vencimento: '2024-02-15',
-        status: 'pendente',
-        created_at: new Date().toISOString()
-      }
-    ];
-    setContas(contasIniciais);
-    calcularResumo(contasIniciais);
+    carregarDados();
   }, []);
+
+  useEffect(() => {
+    if (fornecedorSearch.length >= 2) {
+      buscarFornecedores();
+    } else {
+      setFornecedores([]);
+    }
+  }, [fornecedorSearch]);
+
+  const carregarDados = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contas_pagar')
+        .select(`
+          *,
+          fornecedores(nome)
+        `)
+        .order('data_vencimento', { ascending: true });
+
+      if (error) throw error;
+      
+      const contasComStatus = (data || []).map(conta => ({
+        ...conta,
+        status: new Date(conta.data_vencimento) < new Date() && conta.status === 'pendente' 
+          ? 'vencido' as const
+          : conta.status as 'pendente' | 'pago' | 'vencido'
+      }));
+      
+      setContas(contasComStatus);
+      calcularResumo(contasComStatus);
+    } catch (error) {
+      console.error('Erro ao carregar contas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar as contas a pagar."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const buscarFornecedores = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fornecedores')
+        .select('id, nome')
+        .ilike('nome', `%${fornecedorSearch}%`)
+        .limit(10);
+
+      if (error) throw error;
+      setFornecedores(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar fornecedores:', error);
+    }
+  };
 
   const calcularResumo = (contasList: ContaPagar[]) => {
     const totalPagar = contasList
       .filter(conta => conta.status === 'pendente' || conta.status === 'vencido')
       .reduce((sum, conta) => sum + conta.valor, 0);
     
-    onUpdateResumo(prev => ({
-      ...prev,
-      totalPagar
-    }));
+    if (onUpdateResumo) {
+      onUpdateResumo({
+        totalPagar
+      });
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const novaConta: ContaPagar = {
-      id: Date.now().toString(),
-      fornecedor: formData.fornecedor,
-      descricao: formData.descricao,
-      categoria: formData.categoria,
-      valor: parseFloat(formData.valor),
-      vencimento: formData.vencimento,
-      status: new Date(formData.vencimento) < new Date() ? 'vencido' : 'pendente',
-      created_at: new Date().toISOString()
-    };
+    try {
+      const { error } = await supabase
+        .from('contas_pagar')
+        .insert({
+          fornecedor_id: formData.fornecedor_id || null,
+          descricao: formData.descricao,
+          categoria: formData.categoria,
+          valor: parseFloat(formData.valor),
+          data_vencimento: formData.data_vencimento,
+          status: 'pendente'
+        });
 
-    const novasContas = [...contas, novaConta];
-    setContas(novasContas);
-    calcularResumo(novasContas);
-    
-    setFormData({ fornecedor: '', descricao: '', categoria: '', valor: '', vencimento: '' });
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Conta adicionada",
-      description: "Nova conta a pagar foi registrada com sucesso.",
-    });
+      if (error) throw error;
+
+      toast({
+        title: "Conta adicionada",
+        description: "Nova conta a pagar foi registrada com sucesso.",
+      });
+
+      setFormData({ fornecedor_id: '', descricao: '', categoria: '', valor: '', data_vencimento: '' });
+      setFornecedorSearch('');
+      setIsDialogOpen(false);
+      carregarDados();
+    } catch (error) {
+      console.error('Erro ao adicionar conta:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível adicionar a conta."
+      });
+    }
   };
 
-  const marcarComoPago = (id: string) => {
-    const novasContas = contas.map(conta => 
-      conta.id === id ? { ...conta, status: 'pago' as const } : conta
-    );
-    setContas(novasContas);
-    calcularResumo(novasContas);
-    
-    toast({
-      title: "Conta paga",
-      description: "Conta marcada como paga com sucesso.",
-    });
+  const marcarComoPago = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('contas_pagar')
+        .update({ 
+          status: 'pago',
+          data_pagamento: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Conta paga",
+        description: "Conta marcada como paga com sucesso.",
+      });
+
+      carregarDados();
+    } catch (error) {
+      console.error('Erro ao marcar como pago:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível marcar a conta como paga."
+      });
+    }
   };
 
   const contasFiltradas = contas.filter(conta =>
-    conta.fornecedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conta.fornecedores?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conta.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conta.categoria.toLowerCase().includes(searchTerm.toLowerCase())
+    conta.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {
@@ -145,6 +214,17 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Carregando contas...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card>
@@ -164,13 +244,32 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="fornecedor">Fornecedor</Label>
-                  <Input
-                    id="fornecedor"
-                    value={formData.fornecedor}
-                    onChange={(e) => setFormData({...formData, fornecedor: e.target.value})}
-                    required
-                  />
+                  <Label htmlFor="fornecedor_search">Fornecedor</Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="fornecedor_search"
+                      placeholder="Digite o nome do fornecedor (mín. 2 caracteres)"
+                      value={fornecedorSearch}
+                      onChange={(e) => setFornecedorSearch(e.target.value)}
+                    />
+                    {fornecedores.length > 0 && (
+                      <div className="border rounded-md max-h-32 overflow-y-auto">
+                        {fornecedores.map((fornecedor) => (
+                          <div
+                            key={fornecedor.id}
+                            className="p-2 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => {
+                              setFormData({...formData, fornecedor_id: fornecedor.id});
+                              setFornecedorSearch(fornecedor.nome);
+                              setFornecedores([]);
+                            }}
+                          >
+                            {fornecedor.nome}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="categoria">Categoria</Label>
@@ -208,12 +307,12 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="vencimento">Data de Vencimento</Label>
+                  <Label htmlFor="data_vencimento">Data de Vencimento</Label>
                   <Input
-                    id="vencimento"
+                    id="data_vencimento"
                     type="date"
-                    value={formData.vencimento}
-                    onChange={(e) => setFormData({...formData, vencimento: e.target.value})}
+                    value={formData.data_vencimento}
+                    onChange={(e) => setFormData({...formData, data_vencimento: e.target.value})}
                     required
                   />
                 </div>
@@ -253,11 +352,11 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
           <TableBody>
             {contasFiltradas.map((conta) => (
               <TableRow key={conta.id}>
-                <TableCell className="font-medium">{conta.fornecedor}</TableCell>
-                <TableCell>{conta.categoria}</TableCell>
+                <TableCell className="font-medium">{conta.fornecedores?.nome || 'N/A'}</TableCell>
+                <TableCell>{conta.categoria || 'N/A'}</TableCell>
                 <TableCell>{conta.descricao}</TableCell>
                 <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
-                <TableCell>{new Date(conta.vencimento).toLocaleDateString('pt-BR')}</TableCell>
+                <TableCell>{new Date(conta.data_vencimento).toLocaleDateString('pt-BR')}</TableCell>
                 <TableCell>
                   <Badge className={getStatusColor(conta.status)}>
                     {conta.status}
