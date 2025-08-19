@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO, isToday, isTomorrow, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Plus, Search } from 'lucide-react';
+import { Calendar, Plus, Search, Clock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import CalendarioInterativo from '@/components/scheduling/CalendarioInterativo';
@@ -94,6 +96,67 @@ const SchedulesPage = () => {
     agendamento.services?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     agendamento.observacoes?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Render schedule card
+  const renderScheduleCard = (agendamento: any) => (
+    <Card key={agendamento.id} className="mb-4 hover:shadow-md transition-shadow">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg">{agendamento.services?.nome || agendamento.descricao_servico}</CardTitle>
+            <CardDescription>{agendamento.clients?.nome}</CardDescription>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              {agendamento.horario}
+            </Badge>
+            <Badge 
+              variant={agendamento.status === 'agendado' ? 'default' : 
+                     agendamento.status === 'concluido' ? 'default' : 'destructive'}
+              className={
+                agendamento.status === 'agendado' ? 'bg-yellow-100 text-yellow-800' :
+                agendamento.status === 'concluido' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }
+            >
+              {agendamento.status}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <p className="text-sm text-gray-600 mb-1">
+          <strong>Cliente:</strong> {agendamento.clients?.nome}
+        </p>
+        <p className="text-sm text-gray-600 mb-1">
+          <strong>Telefone:</strong> {agendamento.clients?.telefone}
+        </p>
+        {agendamento.observacoes && (
+          <p className="text-sm text-gray-600">
+            <strong>Observações:</strong> {agendamento.observacoes}
+          </p>
+        )}
+      </CardContent>
+      <CardFooter className="pt-0 flex justify-between">
+        <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/agendamentos/${agendamento.id}`)}>
+          Ver detalhes
+          <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+
+  const renderEmptyState = (title: string, description: string) => (
+    <div className="text-center py-12">
+      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+      <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+      <p className="mt-1 text-sm text-gray-500">{description}</p>
+      <Button onClick={handleNewSchedule} className="mt-4">
+        <Plus className="mr-2 h-4 w-4" />
+        Agendar Serviço
+      </Button>
+    </div>
+  );
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -147,81 +210,30 @@ const SchedulesPage = () => {
         <TabsContent value="hoje">
           <div className="bg-white rounded-md p-4">
             <h2 className="text-xl font-semibold mb-4">Agendamentos de Hoje</h2>
-            
-            {todaySchedules.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">Sem agendamentos hoje</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Não há agendamentos para hoje
-                </p>
-                <Button 
-                  onClick={handleNewSchedule} 
-                  className="mt-4"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agendar Serviço
-                </Button>
-              </div>
-            ) : (
-              <div>
-                {todaySchedules.map(renderScheduleCard)}
-              </div>
-            )}
+            {todaySchedules.length === 0 ? 
+              renderEmptyState("Sem agendamentos hoje", "Não há agendamentos para hoje") : 
+              <div>{todaySchedules.map(renderScheduleCard)}</div>
+            }
           </div>
         </TabsContent>
         
-        <TabsContent value="tomorrow">
+        <TabsContent value="amanha">
           <div className="bg-white rounded-md p-4">
             <h2 className="text-xl font-semibold mb-4">Agendamentos de Amanhã</h2>
-            
-            {tomorrowSchedules.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">Sem agendamentos amanhã</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Não há agendamentos para amanhã
-                </p>
-                <Button 
-                  onClick={handleNewSchedule} 
-                  className="mt-4"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agendar Serviço
-                </Button>
-              </div>
-            ) : (
-              <div>
-                {tomorrowSchedules.map(renderScheduleCard)}
-              </div>
-            )}
+            {tomorrowSchedules.length === 0 ? 
+              renderEmptyState("Sem agendamentos amanhã", "Não há agendamentos para amanhã") : 
+              <div>{tomorrowSchedules.map(renderScheduleCard)}</div>
+            }
           </div>
         </TabsContent>
         
-        <TabsContent value="upcoming">
+        <TabsContent value="proximos">
           <div className="bg-white rounded-md p-4">
             <h2 className="text-xl font-semibold mb-4">Próximos Agendamentos</h2>
-            
-            {upcomingSchedules.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">Sem agendamentos futuros</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Não há agendamentos para os próximos dias
-                </p>
-                <Button 
-                  onClick={handleNewSchedule} 
-                  className="mt-4"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agendar Serviço
-                </Button>
-              </div>
-            ) : (
-              <div>
-                {upcomingSchedules.map(renderScheduleCard)}
-              </div>
-            )}
+            {upcomingSchedules.length === 0 ? 
+              renderEmptyState("Sem agendamentos futuros", "Não há agendamentos para os próximos dias") : 
+              <div>{upcomingSchedules.map(renderScheduleCard)}</div>
+            }
           </div>
         </TabsContent>
       </Tabs>
@@ -230,55 +242,3 @@ const SchedulesPage = () => {
 };
 
 export default SchedulesPage;
-
-import { ArrowRight, Clock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-
-// Render schedule card
-const renderScheduleCard = (agendamento: any) => (
-  <Card key={agendamento.id} className="mb-4 hover:shadow-md transition-shadow">
-    <CardHeader className="pb-2">
-      <div className="flex justify-between items-start">
-        <div>
-          <CardTitle className="text-lg">{agendamento.services?.nome || agendamento.descricao_servico}</CardTitle>
-          <CardDescription>{agendamento.clients?.nome}</CardDescription>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            {agendamento.horario}
-          </Badge>
-          <Badge 
-            variant={agendamento.status === 'agendado' ? 'default' : 
-                   agendamento.status === 'concluido' ? 'default' : 'destructive'}
-            className={
-              agendamento.status === 'agendado' ? 'bg-yellow-100 text-yellow-800' :
-              agendamento.status === 'concluido' ? 'bg-green-100 text-green-800' :
-              'bg-red-100 text-red-800'
-            }
-          >
-            {agendamento.status}
-          </Badge>
-        </div>
-      </div>
-    </CardHeader>
-    <CardContent className="pb-2">
-      <p className="text-sm text-gray-600 mb-1">
-        <strong>Cliente:</strong> {agendamento.clients?.nome}
-      </p>
-      <p className="text-sm text-gray-600 mb-1">
-        <strong>Telefone:</strong> {agendamento.clients?.telefone}
-      </p>
-      {agendamento.observacoes && (
-        <p className="text-sm text-gray-600">
-          <strong>Observações:</strong> {agendamento.observacoes}
-        </p>
-      )}
-    </CardContent>
-    <CardFooter className="pt-0 flex justify-between">
-      <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/agendamentos/${agendamento.id}`)}>
-        Ver detalhes
-        <ArrowRight className="ml-1 h-4 w-4" />
-      </Button>
-    </CardFooter>
-  </Card>
-);

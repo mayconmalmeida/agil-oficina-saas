@@ -30,45 +30,67 @@ const OrdemServicoDetalhePage: React.FC = () => {
       let { data: ordemData, error: ordemError } = await supabase
         .from('ordens_servico')
         .select(`
-          *,
-          clients(nome, telefone)
+          *
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (ordemError && ordemError.code === 'PGRST116') {
+      if (ordemError) throw ordemError;
+
+      if (!ordemData) {
         // Se não encontrar na ordens_servico, buscar na agendamentos
         const { data: agendamentoData, error: agendamentoError } = await supabase
           .from('agendamentos')
           .select(`
-            *,
-            clients(nome, telefone),
-            services(nome, valor)
+            *
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle();
 
         if (agendamentoError) throw agendamentoError;
 
-        // Transformar agendamento em formato de ordem de serviço
-        ordemData = {
-          id: agendamentoData.id,
-          cliente_id: agendamentoData.cliente_id,
-          data_inicio: agendamentoData.data_agendamento,
-          status: agendamentoData.status === 'agendado' ? 'Aberto' : 'Em Andamento',
-          observacoes: agendamentoData.observacoes,
-          valor_total: agendamentoData.services?.valor || 0,
-          cliente_nome: agendamentoData.clients?.nome,
-          clients: agendamentoData.clients,
-          services: agendamentoData.services
-        };
+        if (agendamentoData) {
+          // Buscar dados do cliente separadamente
+          const { data: clienteData } = await supabase
+            .from('clients')
+            .select('nome, telefone')
+            .eq('id', agendamentoData.cliente_id)
+            .maybeSingle();
+
+          // Buscar dados do serviço separadamente
+          const { data: servicoData } = await supabase
+            .from('services')
+            .select('nome, valor')
+            .eq('id', agendamentoData.servico_id)
+            .maybeSingle();
+
+          // Transformar agendamento em formato de ordem de serviço
+          ordemData = {
+            id: agendamentoData.id,
+            cliente_id: agendamentoData.cliente_id,
+            data_inicio: agendamentoData.data_agendamento,
+            status: agendamentoData.status === 'agendado' ? 'Aberto' : 'Em Andamento',
+            observacoes: agendamentoData.observacoes,
+            valor_total: servicoData?.valor || 0,
+            cliente_nome: clienteData?.nome || 'Cliente não encontrado',
+            cliente_telefone: clienteData?.telefone || '',
+            servico_nome: servicoData?.nome || agendamentoData.descricao_servico
+          };
+        }
+      } else {
+        // Buscar dados do cliente para ordem de serviço existente
+        const { data: clienteData } = await supabase
+          .from('clients')
+          .select('nome, telefone')
+          .eq('id', ordemData.cliente_id)
+          .maybeSingle();
+
+        ordemData.cliente_nome = clienteData?.nome || 'Cliente não encontrado';
+        ordemData.cliente_telefone = clienteData?.telefone || '';
       }
 
       if (ordemData) {
-        setOrdem({
-          ...ordemData,
-          cliente_nome: ordemData.clients?.nome || ordemData.cliente_nome
-        });
+        setOrdem(ordemData);
       }
 
     } catch (error: any) {
