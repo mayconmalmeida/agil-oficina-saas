@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
@@ -48,6 +47,10 @@ const servicesAndBudgetsItems = [
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
   { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
+];
+
+const financialItems = [
+  { name: 'Financeiro', href: '/dashboard/financeiro', icon: TrendingUp },
 ];
 
 const inventoryItems = [
@@ -169,6 +172,9 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
 
         {/* Services & Budgets */}
         {renderCollapsibleSection('Serviços & Orçamentos', servicesAndBudgetsItems, isServicesOpen, setIsServicesOpen)}
+
+        {/* Financial */}
+        {renderCollapsibleSection('Financeiro', financialItems, true, () => {})}
 
         {/* Inventory */}
         {renderCollapsibleSection('Estoque & Fornecedores', inventoryItems, isInventoryOpen, setIsInventoryOpen)}
