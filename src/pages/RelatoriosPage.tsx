@@ -1,268 +1,379 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { BarChart3, Download, Calendar, TrendingUp, Users, Car, DollarSign, FileText } from 'lucide-react';
-import { useRelatoriosBasicosData } from '@/hooks/useRelatoriosBasicosData';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { FileText, Download, Calendar, DollarSign, Package, Users } from 'lucide-react';
+
+interface RelatorioData {
+  osPorStatus: Array<{ status: string; count: number }>;
+  faturamentoPorPeriodo: Array<{ periodo: string; valor: number }>;
+  produtosMaisUsados: Array<{ nome: string; quantidade: number }>;
+  clientesRecorrentes: Array<{ nome: string; total_os: number; ultimo_servico: string }>;
+  resumoFinanceiro: {
+    totalFaturado: number;
+    totalServicos: number;
+    mediaTicket: number;
+  };
+}
 
 const RelatoriosPage: React.FC = () => {
-  const [reportType, setReportType] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const { data, loading } = useRelatoriosBasicosData();
+  const [relatorioData, setRelatorioData] = useState<RelatorioData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filtros, setFiltros] = useState({
+    dataInicio: '',
+    dataFim: '',
+    tipoRelatorio: 'geral'
+  });
+  const { toast } = useToast();
 
-  const handleGenerateReport = () => {
-    console.log('Gerando relatório:', { reportType, dateFrom, dateTo });
+  useEffect(() => {
+    fetchRelatorioData();
+  }, []);
+
+  const fetchRelatorioData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Buscar OS por status
+      const { data: osData, error: osError } = await supabase
+        .from('ordens_servico')
+        .select('status')
+        .gte('created_at', filtros.dataInicio || '2024-01-01')
+        .lte('created_at', filtros.dataFim || new Date().toISOString());
+
+      if (osError) throw osError;
+
+      const osPorStatus = osData?.reduce((acc: any, os) => {
+        const status = os.status || 'Sem status';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Buscar faturamento por mês
+      const { data: faturamentoData, error: fatError } = await supabase
+        .from('ordens_servico')
+        .select('valor_total, created_at')
+        .not('valor_total', 'is', null)
+        .gte('created_at', filtros.dataInicio || '2024-01-01')
+        .lte('created_at', filtros.dataFim || new Date().toISOString());
+
+      if (fatError) throw fatError;
+
+      const faturamentoPorPeriodo = faturamentoData?.reduce((acc: any, item) => {
+        const mes = new Date(item.created_at).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+        acc[mes] = (acc[mes] || 0) + (item.valor_total || 0);
+        return acc;
+      }, {});
+
+      // Buscar produtos mais usados (através de serviços)
+      const { data: servicos, error: servicosError } = await supabase
+        .from('services')
+        .select('nome, quantidade_estoque')
+        .eq('tipo', 'produto')
+        .order('quantidade_estoque', { ascending: true })
+        .limit(10);
+
+      if (servicosError) throw servicosError;
+
+      // Buscar clientes mais recorrentes
+      const { data: clientesData, error: clientesError } = await supabase
+        .from('ordens_servico')
+        .select(`
+          cliente_id,
+          created_at,
+          clients:cliente_id(nome)
+        `)
+        .not('cliente_id', 'is', null);
+
+      if (clientesError) throw clientesError;
+
+      const clientesRecorrentes = clientesData?.reduce((acc: any, os) => {
+        const clienteId = os.cliente_id;
+        const nomeCliente = os.clients?.nome || 'Cliente não identificado';
+        
+        if (!acc[clienteId]) {
+          acc[clienteId] = {
+            nome: nomeCliente,
+            total_os: 0,
+            ultimo_servico: os.created_at
+          };
+        }
+        
+        acc[clienteId].total_os += 1;
+        if (new Date(os.created_at) > new Date(acc[clienteId].ultimo_servico)) {
+          acc[clienteId].ultimo_servico = os.created_at;
+        }
+        
+        return acc;
+      }, {});
+
+      // Calcular resumo financeiro
+      const totalFaturado = faturamentoData?.reduce((sum, item) => sum + (item.valor_total || 0), 0) || 0;
+      const totalServicos = osData?.length || 0;
+      const mediaTicket = totalServicos > 0 ? totalFaturado / totalServicos : 0;
+
+      setRelatorioData({
+        osPorStatus: Object.entries(osPorStatus || {}).map(([status, count]) => ({ 
+          status, 
+          count: count as number 
+        })),
+        faturamentoPorPeriodo: Object.entries(faturamentoPorPeriodo || {}).map(([periodo, valor]) => ({ 
+          periodo, 
+          valor: valor as number 
+        })),
+        produtosMaisUsados: servicos?.map(s => ({ 
+          nome: s.nome, 
+          quantidade: s.quantidade_estoque || 0 
+        })) || [],
+        clientesRecorrentes: Object.values(clientesRecorrentes || {}).sort((a: any, b: any) => 
+          b.total_os - a.total_os
+        ).slice(0, 10) as any,
+        resumoFinanceiro: {
+          totalFaturado,
+          totalServicos,
+          mediaTicket
+        }
+      });
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar relatórios",
+        description: error.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const reportTypes = [
-    { value: 'orcamentos', label: 'Relatório de Orçamentos', icon: BarChart3 },
-    { value: 'clientes', label: 'Relatório de Clientes', icon: Users },
-    { value: 'servicos', label: 'Relatório de Serviços', icon: Car },
-    { value: 'financeiro', label: 'Relatório Financeiro', icon: TrendingUp }
-  ];
+  const exportarRelatorio = (tipo: string) => {
+    // Implementar exportação futura
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A exportação de relatórios será implementada em breve."
+    });
+  };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  if (isLoading) {
+    return <div className="p-6">Carregando relatórios...</div>;
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center space-x-2">
-        <BarChart3 className="h-8 w-8 text-blue-600" />
-        <h1 className="text-3xl font-bold">Relatórios</h1>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Relatórios</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => exportarRelatorio('pdf')}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar PDF
+          </Button>
+          <Button variant="outline" onClick={() => exportarRelatorio('excel')}>
+            <FileText className="w-4 h-4 mr-2" />
+            Exportar Excel
+          </Button>
+        </div>
       </div>
 
-      {/* Cards com estatísticas gerais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.totalClientes || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Clientes cadastrados
-            </p>
-          </CardContent>
-        </Card>
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="dataInicio">Data Início</Label>
+              <Input
+                id="dataInicio"
+                type="date"
+                value={filtros.dataInicio}
+                onChange={(e) => setFiltros({...filtros, dataInicio: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dataFim">Data Fim</Label>
+              <Input
+                id="dataFim"
+                type="date"
+                value={filtros.dataFim}
+                onChange={(e) => setFiltros({...filtros, dataFim: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="tipoRelatorio">Tipo de Relatório</Label>
+              <Select 
+                value={filtros.tipoRelatorio} 
+                onValueChange={(value) => setFiltros({...filtros, tipoRelatorio: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="geral">Geral</SelectItem>
+                  <SelectItem value="financeiro">Financeiro</SelectItem>
+                  <SelectItem value="operacional">Operacional</SelectItem>
+                  <SelectItem value="estoque">Estoque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button onClick={fetchRelatorioData}>Aplicar Filtros</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Orçamentos</CardTitle>
-            <FileText className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.totalOrcamentos || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Orçamentos criados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
-            <Car className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.totalServicos || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Serviços realizados
-            </p>
-          </CardContent>
-        </Card>
-
+      {/* Resumo Financeiro */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-            <DollarSign className="h-4 w-4 text-orange-600" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {data?.faturamentoTotal?.toLocaleString('pt-BR', { 
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              }) || '0,00'}
+              R$ {relatorioData?.resumoFinanceiro.totalFaturado.toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Receita total
-            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {relatorioData?.resumoFinanceiro.totalServicos}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R$ {relatorioData?.resumoFinanceiro.mediaTicket.toFixed(2)}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* OS por Status */}
         <Card>
           <CardHeader>
-            <CardTitle>Evolução Mensal</CardTitle>
-            <CardDescription>
-              Orçamentos e serviços por mês
-            </CardDescription>
+            <CardTitle>OS por Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data?.graficoMensal || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="orcamentos" fill="#3b82f6" name="Orçamentos" />
-                  <Bar dataKey="servicos" fill="#10b981" name="Serviços" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={relatorioData?.osPorStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({status, count}) => `${status}: ${count}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {relatorioData?.osPorStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
+        {/* Faturamento por Período */}
         <Card>
           <CardHeader>
-            <CardTitle>Faturamento Mensal</CardTitle>
-            <CardDescription>
-              Evolução da receita por mês
-            </CardDescription>
+            <CardTitle>Faturamento por Período</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data?.graficoMensal || []}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => [
-                      `R$ ${Number(value).toLocaleString('pt-BR', { 
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}`,
-                      'Faturamento'
-                    ]}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="faturamento" 
-                    stroke="#f59e0b" 
-                    strokeWidth={2}
-                    name="Faturamento"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={relatorioData?.faturamentoPorPeriodo}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="periodo" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`R$ ${value}`, 'Faturamento']} />
+                <Bar dataKey="valor" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Últimos serviços */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Últimos Serviços</CardTitle>
-          <CardDescription>
-            Os 10 serviços mais recentes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {data?.ultimosServicos?.length ? (
-              data.ultimosServicos.map((servico) => (
-                <div key={servico.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{servico.cliente_nome}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Status: {servico.status} | {new Date(servico.created_at).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">
-                      R$ {servico.valor_total.toLocaleString('pt-BR', { 
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum serviço encontrado
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Gerador de Relatórios */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerador de Relatórios</CardTitle>
-          <CardDescription>
-            Selecione o tipo de relatório e o período para gerar
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Tipo de Relatório
-              </label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reportTypes.map((report) => (
-                    <SelectItem key={report.value} value={report.value}>
-                      {report.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Data Inicial
-              </label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Data Final
-              </label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <Button 
-            onClick={handleGenerateReport}
-            disabled={!reportType}
-            className="w-full md:w-auto"
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Gerar Relatório
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Tabelas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Produtos Mais Usados */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Produtos em Estoque</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {relatorioData?.produtosMaisUsados.map((produto, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{produto.nome}</TableCell>
+                    <TableCell>{produto.quantidade}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Clientes Recorrentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Clientes Mais Ativos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Total OS</TableHead>
+                  <TableHead>Último Serviço</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {relatorioData?.clientesRecorrentes.map((cliente, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{cliente.nome}</TableCell>
+                    <TableCell>{cliente.total_os}</TableCell>
+                    <TableCell>
+                      {new Date(cliente.ultimo_servico).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

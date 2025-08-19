@@ -1,82 +1,113 @@
 
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Users,
-  Wrench,
-  FileText,
+import { 
+  Home, 
+  Users, 
+  FileText, 
+  Wrench, 
+  Settings, 
+  Package, 
+  BarChart3,
   Calendar,
-  Bot,
-  MessageCircle,
-  CreditCard,
-  Settings,
-  ClipboardList,
-  Headphones
+  DollarSign,
+  UserPlus,
+  Warehouse
 } from 'lucide-react';
 
-interface MenuItem {
-  icon: React.ComponentType<any>;
-  label: string;
-  path: string;
+interface SidebarProps {
+  className?: string;
 }
 
-const Sidebar: React.FC = () => {
+const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const location = useLocation();
-  const { user } = useAuth();
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Users, label: 'Clientes', path: '/dashboard/clients' },
-    { icon: Wrench, label: 'Serviços', path: '/dashboard/services' },
-    { icon: FileText, label: 'Orçamentos', path: '/dashboard/budgets' },
-    { icon: Calendar, label: 'Agendamentos', path: '/dashboard/scheduling' },
-    { icon: ClipboardList, label: 'Ordem de Serviço', path: '/dashboard/ordem-servico' },
-    { icon: Bot, label: 'IA Diagnóstico', path: '/dashboard/ia-diagnostico' },
-    { icon: MessageCircle, label: 'IA Suporte', path: '/dashboard/ia-suporte' },
-    { icon: Headphones, label: 'IA Suporte Inteligente', path: '/dashboard/ia-suporte-inteligente' },
-    { icon: CreditCard, label: 'Assinatura', path: '/dashboard/assinatura' },
+    {
+      title: 'Dashboard',
+      href: '/dashboard',
+      icon: Home
+    },
+    {
+      title: 'Clientes',
+      href: '/clientes',
+      icon: Users
+    },
+    {
+      title: 'Orçamentos',
+      href: '/orcamentos',
+      icon: FileText
+    },
+    {
+      title: 'Ordens de Serviço',
+      href: '/ordens-servico',
+      icon: Wrench
+    },
+    {
+      title: 'Produtos/Serviços',
+      href: '/products',
+      icon: Package
+    },
+    {
+      title: 'Estoque',
+      href: '/estoque',
+      icon: Warehouse
+    },
+    {
+      title: 'Colaboradores',
+      href: '/colaboradores',
+      icon: UserPlus
+    },
+    {
+      title: 'Agendamentos',
+      href: '/agendamentos',
+      icon: Calendar
+    },
+    {
+      title: 'Financeiro',
+      href: '/financeiro',
+      icon: DollarSign
+    },
+    {
+      title: 'Relatórios',
+      href: '/relatorios',
+      icon: BarChart3
+    },
+    {
+      title: 'Configurações',
+      href: '/settings',
+      icon: Settings
+    }
   ];
 
+  const isActive = (href: string) => {
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
+
   return (
-    <div className="flex flex-col w-64 bg-gray-50 border-r border-gray-200">
-      <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <span className="text-lg font-semibold">Oficina Go</span>
-      </div>
-      <div className="flex-1 p-4">
-        <nav className="space-y-1">
-          {menuItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-200 hover:text-gray-900',
-                location.pathname === item.path
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'text-gray-700'
-              )}
-            >
-              <item.icon
+    <div className={cn("pb-12", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <div className="space-y-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
                 className={cn(
-                  'mr-2 h-4 w-4',
-                  location.pathname === item.path ? 'text-gray-900' : 'text-gray-500'
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                  isActive(item.href)
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
                 )}
-              />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-      {user && (
-        <div className="p-4 border-t border-gray-200">
-          <Link to="/dashboard/settings" className="group flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-200 hover:text-gray-900 text-gray-700">
-            <Settings className="mr-2 h-4 w-4 text-gray-500" />
-            Configurações
-          </Link>
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.title}
+              </Link>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
