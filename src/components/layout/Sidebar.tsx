@@ -1,114 +1,102 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import { 
   Home, 
   Users, 
   FileText, 
-  Wrench, 
-  Settings, 
-  Package, 
+  Calendar, 
+  DollarSign, 
+  Settings,
+  Package,
   BarChart3,
-  Calendar,
-  DollarSign,
-  UserPlus,
-  Warehouse
+  UserCheck
 } from 'lucide-react';
 
-interface SidebarProps {
-  className?: string;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
     {
-      title: 'Dashboard',
-      href: '/dashboard',
-      icon: Home
+      icon: Home,
+      label: 'Dashboard',
+      path: '/dashboard',
     },
     {
-      title: 'Clientes',
-      href: '/clientes',
-      icon: Users
+      icon: Users,
+      label: 'Clientes',
+      path: '/clientes',
     },
     {
-      title: 'Orçamentos',
-      href: '/orcamentos',
-      icon: FileText
+      icon: UserCheck,
+      label: 'Colaboradores',
+      path: '/colaboradores',
     },
     {
-      title: 'Ordens de Serviço',
-      href: '/ordens-servico',
-      icon: Wrench
+      icon: FileText,
+      label: 'Ordens de Serviço',
+      path: '/ordens-servico',
     },
     {
-      title: 'Produtos/Serviços',
-      href: '/products',
-      icon: Package
+      icon: Package,
+      label: 'Estoque',
+      path: '/estoque',
     },
     {
-      title: 'Estoque',
-      href: '/estoque',
-      icon: Warehouse
+      icon: Calendar,
+      label: 'Agendamentos',
+      path: '/agendamentos',
     },
     {
-      title: 'Colaboradores',
-      href: '/colaboradores',
-      icon: UserPlus
+      icon: DollarSign,
+      label: 'Financeiro',
+      path: '/financeiro',
     },
     {
-      title: 'Agendamentos',
-      href: '/agendamentos',
-      icon: Calendar
+      icon: BarChart3,
+      label: 'Relatórios',
+      path: '/relatorios',
     },
     {
-      title: 'Financeiro',
-      href: '/financeiro',
-      icon: DollarSign
+      icon: Settings,
+      label: 'Configurações',
+      path: '/configuracoes',
     },
-    {
-      title: 'Relatórios',
-      href: '/relatorios',
-      icon: BarChart3
-    },
-    {
-      title: 'Configurações',
-      href: '/settings',
-      icon: Settings
-    }
   ];
 
-  const isActive = (href: string) => {
-    return location.pathname === href || location.pathname.startsWith(href + '/');
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
-    <div className={cn("pb-12", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <div className="space-y-1">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                  isActive(item.href)
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.title}
-              </Link>
-            ))}
-          </div>
-        </div>
+    <aside className="bg-white shadow-sm border-r border-gray-200 w-64 min-h-screen">
+      <div className="p-6 border-b border-gray-200">
+        <h1 className="text-xl font-bold text-gray-800">OficinaÁgil</h1>
       </div>
-    </div>
+      
+      <nav className="mt-6">
+        <ul className="space-y-1 px-3">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <li key={item.path}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mr-3" />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </aside>
   );
 };
 

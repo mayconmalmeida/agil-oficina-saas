@@ -16,44 +16,25 @@ export const useManualAuth = (): AuthState => {
     console.log('[useManualAuth] Iniciando configuração de autenticação');
     
     let isMounted = true;
+    let isProcessing = false;
 
-    // Configurar listener de mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return;
-
-        console.log('[useManualAuth] Auth state changed:', { event, hasSession: !!session });
-        
+    const handleAuthStateChange = async (event: string, session: Session | null) => {
+      if (!isMounted || isProcessing) return;
+      
+      console.log('[useManualAuth] Auth state changed:', event);
+      isProcessing = true;
+      
+      try {
         setSession(session);
         
         if (session?.user) {
           console.log('[useManualAuth] Buscando perfil para:', session.user.id);
-          try {
-            const profile = await fetchUserProfile(session.user.id);
-            if (isMounted) {
-              setUser(profile);
-              setRole(profile.role);
-              console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
-            }
-          } catch (error) {
-            console.error('[useManualAuth] Erro ao carregar profile:', error);
-            if (isMounted) {
-              // Criar perfil básico em caso de erro
-              const basicProfile: UserProfile = {
-                id: session.user.id,
-                email: session.user.email || '',
-                role: 'user',
-                nome_oficina: null,
-                telefone: null,
-                is_active: true,
-                subscription: null,
-                oficina_id: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-              setUser(basicProfile);
-              setRole('user');
-            }
+          
+          const profile = await fetchUserProfile(session.user.id);
+          if (isMounted) {
+            setUser(profile);
+            setRole(profile.role);
+            console.log('[useManualAuth] Profile carregado:', profile.email);
           }
         } else {
           console.log('[useManualAuth] Sem sessão, limpando estados');
@@ -62,29 +43,66 @@ export const useManualAuth = (): AuthState => {
             setRole(null);
           }
         }
-        
+      } catch (error) {
+        console.error('[useManualAuth] Erro ao processar mudança de auth:', error);
+        if (isMounted) {
+          // Criar perfil básico em caso de erro
+          if (session?.user) {
+            const basicProfile: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              role: 'user',
+              nome_oficina: null,
+              telefone: null,
+              is_active: true,
+              subscription: null,
+              oficina_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            setUser(basicProfile);
+            setRole('user');
+          } else {
+            setUser(null);
+            setRole(null);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setIsLoadingAuth(false);
+        }
+        isProcessing = false;
+      }
+    };
+
+    // Configurar listener de mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+
+    // Verificar sessão existente
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await handleAuthStateChange('INITIAL_SESSION', session);
+      } catch (error) {
+        console.error('[useManualAuth] Erro na inicialização:', error);
         if (isMounted) {
           setLoading(false);
           setIsLoadingAuth(false);
         }
       }
-    );
+    };
 
-    // Verificar sessão existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted) {
-        console.log('[useManualAuth] Sessão inicial verificada:', !!session);
-      }
-    });
+    initAuth();
 
-    // Timeout de segurança
+    // Timeout de segurança para evitar loading infinito
     const timeout = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && (loading || isLoadingAuth)) {
         console.log('[useManualAuth] Timeout de segurança atingido');
         setLoading(false);
         setIsLoadingAuth(false);
       }
-    }, 2000);
+    }, 5000);
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
