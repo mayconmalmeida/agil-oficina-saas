@@ -1,77 +1,78 @@
-
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAdminContext } from '@/contexts/AdminContext';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import PlanExpiredGuard from '@/components/subscription/PlanExpiredGuard';
-import { AdminRoutes } from '@/routes/AdminRoutes';
-import { publicRoutes } from '@/routes/PublicRoutes';
-import { protectedRoutes } from '@/routes/ProtectedRoutes';
+import { Routes, Route } from 'react-router-dom';
+import LandingPage from '@/pages/LandingPage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import PricingPage from '@/pages/PricingPage';
+import SupportPage from '@/pages/SupportPage';
 import DashboardPage from '@/pages/DashboardPage';
-import PlanoExpirado from '@/pages/plano-expirado';
+import ClientesPage from '@/pages/ClientesPage';
+import ServicosPage from '@/pages/ServicosPage';
+import OrcamentosPage from '@/pages/OrcamentosPage';
+import EstoquePage from '@/pages/EstoquePage';
+import FinanceiroPage from '@/pages/FinanceiroPage';
+import ColaboradoresPage from '@/pages/ColaboradoresPage';
+import RelatoriosPage from '@/pages/RelatoriosPage';
+import ConfiguracoesPage from '@/pages/ConfiguracoesPage';
+import AjudaPage from '@/pages/AjudaPage';
+import Layout from '@/components/layout/Layout';
+import AdminLoginPage from '@/pages/admin/AdminLoginPage';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import OptimizedAdminGuard from '@/components/auth/OptimizedAdminGuard';
+import NovoAgendamentoPage from '@/pages/NovoAgendamentoPage';
+import EditarAgendamentoPage from '@/pages/EditarAgendamentoPage';
+import NovoClientePage from '@/pages/NovoClientePage';
+import EditarClientePage from '@/pages/EditarClientePage';
+import NovoServicoPage from '@/pages/NovoServicoPage';
+import EditarServicoPage from '@/pages/EditarServicoPage';
+import NovoOrcamentoPage from '@/pages/NovoOrcamentoPage';
+import EditarOrcamentoPage from '@/pages/EditarOrcamentoPage';
+import AgendaPage from '@/pages/AgendaPage';
+import OrdensServicoPage from '@/pages/OrdensServicoPage';
+import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 
 const AppRoutes: React.FC = () => {
-  const { user, isLoadingAuth } = useAuth();
-  const { user: adminUser, isLoading: isLoadingAdmin } = useAdminContext();
-
-  console.log('AppRoutes: Estado atual', {
-    hasUser: !!user,
-    hasAdminUser: !!adminUser,
-    isLoadingAuth,
-    isLoadingAdmin,
-    userEmail: user?.email,
-    adminEmail: adminUser?.email,
-    isAdmin: adminUser?.isAdmin
-  });
-
-  if (isLoadingAuth || isLoadingAdmin) {
-    return <div>Carregando...</div>;
-  }
-
-  // Determinar se é admin baseado no AdminContext
-  const isAdmin = adminUser && adminUser.isAdmin;
-
   return (
-    <Routes>
-      {/* Rotas públicas sempre disponíveis */}
-      {publicRoutes}
-      
-      {/* Rota especial para plano expirado */}
-      <Route path="/plano-expirado" element={<PlanoExpirado />} />
-      
-      {/* Rotas administrativas - renderizando o array de routes */}
-      {AdminRoutes()}
-      
-      {/* Rotas protegidas */}
-      {protectedRoutes}
-      
-      {/* Rota protegida para dashboard principal */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <PlanExpiredGuard>
-            <DashboardPage />
-          </PlanExpiredGuard>
-        </ProtectedRoute>
-      } />
-      
-      {/* Rota raiz - redirecionamento baseado no tipo de usuário */}
-      <Route path="/" element={
-        // Se tem admin logado, redirecionar para admin
-        isAdmin ? (
-          <Navigate to="/admin" replace />
-        ) : user ? (
-          // Se tem usuário comum logado, redirecionar para dashboard
-          <Navigate to="/dashboard" replace />
-        ) : (
-          // Se não tem ninguém logado, redirecionar para home
-          <Navigate to="/home" replace />
-        )
-      } />
-      
-      {/* Redirecionar qualquer rota não encontrada */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/*" element={
+            <OptimizedAdminGuard>
+              <AdminDashboard />
+            </OptimizedAdminGuard>
+          } />
+
+          {/* Protected Routes */}
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/agenda" element={<AgendaPage />} />
+            <Route path="/clientes" element={<ClientesPage />} />
+            <Route path="/servicos" element={<ServicosPage />} />
+            <Route path="/orcamentos" element={<OrcamentosPage />} />
+            <Route path="/ordens-servico" element={<OrdensServicoPage />} />
+            <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
+            <Route path="/estoque" element={<EstoquePage />} />
+            <Route path="/financeiro" element={<FinanceiroPage />} />
+            <Route path="/colaboradores" element={<ColaboradoresPage />} />
+            <Route path="/relatorios" element={<RelatoriosPage />} />
+            <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+            <Route path="/ajuda" element={<AjudaPage />} />
+            <Route path="/agendamentos/novo" element={<NovoAgendamentoPage />} />
+            <Route path="/agendamentos/:id/editar" element={<EditarAgendamentoPage />} />
+            <Route path="/clientes/novo" element={<NovoClientePage />} />
+            <Route path="/clientes/:id/editar" element={<EditarClientePage />} />
+            <Route path="/servicos/novo" element={<NovoServicoPage />} />
+            <Route path="/servicos/:id/editar" element={<EditarServicoPage />} />
+            <Route path="/orcamentos/novo" element={<NovoOrcamentoPage />} />
+            <Route path="/orcamentos/:id/editar" element={<EditarOrcamentoPage />} />
+          </Route>
+        </Routes>
   );
 };
 

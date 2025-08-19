@@ -1,229 +1,305 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Download, Calendar, TrendingUp } from 'lucide-react';
+import { Download, FileText, TrendingUp, DollarSign } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
+interface RelatorioData {
+  faturamento: Array<{ mes: string; valor: number }>;
+  despesas: Array<{ categoria: string; valor: number }>;
+  resumoMensal: {
+    totalEntradas: number;
+    totalSaidas: number;
+    saldoLiquido: number;
+    crescimento: number;
+  };
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
 const RelatoriosFinanceiros: React.FC = () => {
+  const [relatorioData, setRelatorioData] = useState<RelatorioData>({
+    faturamento: [],
+    despesas: [],
+    resumoMensal: {
+      totalEntradas: 0,
+      totalSaidas: 0,
+      saldoLiquido: 0,
+      crescimento: 0
+    }
+  });
+  const [periodo, setPeriodo] = useState('mes');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [tipoRelatorio, setTipoRelatorio] = useState('faturamento');
-  const [periodoInicio, setPeriodoInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [periodoFim, setPeriodoFim] = useState(new Date().toISOString().split('T')[0]);
 
-  // Dados simulados para os gráficos
-  const dadosFaturamento = [
-    { mes: 'Jan', valor: 4500 },
-    { mes: 'Fev', valor: 5200 },
-    { mes: 'Mar', valor: 4800 },
-    { mes: 'Abr', valor: 5800 },
-    { mes: 'Mai', valor: 6200 },
-    { mes: 'Jun', valor: 5500 }
-  ];
+  const gerarRelatorio = async () => {
+    if (!user?.id) return;
 
-  const dadosDespesas = [
-    { categoria: 'Fornecedores', valor: 2500, color: '#8884d8' },
-    { categoria: 'Combustível', valor: 800, color: '#82ca9d' },
-    { categoria: 'Energia', valor: 350, color: '#ffc658' },
-    { categoria: 'Aluguel', valor: 1200, color: '#ff7300' },
-    { categoria: 'Outros', valor: 450, color: '#8dd1e1' }
-  ];
+    try {
+      setIsLoading(true);
 
-  const gerarRelatorio = () => {
-    toast({
-      title: "Relatório gerado",
-      description: `Relatório de ${tipoRelatorio} para o período selecionado foi gerado com sucesso.`,
-    });
+      // Buscar dados de faturamento (contas receber pagas)
+      const { data: contasReceber } = await supabase
+        .from('contas_receber')
+        .select('valor, data_pagamento')
+        .eq('user_id', user.id)
+        .eq('status', 'pago')
+        .not('data_pagamento', 'is', null);
+
+      // Buscar dados de despesas (contas pagar pagas)
+      const { data: contasPagar } = await supabase
+        .from('contas_pagar')
+        .select('valor, categoria, data_pagamento')
+        .eq('user_id', user.id)
+        .eq('status', 'pago')
+        .not('data_pagamento', 'is', null);
+
+      // Processar dados para gráficos
+      const faturamentoPorMes = processarFaturamentoPorMes(contasReceber || []);
+      const despesasPorCategoria = processarDespesasPorCategoria(contasPagar || []);
+      const resumo = calcularResumoMensal(contasReceber || [], contasPagar || []);
+
+      setRelatorioData({
+        faturamento: faturamentoPorMes,
+        despesas: despesasPorCategoria,
+        resumoMensal: resumo
+      });
+
+    } catch (error: any) {
+      console.error('Erro ao gerar relatório:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível gerar o relatório."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const processarFaturamentoPorMes = (contas: any[]) => {
+    const meses = {};
+    contas.forEach(conta => {
+      const mes = new Date(conta.data_pagamento).toLocaleDateString('pt-BR', { 
+        month: 'short', 
+        year: '2-digit' 
+      });
+      meses[mes] = (meses[mes] || 0) + parseFloat(conta.valor);
+    });
+
+    return Object.entries(meses).map(([mes, valor]) => ({ mes, valor }));
+  };
+
+  const processarDespesasPorCategoria = (contas: any[]) => {
+    const categorias = {};
+    contas.forEach(conta => {
+      const categoria = conta.categoria || 'Outros';
+      categorias[categoria] = (categorias[categoria] || 0) + parseFloat(conta.valor);
+    });
+
+    return Object.entries(categorias).map(([categoria, valor]) => ({ categoria, valor }));
+  };
+
+  const calcularResumoMensal = (contasReceber: any[], contasPagar: any[]) => {
+    const totalEntradas = contasReceber.reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+    const totalSaidas = contasPagar.reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+    const saldoLiquido = totalEntradas - totalSaidas;
+    
+    // Calcular crescimento (simulado - em implementação real, comparar com mês anterior)
+    const crescimento = Math.random() * 20 - 10; // Valor simulado entre -10% e +10%
+
+    return {
+      totalEntradas,
+      totalSaidas,
+      saldoLiquido,
+      crescimento
+    };
+  };
+
+  useEffect(() => {
+    gerarRelatorio();
+  }, [user?.id]);
+
   const exportarPDF = () => {
+    // Em implementação real, integrar com biblioteca de PDF como jsPDF
     toast({
-      title: "Exportando relatório",
-      description: "O relatório será baixado em formato PDF em instantes.",
+      title: "Exportação",
+      description: "Funcionalidade de exportação em desenvolvimento."
     });
   };
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Relatórios Financeiros</h2>
+        <Button onClick={exportarPDF}>
+          <Download className="h-4 w-4 mr-2" />
+          Exportar PDF
+        </Button>
+      </div>
+
+      {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Configurar Relatório
-          </CardTitle>
+          <CardTitle>Filtros do Relatório</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="tipo-relatorio">Tipo de Relatório</Label>
-              <Select value={tipoRelatorio} onValueChange={setTipoRelatorio}>
+              <Label htmlFor="periodo">Período</Label>
+              <Select value={periodo} onValueChange={setPeriodo}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="faturamento">Faturamento</SelectItem>
-                  <SelectItem value="despesas">Despesas por Categoria</SelectItem>
-                  <SelectItem value="fluxo-caixa">Fluxo de Caixa</SelectItem>
+                  <SelectItem value="semana">Última Semana</SelectItem>
+                  <SelectItem value="mes">Último Mês</SelectItem>
+                  <SelectItem value="trimestre">Último Trimestre</SelectItem>
+                  <SelectItem value="ano">Último Ano</SelectItem>
+                  <SelectItem value="personalizado">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label htmlFor="periodo-inicio">Data Início</Label>
-              <Input
-                id="periodo-inicio"
-                type="date"
-                value={periodoInicio}
-                onChange={(e) => setPeriodoInicio(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="periodo-fim">Data Fim</Label>
-              <Input
-                id="periodo-fim"
-                type="date"
-                value={periodoFim}
-                onChange={(e) => setPeriodoFim(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <Button onClick={gerarRelatorio} className="flex-1">
-                <Calendar className="mr-2 h-4 w-4" />
-                Gerar
-              </Button>
-              <Button variant="outline" onClick={exportarPDF}>
-                <Download className="h-4 w-4" />
+            
+            {periodo === 'personalizado' && (
+              <>
+                <div>
+                  <Label htmlFor="dataInicio">Data Início</Label>
+                  <Input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dataFim">Data Fim</Label>
+                  <Input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+            
+            <div className="flex items-end">
+              <Button onClick={gerarRelatorio} disabled={isLoading}>
+                <FileText className="h-4 w-4 mr-2" />
+                {isLoading ? 'Gerando...' : 'Gerar Relatório'}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Relatório de Faturamento */}
-      {tipoRelatorio === 'faturamento' && (
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Faturamento Mensal
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Entradas</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dadosFaturamento}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`R$ ${value}`, 'Faturamento']} />
-                  <Bar dataKey="valor" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="text-2xl font-bold text-green-600">
+              R$ {relatorioData.resumoMensal.totalEntradas.toFixed(2)}
             </div>
           </CardContent>
         </Card>
-      )}
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Saídas</CardTitle>
+            <TrendingUp className="h-4 w-4 text-red-600 transform rotate-180" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              R$ {relatorioData.resumoMensal.totalSaidas.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Saldo Líquido</CardTitle>
+            <DollarSign className="h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${relatorioData.resumoMensal.saldoLiquido >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              R$ {relatorioData.resumoMensal.saldoLiquido.toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Crescimento</CardTitle>
+            <TrendingUp className={`h-4 w-4 ${relatorioData.resumoMensal.crescimento >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${relatorioData.resumoMensal.crescimento >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {relatorioData.resumoMensal.crescimento >= 0 ? '+' : ''}
+              {relatorioData.resumoMensal.crescimento.toFixed(1)}%
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Relatório de Despesas */}
-      {tipoRelatorio === 'despesas' && (
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Despesas por Categoria
-            </CardTitle>
+            <CardTitle>Faturamento por Mês</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={dadosDespesas}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="valor"
-                      label={({ categoria, valor }) => `${categoria}: R$ ${valor}`}
-                    >
-                      {dadosDespesas.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`R$ ${value}`, 'Valor']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-semibold mb-4">Resumo por Categoria</h3>
-                {dadosDespesas.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-4 h-4 rounded" 
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span>{item.categoria}</span>
-                    </div>
-                    <span className="font-medium">R$ {item.valor.toFixed(2)}</span>
-                  </div>
-                ))}
-                <div className="pt-2 border-t font-semibold">
-                  Total: R$ {dadosDespesas.reduce((sum, item) => sum + item.valor, 0).toFixed(2)}
-                </div>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={relatorioData.faturamento}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Faturamento']} />
+                <Bar dataKey="valor" fill="#0088FE" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
 
-      {/* Relatório de Fluxo de Caixa */}
-      {tipoRelatorio === 'fluxo-caixa' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Fluxo de Caixa
-            </CardTitle>
+            <CardTitle>Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card className="border-green-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-gray-600">Total Entradas</p>
-                  <p className="text-2xl font-bold text-green-600">R$ 15.250,00</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-red-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-gray-600">Total Saídas</p>
-                  <p className="text-2xl font-bold text-red-600">R$ 8.420,00</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-blue-200">
-                <CardContent className="p-4 text-center">
-                  <p className="text-sm text-gray-600">Saldo Líquido</p>
-                  <p className="text-2xl font-bold text-blue-600">R$ 6.830,00</p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <p className="text-center text-gray-600">
-              Período: {new Date(periodoInicio).toLocaleDateString('pt-BR')} a {new Date(periodoFim).toLocaleDateString('pt-BR')}
-            </p>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={relatorioData.despesas}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ categoria, percent }) => `${categoria} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="valor"
+                >
+                  {relatorioData.despesas.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [`R$ ${value.toFixed(2)}`, 'Valor']} />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 };

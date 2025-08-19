@@ -1,104 +1,105 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ContasReceber from '@/components/financeiro/ContasReceber';
 import ContasPagar from '@/components/financeiro/ContasPagar';
 import FechamentoCaixa from '@/components/financeiro/FechamentoCaixa';
 import RelatoriosFinanceiros from '@/components/financeiro/RelatoriosFinanceiros';
 
+interface ResumoFinanceiro {
+  totalReceber: number;
+  totalPagar: number;
+  saldoPrevisto: number;
+  movimentacoesMes: number;
+}
+
 const FinanceiroPage: React.FC = () => {
-  const [resumoFinanceiro, setResumoFinanceiro] = useState({
+  const [resumoFinanceiro, setResumoFinanceiro] = useState<ResumoFinanceiro>({
     totalReceber: 0,
     totalPagar: 0,
-    saldoAtual: 0,
+    saldoPrevisto: 0,
     movimentacoesMes: 0
   });
 
+  const handleUpdateResumo = (novoResumo: Partial<ResumoFinanceiro>) => {
+    setResumoFinanceiro(prev => {
+      const updated = { ...prev, ...novoResumo };
+      updated.saldoPrevisto = updated.totalReceber - updated.totalPagar;
+      return updated;
+    });
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Financeiro</h1>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Financeiro</h1>
       </div>
 
-      {/* Resumo Financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">A Receber</p>
-                <p className="text-lg font-semibold text-green-600">
-                  R$ {resumoFinanceiro.totalReceber.toFixed(2)}
-                </p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-green-600">A Receber</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R$ {resumoFinanceiro.totalReceber.toFixed(2)}
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">A Pagar</p>
-                <p className="text-lg font-semibold text-red-600">
-                  R$ {resumoFinanceiro.totalPagar.toFixed(2)}
-                </p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-red-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-red-600">A Pagar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              R$ {resumoFinanceiro.totalPagar.toFixed(2)}
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Saldo Atual</p>
-                <p className="text-lg font-semibold">
-                  R$ {resumoFinanceiro.saldoAtual.toFixed(2)}
-                </p>
-              </div>
-              <DollarSign className="h-8 w-8 text-blue-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-blue-600">Saldo Previsto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${resumoFinanceiro.saldoPrevisto >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              R$ {resumoFinanceiro.saldoPrevisto.toFixed(2)}
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Movimentações</p>
-                <p className="text-lg font-semibold">
-                  {resumoFinanceiro.movimentacoesMes}
-                </p>
-              </div>
-              <Calendar className="h-8 w-8 text-purple-500" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Movimentações/Mês</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {resumoFinanceiro.movimentacoesMes}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="contas-receber" className="w-full">
-        <TabsList className="mb-6">
+      <Tabs defaultValue="contas-receber" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="contas-receber">Contas a Receber</TabsTrigger>
           <TabsTrigger value="contas-pagar">Contas a Pagar</TabsTrigger>
-          <TabsTrigger value="fechamento-caixa">Fechamento de Caixa</TabsTrigger>
+          <TabsTrigger value="fechamento">Fechamento de Caixa</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
 
         <TabsContent value="contas-receber">
-          <ContasReceber onUpdateResumo={setResumoFinanceiro} />
+          <ContasReceber onUpdateResumo={handleUpdateResumo} />
         </TabsContent>
 
         <TabsContent value="contas-pagar">
-          <ContasPagar onUpdateResumo={setResumoFinanceiro} />
+          <ContasPagar onUpdateResumo={handleUpdateResumo} />
         </TabsContent>
 
-        <TabsContent value="fechamento-caixa">
+        <TabsContent value="fechamento">
           <FechamentoCaixa />
         </TabsContent>
 
