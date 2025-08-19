@@ -82,7 +82,20 @@ const CollaboratorsPage: React.FC = () => {
         .order('nome');
 
       if (error) throw error;
-      setCollaborators(data || []);
+      
+      // Transform the data to match our Collaborator interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        nome: item.nome,
+        email: item.email,
+        telefone: item.telefone,
+        funcao: item.funcao,
+        permissoes: Array.isArray(item.permissoes) ? item.permissoes : [],
+        ativo: item.ativo,
+        created_at: item.created_at
+      }));
+      
+      setCollaborators(transformedData);
     } catch (error: any) {
       toast({
         variant: "destructive",

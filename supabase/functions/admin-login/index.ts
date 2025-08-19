@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,15 +33,15 @@ serve(async (req) => {
 
     console.log('🔐 Tentativa de login admin para:', email)
 
-    // Buscar admin na tabela admins - usando 'password' ao invés de 'password_hash'
-    const { data: admin, error: adminError } = await supabaseClient
-      .from('admins')
-      .select('id, email, password, is_superadmin')
+    // Verificar se o usuário existe e tem role de admin na tabela profiles
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('id, email, role')
       .eq('email', email)
       .maybeSingle()
 
-    if (adminError) {
-      console.error('❌ Erro ao buscar admin:', adminError)
+    if (profileError) {
+      console.error('❌ Erro ao buscar perfil:', profileError)
       return new Response(
         JSON.stringify({ error: 'Erro interno do servidor' }),
         { 
@@ -52,8 +51,8 @@ serve(async (req) => {
       )
     }
 
-    if (!admin) {
-      console.log('❌ Admin não encontrado para email:', email)
+    if (!profile) {
+      console.log('❌ Perfil não encontrado para email:', email)
       return new Response(
         JSON.stringify({ error: 'Credenciais inválidas' }),
         { 
@@ -63,36 +62,26 @@ serve(async (req) => {
       )
     }
 
-    console.log('✅ Admin encontrado:', { email: admin.email, id: admin.id })
-
-    // Verificar senha usando bcrypt
-    let passwordValid = false
-    
-    try {
-      // Verificar se é um hash bcrypt válido
-      const isBcryptHash = /^\$2[abxy]\$/.test(admin.password)
-      
-      if (isBcryptHash) {
-        passwordValid = await bcrypt.compare(password, admin.password)
-        console.log('🔒 Verificação bcrypt concluída:', passwordValid)
-      } else {
-        // Fallback para senhas em texto simples (temporário para migração)
-        passwordValid = password === admin.password
-        console.log('⚠️ Usando verificação de texto simples (deve ser migrado para bcrypt)')
-      }
-    } catch (bcryptError) {
-      console.error('❌ Erro na verificação bcrypt:', bcryptError)
+    // Verificar se tem role de admin
+    if (!profile.role || !['admin', 'superadmin'].includes(profile.role)) {
+      console.log('❌ Usuário não é admin, role:', profile.role)
       return new Response(
-        JSON.stringify({ error: 'Erro na validação da senha' }),
+        JSON.stringify({ error: 'Acesso negado: usuário não é administrador' }),
         { 
-          status: 500, 
+          status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       )
     }
 
-    if (!passwordValid) {
-      console.log('❌ Senha incorreta para admin:', email)
+    // Tentar fazer login com Supabase Auth
+    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    if (authError) {
+      console.log('❌ Erro de autenticação:', authError.message)
       return new Response(
         JSON.stringify({ error: 'Credenciais inválidas' }),
         { 
@@ -101,22 +90,35 @@ serve(async (req) => {
         }
       )
     }
+
+    if (!authData.user) {
+      console.log('❌ Dados do usuário não encontrados')
+      return new Response(
+        JSON.stringify({ error: 'Erro na autenticação' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('✅ Admin encontrado:', { email: profile.email, id: profile.id })
 
     // Gerar token de sessão
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000) // 8 horas
 
     const adminUser = {
-      id: admin.id,
-      email: admin.email,
-      role: admin.is_superadmin ? 'superadmin' : 'admin',
+      id: profile.id,
+      email: profile.email,
+      role: profile.role === 'superadmin' ? 'superadmin' : 'admin',
       isAdmin: true,
       canAccessFeatures: true,
       sessionToken,
       expiresAt: expiresAt.toISOString()
     }
 
-    console.log('✅ Login admin bem-sucedido:', admin.email)
+    console.log('✅ Login admin bem-sucedido:', profile.email)
 
     return new Response(
       JSON.stringify({ 
