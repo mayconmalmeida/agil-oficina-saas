@@ -15,73 +15,32 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   const checkAdminSession = async () => {
-    console.log('AdminContext: Verificando sessão admin...');
+    console.log('AdminContext: Verificando sessão admin existente...');
     try {
-      // Verificar se há sessão ativa no Supabase Auth
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error('AdminContext: Erro ao verificar sessão:', sessionError);
-        setError('Erro ao verificar sessão');
-        setUser(null);
-        setIsLoading(false);
-        return;
+      // Verificar se existe uma sessão ativa no localStorage
+      const adminSession = localStorage.getItem('admin_session');
+      if (adminSession) {
+        const sessionData = JSON.parse(adminSession);
+        
+        // Verificar se a sessão ainda é válida (não expirada)
+        if (sessionData.expiresAt && new Date(sessionData.expiresAt) > new Date()) {
+          console.log('AdminContext: Sessão admin válida encontrada');
+          setUser(sessionData.user);
+          setIsLoading(false);
+          return;
+        } else {
+          // Sessão expirada, remover
+          localStorage.removeItem('admin_session');
+        }
       }
 
-      if (!session?.user) {
-        console.log('AdminContext: Nenhuma sessão ativa encontrada');
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      // Verificar se o usuário é admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('AdminContext: Erro ao buscar perfil:', profileError);
-        setError('Erro ao verificar permissões');
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!profile) {
-        console.log('AdminContext: Perfil não encontrado');
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
-      
-      if (isAdmin) {
-        const adminUser: AdminUser = {
-          id: session.user.id,
-          email: profile.email,
-          role: profile.role as 'admin' | 'superadmin',
-          isAdmin: true,
-          canAccessFeatures: true,
-          sessionToken: session.access_token,
-          expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined
-        };
-
-        console.log('AdminContext: Admin autenticado:', profile.email);
-        setUser(adminUser);
-        setError(null);
-      } else {
-        console.log('AdminContext: Usuário não é admin, role:', profile.role);
-        setUser(null);
-      }
+      console.log('AdminContext: Nenhuma sessão admin válida encontrada');
+      setUser(null);
+      setIsLoading(false);
     } catch (error) {
-      console.error('AdminContext: Erro geral:', error);
+      console.error('AdminContext: Erro ao verificar sessão:', error);
       setError('Erro ao verificar sessão de administrador');
       setUser(null);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -92,54 +51,29 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      // Fazer login com Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Usar a Edge Function para login seguro
+      const { data, error: functionError } = await supabase.functions.invoke('admin-login', {
+        body: { email, password }
       });
 
-      if (authError) {
-        console.error('AdminContext: Erro de autenticação:', authError);
-        throw new Error(authError.message);
+      if (functionError) {
+        console.error('AdminContext: Erro na Edge Function:', functionError);
+        throw new Error('Erro na comunicação com o servidor');
       }
 
-      if (!authData.user) {
-        throw new Error('Dados do usuário não encontrados');
+      if (!data.success) {
+        console.log('AdminContext: Login rejeitado:', data.error);
+        throw new Error(data.error || 'Credenciais inválidas');
       }
 
-      // Verificar se é admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, email')
-        .eq('id', authData.user.id)
-        .maybeSingle();
+      const adminUser: AdminUser = data.user;
 
-      if (profileError) {
-        console.error('AdminContext: Erro ao verificar role:', profileError);
-        throw new Error('Erro ao verificar permissões');
-      }
-
-      if (!profile) {
-        throw new Error('Perfil não encontrado');
-      }
-
-      const isAdmin = profile.role === 'admin' || profile.role === 'superadmin';
-      
-      if (!isAdmin) {
-        console.log('AdminContext: Usuário não é admin, role:', profile.role);
-        await supabase.auth.signOut();
-        throw new Error('Acesso negado: usuário não é administrador');
-      }
-
-      const adminUser: AdminUser = {
-        id: authData.user.id,
-        email: profile.email,
-        role: profile.role as 'admin' | 'superadmin',
-        isAdmin: true,
-        canAccessFeatures: true,
-        sessionToken: authData.session?.access_token,
-        expiresAt: authData.session?.expires_at ? new Date(authData.session.expires_at * 1000).toISOString() : undefined
+      // Salvar sessão no localStorage
+      const sessionData = {
+        user: adminUser,
+        expiresAt: adminUser.expiresAt
       };
+      localStorage.setItem('admin_session', JSON.stringify(sessionData));
 
       setUser(adminUser);
       setError(null);
@@ -158,13 +92,9 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     console.log('AdminContext: Fazendo logout admin');
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setError(null);
-    } catch (error) {
-      console.error('AdminContext: Erro no logout:', error);
-    }
+    localStorage.removeItem('admin_session');
+    setUser(null);
+    setError(null);
   };
 
   const checkAdminPermissions = (requiredRole?: 'admin' | 'superadmin'): boolean => {
@@ -179,23 +109,6 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
 
   useEffect(() => {
     checkAdminSession();
-
-    // Configurar listener para mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AdminContext: Auth state changed:', event);
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        setUser(null);
-        setIsLoading(false);
-      } else if (event === 'SIGNED_IN' && session) {
-        // Verificar se é admin quando faz login
-        await checkAdminSession();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const contextValue: AdminContextValue = {

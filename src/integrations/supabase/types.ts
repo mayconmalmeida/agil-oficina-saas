@@ -84,41 +84,6 @@ export type Database = {
           },
         ]
       }
-      alertas_estoque: {
-        Row: {
-          created_at: string | null
-          id: string
-          produto_id: string
-          tipo_alerta: string
-          user_id: string
-          visualizado: boolean | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          produto_id: string
-          tipo_alerta?: string
-          user_id: string
-          visualizado?: boolean | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          produto_id?: string
-          tipo_alerta?: string
-          user_id?: string
-          visualizado?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "alertas_estoque_produto_id_fkey"
-            columns: ["produto_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       campanhas_marketing: {
         Row: {
           arquivo_url: string | null
@@ -274,57 +239,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cotacoes_fornecedor: {
-        Row: {
-          created_at: string | null
-          fornecedor_id: string
-          id: string
-          observacoes: string | null
-          ordem_servico_id: string | null
-          produtos: Json
-          status: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          fornecedor_id: string
-          id?: string
-          observacoes?: string | null
-          ordem_servico_id?: string | null
-          produtos: Json
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          fornecedor_id?: string
-          id?: string
-          observacoes?: string | null
-          ordem_servico_id?: string | null
-          produtos?: Json
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "cotacoes_fornecedor_fornecedor_id_fkey"
-            columns: ["fornecedor_id"]
-            isOneToOne: false
-            referencedRelation: "fornecedores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cotacoes_fornecedor_ordem_servico_id_fkey"
-            columns: ["ordem_servico_id"]
-            isOneToOne: false
-            referencedRelation: "ordens_servico"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       estoque: {
         Row: {
           codigo_produto: string | null
@@ -442,73 +356,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      movimentacao_estoque: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          id: string
-          motivo: string | null
-          nota_fiscal_id: string | null
-          ordem_servico_id: string | null
-          produto_id: string
-          quantidade: number
-          quantidade_anterior: number
-          quantidade_atual: number
-          tipo_movimentacao: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          motivo?: string | null
-          nota_fiscal_id?: string | null
-          ordem_servico_id?: string | null
-          produto_id: string
-          quantidade: number
-          quantidade_anterior: number
-          quantidade_atual: number
-          tipo_movimentacao: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          motivo?: string | null
-          nota_fiscal_id?: string | null
-          ordem_servico_id?: string | null
-          produto_id?: string
-          quantidade?: number
-          quantidade_anterior?: number
-          quantidade_atual?: number
-          tipo_movimentacao?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "movimentacao_estoque_nota_fiscal_id_fkey"
-            columns: ["nota_fiscal_id"]
-            isOneToOne: false
-            referencedRelation: "notas_fiscais"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "movimentacao_estoque_ordem_servico_id_fkey"
-            columns: ["ordem_servico_id"]
-            isOneToOne: false
-            referencedRelation: "ordens_servico"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "movimentacao_estoque_produto_id_fkey"
-            columns: ["produto_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       notas_fiscais: {
         Row: {
@@ -924,7 +771,6 @@ export type Database = {
           codigo: string | null
           created_at: string | null
           descricao: string | null
-          estoque_minimo: number | null
           id: string
           is_active: boolean | null
           nome: string
@@ -938,7 +784,6 @@ export type Database = {
           codigo?: string | null
           created_at?: string | null
           descricao?: string | null
-          estoque_minimo?: number | null
           id?: string
           is_active?: boolean | null
           nome: string
@@ -952,7 +797,6 @@ export type Database = {
           codigo?: string | null
           created_at?: string | null
           descricao?: string | null
-          estoque_minimo?: number | null
           id?: string
           is_active?: boolean | null
           nome?: string
@@ -1089,56 +933,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      usuarios_colaboradores: {
-        Row: {
-          ativo: boolean | null
-          created_at: string | null
-          email: string
-          funcao: string
-          id: string
-          nome: string
-          oficina_id: string | null
-          permissoes: Json | null
-          telefone: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string | null
-          email: string
-          funcao?: string
-          id?: string
-          nome: string
-          oficina_id?: string | null
-          permissoes?: Json | null
-          telefone?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string | null
-          email?: string
-          funcao?: string
-          id?: string
-          nome?: string
-          oficina_id?: string | null
-          permissoes?: Json | null
-          telefone?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "usuarios_colaboradores_oficina_id_fkey"
-            columns: ["oficina_id"]
-            isOneToOne: false
-            referencedRelation: "oficinas"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       veiculos: {
         Row: {

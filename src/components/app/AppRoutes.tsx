@@ -10,10 +10,6 @@ import { publicRoutes } from '@/routes/PublicRoutes';
 import { protectedRoutes } from '@/routes/ProtectedRoutes';
 import DashboardPage from '@/pages/DashboardPage';
 import PlanoExpirado from '@/pages/plano-expirado';
-import Layout from '@/components/layout/Layout';
-import ColaboradoresPage from '@/pages/ColaboradoresPage';
-import EstoquePage from '@/pages/EstoquePage';
-import RelatoriosPage from '@/pages/RelatoriosPage';
 
 const AppRoutes: React.FC = () => {
   const { user, isLoadingAuth } = useAuth();
@@ -44,52 +40,20 @@ const AppRoutes: React.FC = () => {
       {/* Rota especial para plano expirado */}
       <Route path="/plano-expirado" element={<PlanoExpirado />} />
       
-      {/* Rotas administrativas */}
+      {/* Rotas administrativas - renderizando o array de routes */}
       {AdminRoutes()}
       
-      {/* Rotas protegidas com Layout */}
+      {/* Rotas protegidas */}
+      {protectedRoutes}
+      
+      {/* Rota protegida para dashboard principal */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <PlanExpiredGuard>
-            <Layout>
-              <DashboardPage />
-            </Layout>
+            <DashboardPage />
           </PlanExpiredGuard>
         </ProtectedRoute>
       } />
-      
-      <Route path="/colaboradores" element={
-        <ProtectedRoute>
-          <PlanExpiredGuard>
-            <Layout>
-              <ColaboradoresPage />
-            </Layout>
-          </PlanExpiredGuard>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/estoque" element={
-        <ProtectedRoute>
-          <PlanExpiredGuard>
-            <Layout>
-              <EstoquePage />
-            </Layout>
-          </PlanExpiredGuard>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/relatorios" element={
-        <ProtectedRoute>
-          <PlanExpiredGuard>
-            <Layout>
-              <RelatoriosPage />
-            </Layout>
-          </PlanExpiredGuard>
-        </ProtectedRoute>
-      } />
-      
-      {/* Outras rotas protegidas existentes */}
-      {protectedRoutes}
       
       {/* Rota raiz - redirecionamento baseado no tipo de usuário */}
       <Route path="/" element={
