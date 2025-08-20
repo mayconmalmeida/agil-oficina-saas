@@ -9,7 +9,7 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -18,16 +18,16 @@ const LandingPage: React.FC = () => {
             <span className="text-xl font-bold text-gray-900">Oficina Go</span>
           </div>
           <nav className="hidden md:flex space-x-8">
-            <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600">Funcionalidades</a>
-            <a href="#planos" className="text-gray-600 hover:text-blue-600">Planos</a>
-            <a href="#faq" className="text-gray-600 hover:text-blue-600">FAQ</a>
-            <a href="#contato" className="text-gray-600 hover:text-blue-600">Contato</a>
+            <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Funcionalidades</a>
+            <a href="#planos" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Planos</a>
+            <a href="#faq" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">FAQ</a>
+            <a href="#contato" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Contato</a>
           </nav>
           <div className="flex space-x-3">
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="hover-scale">
               <Link to="/login">Login</Link>
             </Button>
-            <Button asChild>
+            <Button asChild className="hover-scale">
               <Link to="/register">Teste Grátis</Link>
             </Button>
           </div>
@@ -35,10 +35,10 @@ const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 animate-fade-in">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="animate-slide-in-left">
               <h1 className="text-5xl font-bold text-gray-900 mb-6">
                 Transforme sua oficina com{' '}
                 <span className="text-blue-600">Oficina Go</span>
@@ -48,15 +48,15 @@ const LandingPage: React.FC = () => {
                 relatórios avançados e controle total do seu negócio.
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button size="lg" className="px-8 py-3 text-lg" asChild>
+                <Button size="lg" className="px-8 py-3 text-lg hover-scale" asChild>
                   <Link to="/register">Começar Agora →</Link>
                 </Button>
-                <Button variant="outline" size="lg" className="px-8 py-3 text-lg" asChild>
+                <Button variant="outline" size="lg" className="px-8 py-3 text-lg hover-scale" asChild>
                   <Link to="/login">Fazer Login</Link>
                 </Button>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative animate-slide-in-right">
               <div className="bg-white rounded-2xl shadow-2xl p-6 transform rotate-3 hover:rotate-0 transition-transform duration-300">
                 <div className="flex space-x-2 mb-4">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -64,15 +64,15 @@ const LandingPage: React.FC = () => {
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
                 <div className="space-y-3">
-                  <div className="h-4 bg-blue-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-blue-200 rounded w-3/4 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="bg-blue-100 rounded-lg p-4 flex items-center justify-center">
+                  <div className="bg-blue-100 rounded-lg p-4 flex items-center justify-center hover-scale">
                     <Calendar className="h-8 w-8 text-blue-600" />
                   </div>
-                  <div className="bg-green-100 rounded-lg p-4 flex items-center justify-center">
+                  <div className="bg-green-100 rounded-lg p-4 flex items-center justify-center hover-scale">
                     <BarChart3 className="h-8 w-8 text-green-600" />
                   </div>
                 </div>
@@ -83,22 +83,22 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Icons */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <Settings className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">IA Diagnóstico</h3>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <Calendar className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Agendamentos</h3>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="h-8 w-8 text-blue-600" />
               </div>
@@ -109,7 +109,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Funcionalidades que Transformam */}
-      <section id="funcionalidades" className="py-20 bg-gray-50">
+      <section id="funcionalidades" className="py-20 bg-gray-50 animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -121,7 +121,7 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-8 w-8 text-blue-600" />
               </div>
@@ -133,7 +133,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Calendar className="h-8 w-8 text-green-600" />
               </div>
@@ -145,7 +145,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="h-8 w-8 text-purple-600" />
               </div>
@@ -157,7 +157,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-orange-600" />
               </div>
@@ -169,7 +169,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-8 w-8 text-red-600" />
               </div>
@@ -181,7 +181,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-8 w-8 text-blue-600" />
               </div>
@@ -193,7 +193,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-8 w-8 text-green-600" />
               </div>
@@ -205,7 +205,7 @@ const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="p-6 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
               <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Smartphone className="h-8 w-8 text-pink-600" />
               </div>
@@ -221,7 +221,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* IA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-6">
             ⚡ Potencialize Sua Oficina com Inteligência Artificial!
@@ -231,20 +231,17 @@ const LandingPage: React.FC = () => {
           </p>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="bg-white/10 backdrop-blur border-white/20 p-8">
+            <Card className="bg-white/10 backdrop-blur border-white/20 p-8 hover-scale transition-all duration-300">
               <div className="flex items-center mb-4">
                 <Settings className="h-8 w-8 text-white mr-3" />
                 <h3 className="text-xl font-bold text-white">IA para Diagnóstico de Problemas Mecânicos</h3>
-              </div>
-              <div className="bg-blue-900/30 rounded px-3 py-1 text-sm mb-4 inline-block">
-                Exclusivo Plano PREMIUM
               </div>
               <p className="text-white/90 mb-6">
                 Digite os sintomas que o cliente relata e deixe nossa IA analisar e 
                 sugerir possíveis causas, economizando tempo e aumentando a 
                 precisão dos seus diagnósticos.
               </p>
-              <ul className="text-left space-y-2 text-white/90 mb-6">
+              <ul className="text-left space-y-2 text-white/90">
                 <li className="flex items-center">
                   <Check className="h-4 w-4 mr-2 text-green-400" />
                   Análise de sintomas em tempo real
@@ -262,25 +259,19 @@ const LandingPage: React.FC = () => {
                   Aumenta precisão e reduz tempo de diagnóstico
                 </li>
               </ul>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-                Comece o Plano Premium
-              </Button>
             </Card>
 
-            <Card className="bg-white/10 backdrop-blur border-white/20 p-8">
+            <Card className="bg-white/10 backdrop-blur border-white/20 p-8 hover-scale transition-all duration-300">
               <div className="flex items-center mb-4">
                 <Users className="h-8 w-8 text-white mr-3" />
                 <h3 className="text-xl font-bold text-white">IA para Suporte Inteligente no Sistema</h3>
-              </div>
-              <div className="bg-green-900/30 rounded px-3 py-1 text-sm mb-4 inline-block">
-                Disponível no Plano ESSENCIAL
               </div>
               <p className="text-white/90 mb-6">
                 Tenha um assistente virtual sempre disponível para tirar suas 
                 dúvidas sobre o uso da plataforma. Respostas rápidas e precisas a 
                 um clique!
               </p>
-              <ul className="text-left space-y-2 text-white/90 mb-6">
+              <ul className="text-left space-y-2 text-white/90">
                 <li className="flex items-center">
                   <Check className="h-4 w-4 mr-2 text-green-400" />
                   Chat embutido no sistema
@@ -298,9 +289,6 @@ const LandingPage: React.FC = () => {
                   Reduz tempo de suporte e melhora experiência
                 </li>
               </ul>
-              <Button className="bg-green-600 hover:bg-green-700 text-white w-full">
-                Comece Agora (Plano Essencial)
-              </Button>
             </Card>
           </div>
 
@@ -311,10 +299,10 @@ const LandingPage: React.FC = () => {
               desenvolvidas especificamente para o setor automotivo.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 hover-scale">
                 Experimentar Gratuitamente
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 hover-scale">
                 Ver Demonstração
               </Button>
             </div>
@@ -323,30 +311,30 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Números que comprovam nossa eficiência
             </h2>
             <p className="text-gray-600">
-              O OficinaÁgil está ajudando centenas de profissionais a transformar a gestão das suas oficinas.
+              O Oficina Go está ajudando centenas de profissionais a transformar a gestão das suas oficinas.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
+            <div className="hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-8 w-8 text-blue-600" />
               </div>
               <div className="text-4xl font-bold text-gray-900 mb-2">+100</div>
               <div className="text-lg font-semibold text-gray-900 mb-2">Oficinas Ativas</div>
               <p className="text-gray-600">
-                Oficinas em todo o Brasil usando o OficinaÁgil diariamente.
+                Oficinas em todo o Brasil usando o Oficina Go diariamente.
               </p>
             </div>
 
-            <div>
+            <div className="hover-scale">
               <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-green-600" />
               </div>
@@ -357,7 +345,7 @@ const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            <div>
+            <div className="hover-scale">
               <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="h-8 w-8 text-purple-600" />
               </div>
@@ -372,17 +360,17 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Como Funciona */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h2>
             <p className="text-xl text-gray-600">
-              Começar a usar o OficinaÁgil é simples e rápido. Siga estes passos:
+              Começar a usar o Oficina Go é simples e rápido. Siga estes passos:
             </p>
           </div>
 
           <div className="grid md:grid-cols-4 gap-8">
-            <div className="text-center">
+            <div className="text-center hover-scale">
               <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Calendar className="h-8 w-8 text-blue-600" />
               </div>
@@ -393,7 +381,7 @@ const LandingPage: React.FC = () => {
               <div className="text-blue-600 text-sm">→</div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center hover-scale">
               <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-green-600" />
               </div>
@@ -404,7 +392,7 @@ const LandingPage: React.FC = () => {
               <div className="text-blue-600 text-sm">→</div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center hover-scale">
               <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <Settings className="h-8 w-8 text-purple-600" />
               </div>
@@ -415,7 +403,7 @@ const LandingPage: React.FC = () => {
               <div className="text-blue-600 text-sm">→</div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center hover-scale">
               <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="h-8 w-8 text-orange-600" />
               </div>
@@ -429,7 +417,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="planos" className="py-20 bg-white">
+      <section id="planos" className="py-20 bg-white animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -442,7 +430,7 @@ const LandingPage: React.FC = () => {
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Plano Mensal */}
-            <Card className="relative p-8 border-2 hover:border-blue-200 transition-colors">
+            <Card className="relative p-8 border-2 hover:border-blue-200 transition-all duration-300 hover-scale">
               <CardContent className="p-0">
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Plano Mensal</h3>
@@ -477,14 +465,14 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
 
-                <Button className="w-full" size="lg" asChild>
+                <Button className="w-full hover-scale" size="lg" asChild>
                   <Link to="/register">Começar Teste Grátis</Link>
                 </Button>
               </CardContent>
             </Card>
 
             {/* Plano Anual */}
-            <Card className="relative p-8 border-2 border-blue-500 bg-blue-50 hover:border-blue-600 transition-colors">
+            <Card className="relative p-8 border-2 border-blue-500 bg-blue-50 hover:border-blue-600 transition-all duration-300 hover-scale">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">
                   Mais Popular
@@ -531,7 +519,7 @@ const LandingPage: React.FC = () => {
                   </li>
                 </ul>
 
-                <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg" asChild>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 hover-scale" size="lg" asChild>
                   <Link to="/register">Começar Teste Grátis</Link>
                 </Button>
               </CardContent>
@@ -547,12 +535,12 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-gray-50">
+      <section id="faq" className="py-20 bg-gray-50 animate-fade-in">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Perguntas Frequentes</h2>
             <p className="text-xl text-gray-600">
-              Encontre respostas para as dúvidas mais comuns sobre o OficinaÁgil.
+              Encontre respostas para as dúvidas mais comuns sobre o Oficina Go.
             </p>
           </div>
 
@@ -564,7 +552,7 @@ const LandingPage: React.FC = () => {
               },
               {
                 question: "Preciso instalar algum software no meu computador?",
-                answer: "Não! O OficinaÁgil funciona 100% online. Basta acessar pelo navegador de qualquer dispositivo."
+                answer: "Não! O Oficina Go funciona 100% online. Basta acessar pelo navegador de qualquer dispositivo."
               },
               {
                 question: "Quantos usuários posso cadastrar?",
@@ -587,11 +575,11 @@ const LandingPage: React.FC = () => {
                 answer: "Aceitamos cartão de crédito, PIX e boleto bancário. O pagamento é processado de forma segura."
               }
             ].map((faq, index) => (
-              <Card key={index} className="p-6">
+              <Card key={index} className="p-6 hover-scale transition-all duration-300">
                 <details className="group">
                   <summary className="flex justify-between items-center cursor-pointer list-none">
                     <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
-                    <ChevronDown className="h-5 w-5 text-gray-500 group-open:rotate-180 transition-transform" />
+                    <ChevronDown className="h-5 w-5 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
                   </summary>
                   <p className="mt-4 text-gray-600 leading-relaxed">{faq.answer}</p>
                 </details>
@@ -601,7 +589,7 @@ const LandingPage: React.FC = () => {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-4">Ainda tem dúvidas? Entre em contato conosco!</p>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="hover-scale">
               <a href="https://wa.me/5546999324779" target="_blank" rel="noopener noreferrer">
                 Fale Conosco
               </a>
@@ -611,19 +599,19 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white">
+      <section className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white animate-fade-in">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <div className="bg-blue-600/20 rounded-full px-6 py-2 inline-block mb-6">
             <span className="text-blue-200">Experimente por 7 dias grátis!</span>
           </div>
           <h2 className="text-4xl font-bold mb-6">
-            Transforme a gestão da sua oficina com o OficinaÁgil
+            Transforme a gestão da sua oficina com o Oficina Go
           </h2>
           <p className="text-xl mb-8 opacity-90">
             Junte-se a centenas de oficinas que já estão economizando tempo, 
             reduzindo erros e aumentando seus resultados.
           </p>
-          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3" asChild>
+          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3 hover-scale" asChild>
             <Link to="/register">Começar Agora →</Link>
           </Button>
           <p className="mt-4 text-sm opacity-75">
@@ -633,10 +621,10 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contato" className="py-20 bg-white">
+      <section id="contato" className="py-20 bg-white animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
-            <div className="bg-blue-600 rounded-2xl p-8 text-white">
+            <div className="bg-blue-600 rounded-2xl p-8 text-white hover-scale">
               <h3 className="text-2xl font-bold mb-6">Entre em Contato</h3>
               <p className="mb-8 opacity-90">
                 Estamos aqui para ajudar você a transformar a gestão da sua oficina. 
@@ -646,7 +634,7 @@ const LandingPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold mb-1">E-mail</h4>
-                  <p className="opacity-90">contatooficinage@gmail.com</p>
+                  <p className="opacity-90">contatooficinago@gmail.com</p>
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Telefone</h4>
@@ -665,7 +653,7 @@ const LandingPage: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Seu nome"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 />
               </div>
               <div>
@@ -673,7 +661,7 @@ const LandingPage: React.FC = () => {
                 <input
                   type="email"
                   placeholder="seu@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 />
               </div>
               <div>
@@ -681,7 +669,7 @@ const LandingPage: React.FC = () => {
                 <input
                   type="tel"
                   placeholder="(XX) XXXXX-XXXX"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 />
               </div>
               <div>
@@ -689,10 +677,10 @@ const LandingPage: React.FC = () => {
                 <textarea
                   rows={4}
                   placeholder="Como podemos ajudar você?"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 ></textarea>
               </div>
-              <Button className="w-full bg-green-600 hover:bg-green-700" size="lg">
+              <Button className="w-full bg-green-600 hover:bg-green-700 hover-scale" size="lg">
                 Enviar Mensagem
               </Button>
             </div>
@@ -701,7 +689,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-12 animate-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
@@ -720,7 +708,7 @@ const LandingPage: React.FC = () => {
               <h4 className="font-semibold mb-4">Contato</h4>
               <div className="space-y-2 text-gray-400">
                 <p>📞 (46) 99932-4779</p>
-                <p>✉️ contatooficinage@gmail.com</p>
+                <p>✉️ contatooficinago@gmail.com</p>
                 <p>📍 Pato Branco - PR, Brasil</p>
               </div>
             </div>
