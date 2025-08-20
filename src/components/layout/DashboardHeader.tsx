@@ -3,11 +3,16 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
-import { useLogout } from '@/hooks/useLogout';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardHeader: React.FC = () => {
-  const { user } = useAuth();
-  const { handleLogout } = useLogout();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">

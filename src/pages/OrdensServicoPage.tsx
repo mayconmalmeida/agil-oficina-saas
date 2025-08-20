@@ -1,216 +1,175 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Wrench, Edit, Trash2, Eye } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Search, Eye, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrdemServico {
   id: string;
-  numero: string;
-  cliente_nome: string;
-  veiculo: string;
+  cliente_id: string;
   status: string;
   valor_total: number;
-  data_criacao: string;
-  data_prevista: string;
+  data_inicio: string;
+  observacoes?: string;
+  clients?: {
+    nome: string;
+  };
 }
 
 const OrdensServicoPage: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchOrdens();
-  }, [user?.id]);
+    carregarOrdens();
+  }, []);
 
-  const fetchOrdens = async () => {
-    if (!user?.id) return;
-
+  const carregarOrdens = async () => {
     try {
-      setIsLoading(true);
-      // This is a placeholder - you would implement this based on your database schema
       const { data, error } = await supabase
         .from('ordens_servico')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('data_criacao', { ascending: false });
+        .select(`
+          id,
+          cliente_id,
+          status,
+          valor_total,
+          data_inicio,
+          observacoes,
+          clients!inner(nome)
+        `)
+        .order('data_inicio', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = table doesn't exist
-        throw error;
-      }
+      if (error) throw error;
       
-      // For now, using mock data since table might not exist
-      setOrdens([
-        {
-          id: '1',
-          numero: 'OS-001',
-          cliente_nome: 'João Silva',
-          veiculo: 'Honda Civic 2020',
-          status: 'em_andamento',
-          valor_total: 800.00,
-          data_criacao: '2024-01-15',
-          data_prevista: '2024-01-20'
-        },
-        {
-          id: '2',
-          numero: 'OS-002',
-          cliente_nome: 'Maria Santos',
-          veiculo: 'Toyota Corolla 2019',
-          status: 'aguardando_pecas',
-          valor_total: 1200.00,
-          data_criacao: '2024-01-16',
-          data_prevista: '2024-01-25'
-        }
-      ]);
-    } catch (error: any) {
+      // Transform the data to match our interface
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        cliente_id: item.cliente_id,
+        status: item.status,
+        valor_total: item.valor_total,
+        data_inicio: item.data_inicio,
+        observacoes: item.observacoes,
+        clients: Array.isArray(item.clients) 
+          ? item.clients[0] 
+          : item.clients
+      }));
+      
+      setOrdens(transformedData);
+    } catch (error) {
       console.error('Erro ao carregar ordens de serviço:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao carregar ordens de serviço",
-        description: error.message,
+        title: "Erro",
+        description: "Não foi possível carregar as ordens de serviço."
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredOrdens = ordens.filter(ordem =>
-    ordem.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ordem.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ordem.veiculo.toLowerCase().includes(searchTerm.toLowerCase())
+  const ordensFiltradasr = ordens.filter(ordem =>
+    ordem.clients?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ordem.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'aberto':
-        return <Badge variant="secondary">Aberto</Badge>;
-      case 'aprovado':
-        return <Badge variant="default">Aprovado</Badge>;
-      case 'em_andamento':
-        return <Badge className="bg-blue-600">Em Andamento</Badge>;
-      case 'aguardando_pecas':
-        return <Badge className="bg-yellow-600">Aguardando Peças</Badge>;
-      case 'finalizado':
-        return <Badge className="bg-green-600">Finalizado</Badge>;
-      case 'cancelado':
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'aberta': return 'bg-blue-100 text-blue-800';
+      case 'em andamento': return 'bg-yellow-100 text-yellow-800';
+      case 'concluída': return 'bg-green-100 text-green-800';
+      case 'cancelada': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Carregando ordens de serviço...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Wrench className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Ordens de Serviço</h1>
+          <FileText className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold">Ordens de Serviço</h1>
         </div>
-        <Button 
-          onClick={() => navigate('/dashboard/ordens-servico/nova')}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
+        <Button onClick={() => navigate('/ordens-servico/nova')}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Ordem de Serviço
         </Button>
       </div>
 
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Buscar Ordens de Serviço</CardTitle>
-        </CardHeader>
-        <CardContent>
+          <CardTitle>Lista de Ordens de Serviço</CardTitle>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por cliente, número ou veículo..."
+              placeholder="Buscar ordens de serviço..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Ordens de Serviço ({filteredOrdens.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredOrdens.length === 0 ? (
-            <div className="text-center py-8">
-              <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">Nenhuma ordem de serviço encontrada.</p>
-              <Button onClick={() => navigate('/dashboard/ordens-servico/nova')}>
-                <Plus className="mr-2 h-4 w-4" />
-                Criar Primeira Ordem de Serviço
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Veículo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Previsão</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Valor Total</TableHead>
+                <TableHead>Data Início</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ordensFiltradasr.map((ordem) => (
+                <TableRow key={ordem.id}>
+                  <TableCell className="font-medium">
+                    #{ordem.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell>{ordem.clients?.nome || 'N/A'}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(ordem.status)}>
+                      {ordem.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>R$ {ordem.valor_total?.toFixed(2) || '0,00'}</TableCell>
+                  <TableCell>
+                    {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/ordens-servico/${ordem.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrdens.map((ordem) => (
-                  <TableRow key={ordem.id}>
-                    <TableCell className="font-medium">{ordem.numero}</TableCell>
-                    <TableCell>{ordem.cliente_nome}</TableCell>
-                    <TableCell>{ordem.veiculo}</TableCell>
-                    <TableCell>{getStatusBadge(ordem.status)}</TableCell>
-                    <TableCell>R$ {ordem.valor_total.toFixed(2)}</TableCell>
-                    <TableCell>{new Date(ordem.data_criacao).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{new Date(ordem.data_prevista).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => navigate(`/dashboard/ordens-servico/${ordem.id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

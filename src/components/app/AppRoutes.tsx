@@ -1,45 +1,40 @@
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Routes, Route } from 'react-router-dom';
+import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
-import LandingPage from '@/pages/LandingPage';
 import SupportPage from '@/pages/SupportPage';
 import DashboardPage from '@/pages/DashboardPage';
-import ClientsPage from '@/pages/ClientsPage';
+import Layout from '@/components/layout/Layout';
+import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 import AgendaPage from '@/pages/AgendaPage';
-import ProductsPage from '@/pages/ProductsPage';
-import OrcamentosPage from '@/pages/OrcamentosPage';
-import NewOrcamentoPage from '@/pages/NewOrcamentoPage';
+import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdensServicoPage from '@/pages/OrdensServicoPage';
-import NewOrdemServicoPage from '@/pages/NewOrdemServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+
+// Import pages
+import ClientsPage from '@/pages/ClientsPage';
+import ServicesPage from '@/pages/ServicesPage';
+import BudgetsPage from '@/pages/BudgetsPage';
+import ProductsPage from '@/pages/ProductsPage';
+import CategoriesPage from '@/pages/CategoriesPage';
+import SuppliersPage from '@/pages/SuppliersPage';
+import ReportsPage from '@/pages/ReportsPage';
+import CompanyPage from '@/pages/CompanyPage';
 import SettingsPage from '@/pages/SettingsPage';
-
-// Admin imports
-import AdminLogin from '@/pages/AdminLogin';
-import SimpleAdminDashboard from '@/pages/SimpleAdminDashboard';
-import AdminUsers from '@/pages/AdminUsers';
-import AdminSubscriptions from '@/pages/AdminSubscriptions';
-import AdminPlansPage from '@/pages/AdminPlansPage';
-import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
-
-import LoadingScreen from '@/components/ui/loading';
+import SubscriptionPage from '@/pages/SubscriptionPage';
+import CollaboratorsPage from '@/pages/CollaboratorsPage';
+import AdminLoginPage from '@/pages/AdminLoginPage';
+import AdminDashboard from '@/pages/AdminDashboard';
+import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
+import IASuportePage from '@/pages/IASuportePage';
 
 const AppRoutes: React.FC = () => {
-  const { loading } = useAuth();
-
-  if (loading) {
-    return <LoadingScreen fullscreen />;
-  }
-
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -48,45 +43,42 @@ const AppRoutes: React.FC = () => {
       <Route path="/support" element={<SupportPage />} />
       
       {/* Admin Routes */}
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin" element={
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route path="/admin/*" element={
         <OptimizedAdminGuard>
-          <SimpleAdminDashboard />
-        </OptimizedAdminGuard>
-      } />
-      <Route path="/admin/users" element={
-        <OptimizedAdminGuard>
-          <AdminUsers />
-        </OptimizedAdminGuard>
-      } />
-      <Route path="/admin/subscriptions" element={
-        <OptimizedAdminGuard>
-          <AdminSubscriptions />
-        </OptimizedAdminGuard>
-      } />
-      <Route path="/admin/plans" element={
-        <OptimizedAdminGuard>
-          <AdminPlansPage />
+          <AdminDashboard />
         </OptimizedAdminGuard>
       } />
 
-      {/* Private Routes */}
-      <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="clientes" element={<ClientsPage />} />
-        <Route path="agenda" element={<AgendaPage />} />
-        <Route path="produtos" element={<ProductsPage />} />
-        <Route path="orcamentos" element={<OrcamentosPage />} />
-        <Route path="orcamentos/novo" element={<NewOrcamentoPage />} />
-        <Route path="ordens-servico" element={<OrdensServicoPage />} />
-        <Route path="ordens-servico/nova" element={<NewOrdemServicoPage />} />
-        <Route path="ordens-servico/:id" element={<OrdemServicoDetailPage />} />
-        <Route path="financeiro" element={<FinanceiroPage />} />
-        <Route path="configuracoes" element={<SettingsPage />} />
+      {/* Protected Routes */}
+      <Route element={<Layout />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/agenda" element={<AgendaPage />} />
+        <Route path="/agendamentos/novo" element={<NewSchedulePage />} />
+        <Route path="/clientes" element={<ClientsPage />} />
+        <Route path="/servicos" element={<ServicesPage />} />
+        <Route path="/produtos" element={<ProductsPage />} />
+        <Route path="/orcamentos" element={<BudgetsPage />} />
+        <Route path="/ordens-servico" element={<OrdensServicoPage />} />
+        <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
+        <Route path="/financeiro" element={<FinanceiroPage />} />
+        <Route path="/colaboradores" element={<CollaboratorsPage />} />
+        <Route path="/relatorios" element={<ReportsPage />} />
+        <Route path="/configuracoes" element={<SettingsPage />} />
+        
+        {/* Dashboard specific routes */}
+        <Route path="/dashboard/produtos" element={<ProductsPage />} />
+        <Route path="/dashboard/categorias" element={<CategoriesPage />} />
+        <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
+        <Route path="/dashboard/relatorios" element={<ReportsPage />} />
+        <Route path="/dashboard/empresa" element={<CompanyPage />} />
+        <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
+        <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
+        <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
+        <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
+        <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
+        <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
       </Route>
-
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
