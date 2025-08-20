@@ -31,13 +31,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
     },
   });
 
-  // Novo handler para sanitizar antes de chamar onSubmit
   const handleSubmit = async (values: LoginFormValues) => {
-    // Sanitize email
     const sanitizedValues = {
       ...values,
       email: sanitizeInput(values.email),
-      // password intencionalmente não é sanitizada (nunca deve ser exibida no DOM)
     };
     await onSubmit(sanitizedValues);
   };
@@ -92,7 +89,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
         
         <Button 
           type="submit" 
-          className="w-full bg-oficina hover:bg-blue-700"
+          className="w-full bg-blue-600 hover:bg-blue-700"
           disabled={isLoading}
         >
           {isLoading ? (

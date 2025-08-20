@@ -7,18 +7,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/sonner';
+import { useToast } from '@/hooks/use-toast';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email) {
-      toast.error('Por favor, digite seu email');
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Por favor, digite seu email"
+      });
       return;
     }
 
@@ -31,14 +36,25 @@ const ForgotPasswordPage = () => {
 
       if (error) {
         console.error('Erro ao enviar email:', error);
-        toast.error('Erro ao enviar email. Tente novamente.');
+        toast({
+          variant: "destructive",
+          title: "Erro ao enviar email",
+          description: "Verifique se o email está correto e tente novamente."
+        });
       } else {
         setEmailSent(true);
-        toast.success('Email de recuperação enviado com sucesso!');
+        toast({
+          title: "Email enviado!",
+          description: "Verifique sua caixa de entrada para redefinir sua senha."
+        });
       }
     } catch (error) {
       console.error('Erro:', error);
-      toast.error('Erro inesperado. Tente novamente.');
+      toast({
+        variant: "destructive",
+        title: "Erro inesperado",
+        description: "Ocorreu um erro. Tente novamente."
+      });
     } finally {
       setIsLoading(false);
     }

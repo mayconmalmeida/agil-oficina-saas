@@ -13,6 +13,7 @@ import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdensServicoPage from '@/pages/OrdensServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 
 // Import pages
 import ClientsPage from '@/pages/ClientsPage';
@@ -38,6 +39,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
       <Route path="/support" element={<SupportPage />} />
       
       {/* Admin Routes */}
