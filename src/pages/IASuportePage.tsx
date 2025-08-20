@@ -146,7 +146,7 @@ const IASuportePage: React.FC = () => {
           <h1 className="text-2xl font-bold">IA Suporte Inteligente</h1>
           <p className="text-gray-600">Tire suas dúvidas sobre o Oficina Go</p>
         </div>
-        {messages.length {'>'}  0 && (
+        {messages.length > 0 && (
           <Button variant="outline" onClick={clearMessages}>
             <Trash2 className="h-4 w-4 mr-2" />
             Limpar Conversa
