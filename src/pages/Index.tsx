@@ -14,9 +14,9 @@ import AIFeatures from '@/components/sections/AIFeatures';
 
 const Index: React.FC = () => {
   return (
-    <div className="flex flex-col min-h-screen font-sans">
+    <div className="flex flex-col min-h-screen font-sans bg-white">
       <Navbar />
-      <main className="flex-grow pt-16 sm:pt-20 md:pt-24">
+      <main className="flex-grow">
         <Hero />
         <Features />
         <AIFeatures />

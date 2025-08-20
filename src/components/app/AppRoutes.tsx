@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import Index from '@/pages/Index';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -13,7 +14,6 @@ import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdensServicoPage from '@/pages/OrdensServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
-import EstoquePage from '@/pages/EstoquePage';
 
 // Import pages
 import ClientsPage from '@/pages/ClientsPage';
@@ -35,7 +35,8 @@ import IASuportePage from '@/pages/IASuportePage';
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<Index />} />
+      <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/support" element={<SupportPage />} />
@@ -59,7 +60,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/orcamentos" element={<BudgetsPage />} />
         <Route path="/ordens-servico" element={<OrdensServicoPage />} />
         <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
-        <Route path="/estoque" element={<EstoquePage />} />
         <Route path="/financeiro" element={<FinanceiroPage />} />
         <Route path="/colaboradores" element={<CollaboratorsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />
@@ -77,7 +77,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
         <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
-        <Route path="/dashboard/estoque" element={<EstoquePage />} />
       </Route>
     </Routes>
   );

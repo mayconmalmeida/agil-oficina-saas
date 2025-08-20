@@ -14,12 +14,11 @@ import {
   Settings,
   Building2,
   Truck,
-  FolderOpen,
   Brain,
   Stethoscope,
-  UserPlus,
-  Factory
+  UserPlus
 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -59,11 +58,6 @@ const Sidebar: React.FC = () => {
       name: 'Ordens de Serviço',
       href: '/ordens-servico',
       icon: ClipboardList,
-    },
-    {
-      name: 'Estoque',
-      href: '/estoque',
-      icon: Factory,
     },
     {
       name: 'Financeiro',
@@ -108,34 +102,38 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:block">
+    <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:block border-r border-gray-200">
       <div className="flex h-16 items-center justify-center border-b border-gray-200">
-        <h1 className="text-xl font-bold text-blue-600">OficinaGO</h1>
+        <h1 className="text-xl font-bold text-blue-600">Oficina Go</h1>
       </div>
-      <nav className="mt-8 px-4">
-        <ul className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <li key={item.name}>
-                <NavLink
-                  to={item.href}
-                  className={`flex items-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      
+      <ScrollArea className="h-[calc(100vh-4rem)] px-3 py-4">
+        <nav>
+          <ul className="space-y-1">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href || 
+                               (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+              
+              return (
+                <li key={item.name}>
+                  <NavLink
+                    to={item.href}
+                    className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />
+                    {item.name}
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </ScrollArea>
     </div>
   );
 };
