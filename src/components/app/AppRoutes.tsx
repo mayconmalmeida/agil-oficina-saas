@@ -10,7 +10,7 @@ import SupportPage from '@/pages/SupportPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ClientsPage from '@/pages/ClientsPage';
 import AgendaPage from '@/pages/AgendaPage';
-import ProdutosPage from '@/pages/ProdutosPage';
+import ProductsPage from '@/pages/ProductsPage';
 import OrcamentosPage from '@/pages/OrcamentosPage';
 import NewOrcamentoPage from '@/pages/NewOrcamentoPage';
 import OrdensServicoPage from '@/pages/OrdensServicoPage';
@@ -23,9 +23,9 @@ import SettingsPage from '@/pages/SettingsPage';
 // Admin imports
 import AdminLogin from '@/pages/AdminLogin';
 import SimpleAdminDashboard from '@/pages/SimpleAdminDashboard';
-import AdminUsersPage from '@/pages/admin/AdminUsersPage';
-import AdminSubscriptionsPage from '@/pages/admin/AdminSubscriptionsPage';
-import AdminPlansPage from '@/pages/admin/AdminPlansPage';
+import AdminUsers from '@/pages/AdminUsers';
+import AdminSubscriptions from '@/pages/AdminSubscriptions';
+import AdminPlansPage from '@/pages/AdminPlansPage';
 import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 
 import LoadingScreen from '@/components/ui/loading';
@@ -56,12 +56,12 @@ const AppRoutes: React.FC = () => {
       } />
       <Route path="/admin/users" element={
         <OptimizedAdminGuard>
-          <AdminUsersPage />
+          <AdminUsers />
         </OptimizedAdminGuard>
       } />
       <Route path="/admin/subscriptions" element={
         <OptimizedAdminGuard>
-          <AdminSubscriptionsPage />
+          <AdminSubscriptions />
         </OptimizedAdminGuard>
       } />
       <Route path="/admin/plans" element={
@@ -75,7 +75,7 @@ const AppRoutes: React.FC = () => {
         <Route index element={<DashboardPage />} />
         <Route path="clientes" element={<ClientsPage />} />
         <Route path="agenda" element={<AgendaPage />} />
-        <Route path="produtos" element={<ProdutosPage />} />
+        <Route path="produtos" element={<ProductsPage />} />
         <Route path="orcamentos" element={<OrcamentosPage />} />
         <Route path="orcamentos/novo" element={<NewOrcamentoPage />} />
         <Route path="ordens-servico" element={<OrdensServicoPage />} />

@@ -5,25 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Wrench, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, FileText, Edit, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-interface OrdemServico {
+interface Orcamento {
   id: string;
   numero: string;
   cliente_nome: string;
-  veiculo: string;
-  status: string;
   valor_total: number;
+  status: string;
   data_criacao: string;
-  data_prevista: string;
+  validade: string;
 }
 
-const OrdensServicoPage: React.FC = () => {
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+const OrcamentosPage: React.FC = () => {
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -31,17 +30,17 @@ const OrdensServicoPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchOrdens();
+    fetchOrcamentos();
   }, [user?.id]);
 
-  const fetchOrdens = async () => {
+  const fetchOrcamentos = async () => {
     if (!user?.id) return;
 
     try {
       setIsLoading(true);
       // This is a placeholder - you would implement this based on your database schema
       const { data, error } = await supabase
-        .from('ordens_servico')
+        .from('orcamentos')
         .select('*')
         .eq('user_id', user.id)
         .order('data_criacao', { ascending: false });
@@ -51,33 +50,31 @@ const OrdensServicoPage: React.FC = () => {
       }
       
       // For now, using mock data since table might not exist
-      setOrdens([
+      setOrcamentos([
         {
           id: '1',
-          numero: 'OS-001',
+          numero: 'ORC-001',
           cliente_nome: 'João Silva',
-          veiculo: 'Honda Civic 2020',
-          status: 'em_andamento',
-          valor_total: 800.00,
+          valor_total: 1500.00,
+          status: 'pendente',
           data_criacao: '2024-01-15',
-          data_prevista: '2024-01-20'
+          validade: '2024-02-15'
         },
         {
           id: '2',
-          numero: 'OS-002',
+          numero: 'ORC-002',
           cliente_nome: 'Maria Santos',
-          veiculo: 'Toyota Corolla 2019',
-          status: 'aguardando_pecas',
-          valor_total: 1200.00,
+          valor_total: 2800.00,
+          status: 'aprovado',
           data_criacao: '2024-01-16',
-          data_prevista: '2024-01-25'
+          validade: '2024-02-16'
         }
       ]);
     } catch (error: any) {
-      console.error('Erro ao carregar ordens de serviço:', error);
+      console.error('Erro ao carregar orçamentos:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao carregar ordens de serviço",
+        title: "Erro ao carregar orçamentos",
         description: error.message,
       });
     } finally {
@@ -85,26 +82,21 @@ const OrdensServicoPage: React.FC = () => {
     }
   };
 
-  const filteredOrdens = ordens.filter(ordem =>
-    ordem.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ordem.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ordem.veiculo.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOrcamentos = orcamentos.filter(orcamento =>
+    orcamento.cliente_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    orcamento.numero.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'aberto':
-        return <Badge variant="secondary">Aberto</Badge>;
+      case 'pendente':
+        return <Badge variant="secondary">Pendente</Badge>;
       case 'aprovado':
         return <Badge variant="default">Aprovado</Badge>;
-      case 'em_andamento':
-        return <Badge className="bg-blue-600">Em Andamento</Badge>;
-      case 'aguardando_pecas':
-        return <Badge className="bg-yellow-600">Aguardando Peças</Badge>;
-      case 'finalizado':
-        return <Badge className="bg-green-600">Finalizado</Badge>;
-      case 'cancelado':
-        return <Badge variant="destructive">Cancelado</Badge>;
+      case 'rejeitado':
+        return <Badge variant="destructive">Rejeitado</Badge>;
+      case 'expirado':
+        return <Badge variant="outline">Expirado</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -122,27 +114,27 @@ const OrdensServicoPage: React.FC = () => {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-2">
-          <Wrench className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Ordens de Serviço</h1>
+          <FileText className="h-6 w-6 text-blue-600" />
+          <h1 className="text-2xl font-bold text-gray-900">Orçamentos</h1>
         </div>
         <Button 
-          onClick={() => navigate('/dashboard/ordens-servico/nova')}
+          onClick={() => navigate('/dashboard/orcamentos/novo')}
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Nova Ordem de Serviço
+          Novo Orçamento
         </Button>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Buscar Ordens de Serviço</CardTitle>
+          <CardTitle>Buscar Orçamentos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Buscar por cliente, número ou veículo..."
+              placeholder="Buscar por cliente ou número..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -153,16 +145,16 @@ const OrdensServicoPage: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Ordens de Serviço ({filteredOrdens.length})</CardTitle>
+          <CardTitle>Lista de Orçamentos ({filteredOrcamentos.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredOrdens.length === 0 ? (
+          {filteredOrcamentos.length === 0 ? (
             <div className="text-center py-8">
-              <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">Nenhuma ordem de serviço encontrada.</p>
-              <Button onClick={() => navigate('/dashboard/ordens-servico/nova')}>
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">Nenhum orçamento encontrado.</p>
+              <Button onClick={() => navigate('/dashboard/orcamentos/novo')}>
                 <Plus className="mr-2 h-4 w-4" />
-                Criar Primeira Ordem de Serviço
+                Criar Primeiro Orçamento
               </Button>
             </div>
           ) : (
@@ -171,31 +163,25 @@ const OrdensServicoPage: React.FC = () => {
                 <TableRow>
                   <TableHead>Número</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Veículo</TableHead>
+                  <TableHead>Valor Total</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Valor</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead>Previsão</TableHead>
+                  <TableHead>Validade</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrdens.map((ordem) => (
-                  <TableRow key={ordem.id}>
-                    <TableCell className="font-medium">{ordem.numero}</TableCell>
-                    <TableCell>{ordem.cliente_nome}</TableCell>
-                    <TableCell>{ordem.veiculo}</TableCell>
-                    <TableCell>{getStatusBadge(ordem.status)}</TableCell>
-                    <TableCell>R$ {ordem.valor_total.toFixed(2)}</TableCell>
-                    <TableCell>{new Date(ordem.data_criacao).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{new Date(ordem.data_prevista).toLocaleDateString('pt-BR')}</TableCell>
+                {filteredOrcamentos.map((orcamento) => (
+                  <TableRow key={orcamento.id}>
+                    <TableCell className="font-medium">{orcamento.numero}</TableCell>
+                    <TableCell>{orcamento.cliente_nome}</TableCell>
+                    <TableCell>R$ {orcamento.valor_total.toFixed(2)}</TableCell>
+                    <TableCell>{getStatusBadge(orcamento.status)}</TableCell>
+                    <TableCell>{new Date(orcamento.data_criacao).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{new Date(orcamento.validade).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => navigate(`/dashboard/ordens-servico/${ordem.id}`)}
-                        >
+                        <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon">
@@ -217,4 +203,4 @@ const OrdensServicoPage: React.FC = () => {
   );
 };
 
-export default OrdensServicoPage;
+export default OrcamentosPage;
