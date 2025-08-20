@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Index from '@/pages/Index';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -24,7 +23,7 @@ import CategoriesPage from '@/pages/CategoriesPage';
 import SuppliersPage from '@/pages/SuppliersPage';
 import ReportsPage from '@/pages/ReportsPage';
 import CompanyPage from '@/pages/CompanyPage';
-import ConfigurationsPage from '@/pages/ConfigurationsPage';
+import SettingsPage from '@/pages/SettingsPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
 import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -35,7 +34,7 @@ import IASuportePage from '@/pages/IASuportePage';
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -63,7 +62,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/financeiro" element={<FinanceiroPage />} />
         <Route path="/colaboradores" element={<CollaboratorsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />
-        <Route path="/configuracoes" element={<ConfigurationsPage />} />
+        <Route path="/configuracoes" element={<SettingsPage />} />
         
         {/* Dashboard specific routes */}
         <Route path="/dashboard/produtos" element={<ProductsPage />} />
@@ -71,7 +70,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
         <Route path="/dashboard/relatorios" element={<ReportsPage />} />
         <Route path="/dashboard/empresa" element={<CompanyPage />} />
-        <Route path="/dashboard/configuracoes" element={<ConfigurationsPage />} />
+        <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
         <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
         <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />

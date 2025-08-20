@@ -119,11 +119,17 @@ const Sidebar: React.FC = () => {
                 <li key={item.name}>
                   <NavLink
                     to={item.href}
-                    className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                      isActive
+                    className={({ isActive: navActive }) => `
+                      flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 
+                      ${navActive || isActive
                         ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
+                      }
+                    `}
+                    onClick={(e) => {
+                      // Prevent any event bubbling that might cause issues
+                      e.stopPropagation();
+                    }}
                   >
                     <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />
                     {item.name}
