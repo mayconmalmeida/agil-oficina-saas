@@ -1,4 +1,6 @@
+
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -78,6 +80,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
             </FormItem>
           )}
         />
+
+        <div className="text-right">
+          <Link 
+            to="/esqueceu-senha" 
+            className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
+          >
+            Esqueceu sua senha?
+          </Link>
+        </div>
         
         <Button 
           type="submit" 
@@ -93,6 +104,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
             'Entrar'
           )}
         </Button>
+
+        <div className="text-center mt-4">
+          <span className="text-sm text-gray-600">
+            Não tem uma conta?{' '}
+            <Link 
+              to="/register" 
+              className="text-blue-600 hover:text-blue-500 hover:underline font-medium"
+            >
+              Registre-se
+            </Link>
+          </span>
+        </div>
       </form>
     </Form>
   );

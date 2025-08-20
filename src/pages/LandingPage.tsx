@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -363,7 +362,7 @@ const LandingPage = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                <AnimatedCounter end={1250} suffix="+" />
+                <AnimatedCounter end={100} suffix="+" />
               </div>
               <p className="text-lg text-gray-600">Oficinas Ativas</p>
             </motion.div>
@@ -376,7 +375,7 @@ const LandingPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                <AnimatedCounter end={85000} suffix="+" />
+                <AnimatedCounter end={300} suffix="+" />
               </div>
               <p className="text-lg text-gray-600">Usuários Cadastrados</p>
             </motion.div>
@@ -389,7 +388,7 @@ const LandingPage = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <div className="text-4xl font-bold text-blue-600 mb-2">
-                <AnimatedCounter end={2500000} suffix="+" />
+                <AnimatedCounter end={5000} suffix="+" />
               </div>
               <p className="text-lg text-gray-600">Orçamentos Criados</p>
             </motion.div>
@@ -680,7 +679,10 @@ const LandingPage = () => {
                 </div>
                 <div className="flex items-center">
                   <MapPin className="h-5 w-5 text-blue-600 mr-3" />
-                  <span className="text-gray-700">Brasil</span>
+                  <div className="text-gray-700">
+                    <div>Pato Branco - PR</div>
+                    <div>Brasil</div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -732,7 +734,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <div className="flex items-center mb-4">
                 <Wrench className="h-8 w-8 text-blue-400 mr-2" />
@@ -750,24 +752,6 @@ const LandingPage = () => {
                 <li><a href="#funcionalidades" className="hover:text-white transition-colors">Funcionalidades</a></li>
                 <li><a href="#precos" className="hover:text-white transition-colors">Preços</a></li>
                 <li><Link to="/register" className="hover:text-white transition-colors">Teste Grátis</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Suporte</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#contato" className="hover:text-white transition-colors">Contato</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Ajuda</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentação</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Empresa</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Sobre</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Carreira</a></li>
               </ul>
             </div>
           </div>

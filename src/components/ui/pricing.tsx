@@ -11,6 +11,7 @@ import { Check, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef } from "react";
 import confetti from "canvas-confetti";
+import NumberFlow from "@number-flow/react";
 
 interface PricingPlan {
   name: string;
@@ -38,6 +39,31 @@ export function Pricing({
   const [isMonthly, setIsMonthly] = useState(true);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const switchRef = useRef<HTMLButtonElement>(null);
+
+  // Pegar apenas o primeiro plano (Premium)
+  const plan = plans[0] || {
+    name: "Premium",
+    price: "197",
+    yearlyPrice: "1970",
+    period: "mês",
+    features: [
+      "Gestão completa de clientes",
+      "Orçamentos digitais profissionais", 
+      "IA para diagnóstico avançado",
+      "Agendamentos inteligentes",
+      "Controle de estoque completo",
+      "Relatórios avançados",
+      "Marketing automático",
+      "Suporte prioritário",
+      "Integração contábil",
+      "App mobile",
+      "Backup automático"
+    ],
+    description: "Gestão completa para sua oficina",
+    buttonText: "Começar Teste Grátis",
+    href: "/register",
+    isPopular: true,
+  };
 
   const handleToggle = (checked: boolean) => {
     setIsMonthly(!checked);
@@ -70,6 +96,18 @@ export function Pricing({
 
   const formatPrice = (price: string) => {
     return price.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const getCurrentPrice = () => {
+    return isMonthly ? plan.price : plan.yearlyPrice;
+  };
+
+  const getCurrentPeriod = () => {
+    return isMonthly ? "/mês" : "/ano";
+  };
+
+  const getCurrentName = () => {
+    return isMonthly ? "Premium Mensal" : "Premium Anual";
   };
 
   return (
@@ -124,86 +162,83 @@ export function Pricing({
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        {plans.map((plan, index) => (
-          <motion.div
-            key={index}
-            initial={{ y: 50, opacity: 0 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            whileHover={{ 
-              y: -10,
-              transition: { duration: 0.3, ease: "easeOut" }
-            }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.6,
-              delay: index * 0.1,
-            }}
-            className={cn(
-              `relative rounded-2xl border p-8 bg-white text-center shadow-lg hover:shadow-2xl transition-all duration-300`,
-              plan.isPopular ? "border-2 border-blue-500 scale-105" : "border border-gray-200",
-              "flex flex-col h-full"
-            )}
-          >
-            {plan.isPopular && (
-              <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center py-2 rounded-t-2xl">
-                <div className="flex items-center justify-center space-x-1">
-                  <Star className="h-4 w-4 fill-current" />
-                  <span className="text-sm font-semibold">MAIS ECONÔMICO</span>
-                  <Star className="h-4 w-4 fill-current" />
-                </div>
-              </div>
-            )}
-            
-            <div className={`flex-1 flex flex-col ${plan.isPopular ? 'pt-8' : 'pt-2'}`}>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                {plan.name}
-              </h3>
-              
-              <div className="flex items-center justify-center space-x-1 mb-4">
-                <span className="text-4xl font-bold text-gray-900">
-                  R$ {formatPrice(isMonthly ? plan.price : plan.yearlyPrice)}
-                </span>
-                <span className="text-lg text-gray-600">
-                  {isMonthly ? "/mês" : "/ano"}
-                </span>
-              </div>
-
-              {!isMonthly && (
-                <div className="text-sm text-green-600 font-medium mb-4">
-                  Economize 17% no plano anual
-                </div>
-              )}
-
-              <p className="text-gray-600 mb-6">{plan.description}</p>
-
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center space-x-3">
-                    <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700 text-left">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                to={plan.href}
-                className={cn(
-                  "w-full py-3 px-6 rounded-lg font-semibold text-base transition-all duration-300 transform hover:scale-105",
-                  plan.isPopular
-                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl"
-                    : "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300"
-                )}
-              >
-                {plan.buttonText}
-              </Link>
-              
-              <p className="text-center text-xs text-gray-500 mt-3">
-                7 dias grátis • Sem cartão de crédito
-              </p>
+      <div className="flex justify-center">
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          whileHover={{ 
+            y: -10,
+            transition: { duration: 0.3, ease: "easeOut" }
+          }}
+          viewport={{ once: true }}
+          transition={{
+            duration: 0.6,
+            delay: 0.3,
+          }}
+          className="relative rounded-2xl border-2 border-blue-500 p-8 bg-white text-center shadow-lg hover:shadow-2xl transition-all duration-300 max-w-md w-full scale-105"
+        >
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center py-2 rounded-t-2xl">
+            <div className="flex items-center justify-center space-x-1">
+              <Star className="h-4 w-4 fill-current" />
+              <span className="text-sm font-semibold">MAIS ECONÔMICO</span>
+              <Star className="h-4 w-4 fill-current" />
             </div>
-          </motion.div>
-        ))}
+          </div>
+          
+          <div className="flex-1 flex flex-col pt-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {getCurrentName()}
+            </h3>
+            
+            <div className="flex items-center justify-center space-x-1 mb-4">
+              <span className="text-4xl font-bold text-gray-900">
+                R$ <NumberFlow
+                  value={Number(getCurrentPrice())}
+                  format={{
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }}
+                  transformTiming={{
+                    duration: 500,
+                    easing: "ease-out",
+                  }}
+                  willChange
+                />
+              </span>
+              <span className="text-lg text-gray-600">
+                {getCurrentPeriod()}
+              </span>
+            </div>
+
+            {!isMonthly && (
+              <div className="text-sm text-green-600 font-medium mb-4">
+                R$ 1.970,00/ano - Economize 17% no plano anual
+              </div>
+            )}
+
+            <p className="text-gray-600 mb-6">{plan.description}</p>
+
+            <ul className="space-y-3 mb-8 flex-1">
+              {plan.features.map((feature, idx) => (
+                <li key={idx} className="flex items-center space-x-3">
+                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span className="text-sm text-gray-700 text-left">{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Link
+              to={plan.href}
+              className="w-full py-3 px-6 rounded-lg font-semibold text-base transition-all duration-300 transform hover:scale-105 bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl inline-block"
+            >
+              {plan.buttonText}
+            </Link>
+            
+            <p className="text-center text-xs text-gray-500 mt-3">
+              7 dias grátis • Sem cartão de crédito
+            </p>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
