@@ -1,729 +1,779 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Calendar, 
+  Users, 
+  FileText, 
+  BarChart3, 
+  Smartphone, 
+  Shield, 
+  Clock, 
+  Star,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Menu,
+  X,
+  Phone,
+  Mail,
+  MapPin,
+  Wrench,
+  DollarSign,
+  Bot,
+  Zap,
+  Target,
+  TrendingUp,
+  Award,
+  CheckCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Calendar, BarChart3, Users, Settings, Shield, Clock, Smartphone, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Pricing } from '@/components/ui/pricing';
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Dados dos planos para o novo componente
+  const pricingPlans = [
+    {
+      name: "Premium Mensal",
+      price: "197",
+      yearlyPrice: "1970",
+      period: "mês",
+      features: [
+        "Gestão completa de clientes",
+        "Orçamentos digitais profissionais",
+        "IA para diagnóstico avançado",
+        "Agendamentos inteligentes",
+        "Controle de estoque completo",
+        "Relatórios avançados",
+        "Marketing automático",
+        "Suporte prioritário",
+        "Integração contábil",
+        "App mobile",
+        "Backup automático"
+      ],
+      description: "Gestão completa para sua oficina",
+      buttonText: "Começar Teste Grátis",
+      href: "/register",
+      isPopular: false,
+    },
+    {
+      name: "Premium Anual",
+      price: "197",
+      yearlyPrice: "1970",
+      period: "ano",
+      features: [
+        "Tudo do Premium Mensal",
+        "2 meses grátis no plano anual", 
+        "Desconto especial de 17%",
+        "Suporte prioritário garantido",
+        "Treinamento personalizado",
+        "Migração gratuita de dados",
+        "Customizações exclusivas"
+      ],
+      description: "R$ 1.970,00/ano - Economia de 17%",
+      buttonText: "Começar Teste Grátis",
+      href: "/register",
+      isPopular: true,
+    }
+  ];
+
+  const features = [
+    {
+      icon: <Calendar className="h-8 w-8" />,
+      title: "Agendamento Inteligente",
+      description: "Organize sua agenda com facilidade e nunca perca um compromisso importante."
+    },
+    {
+      icon: <Users className="h-8 w-8" />,
+      title: "Gestão de Clientes",
+      description: "Mantenha todas as informações dos seus clientes organizadas em um só lugar."
+    },
+    {
+      icon: <FileText className="h-8 w-8" />,
+      title: "Orçamentos Digitais",
+      description: "Crie orçamentos profissionais em minutos e impressione seus clientes."
+    },
+    {
+      icon: <BarChart3 className="h-8 w-8" />,
+      title: "Relatórios Avançados",
+      description: "Acompanhe o desempenho do seu negócio com relatórios detalhados."
+    },
+    {
+      icon: <Smartphone className="h-8 w-8" />,
+      title: "Acesso Mobile",
+      description: "Gerencie sua oficina de qualquer lugar com nosso app mobile."
+    },
+    {
+      icon: <Shield className="h-8 w-8" />,
+      title: "Dados Seguros",
+      description: "Seus dados protegidos com a mais alta tecnologia de segurança."
+    }
+  ];
+
+  const steps = [
+    {
+      number: "01",
+      title: "Cadastre-se Grátis",
+      description: "Crie sua conta em menos de 2 minutos"
+    },
+    {
+      number: "02", 
+      title: "Configure sua Oficina",
+      description: "Adicione informações básicas do seu negócio"
+    },
+    {
+      number: "03",
+      title: "Comece a Usar",
+      description: "Aproveite todos os recursos imediatamente"
+    }
+  ];
+
+  const faqs = [
+    {
+      question: "Como funciona o período de teste gratuito?",
+      answer: "Você tem 7 dias para testar todas as funcionalidades gratuitamente, sem compromisso e sem precisar informar cartão de crédito."
+    },
+    {
+      question: "Posso cancelar minha assinatura a qualquer momento?",
+      answer: "Sim! Você pode cancelar sua assinatura a qualquer momento sem multas ou taxas adicionais."
+    },
+    {
+      question: "Meus dados ficam seguros?",
+      answer: "Absolutamente! Utilizamos criptografia de ponta e servidores seguros para proteger todas as suas informações."
+    },
+    {
+      question: "Preciso instalar algum software?",
+      answer: "Não! O Oficina Go funciona 100% online. Basta acessar pelo navegador de qualquer dispositivo."
+    },
+    {
+      question: "Vocês oferecem suporte técnico?",
+      answer: "Sim! Oferecemos suporte técnico completo via WhatsApp, email e chat para todos os nossos clientes."
+    },
+    {
+      question: "Como migrar meus dados atuais?",
+      answer: "Nossa equipe te ajuda gratuitamente na migração dos seus dados. É um processo simples e rápido."
+    }
+  ];
+
+  // Componente para números animados
+  const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }: { 
+    end: number; 
+    duration?: number; 
+    prefix?: string; 
+    suffix?: string; 
+  }) => {
+    const [count, setCount] = useState(0);
+    const [hasAnimated, setHasAnimated] = useState(false);
+
+    React.useEffect(() => {
+      if (hasAnimated) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            setHasAnimated(true);
+            let startTime: number;
+            const animate = (currentTime: number) => {
+              if (!startTime) startTime = currentTime;
+              const progress = Math.min((currentTime - startTime) / duration, 1);
+              setCount(Math.floor(progress * end));
+              if (progress < 1) {
+                requestAnimationFrame(animate);
+              }
+            };
+            requestAnimationFrame(animate);
+          }
+        },
+        { threshold: 0.5 }
+      );
+
+      const element = document.getElementById(`counter-${end}`);
+      if (element) observer.observe(element);
+
+      return () => observer.disconnect();
+    }, [end, duration, hasAnimated]);
+
+    return (
+      <span id={`counter-${end}`}>
+        {prefix}{count.toLocaleString('pt-BR')}{suffix}
+      </span>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">O</span>
+      <header className="bg-white shadow-sm fixed w-full top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Wrench className="h-8 w-8 text-blue-600 mr-2" />
+              <span className="text-2xl font-bold text-gray-900">Oficina Go</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">Oficina Go</span>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8">
+              <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Funcionalidades
+              </a>
+              <a href="#precos" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Preços
+              </a>
+              <a href="#contato" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Contato
+              </a>
+            </nav>
+
+            <div className="hidden md:flex items-center space-x-4">
+              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Entrar
+              </Link>
+              <Link to="/register">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Teste Grátis
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-          <nav className="hidden md:flex space-x-8">
-            <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Funcionalidades</a>
-            <a href="#planos" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Planos</a>
-            <a href="#faq" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">FAQ</a>
-            <a href="#contato" className="text-gray-600 hover:text-blue-600 transition-colors duration-300">Contato</a>
-          </nav>
-          <div className="flex space-x-3">
-            <Button variant="outline" asChild className="hover-scale">
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button asChild className="hover-scale">
-              <Link to="/register">Teste Grátis</Link>
-            </Button>
-          </div>
+
+          {/* Mobile Navigation */}
+          {isMenuOpen && (
+            <motion.div 
+              className="md:hidden py-4 border-t"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <nav className="flex flex-col space-y-4">
+                <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600">
+                  Funcionalidades
+                </a>
+                <a href="#precos" className="text-gray-600 hover:text-blue-600">
+                  Preços
+                </a>
+                <a href="#contato" className="text-gray-600 hover:text-blue-600">
+                  Contato
+                </a>
+                <Link to="/login" className="text-gray-600 hover:text-blue-600">
+                  Entrar
+                </Link>
+                <Link to="/register">
+                  <Button className="bg-blue-600 hover:bg-blue-700 w-full">
+                    Teste Grátis
+                  </Button>
+                </Link>
+              </nav>
+            </motion.div>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 animate-fade-in">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="animate-slide-in-left">
-              <h1 className="text-5xl font-bold text-gray-900 mb-6">
-                Transforme sua oficina com{' '}
-                <span className="text-blue-600">Oficina Go</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Sistema completo de gestão para oficinas mecânicas com IA integrada, 
-                relatórios avançados e controle total do seu negócio.
-              </p>
-              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button size="lg" className="px-8 py-3 text-lg hover-scale" asChild>
-                  <Link to="/register">Começar Agora →</Link>
+      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 to-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-4xl mx-auto">
+            <motion.h1 
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              Transforme a gestão da sua oficina com o{' '}
+              <span className="text-blue-600">Oficina Go</span>
+            </motion.h1>
+            
+            <motion.p 
+              className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              Sistema completo para gerenciar clientes, orçamentos, agendamentos e muito mais. 
+              Tudo online, fácil e intuitivo.
+            </motion.p>
+
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+            >
+              <Link to="/register">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
+                  Começar Teste Grátis
+                  <ChevronRight className="ml-2 h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="lg" className="px-8 py-3 text-lg hover-scale" asChild>
-                  <Link to="/login">Fazer Login</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="relative animate-slide-in-right">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                <div className="flex space-x-2 mb-4">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-blue-200 rounded w-3/4 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="bg-blue-100 rounded-lg p-4 flex items-center justify-center hover-scale">
-                    <Calendar className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="bg-green-100 rounded-lg p-4 flex items-center justify-center hover-scale">
-                    <BarChart3 className="h-8 w-8 text-green-600" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Icons */}
-      <section className="py-16 bg-white animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex flex-col items-center hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Settings className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">IA Diagnóstico</h3>
-            </div>
-            <div className="flex flex-col items-center hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Agendamentos</h3>
-            </div>
-            <div className="flex flex-col items-center hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <BarChart3 className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Relatórios</h3>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Funcionalidades que Transformam */}
-      <section id="funcionalidades" className="py-20 bg-gray-50 animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Funcionalidades que <span className="text-blue-600">Transformam</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Descubra como o Oficina Go pode revolucionar a gestão da sua oficina com tecnologia de ponta
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Settings className="h-8 w-8 text-blue-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">IA para Diagnóstico</h3>
-                <p className="text-gray-600 text-sm">
-                  Inteligência artificial avançada para identificar problemas mecânicos rapidamente
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-green-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Agendamentos Inteligentes</h3>
-                <p className="text-gray-600 text-sm">
-                  Sistema completo de agendamento com notificações automáticas
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-purple-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Relatórios Avançados</h3>
-                <p className="text-gray-600 text-sm">
-                  Dashboard completo com métricas importantes do seu negócio
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-orange-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Gestão de Clientes</h3>
-                <p className="text-gray-600 text-sm">
-                  Cadastro completo de clientes com histórico de serviços
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Settings className="h-8 w-8 text-red-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Controle de Serviços</h3>
-                <p className="text-gray-600 text-sm">
-                  Gerencie todos os serviços e peças da sua oficina
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Settings className="h-8 w-8 text-blue-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Orçamentos Digitais</h3>
-                <p className="text-gray-600 text-sm">
-                  Crie orçamentos profissionais em poucos cliques
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-green-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Backup Automático</h3>
-                <p className="text-gray-600 text-sm">
-                  Seus dados sempre seguros na nuvem
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover-scale">
-              <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="h-8 w-8 text-pink-600" />
-              </div>
-              <CardContent className="p-0">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Acesso Mobile</h3>
-                <p className="text-gray-600 text-sm">
-                  Acesse de qualquer lugar pelo celular ou tablet
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* IA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            ⚡ Potencialize Sua Oficina com Inteligência Artificial!
-          </h2>
-          <p className="text-xl mb-12 opacity-90">
-            Conheça as ferramentas de IA que vão revolucionar sua gestão e atendimento.
-          </p>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Card className="bg-white/10 backdrop-blur border-white/20 p-8 hover-scale transition-all duration-300">
-              <div className="flex items-center mb-4">
-                <Settings className="h-8 w-8 text-white mr-3" />
-                <h3 className="text-xl font-bold text-white">IA para Diagnóstico de Problemas Mecânicos</h3>
-              </div>
-              <p className="text-white/90 mb-6">
-                Digite os sintomas que o cliente relata e deixe nossa IA analisar e 
-                sugerir possíveis causas, economizando tempo e aumentando a 
-                precisão dos seus diagnósticos.
-              </p>
-              <ul className="text-left space-y-2 text-white/90">
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Análise de sintomas em tempo real
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Sugestão de causas prováveis baseada em IA
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Base de dados inteligente de falhas veiculares
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Aumenta precisão e reduz tempo de diagnóstico
-                </li>
-              </ul>
-            </Card>
-
-            <Card className="bg-white/10 backdrop-blur border-white/20 p-8 hover-scale transition-all duration-300">
-              <div className="flex items-center mb-4">
-                <Users className="h-8 w-8 text-white mr-3" />
-                <h3 className="text-xl font-bold text-white">IA para Suporte Inteligente no Sistema</h3>
-              </div>
-              <p className="text-white/90 mb-6">
-                Tenha um assistente virtual sempre disponível para tirar suas 
-                dúvidas sobre o uso da plataforma. Respostas rápidas e precisas a 
-                um clique!
-              </p>
-              <ul className="text-left space-y-2 text-white/90">
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Chat embutido no sistema
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Respostas baseadas no manual do sistema
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Disponível 24 horas por dia, 7 dias por semana
-                </li>
-                <li className="flex items-center">
-                  <Check className="h-4 w-4 mr-2 text-green-400" />
-                  Reduz tempo de suporte e melhora experiência
-                </li>
-              </ul>
-            </Card>
-          </div>
-
-          <div className="mt-12 bg-white/10 backdrop-blur rounded-lg p-8">
-            <h3 className="text-2xl font-bold mb-6">Transforme sua oficina com tecnologia de ponta</h3>
-            <p className="text-lg mb-8 opacity-90">
-              Seja um dos primeiros a experimentar o futuro da gestão automotiva. Nossas IAs foram 
-              desenvolvidas especificamente para o setor automotivo.
-            </p>
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 hover-scale">
-                Experimentar Gratuitamente
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 hover-scale">
+              </Link>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
                 Ver Demonstração
               </Button>
-            </div>
+            </motion.div>
+
+            <motion.p 
+              className="text-sm text-gray-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              ✅ 7 dias grátis • ✅ Sem cartão de crédito • ✅ Suporte incluído
+            </motion.p>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Números que comprovam nossa eficiência
             </h2>
-            <p className="text-gray-600">
-              O Oficina Go está ajudando centenas de profissionais a transformar a gestão das suas oficinas.
+            <p className="text-lg text-gray-600">
+              Milhares de oficinas já confiam no Oficina Go
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div className="hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Settings className="h-8 w-8 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                <AnimatedCounter end={1250} suffix="+" />
               </div>
-              <div className="text-4xl font-bold text-gray-900 mb-2">+100</div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">Oficinas Ativas</div>
-              <p className="text-gray-600">
-                Oficinas em todo o Brasil usando o Oficina Go diariamente.
-              </p>
-            </div>
+              <p className="text-lg text-gray-600">Oficinas Ativas</p>
+            </motion.div>
 
-            <div className="hover-scale">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-green-600" />
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                <AnimatedCounter end={85000} suffix="+" />
               </div>
-              <div className="text-4xl font-bold text-gray-900 mb-2">+300</div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">Usuários Cadastrados</div>
-              <p className="text-gray-600">
-                Donos de funcionários trabalhando com mais eficiência e menos burocracia.
-              </p>
-            </div>
+              <p className="text-lg text-gray-600">Usuários Cadastrados</p>
+            </motion.div>
 
-            <div className="hover-scale">
-              <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-purple-600" />
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <div className="text-4xl font-bold text-blue-600 mb-2">
+                <AnimatedCounter end={2500000} suffix="+" />
               </div>
-              <div className="text-4xl font-bold text-gray-900 mb-2">+5000</div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">Orçamentos Criados</div>
-              <p className="text-gray-600">
-                Orçamentos profissionais que aumentam a taxa de aprovação dos clientes.
-              </p>
-            </div>
+              <p className="text-lg text-gray-600">Orçamentos Criados</p>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Como Funciona */}
-      <section className="py-20 bg-gray-50 animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Como Funciona</h2>
-            <p className="text-xl text-gray-600">
-              Começar a usar o Oficina Go é simples e rápido. Siga estes passos:
+      {/* Features Section */}
+      <section id="funcionalidades" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Tudo que sua oficina precisa em um só lugar
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Recursos completos para automatizar e otimizar todos os processos da sua oficina
             </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="hover-scale"
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-6">
+                    <div className="text-blue-600 mb-4">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                IA para Diagnóstico de Problemas Mecânicos
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Nossa inteligência artificial ajuda você a diagnosticar problemas de forma mais rápida e precisa, 
+                aumentando a eficiência do seu atendimento.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Diagnósticos mais precisos</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Redução do tempo de análise</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Sugestões de soluções automáticas</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="relative"
+            >
+              <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-8">
+                <Bot className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Diagnóstico</h3>
+                  <p className="text-gray-600">Tecnologia avançada para sua oficina</p>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="text-center hover-scale">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-blue-600" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mt-16">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="order-2 lg:order-1 relative"
+            >
+              <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-8">
+                <Zap className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Suporte</h3>
+                  <p className="text-gray-600">Assistente inteligente 24/7</p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Comece com teste grátis</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Experimente todas as funcionalidades do sistema por 7 dias sem compromisso.
-              </p>
-              <div className="text-blue-600 text-sm">→</div>
-            </div>
+            </motion.div>
 
-            <div className="text-center hover-scale">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Cadastre seus dados</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Configure sua oficina, usuários, produtos e clientes para começar a operar.
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="order-1 lg:order-2"
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                IA para Suporte Inteligente no Sistema
+              </h2>
+              <p className="text-lg text-gray-600 mb-6">
+                Assistente virtual disponível 24 horas para tirar suas dúvidas e ajudar você a 
+                usar todas as funcionalidades do sistema.
               </p>
-              <div className="text-blue-600 text-sm">→</div>
-            </div>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Suporte 24/7 automatizado</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Respostas instantâneas</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                  <span className="text-gray-700">Treinamento personalizado</span>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
-            <div className="text-center hover-scale">
-              <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Settings className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Crie orçamentos</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Elabore orçamentos detalhados de forma rápida e profissional.
-              </p>
-              <div className="text-blue-600 text-sm">→</div>
-            </div>
+      {/* How it Works Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Como Funciona
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Começar a usar o Oficina Go é simples e rápido. Siga estes passos:
+            </p>
+          </motion.div>
 
-            <div className="text-center hover-scale">
-              <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="h-8 w-8 text-orange-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Aumente seus resultados</h3>
-              <p className="text-gray-600 text-sm">
-                Gerencie melhor seu negócio e veja seus resultados crescerem.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                  {step.number}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-gray-600">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="planos" className="py-20 bg-white animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Planos que Cabem no seu Bolso
-            </h2>
-            <p className="text-xl text-gray-600">
-              Escolha o plano ideal para sua oficina. Comece grátis e evolua conforme seu negócio cresce.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Plano Mensal */}
-            <Card className="relative p-8 border-2 hover:border-blue-200 transition-all duration-300 hover-scale">
-              <CardContent className="p-0">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Plano Mensal</h3>
-                  <div className="text-5xl font-bold text-blue-600 mb-2">R$ 197</div>
-                  <p className="text-gray-600">por mês</p>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Todas as funcionalidades</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>IA para diagnóstico</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Suporte técnico</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Atualizações automáticas</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Backup na nuvem</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Relatórios avançados</span>
-                  </li>
-                </ul>
-
-                <Button className="w-full hover-scale" size="lg" asChild>
-                  <Link to="/register">Começar Teste Grátis</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Plano Anual */}
-            <Card className="relative p-8 border-2 border-blue-500 bg-blue-50 hover:border-blue-600 transition-all duration-300 hover-scale">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium">
-                  Mais Popular
-                </span>
-              </div>
-              <CardContent className="p-0">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Plano Anual</h3>
-                  <div className="text-5xl font-bold text-blue-600 mb-2">R$ 1.970</div>
-                  <p className="text-gray-600">por ano</p>
-                  <div className="text-green-600 font-medium mt-2">
-                    Economize 2 meses!
-                  </div>
-                </div>
-
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Todas as funcionalidades</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>IA para diagnóstico</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Suporte técnico prioritário</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Atualizações automáticas</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Backup na nuvem</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Relatórios avançados</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-3" />
-                    <span className="font-medium">2 meses grátis</span>
-                  </li>
-                </ul>
-
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 hover-scale" size="lg" asChild>
-                  <Link to="/register">Começar Teste Grátis</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-gray-600">
-              ✅ 7 dias de teste grátis • ✅ Sem cartão de crédito • ✅ Cancele quando quiser
-            </p>
-          </div>
-        </div>
+      <section id="precos" className="py-16 bg-white">
+        <Pricing plans={pricingPlans} />
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-gray-50 animate-fade-in">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Perguntas Frequentes</h2>
-            <p className="text-xl text-gray-600">
-              Encontre respostas para as dúvidas mais comuns sobre o Oficina Go.
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Perguntas Frequentes
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Tire suas dúvidas sobre o Oficina Go
             </p>
-          </div>
+          </motion.div>
 
-          <div className="space-y-4">
-            {[
-              {
-                question: "Como funciona o período de teste grátis?",
-                answer: "Você tem 7 dias para testar todas as funcionalidades sem limitações. Não é necessário cartão de crédito para começar."
-              },
-              {
-                question: "Preciso instalar algum software no meu computador?",
-                answer: "Não! O Oficina Go funciona 100% online. Basta acessar pelo navegador de qualquer dispositivo."
-              },
-              {
-                question: "Quantos usuários posso cadastrar?",
-                answer: "Você pode cadastrar quantos colaboradores precisar. Cada um terá seu próprio acesso e permissões."
-              },
-              {
-                question: "Meus dados estão seguros?",
-                answer: "Sim! Utilizamos criptografia de dados e backup automático na nuvem para garantir total segurança."
-              },
-              {
-                question: "Como funciona o suporte técnico?",
-                answer: "Oferecemos suporte via chat, email e WhatsApp durante horário comercial. Planos anuais têm suporte prioritário."
-              },
-              {
-                question: "Posso exportar meus dados para outros sistemas?",
-                answer: "Sim! Você pode exportar seus dados a qualquer momento em formatos padrão como Excel e PDF."
-              },
-              {
-                question: "Como é feito o pagamento?",
-                answer: "Aceitamos cartão de crédito, PIX e boleto bancário. O pagamento é processado de forma segura."
-              }
-            ].map((faq, index) => (
-              <Card key={index} className="p-6 hover-scale transition-all duration-300">
-                <details className="group">
-                  <summary className="flex justify-between items-center cursor-pointer list-none">
-                    <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
-                    <ChevronDown className="h-5 w-5 text-gray-500 group-open:rotate-180 transition-transform duration-300" />
-                  </summary>
-                  <p className="mt-4 text-gray-600 leading-relaxed">{faq.answer}</p>
-                </details>
-              </Card>
+          <div className="max-w-3xl mx-auto">
+            {faqs.map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="mb-4"
+              >
+                <Card>
+                  <CardContent className="p-0">
+                    <button
+                      onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                      className="w-full text-left p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="font-semibold text-gray-900">{faq.question}</span>
+                      <ChevronDown 
+                        className={`h-5 w-5 text-gray-500 transition-transform ${
+                          openFaq === index ? 'rotate-180' : ''
+                        }`} 
+                      />
+                    </button>
+                    {openFaq === index && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="px-6 pb-6"
+                      >
+                        <p className="text-gray-600">{faq.answer}</p>
+                      </motion.div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
-
-          <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">Ainda tem dúvidas? Entre em contato conosco!</p>
-            <Button variant="outline" asChild className="hover-scale">
-              <a href="https://wa.me/5546999324779" target="_blank" rel="noopener noreferrer">
-                Fale Conosco
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-900 to-blue-900 text-white animate-fade-in">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="bg-blue-600/20 rounded-full px-6 py-2 inline-block mb-6">
-            <span className="text-blue-200">Experimente por 7 dias grátis!</span>
-          </div>
-          <h2 className="text-4xl font-bold mb-6">
-            Transforme a gestão da sua oficina com o Oficina Go
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Junte-se a centenas de oficinas que já estão economizando tempo, 
-            reduzindo erros e aumentando seus resultados.
-          </p>
-          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-lg px-8 py-3 hover-scale" asChild>
-            <Link to="/register">Começar Agora →</Link>
-          </Button>
-          <p className="mt-4 text-sm opacity-75">
-            Sem cartão de crédito. Cancele quando quiser.
-          </p>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contato" className="py-20 bg-white animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12">
-            <div className="bg-blue-600 rounded-2xl p-8 text-white hover-scale">
-              <h3 className="text-2xl font-bold mb-6">Entre em Contato</h3>
-              <p className="mb-8 opacity-90">
-                Estamos aqui para ajudar você a transformar a gestão da sua oficina. 
-                Preencha o formulário e nossa equipe entrará em contato o mais rápido possível.
+      <section id="contato" className="py-16 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                Entre em Contato
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Tem dúvidas? Nossa equipe está pronta para ajudar você a revolucionar sua oficina.
               </p>
-
+              
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-1">E-mail</h4>
-                  <p className="opacity-90">contatooficinago@gmail.com</p>
+                <div className="flex items-center">
+                  <Phone className="h-5 w-5 text-blue-600 mr-3" />
+                  <span className="text-gray-700">(46) 9 9932-4779</span>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Telefone</h4>
-                  <p className="opacity-90">(46) 99932-4779</p>
+                <div className="flex items-center">
+                  <Mail className="h-5 w-5 text-blue-600 mr-3" />
+                  <span className="text-gray-700">contatooficinago@gmail.com</span>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Horário de Atendimento</h4>
-                  <p className="opacity-90">Seg - Sex: 8h às 18h</p>
+                <div className="flex items-center">
+                  <MapPin className="h-5 w-5 text-blue-600 mr-3" />
+                  <span className="text-gray-700">Brasil</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nome completo</label>
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                <input
-                  type="email"
-                  placeholder="seu@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
-                <input
-                  type="tel"
-                  placeholder="(XX) XXXXX-XXXX"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mensagem</label>
-                <textarea
-                  rows={4}
-                  placeholder="Como podemos ajudar você?"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                ></textarea>
-              </div>
-              <Button className="w-full bg-green-600 hover:bg-green-700 hover-scale" size="lg">
-                Enviar Mensagem
-              </Button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <Card>
+                <CardContent className="p-6">
+                  <form className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nome Completo
+                      </label>
+                      <Input placeholder="Seu nome completo" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                      </label>
+                      <Input type="email" placeholder="seu@email.com" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Telefone
+                      </label>
+                      <Input placeholder="(00) 00000-0000" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mensagem
+                      </label>
+                      <Textarea placeholder="Como podemos ajudar você?" rows={4} />
+                    </div>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      Enviar Mensagem
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 animate-fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">O</span>
-                </div>
-                <span className="text-xl font-bold">Oficina Go</span>
+              <div className="flex items-center mb-4">
+                <Wrench className="h-8 w-8 text-blue-400 mr-2" />
+                <span className="text-2xl font-bold">Oficina Go</span>
               </div>
-              <p className="text-gray-400 mb-4">
-                Sistema completo de gestão para oficinas automotivas
+              <p className="text-gray-400">
+                Sistema completo para gestão de oficinas mecânicas. 
+                Simplifique seu negócio e aumente seus resultados.
               </p>
             </div>
-
+            
             <div>
-              <h4 className="font-semibold mb-4">Contato</h4>
-              <div className="space-y-2 text-gray-400">
-                <p>📞 (46) 99932-4779</p>
-                <p>✉️ contatooficinago@gmail.com</p>
-                <p>📍 Pato Branco - PR, Brasil</p>
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Produto</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#funcionalidades" className="hover:text-white transition-colors">Funcionalidades</a></li>
+                <li><a href="#precos" className="hover:text-white transition-colors">Preços</a></li>
+                <li><Link to="/register" className="hover:text-white transition-colors">Teste Grátis</Link></li>
+              </ul>
             </div>
-
+            
             <div>
-              <h4 className="font-semibold mb-4">Localização</h4>
-              <div className="text-gray-400">
-                <p>Pato Branco - PR</p>
-                <p>Brasil</p>
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Suporte</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#contato" className="hover:text-white transition-colors">Contato</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Ajuda</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Documentação</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Empresa</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Sobre</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Carreira</a></li>
+              </ul>
             </div>
           </div>
-
+          
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2024 Oficina Go. Todos os direitos reservados.</p>
+            <p>&copy; 2024 Oficina Go. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
