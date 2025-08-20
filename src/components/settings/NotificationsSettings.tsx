@@ -78,9 +78,12 @@ const NotificationsSettings: React.FC = () => {
         return;
       }
 
+      // Convert settings to JSON format for database storage
+      const settingsJson = JSON.parse(JSON.stringify(settings));
+
       const { error } = await supabase
         .from('profiles')
-        .update({ notification_settings: settings })
+        .update({ notification_settings: settingsJson })
         .eq('id', user.id);
 
       if (error) {
