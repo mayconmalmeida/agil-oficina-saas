@@ -54,8 +54,9 @@ const NotificationsSettings: React.FC = () => {
         return;
       }
 
-      if (data?.notification_settings) {
-        setSettings({ ...settings, ...data.notification_settings });
+      if (data && data.notification_settings) {
+        const notificationSettings = data.notification_settings as any;
+        setSettings({ ...settings, ...notificationSettings });
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -110,12 +111,16 @@ const NotificationsSettings: React.FC = () => {
     if (settings.push_agendamentos || settings.push_pagamentos || settings.push_clientes) {
       if ('Notification' in window) {
         if (Notification.permission === 'default') {
-          await Notification.requestPermission();
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            console.log('Permissão de notificação concedida');
+          }
         }
       }
     }
 
-    // Aqui você pode adicionar lógica adicional para configurar webhooks, etc.
+    // Implementar outras configurações de notificação conforme necessário
+    console.log('Configurações de notificação aplicadas:', settings);
   };
 
   const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {

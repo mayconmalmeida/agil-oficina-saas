@@ -1044,11 +1044,13 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           nome_oficina: string | null
+          notification_settings: Json | null
           oficina_id: string | null
           plano: string | null
           responsavel: string | null
           role: string | null
           telefone: string | null
+          theme_preference: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
           whatsapp_suporte: string | null
@@ -1067,11 +1069,13 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           nome_oficina?: string | null
+          notification_settings?: Json | null
           oficina_id?: string | null
           plano?: string | null
           responsavel?: string | null
           role?: string | null
           telefone?: string | null
+          theme_preference?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           whatsapp_suporte?: string | null
@@ -1090,11 +1094,13 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           nome_oficina?: string | null
+          notification_settings?: Json | null
           oficina_id?: string | null
           plano?: string | null
           responsavel?: string | null
           role?: string | null
           telefone?: string | null
+          theme_preference?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           whatsapp_suporte?: string | null

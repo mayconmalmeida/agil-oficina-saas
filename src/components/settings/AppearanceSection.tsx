@@ -61,16 +61,22 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
 
         if (error) {
           console.error('Erro ao salvar tema:', error);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Não foi possível salvar a preferência de tema."
+          });
+        } else {
+          toast({
+            title: "Tema alterado",
+            description: `Modo ${newMode ? 'escuro' : 'claro'} ativado com sucesso.`
+          });
         }
       }
       
       // Chamar a função do contexto para atualizar o estado global
       onToggleTheme();
       
-      toast({
-        title: "Tema alterado",
-        description: `Modo ${newMode ? 'escuro' : 'claro'} ativado com sucesso.`
-      });
     } catch (error) {
       console.error('Erro ao alterar tema:', error);
       toast({
