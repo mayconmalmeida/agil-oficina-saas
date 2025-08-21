@@ -95,20 +95,36 @@ export const useOptimizedAdminData = () => {
 
       const results = await Promise.allSettled(statsPromises);
       
-      // Processar resultados com fallback
-      const totalUsers = results[0].status === 'fulfilled' && !results[0].value.error 
+      // Processar resultados com fallback e type casting correto
+      const totalUsers = results[0].status === 'fulfilled' && 
+        typeof results[0].value === 'object' && 
+        results[0].value !== null && 
+        'count' in results[0].value && 
+        !(results[0].value as any).error
         ? (results[0].value as any).count || 0 
         : 0;
         
-      const activeSubscriptions = results[1].status === 'fulfilled' && !results[1].value.error
+      const activeSubscriptions = results[1].status === 'fulfilled' && 
+        typeof results[1].value === 'object' && 
+        results[1].value !== null && 
+        'count' in results[1].value && 
+        !(results[1].value as any).error
         ? (results[1].value as any).count || 0 
         : 0;
         
-      const trialingUsers = results[2].status === 'fulfilled' && !results[2].value.error
+      const trialingUsers = results[2].status === 'fulfilled' && 
+        typeof results[2].value === 'object' && 
+        results[2].value !== null && 
+        'count' in results[2].value && 
+        !(results[2].value as any).error
         ? (results[2].value as any).count || 0 
         : 0;
         
-      const newUsersThisMonth = results[3].status === 'fulfilled' && !results[3].value.error
+      const newUsersThisMonth = results[3].status === 'fulfilled' && 
+        typeof results[3].value === 'object' && 
+        results[3].value !== null && 
+        'count' in results[3].value && 
+        !(results[3].value as any).error
         ? (results[3].value as any).count || 0 
         : 0;
 
