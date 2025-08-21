@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { formatCPF, formatCEP, formatTelefone } from '@/utils/formatUtils';
+import { formatCPF, formatCEP, formatPhoneNumber } from '@/utils/formatUtils';
 import { formatLicensePlate } from '@/utils/formatUtils';
 
 export const useFormatHandlers = (form: any) => {
@@ -35,7 +35,7 @@ export const useFormatHandlers = (form: any) => {
     
     useEffect(() => {
       if (telefone) {
-        const formatted = formatTelefone(telefone);
+        const formatted = formatPhoneNumber(telefone);
         if (formatted !== telefone) {
           form.setValue('telefone', formatted);
         }

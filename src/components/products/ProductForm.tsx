@@ -9,15 +9,18 @@ import ProductBasicInfo from './form-sections/ProductBasicInfo';
 import ProductPricing from './form-sections/ProductPricing';
 import ProductStock from './form-sections/ProductStock';
 import ProductDescription from './form-sections/ProductDescription';
+import { Service } from '@/utils/supabaseTypes';
 
 interface ProductFormProps {
   productId?: string;
+  product?: Service;
   onSuccess: () => void;
   onCancel?: () => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ 
   productId, 
+  product,
   onSuccess,
   onCancel 
 }) => {
@@ -28,7 +31,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     controlStock,
     handleSubmit,
     isEditing,
-  } = useProductForm(productId, onSuccess);
+  } = useProductForm(productId || product?.id, onSuccess);
 
   const onSubmit = (values: any) => {
     handleSubmit(values);
