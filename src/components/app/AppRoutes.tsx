@@ -10,10 +10,12 @@ import Layout from '@/components/layout/Layout';
 import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 import AgendaPage from '@/pages/AgendaPage';
 import NewSchedulePage from '@/pages/NewSchedulePage';
-import OrdensServicoPage from '@/pages/OrdensServicoPage';
+import OrdemServicoPage from '@/pages/OrdemServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import NewBudgetPage from '@/pages/NewBudgetPage';
+import NewServiceOrderPage from '@/pages/NewServiceOrderPage';
 
 // Import pages
 import ClientsPage from '@/pages/ClientsPage';
@@ -54,12 +56,15 @@ const AppRoutes: React.FC = () => {
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/agenda" element={<AgendaPage />} />
+        <Route path="/agendamentos" element={<AgendaPage />} />
         <Route path="/agendamentos/novo" element={<NewSchedulePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/servicos" element={<ServicesPage />} />
         <Route path="/produtos" element={<ProductsPage />} />
         <Route path="/orcamentos" element={<BudgetsPage />} />
-        <Route path="/ordens-servico" element={<OrdensServicoPage />} />
+        <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
+        <Route path="/ordens-servico" element={<OrdemServicoPage />} />
+        <Route path="/ordens-servico/nova" element={<NewServiceOrderPage />} />
         <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
         <Route path="/financeiro" element={<FinanceiroPage />} />
         <Route path="/colaboradores" element={<CollaboratorsPage />} />

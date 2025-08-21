@@ -1,39 +1,58 @@
 
 import React from 'react';
+import { User, LogOut, Settings } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLogout } from '@/hooks/useLogout';
+import { useNavigate } from 'react-router-dom';
 
-interface UserMenuProps {
-  userProfile: {
-    nome_oficina?: string;
-    email?: string;
-  } | null;
-  onLogout: () => void;
-}
+const UserMenu: React.FC = () => {
+  const { user } = useAuth();
+  const { logout } = useLogout();
+  const navigate = useNavigate();
 
-const UserMenu: React.FC<UserMenuProps> = ({ userProfile, onLogout }) => (
-  <div className="flex-shrink-0 flex border-t border-gray-200 p-4 mt-auto">
-    <div className="flex-shrink-0 w-full group block">
-      <div className="flex items-center">
-        <div className="ml-3 flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate">
-            {userProfile?.nome_oficina || 'Oficina'}
-          </p>
-          <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700 truncate">
-            {userProfile?.email}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onLogout}
-          className="ml-2 flex-shrink-0"
-        >
-          <LogOut className="h-4 w-4" />
+  const handleSettings = () => {
+    navigate('/configuracoes');
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <User className="h-4 w-4" />
         </Button>
-      </div>
-    </div>
-  </div>
-);
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <div className="flex items-center justify-start gap-2 p-2">
+          <div className="flex flex-col space-y-1 leading-none">
+            <p className="font-medium text-sm">
+              {user?.nome_oficina || user?.email || 'Usuário'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {user?.email}
+            </p>
+          </div>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSettings}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Configurações</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export default UserMenu;

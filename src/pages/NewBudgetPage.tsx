@@ -1,71 +1,21 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import BudgetForm from '@/components/budget/BudgetForm';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 
 const NewBudgetPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (values: any) => {
-    setIsLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('orcamentos')
-        .insert({
-          cliente: values.cliente,
-          veiculo: values.veiculo,
-          descricao: values.descricao,
-          valor_total: values.valor_total,
-          user_id: user.id
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Orçamento criado",
-        description: "Orçamento foi criado com sucesso.",
-      });
-
-      // Redirecionar para a lista de orçamentos
-      navigate('/dashboard/orcamentos');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar orçamento",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSkip = () => {
-    navigate('/dashboard/orcamentos');
-  };
-
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Novo Orçamento</h1>
+      </div>
+      
       <Card>
         <CardHeader>
-          <CardTitle>Novo Orçamento</CardTitle>
-          <CardDescription>
-            Crie um novo orçamento para um cliente
-          </CardDescription>
+          <CardTitle>Criar Orçamento</CardTitle>
         </CardHeader>
         <CardContent>
-          <BudgetForm 
-            onSubmit={handleSubmit}
-            onSkip={handleSkip}
-            isLoading={isLoading}
-          />
+          <BudgetForm />
         </CardContent>
       </Card>
     </div>
