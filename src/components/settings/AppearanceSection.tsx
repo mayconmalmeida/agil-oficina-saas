@@ -28,16 +28,28 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
     const htmlElement = document.documentElement;
     const bodyElement = document.body;
     
+    // Remove classes anteriores
+    htmlElement.classList.remove('dark', 'light');
+    bodyElement.classList.remove('dark', 'light');
+    
     if (theme === 'dark') {
       htmlElement.classList.add('dark');
       bodyElement.classList.add('dark');
       htmlElement.style.colorScheme = 'dark';
       localStorage.setItem('theme', 'dark');
+      
+      // Aplicar ao body para garantir que tudo fique escuro
+      bodyElement.style.backgroundColor = 'rgb(3 7 18)'; // bg-gray-950
+      bodyElement.style.color = 'rgb(248 250 252)'; // text-gray-50
     } else {
-      htmlElement.classList.remove('dark');
-      bodyElement.classList.remove('dark');
+      htmlElement.classList.add('light');
+      bodyElement.classList.add('light');
       htmlElement.style.colorScheme = 'light';
       localStorage.setItem('theme', 'light');
+      
+      // Aplicar ao body para garantir que tudo fique claro
+      bodyElement.style.backgroundColor = 'rgb(255 255 255)'; // bg-white
+      bodyElement.style.color = 'rgb(15 23 42)'; // text-gray-900
     }
   };
 
@@ -95,7 +107,7 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium">Aparência</h2>
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Aparência</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400">Personalize a aparência da plataforma</p>
       </div>
       

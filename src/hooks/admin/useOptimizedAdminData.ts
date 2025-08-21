@@ -11,82 +11,142 @@ export const useOptimizedAdminData = () => {
     totalRevenue: 0,
     newUsersThisMonth: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Inicializar automaticamente quando o hook for chamado
-  React.useEffect(() => {
-    fetchStats();
-  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      console.log('🔍 Iniciando busca de estatísticas administrativas...');
 
-      // Verificar se o usuário atual é admin antes de buscar dados
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Verificar autenticação admin
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
         throw new Error('Usuário não autenticado');
       }
 
-      const { data: profile } = await supabase
+      // Verificar se é admin
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
 
-      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+      if (profileError || !profile || !['admin', 'superadmin'].includes(profile.role)) {
         throw new Error('Acesso negado: usuário não é administrador');
       }
 
-      // Buscar estatísticas corrigidas
-      const [
-        { count: activeWorkshops },
-        { count: activeSubscriptions },
-        { count: trialingUsers },
-        { count: newUsersThisMonth }
-      ] = await Promise.all([
-        // Contar oficinas ativas (is_active = true)
-        supabase
-          .from('oficinas')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_active', true),
-        supabase
-          .from('user_subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'active'),
-        supabase
-          .from('user_subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'trialing'),
-        // Contar novos usuários (não-admin) deste mês
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .neq('role', 'admin')
-          .neq('role', 'superadmin')
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-      ]);
+      console.log('✅ Usuário admin verificado, buscando estatísticas...');
 
-      // Calcular receita estimada (baseada em assinaturas ativas)
-      const estimatedRevenue = (activeSubscriptions || 0) * 49.90;
+      // Data do início do mês
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-      setStats({
-        totalUsers: activeWorkshops || 0, // Agora representa oficinas ativas
-        activeSubscriptions: activeSubscriptions || 0,
-        trialingUsers: trialingUsers || 0,
-        totalRevenue: estimatedRevenue,
-        newUsersThisMonth: newUsersThisMonth || 0,
-      });
+      // Buscar estatísticas com timeout
+      const statsPromises = [
+        // Total de usuários (profiles não-admin)
+        Promise.race([
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .neq('role', 'admin')
+            .neq('role', 'superadmin'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: consulta de usuários')), 10000)
+          )
+        ]),
+        
+        // Assinaturas ativas
+        Promise.race([
+          supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: consulta de assinaturas ativas')), 10000)
+          )
+        ]),
+        
+        // Usuários em trial
+        Promise.race([
+          supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'trialing'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: consulta de trials')), 10000)
+          )
+        ]),
+        
+        // Novos usuários este mês
+        Promise.race([
+          supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .neq('role', 'admin')
+            .neq('role', 'superadmin')
+            .gte('created_at', startOfMonth),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: consulta de novos usuários')), 10000)
+          )
+        ])
+      ];
+
+      const results = await Promise.allSettled(statsPromises);
+      
+      // Processar resultados com fallback
+      const totalUsers = results[0].status === 'fulfilled' && !results[0].value.error 
+        ? (results[0].value as any).count || 0 
+        : 0;
+        
+      const activeSubscriptions = results[1].status === 'fulfilled' && !results[1].value.error
+        ? (results[1].value as any).count || 0 
+        : 0;
+        
+      const trialingUsers = results[2].status === 'fulfilled' && !results[2].value.error
+        ? (results[2].value as any).count || 0 
+        : 0;
+        
+      const newUsersThisMonth = results[3].status === 'fulfilled' && !results[3].value.error
+        ? (results[3].value as any).count || 0 
+        : 0;
+
+      // Calcular receita estimada
+      const totalRevenue = activeSubscriptions * 49.90;
+
+      const finalStats = {
+        totalUsers,
+        activeSubscriptions,
+        trialingUsers,
+        totalRevenue,
+        newUsersThisMonth,
+      };
+
+      console.log('📊 Estatísticas finais:', finalStats);
+      setStats(finalStats);
 
     } catch (err: any) {
-      console.error('Erro ao buscar estatísticas:', err);
+      console.error('❌ Erro ao buscar estatísticas:', err);
       setError(err.message || 'Erro ao carregar estatísticas');
+      
+      // Stats de fallback em caso de erro
+      setStats({
+        totalUsers: 0,
+        activeSubscriptions: 0,
+        trialingUsers: 0,
+        totalRevenue: 0,
+        newUsersThisMonth: 0,
+      });
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Inicializar automaticamente
+  React.useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   const refetch = useCallback(() => {
     fetchStats();

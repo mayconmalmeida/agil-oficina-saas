@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Bell, Save } from 'lucide-react';
+import { Bell, Save, Volume2, VolumeX } from 'lucide-react';
 
 interface NotificationSettings {
   email_agendamentos: boolean;
@@ -14,8 +14,7 @@ interface NotificationSettings {
   push_agendamentos: boolean;
   push_pagamentos: boolean;
   push_clientes: boolean;
-  sms_agendamentos: boolean;
-  sms_pagamentos: boolean;
+  push_sound_enabled: boolean;
 }
 
 const NotificationsSettings: React.FC = () => {
@@ -26,8 +25,7 @@ const NotificationsSettings: React.FC = () => {
     push_agendamentos: true,
     push_pagamentos: false,
     push_clientes: false,
-    sms_agendamentos: false,
-    sms_pagamentos: false,
+    push_sound_enabled: true,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -78,7 +76,6 @@ const NotificationsSettings: React.FC = () => {
         return;
       }
 
-      // Convert settings to JSON format for database storage
       const settingsJson = JSON.parse(JSON.stringify(settings));
 
       const { error } = await supabase
@@ -90,7 +87,6 @@ const NotificationsSettings: React.FC = () => {
         throw error;
       }
 
-      // Aplicar as configurações de notificação
       await applyNotificationSettings();
 
       toast({
@@ -110,20 +106,67 @@ const NotificationsSettings: React.FC = () => {
   };
 
   const applyNotificationSettings = async () => {
-    // Configurar notificações push se habilitadas
     if (settings.push_agendamentos || settings.push_pagamentos || settings.push_clientes) {
       if ('Notification' in window) {
         if (Notification.permission === 'default') {
           const permission = await Notification.requestPermission();
           if (permission === 'granted') {
             console.log('Permissão de notificação concedida');
+            
+            // Testar notificação com som
+            if (settings.push_sound_enabled) {
+              new Notification('Notificações ativadas!', {
+                body: 'Você receberá notificações com som.',
+                icon: '/favicon.ico',
+                tag: 'test-notification'
+              });
+            }
           }
         }
       }
     }
 
-    // Implementar outras configurações de notificação conforme necessário
     console.log('Configurações de notificação aplicadas:', settings);
+  };
+
+  const testPushNotification = () => {
+    if (Notification.permission === 'granted') {
+      const notification = new Notification('Teste de notificação', {
+        body: settings.push_sound_enabled 
+          ? 'Esta é uma notificação de teste com som ativado.'
+          : 'Esta é uma notificação de teste sem som.',
+        icon: '/favicon.ico',
+        tag: 'test-notification',
+        requireInteraction: false
+      });
+
+      if (settings.push_sound_enabled) {
+        // Criar um som de notificação simples
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      }
+
+      setTimeout(() => notification.close(), 3000);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Permissão negada",
+        description: "Permita as notificações no navegador para testar."
+      });
+    }
   };
 
   const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
@@ -140,23 +183,23 @@ const NotificationsSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium flex items-center">
+        <h2 className="text-lg font-medium flex items-center text-gray-900 dark:text-white">
           <Bell className="mr-2 h-5 w-5" />
           Notificações
         </h2>
-        <p className="text-sm text-gray-500">Configure como deseja receber notificações</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Configure como deseja receber notificações</p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Notificações por Email</CardTitle>
+            <CardTitle className="text-gray-900 dark:text-white">Notificações por Email</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Agendamentos</div>
-                <div className="text-sm text-gray-500">Receber emails sobre novos agendamentos</div>
+                <div className="font-medium text-gray-900 dark:text-white">Agendamentos</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails sobre novos agendamentos</div>
               </div>
               <Switch
                 checked={settings.email_agendamentos}
@@ -166,8 +209,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Pagamentos</div>
-                <div className="text-sm text-gray-500">Receber emails sobre pagamentos recebidos</div>
+                <div className="font-medium text-gray-900 dark:text-white">Pagamentos</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails sobre pagamentos recebidos</div>
               </div>
               <Switch
                 checked={settings.email_pagamentos}
@@ -177,8 +220,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Novos Clientes</div>
-                <div className="text-sm text-gray-500">Receber emails quando novos clientes se cadastrarem</div>
+                <div className="font-medium text-gray-900 dark:text-white">Novos Clientes</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails quando novos clientes se cadastrarem</div>
               </div>
               <Switch
                 checked={settings.email_clientes}
@@ -190,13 +233,27 @@ const NotificationsSettings: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Notificações Push</CardTitle>
+            <CardTitle className="text-gray-900 dark:text-white">Notificações Push</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Agendamentos</div>
-                <div className="text-sm text-gray-500">Receber notificações push sobre agendamentos</div>
+                <div className="font-medium text-gray-900 dark:text-white flex items-center">
+                  {settings.push_sound_enabled ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
+                  Som das Notificações
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Reproduzir som ao receber notificações push</div>
+              </div>
+              <Switch
+                checked={settings.push_sound_enabled}
+                onCheckedChange={(value) => handleSettingChange('push_sound_enabled', value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">Agendamentos</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre agendamentos</div>
               </div>
               <Switch
                 checked={settings.push_agendamentos}
@@ -206,8 +263,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Pagamentos</div>
-                <div className="text-sm text-gray-500">Receber notificações push sobre pagamentos</div>
+                <div className="font-medium text-gray-900 dark:text-white">Pagamentos</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre pagamentos</div>
               </div>
               <Switch
                 checked={settings.push_pagamentos}
@@ -217,43 +274,23 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Novos Clientes</div>
-                <div className="text-sm text-gray-500">Receber notificações push sobre novos clientes</div>
+                <div className="font-medium text-gray-900 dark:text-white">Novos Clientes</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre novos clientes</div>
               </div>
               <Switch
                 checked={settings.push_clientes}
                 onCheckedChange={(value) => handleSettingChange('push_clientes', value)}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notificações por SMS</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">Agendamentos</div>
-                <div className="text-sm text-gray-500">Receber SMS sobre agendamentos importantes</div>
-              </div>
-              <Switch
-                checked={settings.sms_agendamentos}
-                onCheckedChange={(value) => handleSettingChange('sms_agendamentos', value)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">Pagamentos</div>
-                <div className="text-sm text-gray-500">Receber SMS sobre pagamentos recebidos</div>
-              </div>
-              <Switch
-                checked={settings.sms_pagamentos}
-                onCheckedChange={(value) => handleSettingChange('sms_pagamentos', value)}
-              />
-            </div>
+            <Button 
+              variant="outline" 
+              onClick={testPushNotification}
+              className="w-full"
+            >
+              <Bell className="mr-2 h-4 w-4" />
+              Testar Notificação Push
+            </Button>
           </CardContent>
         </Card>
       </div>
