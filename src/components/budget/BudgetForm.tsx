@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,38 +10,53 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { BudgetFormValues, budgetSchema, SelectedItem } from './budgetSchema';
 
-const budgetSchema = z.object({
-  cliente: z.string().min(1, 'Cliente é obrigatório'),
-  veiculo: z.string().min(1, 'Veículo é obrigatório'),
-  descricao: z.string().min(1, 'Descrição é obrigatória'),
-  valor_total: z.number().min(0, 'Valor deve ser positivo'),
-  data_validade: z.string().optional(),
-  observacoes: z.string().optional()
-});
+interface BudgetFormProps {
+  onSubmit?: (values: BudgetFormValues & { itens?: SelectedItem[] }) => Promise<void>;
+  onSkip?: () => Promise<void>;
+  isLoading?: boolean;
+  initialValues?: Partial<BudgetFormValues>;
+  isEditing?: boolean;
+}
 
-type BudgetFormValues = z.infer<typeof budgetSchema>;
-
-const BudgetForm: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
+const BudgetForm: React.FC<BudgetFormProps> = ({ 
+  onSubmit, 
+  onSkip,
+  isLoading = false, 
+  initialValues = {},
+  isEditing = false 
+}) => {
   const [clients, setClients] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
-      cliente: '',
-      veiculo: '',
-      descricao: '',
-      valor_total: 0,
-      data_validade: '',
-      observacoes: ''
+      cliente: initialValues.cliente || '',
+      veiculo: initialValues.veiculo || '',
+      descricao: initialValues.descricao || '',
+      valor_total: initialValues.valor_total || 0,
+      data_validade: initialValues.data_validade || '',
+      observacoes: initialValues.observacoes || '',
+      status: initialValues.status || 'Pendente'
     }
   });
 
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (initialValues) {
+      Object.keys(initialValues).forEach((key) => {
+        const value = initialValues[key as keyof BudgetFormValues];
+        if (value !== undefined) {
+          form.setValue(key as keyof BudgetFormValues, value);
+        }
+      });
+    }
+  }, [initialValues, form]);
 
   const fetchClients = async () => {
     try {
@@ -64,41 +78,41 @@ const BudgetForm: React.FC = () => {
   };
 
   const handleSubmit = async (values: BudgetFormValues) => {
-    setIsLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+    if (onSubmit) {
+      await onSubmit(values);
+    } else {
+      // Default behavior if no onSubmit prop is provided
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
 
-      const { error } = await supabase
-        .from('orcamentos')
-        .insert({
-          user_id: user.id,
-          cliente: values.cliente,
-          veiculo: values.veiculo,
-          descricao: values.descricao,
-          valor_total: values.valor_total,
-          status: 'pendente'
+        const { error } = await supabase
+          .from('orcamentos')
+          .insert({
+            user_id: user.id,
+            cliente: values.cliente,
+            veiculo: values.veiculo,
+            descricao: values.descricao,
+            valor_total: values.valor_total,
+            status: 'pendente'
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Orçamento criado",
+          description: "O orçamento foi criado com sucesso.",
         });
 
-      if (error) throw error;
-
-      toast({
-        title: "Orçamento criado",
-        description: "O orçamento foi criado com sucesso.",
-      });
-
-      form.reset();
-      // Redirect to budgets list
-      window.location.href = '/orcamentos';
-    } catch (error: any) {
-      console.error('Erro ao criar orçamento:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar orçamento",
-        description: error.message,
-      });
-    } finally {
-      setIsLoading(false);
+        form.reset();
+      } catch (error: any) {
+        console.error('Erro ao criar orçamento:', error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao criar orçamento",
+          description: error.message,
+        });
+      }
     }
   };
 
@@ -212,20 +226,33 @@ const BudgetForm: React.FC = () => {
           )}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-              Criando...
-            </>
-          ) : (
-            'Criar Orçamento'
+        <div className="flex gap-4">
+          <Button 
+            type="submit" 
+            className="flex-1"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                {isEditing ? 'Atualizando...' : 'Criando...'}
+              </>
+            ) : (
+              isEditing ? 'Atualizar Orçamento' : 'Criar Orçamento'
+            )}
+          </Button>
+          
+          {onSkip && (
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={onSkip}
+              disabled={isLoading}
+            >
+              Pular
+            </Button>
           )}
-        </Button>
+        </div>
       </form>
     </Form>
   );
