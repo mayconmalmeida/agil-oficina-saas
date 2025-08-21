@@ -1,52 +1,64 @@
 
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const usePermissions = () => {
   const { permissions, plan, planActive, isAdmin } = useAuth();
 
-  const hasPermission = (feature: string): boolean => {
-    console.log('usePermissions: Verificando permissão:', {
-      feature,
-      isAdmin,
-      plan,
-      planActive,
-      permissions: permissions.length,
-      hasFeature: permissions.includes(feature) || permissions.includes('*')
-    });
+  // Memoizar a função hasPermission para evitar re-criação em cada render
+  const hasPermission = useMemo(() => {
+    return (feature: string): boolean => {
+      console.log('usePermissions: Verificando permissão (cached):', {
+        feature,
+        isAdmin,
+        plan,
+        planActive,
+        permissions: permissions.length,
+        hasFeature: permissions.includes(feature) || permissions.includes('*')
+      });
 
-    // ✅ CORRIGIDO: Admin tem todas as permissões - verificação mais robusta
-    if (isAdmin === true) {
-      console.log('usePermissions: Admin detectado, permitindo acesso');
-      return true;
-    }
-    
-    // Se o plano não está ativo, só permite recursos básicos
-    if (!planActive) {
-      console.log('usePermissions: Plano inativo, verificando recursos básicos');
-      return ['clientes', 'orcamentos'].includes(feature);
-    }
+      // ✅ Admin tem todas as permissões
+      if (isAdmin === true) {
+        console.log('usePermissions: Admin detectado, permitindo acesso');
+        return true;
+      }
+      
+      // Se o plano não está ativo, só permite recursos básicos
+      if (!planActive) {
+        console.log('usePermissions: Plano inativo, verificando recursos básicos');
+        return ['clientes', 'orcamentos'].includes(feature);
+      }
 
-    // Verificar se tem a permissão específica
-    const hasAccess = permissions.includes(feature) || permissions.includes('*');
-    console.log('usePermissions: Verificação final de permissão:', hasAccess);
-    return hasAccess;
-  };
+      // Verificar se tem a permissão específica
+      const hasAccess = permissions.includes(feature) || permissions.includes('*');
+      console.log('usePermissions: Verificação final de permissão:', hasAccess);
+      return hasAccess;
+    };
+  }, [permissions, plan, planActive, isAdmin]); // Dependências estáveis
 
-  const isPremium = (): boolean => {
-    // ✅ Admin sempre tem acesso premium
-    if (isAdmin === true) return true;
-    const result = plan === 'Premium' && planActive;
-    console.log('usePermissions: isPremium check:', { plan, planActive, isAdmin, result });
-    return result;
-  };
+  // Memoizar isPremium para evitar recálculos desnecessários
+  const isPremium = useMemo(() => {
+    return (): boolean => {
+      // ✅ Admin sempre tem acesso premium
+      if (isAdmin === true) return true;
+      const result = plan === 'Premium' && planActive;
+      console.log('usePermissions: isPremium check (cached):', { plan, planActive, isAdmin, result });
+      return result;
+    };
+  }, [plan, planActive, isAdmin]);
 
-  const canAccessPremiumFeatures = (): boolean => {
-    const result = isAdmin === true || isPremium();
-    console.log('usePermissions: canAccessPremiumFeatures check:', { isAdmin, isPremium: isPremium(), result });
-    return result;
-  };
+  // Memoizar canAccessPremiumFeatures
+  const canAccessPremiumFeatures = useMemo(() => {
+    return (): boolean => {
+      const premiumAccess = isPremium();
+      const result = isAdmin === true || premiumAccess;
+      console.log('usePermissions: canAccessPremiumFeatures check (cached):', { isAdmin, isPremium: premiumAccess, result });
+      return result;
+    };
+  }, [isAdmin, isPremium]);
 
-  const getAvailableFeatures = () => {
+  // Memoizar getAvailableFeatures
+  const getAvailableFeatures = useMemo(() => {
     if (isAdmin === true) {
       return ['*']; // Admin tem todas as funcionalidades
     }
@@ -56,9 +68,10 @@ export const usePermissions = () => {
     }
     
     return permissions;
-  };
+  }, [isAdmin, planActive, permissions]);
 
-  const getPlanFeatures = () => {
+  // Memoizar getPlanFeatures
+  const getPlanFeatures = useMemo(() => {
     const features = {
       Free: [
         'Gestão básica de clientes',
@@ -79,9 +92,10 @@ export const usePermissions = () => {
     };
 
     return features[plan as keyof typeof features] || features.Free;
-  };
+  }, [plan]);
 
-  console.log('usePermissions: Estado atual:', {
+  // Log único com estado atual (sem causar re-renders)
+  console.log('usePermissions: Estado atual (memoizado):', {
     plan,
     planActive,
     isAdmin,
@@ -91,7 +105,8 @@ export const usePermissions = () => {
     hasMarketing: hasPermission('marketing_automatico')
   });
 
-  return {
+  // Retornar objeto memoizado para evitar re-criação
+  return useMemo(() => ({
     hasPermission,
     isPremium,
     canAccessPremiumFeatures,
@@ -100,5 +115,14 @@ export const usePermissions = () => {
     permissions,
     plan,
     planActive
-  };
+  }), [
+    hasPermission,
+    isPremium,
+    canAccessPremiumFeatures,
+    getAvailableFeatures,
+    getPlanFeatures,
+    permissions,
+    plan,
+    planActive
+  ]);
 };
