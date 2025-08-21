@@ -11,6 +11,10 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { BudgetFormValues, budgetSchema, SelectedItem } from './budgetSchema';
+import ClientSearchField from './form-sections/ClientSearchField';
+import VehicleField from './form-sections/VehicleField';
+import ProductServiceSelector from './form-sections/ProductServiceSelector';
+import { Client } from '@/hooks/useClientSearch';
 
 interface BudgetFormProps {
   onSubmit?: (values: BudgetFormValues & { itens?: SelectedItem[] }) => Promise<void>;
@@ -28,6 +32,8 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
   isEditing = false 
 }) => {
   const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const { toast } = useToast();
 
   const form = useForm<BudgetFormValues>({
@@ -42,6 +48,12 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
       status: initialValues.status || 'Pendente'
     }
   });
+
+  // Atualizar valor total automaticamente quando itens mudarem
+  useEffect(() => {
+    const total = selectedItems.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    form.setValue('valor_total', total);
+  }, [selectedItems, form]);
 
   useEffect(() => {
     fetchClients();
@@ -79,7 +91,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
 
   const handleSubmit = async (values: BudgetFormValues) => {
     if (onSubmit) {
-      await onSubmit(values);
+      await onSubmit({ ...values, itens: selectedItems });
     } else {
       // Default behavior if no onSubmit prop is provided
       try {
@@ -105,6 +117,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
         });
 
         form.reset();
+        setSelectedItems([]);
       } catch (error: any) {
         console.error('Erro ao criar orçamento:', error);
         toast({
@@ -116,47 +129,28 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
     }
   };
 
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
+  };
+
+  const handleItemsChange = (items: SelectedItem[]) => {
+    setSelectedItems(items);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="cliente"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cliente *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.nome}>
-                      {client.nome} - {client.telefone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="veiculo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Veículo *</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Honda Civic 2020" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ClientSearchField 
+            form={form} 
+            onClientSelect={handleClientSelect}
+          />
+          
+          <VehicleField 
+            form={form} 
+            selectedClient={selectedClient}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -175,39 +169,48 @@ const BudgetForm: React.FC<BudgetFormProps> = ({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="valor_total"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor Total (R$)</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <ProductServiceSelector 
+          selectedItems={selectedItems}
+          onItemsChange={handleItemsChange}
         />
 
-        <FormField
-          control={form.control}
-          name="data_validade"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data de Validade</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="data_validade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Validade</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="valor_total"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor Total (R$)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    {...field}
+                    readOnly
+                    className="bg-gray-50"
+                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}

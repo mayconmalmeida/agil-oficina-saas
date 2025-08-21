@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2, ClipboardList } from 'lucide-react';
+import { Eye, Edit, Trash2, ClipboardList, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/utils/supabaseTypes';
+import { formatCurrency } from '@/utils/formatUtils';
 import Loading from '@/components/ui/loading';
-import OrdemServicoViewModal from './OrdemServicoViewModal';
-import OrdemServicoEditModal from './OrdemServicoEditModal';
 
 interface OrdemServico {
   id: string;
@@ -31,41 +29,60 @@ interface OrdemServicoListProps {
 const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedOrdem, setSelectedOrdem] = useState<OrdemServico | null>(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchOrdens = async () => {
     try {
       setIsLoading(true);
       
-      // First, get the ordens_servico data
       const { data: ordensData, error: ordensError } = await supabase
         .from('ordens_servico')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (ordensError) throw ordensError;
+      if (ordensError) {
+        console.error('Erro ao buscar ordens:', ordensError);
+        throw ordensError;
+      }
 
-      // Get clients data separately
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, nome');
+      // Buscar dados dos clientes
+      const clienteIds = [...new Set(ordensData?.map(ordem => ordem.cliente_id).filter(Boolean))];
+      
+      let clientesData: any[] = [];
+      if (clienteIds.length > 0) {
+        const { data: clientsResult, error: clientsError } = await supabase
+          .from('clients')
+          .select('id, nome')
+          .in('id', clienteIds);
 
-      if (clientsError) throw clientsError;
+        if (clientsError) {
+          console.error('Erro ao buscar clientes:', clientsError);
+        } else {
+          clientesData = clientsResult || [];
+        }
+      }
 
-      // Get orcamentos data separately
-      const { data: orcamentosData, error: orcamentosError } = await supabase
-        .from('orcamentos')
-        .select('id, descricao');
+      // Buscar dados dos orçamentos
+      const orcamentoIds = [...new Set(ordensData?.map(ordem => ordem.orcamento_id).filter(Boolean))];
+      
+      let orcamentosData: any[] = [];
+      if (orcamentoIds.length > 0) {
+        const { data: orcamentosResult, error: orcamentosError } = await supabase
+          .from('orcamentos')
+          .select('id, descricao')
+          .in('id', orcamentoIds);
 
-      if (orcamentosError) throw orcamentosError;
+        if (orcamentosError) {
+          console.error('Erro ao buscar orçamentos:', orcamentosError);
+        } else {
+          orcamentosData = orcamentosResult || [];
+        }
+      }
 
-      // Combine the data
+      // Combinar os dados
       const ordensFormatted = (ordensData || []).map(ordem => {
-        const cliente = clientsData?.find(c => c.id === ordem.cliente_id);
-        const orcamento = orcamentosData?.find(o => o.id === ordem.orcamento_id);
+        const cliente = clientesData.find(c => c.id === ordem.cliente_id);
+        const orcamento = orcamentosData.find(o => o.id === ordem.orcamento_id);
         
         return {
           ...ordem,
@@ -90,16 +107,6 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
   useEffect(() => {
     fetchOrdens();
   }, []);
-
-  const handleView = (ordem: OrdemServico) => {
-    setSelectedOrdem(ordem);
-    setViewModalOpen(true);
-  };
-
-  const handleEdit = (ordem: OrdemServico) => {
-    setSelectedOrdem(ordem);
-    setEditModalOpen(true);
-  };
 
   const handleDelete = async (ordemId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {
@@ -130,6 +137,14 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
     }
   };
 
+  const createOSFromBudget = async () => {
+    // Implementar lógica para criar OS a partir de orçamento
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "Em breve você poderá criar OS a partir de orçamentos.",
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Aberta': return 'bg-blue-100 text-blue-800';
@@ -157,15 +172,27 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
         <h3 className="text-lg font-medium text-gray-900 mb-2">
           Nenhuma ordem de serviço encontrada
         </h3>
-        <p className="text-gray-500">
+        <p className="text-gray-500 mb-4">
           {searchQuery ? 'Tente ajustar os filtros de busca.' : 'Comece criando sua primeira ordem de serviço.'}
         </p>
+        <Button onClick={createOSFromBudget} variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          Criar OS a partir de Orçamento
+        </Button>
       </div>
     );
   }
 
   return (
     <>
+      <div className="mb-4 flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Ordens de Serviço ({filteredOrdens.length})</h3>
+        <Button onClick={createOSFromBudget} variant="outline" size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Criar a partir de Orçamento
+        </Button>
+      </div>
+
       <div className="grid gap-4">
         {filteredOrdens.map((ordem) => (
           <Card key={ordem.id}>
@@ -176,78 +203,52 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
                     OS #{ordem.id.slice(0, 8)}
                   </CardTitle>
                   <p className="text-sm text-gray-600 mt-1">
-                    Cliente: {ordem.cliente_nome || 'N/A'}
+                    Cliente: {ordem.cliente_nome}
                   </p>
+                  {ordem.orcamento_descricao && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Baseado no orçamento: {ordem.orcamento_descricao}
+                    </p>
+                  )}
                 </div>
-                <Badge className={getStatusColor(ordem.status)}>
-                  {ordem.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-600">Data de Início:</p>
-                  <p className="font-medium">
-                    {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Valor Total:</p>
-                  <p className="font-medium text-green-600">
+                <div className="text-right">
+                  <Badge className={getStatusColor(ordem.status)}>
+                    {ordem.status}
+                  </Badge>
+                  <p className="text-sm font-medium mt-2">
                     {formatCurrency(ordem.valor_total)}
                   </p>
                 </div>
-                {ordem.orcamento_descricao && (
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-600">Orçamento Vinculado:</p>
-                    <p className="text-sm">{ordem.orcamento_descricao}</p>
-                  </div>
-                )}
-                {ordem.observacoes && (
-                  <div className="md:col-span-2">
-                    <p className="text-sm text-gray-600">Observações:</p>
-                    <p className="text-sm">{ordem.observacoes}</p>
-                  </div>
-                )}
               </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" size="sm" onClick={() => handleView(ordem)}>
-                  <Eye className="h-4 w-4 mr-1" /> Visualizar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleEdit(ordem)}>
-                  <Edit className="h-4 w-4 mr-1" /> Editar
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(ordem.id)}>
-                  <Trash2 className="h-4 w-4 mr-1" /> Excluir
-                </Button>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">
+                  <p>Iniciado: {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}</p>
+                  {ordem.data_fim && (
+                    <p>Finalizado: {new Date(ordem.data_fim).toLocaleDateString('pt-BR')}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleDelete(ordem.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-
-      <OrdemServicoViewModal
-        ordem={selectedOrdem}
-        isOpen={viewModalOpen}
-        onClose={() => {
-          setViewModalOpen(false);
-          setSelectedOrdem(null);
-        }}
-      />
-
-      <OrdemServicoEditModal
-        ordem={selectedOrdem}
-        isOpen={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false);
-          setSelectedOrdem(null);
-        }}
-        onSuccess={() => {
-          fetchOrdens();
-        }}
-      />
     </>
   );
 };
