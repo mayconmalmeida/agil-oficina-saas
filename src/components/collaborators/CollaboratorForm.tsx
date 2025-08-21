@@ -59,16 +59,32 @@ const CollaboratorForm: React.FC<CollaboratorFormProps> = ({ onSuccess }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Buscar oficina do usuário
-      const { data: oficina, error: oficinaError } = await supabase
+      // Buscar ou criar oficina do usuário
+      let { data: oficina, error: oficinaError } = await supabase
         .from('oficinas')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (oficinaError) {
-        console.error('Erro ao buscar oficina:', oficinaError);
-        throw new Error('Oficina não encontrada');
+      if (oficinaError && oficinaError.code !== 'PGRST116') {
+        throw oficinaError;
+      }
+
+      // Se não existe oficina, criar uma
+      if (!oficina) {
+        const { data: newOficina, error: createOficinaError } = await supabase
+          .from('oficinas')
+          .insert({
+            user_id: user.id,
+            nome_oficina: 'Minha Oficina',
+            is_active: true,
+            ativo: true
+          })
+          .select('id')
+          .single();
+
+        if (createOficinaError) throw createOficinaError;
+        oficina = newOficina;
       }
 
       // Criar colaborador

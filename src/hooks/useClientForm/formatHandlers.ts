@@ -1,40 +1,65 @@
 
-import { UseFormReturn } from 'react-hook-form';
-import { useCallback } from 'react';
-import { ClientFormValues } from './validation';
-import { formatCPF, formatCEP, formatLicensePlate } from '@/utils/formatUtils';
+import { useEffect } from 'react';
+import { formatCPF, formatCEP, formatTelefone } from '@/utils/formatUtils';
+import { formatLicensePlate } from '@/utils/formatUtils';
 
-export const useFormatHandlers = (form: UseFormReturn<ClientFormValues>) => {
-  const handleDocumentoFormat = useCallback((documento: string) => {
-    if (documento) {
-      const formattedCPF = formatCPF(documento);
-      if (formattedCPF !== documento) {
-        form.setValue('documento', formattedCPF, { shouldValidate: false });
+export const useFormatHandlers = (form: any) => {
+  const handleDocumentoFormat = () => {
+    const documento = form.watch('documento');
+    
+    useEffect(() => {
+      if (documento) {
+        const formatted = formatCPF(documento);
+        if (formatted !== documento) {
+          form.setValue('documento', formatted);
+        }
       }
-    }
-  }, [form]);
+    }, [documento]);
+  };
 
-  const handleCepFormat = useCallback((cep: string) => {
-    if (cep) {
-      const formattedCEP = formatCEP(cep);
-      if (formattedCEP !== cep) {
-        form.setValue('cep', formattedCEP, { shouldValidate: false });
+  const handleCepFormat = () => {
+    const cep = form.watch('cep');
+    
+    useEffect(() => {
+      if (cep) {
+        const formatted = formatCEP(cep);
+        if (formatted !== cep) {
+          form.setValue('cep', formatted);
+        }
       }
-    }
-  }, [form]);
+    }, [cep]);
+  };
 
-  const handlePlacaFormat = useCallback((placa: string) => {
-    if (placa) {
-      const formattedPlate = formatLicensePlate(placa);
-      if (formattedPlate !== placa) {
-        form.setValue('veiculo.placa', formattedPlate, { shouldValidate: false });
+  const handleTelefoneFormat = () => {
+    const telefone = form.watch('telefone');
+    
+    useEffect(() => {
+      if (telefone) {
+        const formatted = formatTelefone(telefone);
+        if (formatted !== telefone) {
+          form.setValue('telefone', formatted);
+        }
       }
-    }
-  }, [form]);
+    }, [telefone]);
+  };
+
+  const handlePlacaFormat = () => {
+    const placa = form.watch('veiculo.placa');
+    
+    useEffect(() => {
+      if (placa) {
+        const formatted = formatLicensePlate(placa);
+        if (formatted !== placa) {
+          form.setValue('veiculo.placa', formatted);
+        }
+      }
+    }, [placa]);
+  };
 
   return {
     handleDocumentoFormat,
     handleCepFormat,
+    handleTelefoneFormat,
     handlePlacaFormat
   };
 };
