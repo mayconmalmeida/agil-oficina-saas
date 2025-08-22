@@ -1,9 +1,11 @@
 
 import React, { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useAdminContext } from '@/contexts/AdminContext';
+import { fetchStatsData } from './services/statsService';
 import { AdminStats } from '@/types/admin';
 
 export const useOptimizedAdminData = () => {
+  const { user: adminUser } = useAdminContext();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeSubscriptions: 0,
@@ -24,134 +26,25 @@ export const useOptimizedAdminData = () => {
       console.log('⚠️ Fetch já em andamento, ignorando nova chamada');
       return;
     }
+
+    // Verificar se temos usuário admin
+    if (!adminUser || !adminUser.isAdmin) {
+      console.log('⚠️ Usuário admin não disponível ainda');
+      return;
+    }
     
     try {
       isLoadingRef.current = true;
       setIsLoading(true);
       setError(null);
       
-      console.log('🔍 Iniciando busca de estatísticas administrativas (otimizada)...');
+      console.log('🔍 Iniciando busca de estatísticas administrativas com admin:', adminUser.email);
 
-      // Verificar autenticação admin
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      // Verificar se é admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError || !profile || !['admin', 'superadmin'].includes(profile.role)) {
-        throw new Error('Acesso negado: usuário não é administrador');
-      }
-
-      console.log('✅ Usuário admin verificado, buscando estatísticas...');
-
-      // Data do início do mês
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-
-      // Buscar estatísticas com timeout de 5 segundos
-      const statsPromises = [
-        // Total de usuários (profiles não-admin)
-        Promise.race([
-          supabase
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .neq('role', 'admin')
-            .neq('role', 'superadmin'),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de usuários')), 5000)
-          )
-        ]),
-        
-        // Assinaturas ativas
-        Promise.race([
-          supabase
-            .from('user_subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'active'),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de assinaturas ativas')), 5000)
-          )
-        ]),
-        
-        // Usuários em trial
-        Promise.race([
-          supabase
-            .from('user_subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'trialing'),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de trials')), 5000)
-          )
-        ]),
-        
-        // Novos usuários este mês
-        Promise.race([
-          supabase
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .neq('role', 'admin')
-            .neq('role', 'superadmin')
-            .gte('created_at', startOfMonth),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de novos usuários')), 5000)
-          )
-        ])
-      ];
-
-      const results = await Promise.allSettled(statsPromises);
+      // Usar o serviço com o usuário admin
+      const statsData = await fetchStatsData(adminUser);
       
-      // Processar resultados com fallback e type casting correto
-      const totalUsers = results[0].status === 'fulfilled' && 
-        typeof results[0].value === 'object' && 
-        results[0].value !== null && 
-        'count' in results[0].value && 
-        !(results[0].value as any).error
-        ? (results[0].value as any).count || 0 
-        : 0;
-        
-      const activeSubscriptions = results[1].status === 'fulfilled' && 
-        typeof results[1].value === 'object' && 
-        results[1].value !== null && 
-        'count' in results[1].value && 
-        !(results[1].value as any).error
-        ? (results[1].value as any).count || 0 
-        : 0;
-        
-      const trialingUsers = results[2].status === 'fulfilled' && 
-        typeof results[2].value === 'object' && 
-        results[2].value !== null && 
-        'count' in results[2].value && 
-        !(results[2].value as any).error
-        ? (results[2].value as any).count || 0 
-        : 0;
-        
-      const newUsersThisMonth = results[3].status === 'fulfilled' && 
-        typeof results[3].value === 'object' && 
-        results[3].value !== null && 
-        'count' in results[3].value && 
-        !(results[3].value as any).error
-        ? (results[3].value as any).count || 0 
-        : 0;
-
-      // Calcular receita estimada
-      const totalRevenue = activeSubscriptions * 49.90;
-
-      const finalStats = {
-        totalUsers,
-        activeSubscriptions,
-        trialingUsers,
-        totalRevenue,
-        newUsersThisMonth,
-      };
-
-      console.log('📊 Estatísticas finais (otimizada):', finalStats);
-      setStats(finalStats);
+      console.log('📊 Estatísticas recebidas:', statsData);
+      setStats(statsData);
       hasInitializedRef.current = true;
 
     } catch (err: any) {
@@ -170,18 +63,19 @@ export const useOptimizedAdminData = () => {
       setIsLoading(false);
       isLoadingRef.current = false;
     }
-  }, []);
+  }, [adminUser]);
 
-  // Inicializar apenas uma vez
+  // Inicializar quando tivermos usuário admin
   React.useEffect(() => {
-    if (!hasInitializedRef.current) {
-      console.log('🚀 Inicializando dados admin (primeira vez)');
+    if (adminUser && adminUser.isAdmin && !hasInitializedRef.current) {
+      console.log('🚀 Inicializando dados admin para:', adminUser.email);
       fetchStats();
     }
-  }, [fetchStats]);
+  }, [adminUser, fetchStats]);
 
   const refetch = useCallback(() => {
     console.log('🔄 Refetch solicitado pelo usuário');
+    hasInitializedRef.current = false; // Reset para permitir nova busca
     fetchStats();
   }, [fetchStats]);
 

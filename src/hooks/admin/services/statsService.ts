@@ -3,32 +3,20 @@ import { supabase } from '@/lib/supabase';
 import { retryRequest } from '../utils/retryRequest';
 import { AdminStats } from '@/types/admin';
 
-export const fetchStatsData = async (): Promise<AdminStats> => {
-  console.log('🔍 Iniciando busca de estatísticas...');
+export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
+  console.log('🔍 Iniciando busca de estatísticas admin...');
   
   // Data do início do mês atual
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
   console.log('📅 Data início do mês:', startOfMonth);
   
-  // Verificar se o usuário é admin
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    console.error('❌ Erro de autenticação:', authError);
-    throw new Error('Usuário não autenticado');
+  // Verificar se temos usuário admin válido
+  if (!adminUser || !adminUser.isAdmin) {
+    console.error('❌ Usuário admin não fornecido ou inválido:', adminUser);
+    throw new Error('Usuário administrador não autenticado');
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !profile || !['admin', 'superadmin'].includes(profile.role)) {
-    console.error('❌ Usuário não é admin:', { profileError, profile });
-    throw new Error('Acesso negado: usuário não é administrador');
-  }
-
-  console.log('✅ Verificação admin OK, buscando dados...');
+  console.log('✅ Usuário admin válido:', adminUser.email);
 
   // Buscar estatísticas em paralelo com retry
   const [
@@ -37,13 +25,14 @@ export const fetchStatsData = async (): Promise<AdminStats> => {
     trialingUsersResult,
     newUsersResult
   ] = await Promise.all([
-    // Total de usuários - TODOS os perfis (incluindo admins para debug)
+    // Total de usuários - profiles com role diferente de admin
     retryRequest(async () => {
-      console.log('👥 Buscando total de usuários (todos)...');
+      console.log('👥 Buscando total de usuários...');
       const result = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true });
-      console.log('📊 Total usuários raw result:', result);
+        .select('*', { count: 'exact', head: true })
+        .not('role', 'in', '("admin","superadmin")');
+      console.log('📊 Total usuários result:', result);
       return result;
     }),
     
@@ -54,7 +43,7 @@ export const fetchStatsData = async (): Promise<AdminStats> => {
         .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
-      console.log('📊 Assinaturas ativas raw result:', result);
+      console.log('📊 Assinaturas ativas result:', result);
       return result;
     }),
     
@@ -65,7 +54,7 @@ export const fetchStatsData = async (): Promise<AdminStats> => {
         .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'trialing');
-      console.log('📊 Usuários em teste raw result:', result);
+      console.log('📊 Usuários em teste result:', result);
       return result;
     }),
     
@@ -75,8 +64,9 @@ export const fetchStatsData = async (): Promise<AdminStats> => {
       const result = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
+        .not('role', 'in', '("admin","superadmin")')
         .gte('created_at', startOfMonth);
-      console.log('📊 Novos usuários raw result:', result);
+      console.log('📊 Novos usuários result:', result);
       return result;
     })
   ]);
@@ -122,23 +112,24 @@ export const fetchStatsData = async (): Promise<AdminStats> => {
   console.log('✅ Estatísticas finais calculadas:', stats);
 
   // Verificar se realmente não há dados ou se é problema de RLS
-  if (totalUsers === 0) {
-    console.warn('⚠️ ATENÇÃO: Nenhum usuário encontrado! Isso pode indicar:');
-    console.warn('  1. Realmente não há dados no sistema');
-    console.warn('  2. Problema nas políticas RLS');
-    console.warn('  3. Problema de conexão com o banco');
+  if (totalUsers === 0 && activeSubscriptions === 0) {
+    console.warn('⚠️ ATENÇÃO: Nenhum dado encontrado! Possíveis causas:');
+    console.warn('  1. Sistema realmente não tem dados cadastrados');
+    console.warn('  2. Problema nas políticas RLS das tabelas');
+    console.warn('  3. Problema de conectividade com o banco');
     
     // Tentar uma consulta básica para verificar conectividade
     try {
       const { data: testData, error: testError } = await supabase
         .from('profiles')
-        .select('id')
-        .limit(1);
+        .select('id, email, role')
+        .limit(5);
       
       if (testError) {
         console.error('❌ Erro na consulta de teste:', testError);
       } else {
-        console.log('🔍 Consulta de teste retornou:', testData);
+        console.log('🔍 Consulta de teste retornou:', testData?.length, 'registros');
+        console.log('Primeiros registros:', testData?.slice(0, 2));
       }
     } catch (error) {
       console.error('❌ Erro na consulta de teste:', error);
