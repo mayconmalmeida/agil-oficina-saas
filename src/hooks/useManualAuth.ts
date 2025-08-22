@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { fetchUserProfile, signOutUser, UserProfile } from '@/services/authService';
@@ -11,6 +11,8 @@ export const useManualAuth = (): AuthState => {
   const [loading, setLoading] = useState(true);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const isInitializedRef = useRef(false);
+  const profileCacheRef = useRef<{ userId: string; profile: UserProfile } | null>(null);
 
   useEffect(() => {
     console.log('[useManualAuth] Iniciando configuração de autenticação');
@@ -28,11 +30,29 @@ export const useManualAuth = (): AuthState => {
         
         if (session?.user) {
           console.log('[useManualAuth] Buscando perfil para:', session.user.id);
+          
+          // Verificar cache primeiro
+          if (profileCacheRef.current?.userId === session.user.id) {
+            console.log('[useManualAuth] Usando perfil do cache');
+            if (isMounted) {
+              setUser(profileCacheRef.current.profile);
+              setRole(profileCacheRef.current.profile.role);
+              setLoading(false);
+              setIsLoadingAuth(false);
+            }
+            return;
+          }
+
           try {
             const profile = await fetchUserProfile(session.user.id);
             if (isMounted) {
               setUser(profile);
               setRole(profile.role);
+              // Salvar no cache
+              profileCacheRef.current = {
+                userId: session.user.id,
+                profile
+              };
               console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
             }
           } catch (error) {
@@ -60,12 +80,14 @@ export const useManualAuth = (): AuthState => {
           if (isMounted) {
             setUser(null);
             setRole(null);
+            profileCacheRef.current = null; // Limpar cache
           }
         }
         
         if (isMounted) {
           setLoading(false);
           setIsLoadingAuth(false);
+          isInitializedRef.current = true;
         }
       }
     );
@@ -77,14 +99,15 @@ export const useManualAuth = (): AuthState => {
       }
     });
 
-    // Timeout de segurança
+    // Timeout de segurança APENAS se não inicializou após 3 segundos
     const timeout = setTimeout(() => {
-      if (isMounted) {
-        console.log('[useManualAuth] Timeout de segurança atingido');
+      if (isMounted && !isInitializedRef.current) {
+        console.log('[useManualAuth] Timeout de segurança - forçando inicialização');
         setLoading(false);
         setIsLoadingAuth(false);
+        isInitializedRef.current = true;
       }
-    }, 2000);
+    }, 3000); // Aumentado para 3 segundos e só roda se não inicializou
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
@@ -100,69 +123,72 @@ export const useManualAuth = (): AuthState => {
       setUser(null);
       setSession(null);
       setRole(null);
+      profileCacheRef.current = null; // Limpar cache
+      isInitializedRef.current = false; // Reset da inicialização
     } catch (error) {
       console.error('[useManualAuth] Erro no logout:', error);
     }
   }, []);
 
-  // Valores derivados baseados na UserProfile
-  const isAdmin = useMemo(() => {
-    return role === 'admin' || role === 'superadmin';
-  }, [role]);
+  // Valores derivados baseados na UserProfile (memoizados para evitar recálculos)
+  const derivedValues = useMemo(() => {
+    const isAdmin = role === 'admin' || role === 'superadmin';
 
-  const plan = useMemo(() => {
-    // Derivar o plano da subscription ou do campo plano
-    if (user?.subscription?.plan_type) {
-      if (user.subscription.plan_type.includes('premium')) {
-        return 'Premium';
+    const plan = (() => {
+      // Derivar o plano da subscription ou do campo plano
+      if (user?.subscription?.plan_type) {
+        if (user.subscription.plan_type.includes('premium')) {
+          return 'Premium';
+        }
       }
-    }
-    // Usar o campo plano se disponível, senão usar Free como padrão
-    return user?.plano === 'Premium' ? 'Premium' : 'Free';
-  }, [user?.subscription?.plan_type, user?.plano]);
+      // Usar o campo plano se disponível, senão usar Free como padrão
+      return user?.plano === 'Premium' ? 'Premium' : 'Free';
+    })();
 
-  const planActive = useMemo(() => {
-    // Verificar se a subscription está ativa
-    if (user?.subscription) {
-      const now = new Date();
-      const isActive = user.subscription.status === 'active';
-      const notExpired = !user.subscription.ends_at || new Date(user.subscription.ends_at) > now;
-      const trialNotExpired = !user.subscription.trial_ends_at || new Date(user.subscription.trial_ends_at) > now;
+    const planActive = (() => {
+      // Verificar se a subscription está ativa
+      if (user?.subscription) {
+        const now = new Date();
+        const isActive = user.subscription.status === 'active';
+        const notExpired = !user.subscription.ends_at || new Date(user.subscription.ends_at) > now;
+        const trialNotExpired = !user.subscription.trial_ends_at || new Date(user.subscription.trial_ends_at) > now;
+        
+        return isActive && (notExpired || trialNotExpired);
+      }
+      return false;
+    })();
+
+    const permissions = (() => {
+      // Gerar permissões baseadas no plano e status
+      if (isAdmin) {
+        return ['*']; // Admin tem todas as permissões
+      }
       
-      return isActive && (notExpired || trialNotExpired);
-    }
-    return false;
-  }, [user?.subscription]);
+      if (!planActive) {
+        return ['clientes', 'orcamentos']; // Permissões básicas
+      }
+      
+      if (plan === 'Premium') {
+        return [
+          'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
+          'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
+          'agendamentos', 'backup_automatico', 'integracao_contabil',
+          'suporte_prioritario', 'marketing_automatico'
+        ];
+      }
+      
+      return ['clientes', 'orcamentos']; // Padrão para planos não reconhecidos
+    })();
 
-  const permissions = useMemo(() => {
-    // Gerar permissões baseadas no plano e status
-    if (isAdmin) {
-      return ['*']; // Admin tem todas as permissões
-    }
-    
-    if (!planActive) {
-      return ['clientes', 'orcamentos']; // Permissões básicas
-    }
-    
-    if (plan === 'Premium') {
-      return [
-        'clientes', 'orcamentos', 'servicos', 'relatorios_basicos', 
-        'diagnostico_ia', 'campanhas_marketing', 'relatorios_avancados', 
-        'agendamentos', 'backup_automatico', 'integracao_contabil',
-        'suporte_prioritario', 'marketing_automatico'
-      ];
-    }
-    
-    return ['clientes', 'orcamentos']; // Padrão para planos não reconhecidos
-  }, [isAdmin, planActive, plan]);
-
-  const canAccessFeatures = useMemo(() => {
-    return planActive || isAdmin;
-  }, [planActive, isAdmin]);
-
-  const oficinaId = useMemo(() => {
-    return user?.oficina_id || null;
-  }, [user?.oficina_id]);
+    return {
+      isAdmin,
+      plan: plan as 'Premium' | 'Free' | null,
+      planActive,
+      permissions,
+      canAccessFeatures: planActive || isAdmin,
+      oficinaId: user?.oficina_id || null
+    };
+  }, [user, role]);
 
   return {
     user,
@@ -170,13 +196,8 @@ export const useManualAuth = (): AuthState => {
     loading,
     isLoadingAuth,
     role,
-    isAdmin,
-    plan: plan as 'Premium' | 'Free' | null,
-    planActive,
-    permissions,
-    canAccessFeatures,
-    permissionsCount: permissions.length,
-    oficinaId,
+    ...derivedValues,
+    permissionsCount: derivedValues.permissions.length,
     signOut
   };
 };

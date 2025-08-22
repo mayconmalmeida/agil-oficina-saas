@@ -1,5 +1,5 @@
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/ui/loading';
@@ -11,56 +11,61 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isLoadingAuth, user } = useAuth();
   const location = useLocation();
-  const lastDecisionRef = useRef<string>('');
-  const lastLogRef = useRef<string>('');
+  const lastCheckRef = useRef<{ path: string; userId: string; result: string } | null>(null);
 
-  // Memoizar o resultado para evitar re-renders desnecessários
-  const authDecision = useMemo(() => {
-    const decisionKey = `${isLoadingAuth}-${user?.id}-${location.pathname}`;
-    
-    // Evitar logs duplicados
-    if (lastLogRef.current !== decisionKey) {
-      console.log('ProtectedRoute: Verificando acesso uma única vez', {
-        isLoadingAuth,
-        hasUser: !!user,
-        userEmail: user?.email || 'não logado',
-        currentPath: location.pathname,
-        userRole: user?.role || 'sem role'
-      });
-      lastLogRef.current = decisionKey;
+  // Verificação única por navegação usando useMemo
+  const access = useMemo(() => {
+    const currentPath = location.pathname;
+    const currentUserId = user?.id || 'no-user';
+    const checkKey = `${currentPath}-${currentUserId}-${isLoadingAuth}`;
+
+    // Se já fizemos esta verificação para este usuário nesta rota, retornar resultado
+    if (lastCheckRef.current?.path === currentPath && 
+        lastCheckRef.current?.userId === currentUserId && 
+        !isLoadingAuth) {
+      return lastCheckRef.current.result;
     }
+
+    console.log('ProtectedRoute: Verificação única de acesso', {
+      isLoadingAuth,
+      hasUser: !!user,
+      userEmail: user?.email || 'não logado',
+      currentPath,
+      userRole: user?.role || 'sem role'
+    });
+
+    let result: string;
 
     if (isLoadingAuth) {
-      console.log('ProtectedRoute: Carregando autenticação...');
-      return 'loading';
+      result = 'loading';
+    } else if (!user) {
+      result = 'redirect';
+    } else {
+      result = 'allowed';
     }
 
-    if (!user) {
-      console.log('ProtectedRoute: Usuário não autenticado, redirecionando para login');
-      return 'redirect';
+    // Salvar resultado no cache apenas se não estiver carregando
+    if (!isLoadingAuth) {
+      lastCheckRef.current = {
+        path: currentPath,
+        userId: currentUserId,
+        result
+      };
     }
 
-    console.log('ProtectedRoute: Acesso permitido para usuário:', user.email);
-    return 'allowed';
-  }, [isLoadingAuth, user?.id, location.pathname]); // Dependências mais específicas
+    return result;
+  }, [isLoadingAuth, user?.id, location.pathname]);
 
-  // Evitar re-renderizações desnecessárias
-  useEffect(() => {
-    const currentDecision = `${authDecision}-${user?.id}-${location.pathname}`;
-    if (lastDecisionRef.current === currentDecision) {
-      return;
-    }
-    lastDecisionRef.current = currentDecision;
-  }, [authDecision, user?.id, location.pathname]);
-
-  if (authDecision === 'loading') {
+  if (access === 'loading') {
     return <Loading fullscreen text="Verificando autenticação..." />;
   }
 
-  if (authDecision === 'redirect') {
+  if (access === 'redirect') {
+    console.log('ProtectedRoute: Redirecionando para login');
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  console.log('ProtectedRoute: Acesso permitido');
   return <>{children}</>;
 };
 
