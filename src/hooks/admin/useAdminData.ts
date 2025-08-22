@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminUser, AdminSubscription, AdminStats } from './types/adminTypes';
 import { fetchUsersData } from './services/usersService';
@@ -20,8 +20,11 @@ export const useAdminData = () => {
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const { toast } = useToast();
+  
+  // Usar refs para evitar múltiplas chamadas
+  const loadingStatsRef = useRef(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setIsLoadingUsers(true);
       const usersData = await fetchUsersData();
@@ -47,9 +50,9 @@ export const useAdminData = () => {
     } finally {
       setIsLoadingUsers(false);
     }
-  };
+  }, [toast]);
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     try {
       setIsLoadingSubscriptions(true);
       const subscriptionsData = await fetchSubscriptionsData();
@@ -74,10 +77,17 @@ export const useAdminData = () => {
     } finally {
       setIsLoadingSubscriptions(false);
     }
-  };
+  }, [toast]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    // Evitar múltiplas chamadas simultâneas
+    if (loadingStatsRef.current) {
+      console.log('⚠️ fetchStats já em andamento, ignorando');
+      return;
+    }
+    
     try {
+      loadingStatsRef.current = true;
       setIsLoadingStats(true);
       const statsData = await fetchStatsData();
       setStats(statsData);
@@ -100,12 +110,9 @@ export const useAdminData = () => {
       }
     } finally {
       setIsLoadingStats(false);
+      loadingStatsRef.current = false;
     }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  }, [toast]);
 
   return {
     users,

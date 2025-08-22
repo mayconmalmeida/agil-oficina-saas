@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useToast } from "@/hooks/use-toast";
 import DashboardHeader from "@/components/admin/DashboardHeader";
 import StatsOverview from "@/components/admin/StatsOverview";
@@ -14,11 +14,16 @@ const OptimizedAdminDashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (error) {
       console.error('Erro no dashboard admin:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar dados",
+        description: error,
+      });
     }
-  }, [error]);
+  }, [error, toast]);
 
   if (isLoading) {
     return (
@@ -105,6 +110,16 @@ const OptimizedAdminDashboard = () => {
             onNavigate={() => navigate('/admin/settings')}
           />
         </div>
+
+        {/* Debug info apenas em desenvolvimento */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Debug - Estatísticas:</h3>
+            <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
+              {JSON.stringify(stats, null, 2)}
+            </pre>
+          </div>
+        )}
       </main>
     </div>
   );

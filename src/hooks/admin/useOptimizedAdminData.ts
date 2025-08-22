@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AdminStats } from '@/types/admin';
 
@@ -13,13 +13,24 @@ export const useOptimizedAdminData = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Usar ref para evitar múltiplas chamadas simultâneas
+  const isLoadingRef = useRef(false);
+  const hasInitializedRef = useRef(false);
 
   const fetchStats = useCallback(async () => {
+    // Evitar múltiplas chamadas simultâneas
+    if (isLoadingRef.current) {
+      console.log('⚠️ Fetch já em andamento, ignorando nova chamada');
+      return;
+    }
+    
     try {
+      isLoadingRef.current = true;
       setIsLoading(true);
       setError(null);
       
-      console.log('🔍 Iniciando busca de estatísticas administrativas...');
+      console.log('🔍 Iniciando busca de estatísticas administrativas (otimizada)...');
 
       // Verificar autenticação admin
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -43,7 +54,7 @@ export const useOptimizedAdminData = () => {
       // Data do início do mês
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
-      // Buscar estatísticas com timeout
+      // Buscar estatísticas com timeout de 5 segundos
       const statsPromises = [
         // Total de usuários (profiles não-admin)
         Promise.race([
@@ -53,7 +64,7 @@ export const useOptimizedAdminData = () => {
             .neq('role', 'admin')
             .neq('role', 'superadmin'),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de usuários')), 10000)
+            setTimeout(() => reject(new Error('Timeout: consulta de usuários')), 5000)
           )
         ]),
         
@@ -64,7 +75,7 @@ export const useOptimizedAdminData = () => {
             .select('*', { count: 'exact', head: true })
             .eq('status', 'active'),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de assinaturas ativas')), 10000)
+            setTimeout(() => reject(new Error('Timeout: consulta de assinaturas ativas')), 5000)
           )
         ]),
         
@@ -75,7 +86,7 @@ export const useOptimizedAdminData = () => {
             .select('*', { count: 'exact', head: true })
             .eq('status', 'trialing'),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de trials')), 10000)
+            setTimeout(() => reject(new Error('Timeout: consulta de trials')), 5000)
           )
         ]),
         
@@ -88,7 +99,7 @@ export const useOptimizedAdminData = () => {
             .neq('role', 'superadmin')
             .gte('created_at', startOfMonth),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout: consulta de novos usuários')), 10000)
+            setTimeout(() => reject(new Error('Timeout: consulta de novos usuários')), 5000)
           )
         ])
       ];
@@ -139,8 +150,9 @@ export const useOptimizedAdminData = () => {
         newUsersThisMonth,
       };
 
-      console.log('📊 Estatísticas finais:', finalStats);
+      console.log('📊 Estatísticas finais (otimizada):', finalStats);
       setStats(finalStats);
+      hasInitializedRef.current = true;
 
     } catch (err: any) {
       console.error('❌ Erro ao buscar estatísticas:', err);
@@ -156,15 +168,20 @@ export const useOptimizedAdminData = () => {
       });
     } finally {
       setIsLoading(false);
+      isLoadingRef.current = false;
     }
   }, []);
 
-  // Inicializar automaticamente
+  // Inicializar apenas uma vez
   React.useEffect(() => {
-    fetchStats();
+    if (!hasInitializedRef.current) {
+      console.log('🚀 Inicializando dados admin (primeira vez)');
+      fetchStats();
+    }
   }, [fetchStats]);
 
   const refetch = useCallback(() => {
+    console.log('🔄 Refetch solicitado pelo usuário');
     fetchStats();
   }, [fetchStats]);
 
