@@ -6,8 +6,9 @@ import StatsOverview from "@/components/admin/StatsOverview";
 import SectionLink from "@/components/admin/SectionLink";
 import { useOptimizedAdminData } from '@/hooks/admin/useOptimizedAdminData';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const OptimizedAdminDashboard = () => {
   const { stats, isLoading, error, refetch } = useOptimizedAdminData();
@@ -41,6 +42,7 @@ const OptimizedAdminDashboard = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center max-w-md">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Erro ao carregar dados
           </h2>
@@ -55,6 +57,9 @@ const OptimizedAdminDashboard = () => {
       </div>
     );
   }
+
+  // Verificar se há dados zerados (possível problema)
+  const hasNoData = stats.totalUsers === 0 && stats.activeSubscriptions === 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -76,6 +81,39 @@ const OptimizedAdminDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Alerta se não há dados */}
+        {hasNoData && (
+          <Card className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800">
+            <CardHeader>
+              <CardTitle className="flex items-center text-yellow-800 dark:text-yellow-200">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Nenhum dado encontrado
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                Não foi possível encontrar dados no sistema. Isso pode indicar:
+              </p>
+              <ul className="list-disc list-inside text-sm text-yellow-600 dark:text-yellow-400 space-y-1">
+                <li>Sistema ainda não possui usuários cadastrados</li>
+                <li>Problema nas políticas de segurança do banco de dados</li>
+                <li>Erro de comunicação com o banco de dados</li>
+              </ul>
+              <div className="mt-4">
+                <Button 
+                  onClick={refetch} 
+                  size="sm" 
+                  variant="outline"
+                  className="border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Tentar Novamente
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <StatsOverview stats={stats} />
 
@@ -113,12 +151,18 @@ const OptimizedAdminDashboard = () => {
 
         {/* Debug info apenas em desenvolvimento */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Debug - Estatísticas:</h3>
-            <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto">
-              {JSON.stringify(stats, null, 2)}
-            </pre>
-          </div>
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Debug - Estatísticas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs text-gray-600 dark:text-gray-400 overflow-auto bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                {JSON.stringify(stats, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>
