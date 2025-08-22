@@ -20,15 +20,15 @@ const DebugInfo: React.FC = () => {
       <div className="space-y-1">
         <p>Plano: {plan}</p>
         <p>Ativo: {planActive ? 'Sim' : 'Não'}</p>
-        <p>É Premium: {isPremium() ? 'Sim' : 'Não'}</p>
-        <p>Pode acessar Premium: {canAccessPremiumFeatures() ? 'Sim' : 'Não'}</p>
+        <p>É Premium: {isPremium ? 'Sim' : 'Não'}</p>
+        <p>Pode acessar Premium: {canAccessPremiumFeatures ? 'Sim' : 'Não'}</p>
         <div>
           <p>Permissões: [{permissions.join(', ')}]</p>
         </div>
         <div>
           <p>Features disponíveis:</p>
           <ul className="ml-2">
-            {getAvailableFeatures().map(feature => (
+            {getAvailableFeatures.map(feature => (
               <li key={feature}>• {feature}</li>
             ))}
           </ul>
@@ -36,7 +36,7 @@ const DebugInfo: React.FC = () => {
         <div>
           <p>Features do plano:</p>
           <ul className="ml-2">
-            {getPlanFeatures().map(feature => (
+            {getPlanFeatures.map(feature => (
               <li key={feature}>• {feature}</li>
             ))}
           </ul>
