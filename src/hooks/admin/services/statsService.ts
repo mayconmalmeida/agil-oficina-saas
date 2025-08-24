@@ -37,8 +37,8 @@ export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
     // Verificar se statsData é um objeto válido e fazer type assertion segura
     let parsedStats: StatsResponse;
     
-    if (typeof statsData === 'object' && statsData !== null) {
-      parsedStats = statsData as StatsResponse;
+    if (typeof statsData === 'object' && statsData !== null && !Array.isArray(statsData)) {
+      parsedStats = statsData as unknown as StatsResponse;
     } else {
       console.warn('⚠️ Dados de estatística inválidos recebidos:', statsData);
       parsedStats = {
