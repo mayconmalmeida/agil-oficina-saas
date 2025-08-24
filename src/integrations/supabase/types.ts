@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          password_hash: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          password_hash: string
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          password_hash?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       agendamentos: {
         Row: {
           cliente_id: string | null
@@ -732,7 +765,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           logo_url: string | null
-          nome_oficina: string | null
+          nome_oficina: string
           plano: string | null
           responsavel: string | null
           telefone: string | null
@@ -751,7 +784,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
-          nome_oficina?: string | null
+          nome_oficina: string
           plano?: string | null
           responsavel?: string | null
           telefone?: string | null
@@ -770,7 +803,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           logo_url?: string | null
-          nome_oficina?: string | null
+          nome_oficina?: string
           plano?: string | null
           responsavel?: string | null
           telefone?: string | null
@@ -1502,6 +1535,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: string
       }
+      get_admin_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_oficina_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1548,6 +1585,10 @@ export type Database = {
       update_user_plan: {
         Args: { new_plan: string; user_profile_id: string }
         Returns: undefined
+      }
+      validate_admin_login: {
+        Args: { p_email: string; p_password: string }
+        Returns: Json
       }
     }
     Enums: {

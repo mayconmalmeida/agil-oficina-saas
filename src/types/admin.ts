@@ -33,3 +33,27 @@ export interface AdminContextValue {
   signOut: () => Promise<void>;
   loginAdmin: (email: string, password: string) => Promise<boolean>;
 }
+
+// Novo tipo para a tabela admins do banco
+export interface AdminRecord {
+  id: string;
+  email: string;
+  password_hash: string;
+  role: AdminRole;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login_at?: string;
+}
+
+// Tipo para validação de login
+export interface AdminLoginResult {
+  success: boolean;
+  admin?: {
+    id: string;
+    email: string;
+    role: AdminRole;
+    is_active: boolean;
+  };
+  error?: string;
+}

@@ -33,15 +33,15 @@ serve(async (req) => {
 
     console.log('🔐 Tentativa de login admin para:', email)
 
-    // Verificar se o usuário existe e tem role de admin na tabela profiles
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('id, email, role')
-      .eq('email', email)
-      .maybeSingle()
+    // Usar a função validate_admin_login para autenticar
+    const { data: loginResult, error: loginError } = await supabaseClient
+      .rpc('validate_admin_login', {
+        p_email: email,
+        p_password: password
+      })
 
-    if (profileError) {
-      console.error('❌ Erro ao buscar perfil:', profileError)
+    if (loginError) {
+      console.error('❌ Erro na função de login:', loginError)
       return new Response(
         JSON.stringify({ error: 'Erro interno do servidor' }),
         { 
@@ -51,10 +51,10 @@ serve(async (req) => {
       )
     }
 
-    if (!profile) {
-      console.log('❌ Perfil não encontrado para email:', email)
+    if (!loginResult.success) {
+      console.log('❌ Login rejeitado:', loginResult.error)
       return new Response(
-        JSON.stringify({ error: 'Credenciais inválidas' }),
+        JSON.stringify({ error: loginResult.error }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -62,63 +62,24 @@ serve(async (req) => {
       )
     }
 
-    // Verificar se tem role de admin
-    if (!profile.role || !['admin', 'superadmin'].includes(profile.role)) {
-      console.log('❌ Usuário não é admin, role:', profile.role)
-      return new Response(
-        JSON.stringify({ error: 'Acesso negado: usuário não é administrador' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // Tentar fazer login com Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    })
-
-    if (authError) {
-      console.log('❌ Erro de autenticação:', authError.message)
-      return new Response(
-        JSON.stringify({ error: 'Credenciais inválidas' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    if (!authData.user) {
-      console.log('❌ Dados do usuário não encontrados')
-      return new Response(
-        JSON.stringify({ error: 'Erro na autenticação' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    console.log('✅ Admin encontrado:', { email: profile.email, id: profile.id })
+    const adminData = loginResult.admin
+    console.log('✅ Admin encontrado:', { email: adminData.email, id: adminData.id })
 
     // Gerar token de sessão
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000) // 8 horas
 
     const adminUser = {
-      id: profile.id,
-      email: profile.email,
-      role: profile.role === 'superadmin' ? 'superadmin' : 'admin',
+      id: adminData.id,
+      email: adminData.email,
+      role: adminData.role === 'superadmin' ? 'superadmin' : 'admin',
       isAdmin: true,
       canAccessFeatures: true,
       sessionToken,
       expiresAt: expiresAt.toISOString()
     }
 
-    console.log('✅ Login admin bem-sucedido:', profile.email)
+    console.log('✅ Login admin bem-sucedido:', adminData.email)
 
     return new Response(
       JSON.stringify({ 
