@@ -1,123 +1,93 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Send, MessageCircle, User, Phone } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Send, MessageCircle, User, Clock, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface ChatMessage {
+interface Message {
   id: string;
   content: string;
-  sender_type: 'user' | 'admin';
-  sender_name?: string;
+  isSupport: boolean;
   timestamp: Date;
-  read: boolean;
 }
 
 const SupportChat: React.FC = () => {
-  const { userProfile } = useUserProfile();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [supportStatus, setSupportStatus] = useState<'offline' | 'online' | 'typing'>('offline');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { userProfile } = useUserProfile();
   const { toast } = useToast();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const supportPhone = userProfile?.whatsapp_suporte || '46999324779';
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    loadChatHistory();
-    
-    // Simular presença do admin (em produção, seria real-time)
-    const adminPresenceTimer = setInterval(() => {
-      setIsOnline(Math.random() > 0.3); // 70% chance de estar online
-    }, 30000);
+    // Simular conexão com suporte
+    const connectToSupport = setTimeout(() => {
+      setIsConnected(true);
+      setSupportStatus('online');
+      addSupportMessage("Olá! Sou da equipe de suporte. Como posso ajudar você hoje? 😊");
+    }, 2000);
 
-    return () => clearInterval(adminPresenceTimer);
+    return () => clearTimeout(connectToSupport);
   }, []);
 
-  const loadChatHistory = async () => {
-    if (!userProfile?.id) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-    try {
-      // Simular carregamento do histórico do chat
-      // Em produção, seria uma consulta real ao banco
-      const mockMessages: ChatMessage[] = [
-        {
-          id: '1',
-          content: 'Olá! Como posso ajudá-lo hoje?',
-          sender_type: 'admin',
-          sender_name: 'Suporte OficinaCloud',
-          timestamp: new Date(Date.now() - 3600000),
-          read: true
-        }
-      ];
-      
-      setMessages(mockMessages);
-      setIsOnline(true);
-    } catch (error) {
-      console.error('Erro ao carregar histórico do chat:', error);
-    }
+  const addSupportMessage = (content: string) => {
+    const message: Message = {
+      id: Date.now().toString(),
+      content,
+      isSupport: true,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, message]);
+  };
+
+  const addUserMessage = (content: string) => {
+    const message: Message = {
+      id: Date.now().toString(),
+      content,
+      isSupport: false,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, message]);
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || isLoading || !userProfile?.id) return;
+    if (!newMessage.trim()) return;
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      content: newMessage,
-      sender_type: 'user',
-      sender_name: userProfile.nome_oficina || 'Usuário',
-      timestamp: new Date(),
-      read: false
-    };
+    addUserMessage(newMessage);
+    
+    // Simular envio via WhatsApp
+    const whatsappUrl = `https://wa.me/${supportPhone}?text=${encodeURIComponent(newMessage)}`;
+    
+    // Abrir WhatsApp em nova aba
+    window.open(whatsappUrl, '_blank');
 
-    setMessages(prev => [...prev, userMessage]);
+    // Simular resposta do suporte
+    setSupportStatus('typing');
+    setTimeout(() => {
+      setSupportStatus('online');
+      addSupportMessage("Recebi sua mensagem via WhatsApp! Vou responder por lá em breve. 📱");
+    }, 3000);
+
     setNewMessage('');
-    setIsLoading(true);
-
-    try {
-      // Simular envio da mensagem para o admin
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Simular resposta automática do admin
-      setTimeout(() => {
-        const adminResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          content: 'Obrigado por entrar em contato! Recebemos sua mensagem e responderemos em breve. Para questões urgentes, entre em contato pelo WhatsApp.',
-          sender_type: 'admin',
-          sender_name: 'Suporte OficinaCloud',
-          timestamp: new Date(),
-          read: true
-        };
-        
-        setMessages(prev => [...prev, adminResponse]);
-        
-        toast({
-          title: "Mensagem enviada",
-          description: "Nossa equipe responderá em breve.",
-        });
-      }, 2000);
-
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível enviar a mensagem. Tente novamente.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+    toast({
+      title: "Mensagem enviada",
+      description: "Sua mensagem foi enviada via WhatsApp. O suporte responderá em breve!",
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -134,125 +104,151 @@ const SupportChat: React.FC = () => {
     });
   };
 
+  const formatPhoneNumber = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  };
+
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader className="flex flex-row items-center space-y-0 pb-2 border-b">
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <MessageCircle className="h-8 w-8 text-blue-600" />
-            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-              isOnline ? 'bg-green-500' : 'bg-gray-400'
-            }`}></div>
+    <Card className="max-w-md mx-auto">
+      <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-lg">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-green-500 text-white">
+              <MessageCircle className="h-6 w-6" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <CardTitle className="text-lg">Suporte ao Vivo</CardTitle>
+            <div className="flex items-center gap-2 text-sm text-green-100">
+              <div className={`w-2 h-2 rounded-full ${
+                supportStatus === 'online' ? 'bg-green-300' : 
+                supportStatus === 'typing' ? 'bg-yellow-300' : 'bg-gray-300'
+              }`} />
+              <span>
+                {supportStatus === 'online' ? 'Online' : 
+                 supportStatus === 'typing' ? 'Digitando...' : 'Offline'}
+              </span>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg">Chat com Suporte</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {isOnline ? 'Equipe online' : 'Equipe offline'}
-            </p>
+          <div className="text-right">
+            <div className="flex items-center gap-1 text-xs text-green-100">
+              <Phone className="h-3 w-3" />
+              <span>{formatPhoneNumber(supportPhone)}</span>
+            </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`flex items-start space-x-2 max-w-xs lg:max-w-md ${
-                message.sender_type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-              }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.sender_type === 'user' 
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-green-600 text-white'
-                }`}>
-                  {message.sender_type === 'user' ? (
-                    <User className="h-4 w-4" />
-                  ) : (
-                    <MessageCircle className="h-4 w-4" />
-                  )}
-                </div>
-                
+      <CardContent className="p-0">
+        {/* Área de mensagens */}
+        <div className="h-80 overflow-y-auto p-4 bg-gradient-to-b from-green-50/30 to-white dark:from-green-900/10 dark:to-gray-800">
+          {!isConnected ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Conectando ao suporte...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {messages.map((message) => (
                 <div
-                  className={`px-4 py-2 rounded-2xl shadow-sm ${
-                    message.sender_type === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-md'
-                      : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md border'
-                  }`}
+                  key={message.id}
+                  className={`flex ${message.isSupport ? 'justify-start' : 'justify-end'}`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  <div className={`flex items-center justify-between mt-1 text-xs ${
-                    message.sender_type === 'user' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                    <span>{formatTime(message.timestamp)}</span>
-                    {message.sender_type === 'user' && (
-                      <div className="flex items-center space-x-1">
-                        {message.read ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <Clock className="h-3 w-3" />
-                        )}
-                      </div>
+                  <div className="flex items-end gap-2 max-w-[85%]">
+                    {message.isSupport && (
+                      <Avatar className="h-6 w-6 flex-shrink-0">
+                        <AvatarFallback className="bg-green-600 text-white text-xs">
+                          S
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    
+                    <div
+                      className={`px-3 py-2 rounded-2xl shadow-md ${
+                        message.isSupport
+                          ? 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                          : 'bg-green-500 text-white'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <p 
+                        className={`text-xs mt-1 ${
+                          message.isSupport 
+                            ? 'text-gray-500 dark:text-gray-400' 
+                            : 'text-green-100'
+                        }`}
+                      >
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </div>
+
+                    {!message.isSupport && (
+                      <Avatar className="h-6 w-6 flex-shrink-0">
+                        <AvatarFallback className="bg-blue-600 text-white text-xs">
+                          <User className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              ))}
 
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="flex items-start space-x-2 max-w-xs lg:max-w-md">
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="h-4 w-4 text-white" />
-                </div>
-                <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-2xl rounded-bl-md shadow-sm border">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              {supportStatus === 'typing' && (
+                <div className="flex justify-start">
+                  <div className="flex items-end gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-green-600 text-white text-xs">
+                        S
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-white dark:bg-gray-700 px-3 py-2 rounded-2xl border border-gray-200 dark:border-gray-600">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-400">Digitando...</span>
                   </div>
                 </div>
-              </div>
+              )}
+              
+              <div ref={messagesEndRef} />
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div className="border-t p-4">
-          <div className="flex space-x-2">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!newMessage.trim() || isLoading}
-              size="icon"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+        {/* Input de mensagem */}
+        {isConnected && (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Digite sua mensagem..."
+                  className="rounded-full"
+                />
+              </div>
+              
+              <Button
+                onClick={sendMessage}
+                disabled={!newMessage.trim()}
+                className="rounded-full bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              📱 Suas mensagens serão enviadas via WhatsApp: {formatPhoneNumber(supportPhone)}
+            </p>
           </div>
-          
-          <p className="text-xs text-muted-foreground mt-2">
-            {isOnline 
-              ? 'Nossa equipe está online e responderá em breve'
-              : 'Nossa equipe está offline. Deixe sua mensagem que responderemos assim que possível'
-            }
-          </p>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

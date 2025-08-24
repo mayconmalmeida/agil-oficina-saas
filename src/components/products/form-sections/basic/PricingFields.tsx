@@ -35,9 +35,18 @@ const PricingFields: React.FC<PricingFieldsProps> = ({ form }) => {
     return `${reaisFormatted},${centavos.toString().padStart(2, '0')}`;
   };
 
-  const handleCurrencyChange = (value: string, onChange: (value: string) => void) => {
+  const parseCurrencyToNumber = (currencyString: string) => {
+    // Remove tudo que não é número
+    const numbers = currencyString.replace(/\D/g, '');
+    if (!numbers) return 0;
+    // Converte para decimal (divide por 100 porque os centavos são os últimos 2 dígitos)
+    return parseInt(numbers, 10) / 100;
+  };
+
+  const handleCurrencyChange = (value: string, onChange: (value: number) => void) => {
     const formatted = formatCurrency(value);
-    onChange(formatted);
+    const numericValue = parseCurrencyToNumber(value);
+    onChange(numericValue);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -61,7 +70,7 @@ const PricingFields: React.FC<PricingFieldsProps> = ({ form }) => {
             <FormControl>
               <Input 
                 placeholder="0,00" 
-                {...field}
+                value={formatCurrency(field.value?.toString() || '0')}
                 onChange={(e) => handleCurrencyChange(e.target.value, field.onChange)}
                 onKeyDown={handleKeyPress}
               />
@@ -80,7 +89,7 @@ const PricingFields: React.FC<PricingFieldsProps> = ({ form }) => {
             <FormControl>
               <Input 
                 placeholder="0,00" 
-                {...field}
+                value={formatCurrency(field.value?.toString() || '0')}
                 onChange={(e) => handleCurrencyChange(e.target.value, field.onChange)}
                 onKeyDown={handleKeyPress}
               />

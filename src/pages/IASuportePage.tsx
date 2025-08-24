@@ -1,10 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Trash2 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Send, Bot, User, Mic, MicOff } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,228 +17,271 @@ interface Message {
 
 const IASuportePage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessages, setLoadingMessages] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    loadMessages();
-  }, []);
+    if (user?.id) {
+      fetchMessages();
+    }
+  }, [user?.id]);
 
-  const loadMessages = async () => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchMessages = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
         .from('ia_suporte_messages')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       setMessages(data || []);
     } catch (error: any) {
       console.error('Erro ao carregar mensagens:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao carregar mensagens",
-        description: error.message
-      });
-    } finally {
-      setLoadingMessages(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!newMessage.trim() || !user?.id) return;
 
-    const userMessage = inputMessage;
-    setInputMessage('');
-    setIsLoading(true);
+    const userMessage = {
+      content: newMessage,
+      is_bot: false,
+      user_id: user.id,
+    };
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      setIsLoading(true);
 
       // Salvar mensagem do usuário
-      const { error: userError } = await supabase
+      const { data: savedMessage, error } = await supabase
         .from('ia_suporte_messages')
-        .insert({
-          user_id: user.id,
-          content: userMessage,
-          is_bot: false
-        });
+        .insert(userMessage)
+        .select()
+        .single();
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      // Simular resposta da IA (substituir por integração real)
-      const botResponse = `Olá! Obrigado por usar o Oficina Go. Sua mensagem "${userMessage}" foi recebida. Como posso ajudá-lo com o sistema de gestão da sua oficina?`;
+      setMessages(prev => [...prev, savedMessage]);
+      setNewMessage('');
 
-      // Salvar resposta da IA
-      const { error: botError } = await supabase
-        .from('ia_suporte_messages')
-        .insert({
-          user_id: user.id,
-          content: botResponse,
-          is_bot: true
-        });
+      // Simular resposta do bot (em um caso real, chamaria uma API de IA)
+      setTimeout(async () => {
+        const botResponse = generateBotResponse(newMessage);
+        
+        const { data: botMessage, error: botError } = await supabase
+          .from('ia_suporte_messages')
+          .insert({
+            content: botResponse,
+            is_bot: true,
+            user_id: user.id,
+          })
+          .select()
+          .single();
 
-      if (botError) throw botError;
+        if (botError) throw botError;
 
-      // Recarregar mensagens
-      await loadMessages();
+        setMessages(prev => [...prev, botMessage]);
+        setIsLoading(false);
+      }, 1500);
 
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
       toast({
         variant: "destructive",
         title: "Erro ao enviar mensagem",
-        description: error.message
+        description: error.message,
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const clearMessages = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const generateBotResponse = (userMessage: string): string => {
+    const responses = [
+      "Olá! Como posso ajudar você hoje? 😊",
+      "Entendi sua solicitação. Vou verificar isso para você.",
+      "Ótima pergunta! Aqui está o que posso fazer por você...",
+      "Obrigado por entrar em contato. Estou aqui para ajudar!",
+      "Essa é uma questão interessante. Deixe-me explicar...",
+      "Posso te ajudar com isso! Qual informação específica você precisa?",
+    ];
 
-      const { error } = await supabase
-        .from('ia_suporte_messages')
-        .delete()
-        .eq('user_id', user.id);
+    if (userMessage.toLowerCase().includes('problema')) {
+      return "Vejo que você está enfrentando um problema. Pode me dar mais detalhes para que eu possa ajudar melhor?";
+    }
+    
+    if (userMessage.toLowerCase().includes('como')) {
+      return "Ótima pergunta! Vou te explicar o passo a passo...";
+    }
 
-      if (error) throw error;
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
 
-      setMessages([]);
-      toast({
-        title: "Conversa limpa",
-        description: "Todas as mensagens foram removidas."
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao limpar conversa",
-        description: error.message
-      });
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
-  if (loadingMessages) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando conversa...</p>
-        </div>
-      </div>
-    );
-  }
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">IA Suporte Inteligente</h1>
-          <p className="text-gray-600">Tire suas dúvidas sobre o Oficina Go</p>
-        </div>
-        {messages.length > 0 && (
-          <Button variant="outline" onClick={clearMessages}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Limpar Conversa
-          </Button>
-        )}
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 p-4">
+      <div className="max-w-md mx-auto">
+        {/* Header estilo WhatsApp */}
+        <Card className="mb-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
+          <div className="p-4 flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-green-500 text-white">
+                <Bot className="h-6 w-6" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="font-semibold">Suporte IA</h1>
+              <p className="text-sm text-green-100">Online agora</p>
+            </div>
+          </div>
+        </Card>
 
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bot className="h-5 w-5 mr-2 text-blue-600" />
-            Assistente Oficina Go
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 mb-4 pr-4">
+        {/* Container de mensagens estilo WhatsApp */}
+        <Card className="h-[500px] flex flex-col bg-chat-bg bg-opacity-50">
+          {/* Mensagens */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Bot className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <p>Olá! Como posso ajudá-lo com o Oficina Go hoje?</p>
-                <p className="text-sm mt-2">Digite sua pergunta abaixo para começar.</p>
+              <div className="text-center text-gray-500 py-8">
+                <Bot className="h-12 w-12 mx-auto mb-4 text-green-600" />
+                <p className="text-lg font-medium">Olá! 👋</p>
+                <p className="text-sm">Como posso ajudar você hoje?</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.is_bot ? 'justify-start' : 'justify-end'}`}
-                  >
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.is_bot ? 'justify-start' : 'justify-end'}`}
+                >
+                  <div className="flex items-end gap-2 max-w-[85%]">
+                    {message.is_bot && (
+                      <Avatar className="h-6 w-6 flex-shrink-0">
+                        <AvatarFallback className="bg-green-600 text-white text-xs">
+                          <Bot className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    
                     <div
-                      className={`flex max-w-[80%] ${
-                        message.is_bot ? 'flex-row' : 'flex-row-reverse'
+                      className={`px-3 py-2 rounded-2xl shadow-md ${
+                        message.is_bot
+                          ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
+                          : 'bg-green-500 text-white ml-auto'
                       }`}
                     >
-                      <div
-                        className={`flex-shrink-0 ${
-                          message.is_bot ? 'mr-3' : 'ml-3'
+                      <p className="text-sm">{message.content}</p>
+                      <p 
+                        className={`text-xs mt-1 ${
+                          message.is_bot 
+                            ? 'text-gray-500 dark:text-gray-400' 
+                            : 'text-green-100'
                         }`}
                       >
-                        {message.is_bot ? (
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-blue-600" />
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                            <User className="h-4 w-4 text-gray-600" />
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className={`rounded-lg p-3 ${
-                          message.is_bot
-                            ? 'bg-blue-50 text-blue-900'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                        <p className="text-xs opacity-70 mt-1">
-                          {new Date(message.created_at).toLocaleTimeString('pt-BR')}
-                        </p>
-                      </div>
+                        {formatTime(message.created_at)}
+                      </p>
+                    </div>
+
+                    {!message.is_bot && (
+                      <Avatar className="h-6 w-6 flex-shrink-0">
+                        <AvatarFallback className="bg-blue-600 text-white text-xs">
+                          <User className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="flex items-end gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-green-600 text-white text-xs">
+                      <Bot className="h-3 w-3" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="bg-white dark:bg-gray-800 px-3 py-2 rounded-2xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             )}
-          </ScrollArea>
-
-          <div className="flex space-x-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Digite sua pergunta sobre o Oficina Go..."
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button 
-              onClick={sendMessage} 
-              disabled={isLoading || !inputMessage.trim()}
-              className="px-4"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
+            
+            <div ref={messagesEndRef} />
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Input de mensagem estilo WhatsApp */}
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Digite uma mensagem..."
+                  className="border-0 bg-transparent focus:ring-0 flex-1"
+                  disabled={isLoading}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => setIsRecording(!isRecording)}
+                >
+                  {isRecording ? (
+                    <MicOff className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              
+              <Button
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || isLoading}
+                className="h-10 w-10 p-0 rounded-full bg-green-600 hover:bg-green-700"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500">
+            🔒 Suas conversas são privadas e seguras
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

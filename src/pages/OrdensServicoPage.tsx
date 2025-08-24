@@ -1,94 +1,218 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, FileText } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface OrdemServico {
   id: string;
   cliente_id: string;
-  status: string;
   valor_total: number;
-  data_inicio: string;
-  observacoes?: string;
-  clients?: {
+  status: string;
+  observacoes: string;
+  created_at: string;
+  clients: {
     nome: string;
-  };
+    telefone: string;
+  } | null;
+}
+
+interface Orcamento {
+  id: string;
+  cliente: string;
+  veiculo: string;
+  valor_total: number;
+  status: string;
 }
 
 const OrdensServicoPage: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+  const [selectedOrcamento, setSelectedOrcamento] = useState<string>('');
+  const [criarDeOrcamento, setCriarDeOrcamento] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    carregarOrdens();
-  }, []);
+    if (user?.id) {
+      fetchOrdens();
+      fetchOrcamentos();
+    }
+  }, [user?.id]);
 
-  const carregarOrdens = async () => {
+  const fetchOrdens = async () => {
     try {
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
-          id,
-          cliente_id,
-          status,
-          valor_total,
-          data_inicio,
-          observacoes,
-          clients!inner(nome)
+          *,
+          clients (
+            nome,
+            telefone
+          )
         `)
-        .order('data_inicio', { ascending: false });
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Transform the data to match our interface
+      // Transform data to fix clients type
       const transformedData = (data || []).map(item => ({
-        id: item.id,
-        cliente_id: item.cliente_id,
-        status: item.status,
-        valor_total: item.valor_total,
-        data_inicio: item.data_inicio,
-        observacoes: item.observacoes,
-        clients: Array.isArray(item.clients) 
-          ? item.clients[0] 
-          : item.clients
+        ...item,
+        clients: Array.isArray(item.clients) ? item.clients[0] : item.clients
       }));
       
       setOrdens(transformedData);
-    } catch (error) {
-      console.error('Erro ao carregar ordens de serviço:', error);
+    } catch (error: any) {
+      console.error('Erro ao carregar ordens:', error);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Não foi possível carregar as ordens de serviço."
+        title: "Erro ao carregar ordens de serviço",
+        description: error.message,
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const ordensFiltradasr = ordens.filter(ordem =>
-    ordem.clients?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ordem.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchOrcamentos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orcamentos')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'aprovado') // Só orçamentos aprovados
+        .order('created_at', { ascending: false });
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'aberta': return 'bg-blue-100 text-blue-800';
-      case 'em andamento': return 'bg-yellow-100 text-yellow-800';
-      case 'concluída': return 'bg-green-100 text-green-800';
-      case 'cancelada': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      if (error) throw error;
+      setOrcamentos(data || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar orçamentos:', error);
     }
+  };
+
+  const criarOrdemDeOrcamento = async () => {
+    if (!selectedOrcamento || !user?.id) return;
+
+    try {
+      const orcamento = orcamentos.find(o => o.id === selectedOrcamento);
+      if (!orcamento) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Orçamento não encontrado",
+        });
+        return;
+      }
+
+      // Buscar cliente por nome no orçamento
+      const { data: clienteData, error: clienteError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('nome', orcamento.cliente)
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (clienteError) throw clienteError;
+
+      const cliente_id = clienteData?.[0]?.id;
+      if (!cliente_id) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Cliente não encontrado para este orçamento",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('ordens_servico')
+        .insert({
+          user_id: user.id,
+          cliente_id: cliente_id,
+          orcamento_id: orcamento.id,
+          valor_total: orcamento.valor_total,
+          status: 'Aberta',
+          observacoes: `Criada a partir do orçamento: ${orcamento.cliente} - ${orcamento.veiculo}`
+        });
+
+      if (error) throw error;
+
+      // Atualizar status do orçamento para usado
+      await supabase
+        .from('orcamentos')
+        .update({ status: 'usado' })
+        .eq('id', orcamento.id);
+
+      toast({
+        title: "Ordem de serviço criada",
+        description: "A ordem foi criada com sucesso a partir do orçamento.",
+      });
+
+      setCriarDeOrcamento(false);
+      setSelectedOrcamento('');
+      fetchOrdens();
+      fetchOrcamentos();
+
+    } catch (error: any) {
+      console.error('Erro ao criar ordem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar ordem de serviço",
+        description: error.message,
+      });
+    }
+  };
+
+  const deleteOrdem = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta ordem de serviço?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('ordens_servico')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Ordem excluída",
+        description: "A ordem de serviço foi excluída com sucesso.",
+      });
+
+      fetchOrdens();
+    } catch (error: any) {
+      console.error('Erro ao excluir ordem:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir ordem",
+        description: error.message,
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
+      'Aberta': 'default',
+      'Em Andamento': 'secondary',
+      'Concluída': 'default',
+      'Cancelada': 'destructive'
+    };
+    return <Badge variant={variants[status] || 'default'}>{status}</Badge>;
+  };
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
   if (isLoading) {
@@ -103,73 +227,134 @@ const OrdensServicoPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <FileText className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold">Ordens de Serviço</h1>
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Ordens de Serviço</h1>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate('/ordens-servico/nova')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Ordem
+          </Button>
         </div>
-        <Button onClick={() => navigate('/ordens-servico/nova')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Ordem de Serviço
-        </Button>
       </div>
+
+      {/* Seção para criar ordem a partir de orçamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Opções de Criação</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="criar-de-orcamento"
+              checked={criarDeOrcamento}
+              onCheckedChange={(checked) => {
+                setCriarDeOrcamento(checked as boolean);
+                if (!checked) {
+                  setSelectedOrcamento('');
+                }
+              }}
+            />
+            <label htmlFor="criar-de-orcamento" className="text-sm font-medium">
+              Criar a partir de orçamento existente
+            </label>
+          </div>
+
+          {criarDeOrcamento && (
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Selecionar Orçamento Aprovado
+                </label>
+                <Select value={selectedOrcamento} onValueChange={setSelectedOrcamento}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um orçamento aprovado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orcamentos.length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        Nenhum orçamento aprovado disponível
+                      </SelectItem>
+                    ) : (
+                      orcamentos.map((orcamento) => (
+                        <SelectItem key={orcamento.id} value={orcamento.id}>
+                          {orcamento.cliente} - {orcamento.veiculo} - {formatCurrency(orcamento.valor_total)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={criarOrdemDeOrcamento}
+                disabled={!selectedOrcamento}
+              >
+                Criar Ordem
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Ordens de Serviço</CardTitle>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar ordens de serviço..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <CardTitle>Ordens de Serviço</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Data Início</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {ordensFiltradasr.map((ordem) => (
-                <TableRow key={ordem.id}>
-                  <TableCell className="font-medium">
-                    #{ordem.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell>{ordem.clients?.nome || 'N/A'}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(ordem.status)}>
-                      {ordem.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>R$ {ordem.valor_total?.toFixed(2) || '0,00'}</TableCell>
-                  <TableCell>
-                    {new Date(ordem.data_inicio).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => navigate(`/ordens-servico/${ordem.id}`)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Ver
-                    </Button>
-                  </TableCell>
+          {ordens.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">Nenhuma ordem de serviço encontrada</p>
+              <Button onClick={() => navigate('/ordens-servico/nova')}>
+                Criar primeira ordem
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Valor Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {ordens.map((ordem) => (
+                  <TableRow key={ordem.id}>
+                    <TableCell className="font-medium">
+                      {ordem.clients?.nome || 'Cliente não encontrado'}
+                    </TableCell>
+                    <TableCell>{ordem.clients?.telefone || '-'}</TableCell>
+                    <TableCell>{formatCurrency(ordem.valor_total)}</TableCell>
+                    <TableCell>{getStatusBadge(ordem.status)}</TableCell>
+                    <TableCell>
+                      {new Date(ordem.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/ordens-servico/${ordem.id}`)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteOrdem(ordem.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

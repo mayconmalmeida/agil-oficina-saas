@@ -37,7 +37,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastRenderRef.current = renderKey;
     }
 
-    return authValue;
+    // Adicionar função de logout que redireciona para /login
+    const enhancedSignOut = async () => {
+      await authValue.signOut();
+      window.location.href = '/login';
+    };
+
+    return {
+      ...authValue,
+      signOut: enhancedSignOut
+    };
   }, [
     authValue.user?.id,
     authValue.user?.email,
