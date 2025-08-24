@@ -2,6 +2,15 @@
 import { supabase } from '@/lib/supabase';
 import { AdminStats } from '@/types/admin';
 
+// Interface para tipificar o retorno da função RPC
+interface StatsResponse {
+  totalUsers: number;
+  activeSubscriptions: number;
+  trialingUsers: number;
+  totalRevenue: number;
+  newUsersThisMonth: number;
+}
+
 export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
   console.log('🔍 Iniciando busca de estatísticas admin...');
   
@@ -25,12 +34,28 @@ export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
 
     console.log('📊 Estatísticas recebidas do banco:', statsData);
 
+    // Verificar se statsData é um objeto válido e fazer type assertion segura
+    let parsedStats: StatsResponse;
+    
+    if (typeof statsData === 'object' && statsData !== null) {
+      parsedStats = statsData as StatsResponse;
+    } else {
+      console.warn('⚠️ Dados de estatística inválidos recebidos:', statsData);
+      parsedStats = {
+        totalUsers: 0,
+        activeSubscriptions: 0,
+        trialingUsers: 0,
+        totalRevenue: 0,
+        newUsersThisMonth: 0,
+      };
+    }
+
     const stats: AdminStats = {
-      totalUsers: statsData.totalUsers || 0,
-      activeSubscriptions: statsData.activeSubscriptions || 0,
-      trialingUsers: statsData.trialingUsers || 0,
-      totalRevenue: statsData.totalRevenue || 0,
-      newUsersThisMonth: statsData.newUsersThisMonth || 0,
+      totalUsers: parsedStats.totalUsers || 0,
+      activeSubscriptions: parsedStats.activeSubscriptions || 0,
+      trialingUsers: parsedStats.trialingUsers || 0,
+      totalRevenue: parsedStats.totalRevenue || 0,
+      newUsersThisMonth: parsedStats.newUsersThisMonth || 0,
     };
 
     console.log('✅ Estatísticas finais calculadas:', stats);
