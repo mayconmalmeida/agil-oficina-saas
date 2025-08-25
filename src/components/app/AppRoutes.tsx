@@ -12,6 +12,9 @@ import AgendaPage from '@/pages/AgendaPage';
 import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdemServicoPage from '@/pages/OrdemServicoPage';
 import OrdemServicoDetailPage from '@/pages/OrdemServicoDetailPage';
+import BudgetViewPage from '@/pages/BudgetViewPage';
+import EditClientPage from '@/pages/EditClientPage';
+import NewClientPage from '@/pages/NewClientPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import NewBudgetPage from '@/pages/NewBudgetPage';
@@ -59,10 +62,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/agendamentos" element={<AgendaPage />} />
         <Route path="/agendamentos/novo" element={<NewSchedulePage />} />
         <Route path="/clientes" element={<ClientsPage />} />
+        <Route path="/clientes/:id/editar" element={<EditClientPage />} />
+        <Route path="/dashboard/clientes" element={<ClientsPage />} />
+        <Route path="/dashboard/clientes/novo" element={<NewClientPage />} />
+        <Route path="/dashboard/clientes/:id/editar" element={<EditClientPage />} />
         <Route path="/servicos" element={<ServicesPage />} />
         <Route path="/produtos" element={<ProductsPage />} />
         <Route path="/orcamentos" element={<BudgetsPage />} />
         <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
+        <Route path="/orcamentos/:id" element={<BudgetViewPage />} />
+        <Route path="/orcamentos/editar/:id" element={<NewBudgetPage />} />
         <Route path="/ordens-servico" element={<OrdemServicoPage />} />
         <Route path="/ordens-servico/nova" element={<NewServiceOrderPage />} />
         <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />

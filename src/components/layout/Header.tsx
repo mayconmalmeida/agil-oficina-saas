@@ -3,6 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Bell, User } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -14,6 +15,7 @@ const Header: React.FC = () => {
           <div className="flex-1" />
           
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>

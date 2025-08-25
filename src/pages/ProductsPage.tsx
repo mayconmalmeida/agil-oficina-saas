@@ -9,6 +9,7 @@ import { Plus, Search, Package, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import ImportXMLButton from '@/components/products/ImportXMLButton';
 
 interface Product {
   id: string;
@@ -83,10 +84,13 @@ const ProductsPage: React.FC = () => {
           <Package className="h-6 w-6 text-blue-600" />
           <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Produto
-        </Button>
+        <div className="flex gap-2">
+          <ImportXMLButton />
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Produto
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-6">
