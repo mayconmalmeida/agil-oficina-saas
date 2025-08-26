@@ -36,6 +36,7 @@ import AdminLoginPage from '@/pages/AdminLoginPage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import IASuportePage from '@/pages/IASuportePage';
+import OrderDetailsPage from '@/pages/OrderDetailsPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -75,6 +76,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/ordens-servico" element={<OrdemServicoPage />} />
         <Route path="/ordens-servico/nova" element={<NewServiceOrderPage />} />
         <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
+        <Route path="/dashboard/ordens-servico" element={<OrdemServicoPage />} />
+        <Route path="/dashboard/ordens-servico/:id" element={<OrderDetailsPage />} />
         <Route path="/financeiro" element={<FinanceiroPage />} />
         <Route path="/colaboradores" element={<CollaboratorsPage />} />
         <Route path="/relatorios" element={<ReportsPage />} />

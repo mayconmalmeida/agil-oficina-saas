@@ -337,9 +337,16 @@ const OrdensServicoPage: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => navigate(`/ordens-servico/${ordem.id}`)}
+                          onClick={() => navigate(`/dashboard/ordens-servico/${ordem.id}`)}
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/ordens-servico/${ordem.id}/editar`)}
+                        >
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"

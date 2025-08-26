@@ -16,7 +16,7 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-6 gap-1">
+      <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-5 gap-1">
         <TabsTrigger value="perfil" className="flex items-center">
           <Building className="w-4 h-4 mr-2" />
           <span className="hidden md:inline">Oficina</span>
@@ -28,10 +28,6 @@ const SettingsTabs: React.FC<SettingsTabsProps> = ({
         <TabsTrigger value="logo" className="flex items-center">
           <Upload className="w-4 h-4 mr-2" />
           <span className="hidden md:inline">Logo</span>
-        </TabsTrigger>
-        <TabsTrigger value="aparencia" className="flex items-center">
-          <Palette className="w-4 h-4 mr-2" />
-          <span className="hidden md:inline">Aparência</span>
         </TabsTrigger>
         <TabsTrigger value="notificacoes" className="flex items-center">
           <Bell className="w-4 h-4 mr-2" />

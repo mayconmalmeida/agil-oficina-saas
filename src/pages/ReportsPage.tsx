@@ -55,37 +55,98 @@ const ReportsPage: React.FC = () => {
         color: status === 'Concluída' ? 'green' : status === 'Em Andamento' ? 'blue' : 'yellow'
       }));
 
-      // Produtos mais usados (simulado)
-      const produtosMaisUsados = [
-        { nome: 'Óleo 5W30', quantidade: 45 },
-        { nome: 'Filtro de Óleo', quantidade: 38 },
-        { nome: 'Pastilha de Freio', quantidade: 22 },
-        { nome: 'Vela de Ignição', quantidade: 18 }
-      ];
+      // Produtos mais usados - dados reais
+      const { data: produtosData } = await supabase
+        .from('ordem_servico_itens')
+        .select('nome_item, quantidade')
+        .eq('tipo', 'produto');
 
-      // Clientes recorrentes (simulado)
-      const clientesRecorrentes = [
-        { nome: 'João Silva', count: 8, telefone: '(11) 99999-9999' },
-        { nome: 'Maria Santos', count: 6, telefone: '(11) 88888-8888' },
-        { nome: 'Carlos Oliveira', count: 5, telefone: '(11) 77777-7777' }
-      ];
+      const produtosCounts = produtosData?.reduce((acc: any, item) => {
+        acc[item.nome_item] = (acc[item.nome_item] || 0) + item.quantidade;
+        return acc;
+      }, {}) || {};
 
-      // Faturamento por período (simulado)
-      const faturamento = [
-        { mes: 'Jan', valor: 15000 },
-        { mes: 'Fev', valor: 18000 },
-        { mes: 'Mar', valor: 22000 },
-        { mes: 'Abr', valor: 19000 },
-        { mes: 'Mai', valor: 25000 },
-        { mes: 'Jun', valor: 28000 }
-      ];
+      const produtosMaisUsados = Object.entries(produtosCounts)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 4)
+        .map(([nome, quantidade]) => ({ nome, quantidade: quantidade as number }));
 
-      // Fluxo de caixa (simulado)
-      const fluxoCaixa = [
-        { tipo: 'Entrada', valor: 28000, data: '2024-01-15' },
-        { tipo: 'Saída', valor: -8000, data: '2024-01-10' },
-        { tipo: 'Entrada', valor: 15000, data: '2024-01-05' }
-      ];
+      // Clientes recorrentes - dados reais
+      const { data: clientesData } = await supabase
+        .from('ordens_servico')
+        .select(`
+          cliente_id,
+          clients!inner(nome, telefone)
+        `)
+        .eq('user_id', user.id);
+
+      const clientesCounts = clientesData?.reduce((acc: any, os) => {
+        const clienteId = os.cliente_id;
+        const client = Array.isArray(os.clients) ? os.clients[0] : os.clients;
+        if (!acc[clienteId]) {
+          acc[clienteId] = {
+            nome: client?.nome || 'Cliente',
+            telefone: client?.telefone || '',
+            count: 0
+          };
+        }
+        acc[clienteId].count++;
+        return acc;
+      }, {}) || {};
+
+      const clientesRecorrentes = Object.values(clientesCounts)
+        .sort((a: any, b: any) => b.count - a.count)
+        .slice(0, 5) as { nome: string; count: number; telefone: string }[];
+
+      // Faturamento por período - dados reais dos últimos 6 meses
+      const { data: faturamentoData } = await supabase
+        .from('ordens_servico')
+        .select('valor_total, created_at')
+        .eq('user_id', user.id)
+        .eq('status', 'Concluída')
+        .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      const faturamentoPorMes = faturamentoData?.reduce((acc: any, os) => {
+        const mes = new Date(os.created_at).toLocaleString('pt-BR', { month: 'short' });
+        acc[mes] = (acc[mes] || 0) + Number(os.valor_total);
+        return acc;
+      }, {}) || {};
+
+      const faturamento = Object.entries(faturamentoPorMes).map(([mes, valor]) => ({
+        mes,
+        valor: valor as number
+      }));
+
+      // Fluxo de caixa - dados reais
+      const { data: entradasData } = await supabase
+        .from('contas_receber')
+        .select('valor, data_pagamento')
+        .eq('user_id', user.id)
+        .eq('status', 'pago')
+        .not('data_pagamento', 'is', null);
+
+      const { data: saidasData } = await supabase
+        .from('contas_pagar')
+        .select('valor, data_pagamento')
+        .eq('user_id', user.id)
+        .eq('status', 'pago')
+        .not('data_pagamento', 'is', null);
+
+      const entradas = entradasData?.map(item => ({
+        tipo: 'Entrada',
+        valor: Number(item.valor),
+        data: item.data_pagamento
+      })) || [];
+
+      const saidas = saidasData?.map(item => ({
+        tipo: 'Saída',
+        valor: -Number(item.valor),
+        data: item.data_pagamento
+      })) || [];
+
+      const fluxoCaixa = [...entradas, ...saidas]
+        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+        .slice(0, 10);
 
       setReportData({
         osStatus,
@@ -142,7 +203,9 @@ const ReportsPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-green-100">Faturamento</p>
-                <p className="text-3xl font-bold">R$ 168k</p>
+                <p className="text-3xl font-bold">
+                  R$ {reportData.faturamento.reduce((acc, item) => acc + item.valor, 0).toLocaleString('pt-BR')}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -156,7 +219,7 @@ const ReportsPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-purple-100">Clientes</p>
-                <p className="text-3xl font-bold">127</p>
+                <p className="text-3xl font-bold">{reportData.clientesRecorrentes.length}</p>
               </div>
             </div>
           </CardContent>

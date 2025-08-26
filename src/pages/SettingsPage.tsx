@@ -5,8 +5,8 @@ import { ProfileSection } from '@/components/settings/ProfileSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import LogoSettingsSection from '@/components/settings/LogoSettingsSection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
-import NotificationsSettings from '@/components/settings/NotificationsSettings';
-import SupportContact from '@/components/settings/SupportContact';
+import NotificationSettings from '@/components/settings/notifications/NotificationSettings';
+import SupportSettings from '@/components/settings/support/SupportSettings';
 import SettingsContainer from '@/components/settings/SettingsContainer';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -83,12 +83,13 @@ const SettingsPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="notificacoes">
-          <NotificationsSettings />
+          <NotificationSettings />
         </TabsContent>
         
         <TabsContent value="suporte">
-          <SupportContact 
-            supportPhone={userProfile?.whatsapp_suporte || '46991270777'}
+          <SupportSettings 
+            userId={userId}
+            initialValues={{ whatsapp_suporte: userProfile?.whatsapp_suporte || '46999324779' }}
           />
         </TabsContent>
       </SettingsContainer>
