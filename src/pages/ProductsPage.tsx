@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Package, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ const ProductsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
@@ -88,7 +90,7 @@ const ProductsPage: React.FC = () => {
           <ImportXMLButton />
           <Button 
             className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => window.location.href = '/produtos/novo'}
+            onClick={() => navigate('/produtos/novo')}
           >
             <Plus className="mr-2 h-4 w-4" />
             Novo Produto
@@ -122,7 +124,7 @@ const ProductsPage: React.FC = () => {
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Nenhum produto encontrado.</p>
-              <Button onClick={() => window.location.href = '/produtos/novo'}>
+              <Button onClick={() => navigate('/produtos/novo')}>
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Primeiro Produto
               </Button>
@@ -160,7 +162,7 @@ const ProductsPage: React.FC = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => window.location.href = `/produtos/${product.id}`}
+                            onClick={() => navigate(`/produtos/${product.id}`)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

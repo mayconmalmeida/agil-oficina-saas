@@ -222,8 +222,12 @@ const CollaboratorsPage: React.FC = () => {
                   <Input
                     id="telefone"
                     value={newCollaborator.telefone}
-                    onChange={(e) => setNewCollaborator({...newCollaborator, telefone: e.target.value})}
+                    onChange={(e) => {
+                      const formatted = e.target.value.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                      setNewCollaborator({...newCollaborator, telefone: formatted});
+                    }}
                     placeholder="(00) 00000-0000"
+                    maxLength={15}
                   />
                 </div>
                 <div>

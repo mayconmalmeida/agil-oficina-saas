@@ -8,13 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import ServiceValueField from '@/components/services/ServiceValueField';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 const serviceSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
-  valor: z.string().min(1, 'Valor é obrigatório'),
+  valor: z.number().min(0.01, 'Valor deve ser maior que zero'),
   descricao: z.string().optional(),
 });
 
@@ -34,7 +35,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSuccess, onCancel 
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       nome: service?.nome || '',
-      valor: service?.valor?.toString() || '',
+      valor: service?.valor || 0,
       descricao: service?.descricao || '',
     },
   });
@@ -47,7 +48,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSuccess, onCancel 
       const serviceData = {
         nome: values.nome,
         tipo: 'servico',
-        valor: parseFloat(values.valor.replace(/[^\d,]/g, '').replace(',', '.')),
+        valor: values.valor,
         descricao: values.descricao || null,
         user_id: user.id,
         is_active: true,
@@ -132,9 +133,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ service, onSuccess, onCancel 
                 name="valor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor</FormLabel>
+                    <FormLabel>Valor (R$)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: 50,00" {...field} />
+                      <ServiceValueField form={form} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

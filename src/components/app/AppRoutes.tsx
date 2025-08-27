@@ -39,6 +39,7 @@ import IASuportePage from '@/pages/IASuportePage';
 import OrderDetailsPage from '@/pages/OrderDetailsPage';
 import ProductEditPage from '@/pages/ProductEditPage';
 import ServiceEditPage from '@/pages/ServiceEditPage';
+import SupplierEditPage from '@/pages/SupplierEditPage';
 
 const AppRoutes: React.FC = () => {
   return (

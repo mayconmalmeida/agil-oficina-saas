@@ -59,7 +59,7 @@ const LiveSupportChat: React.FC = () => {
     try {
       // Aqui você integraria com a API do WhatsApp Business
       const whatsappNumber = '5546999324779';
-      const message = encodeURIComponent(`Suporte AutoOficina Pro - ${user?.nome_oficina || 'Usuário'}: ${newMessage}`);
+      const message = encodeURIComponent(`Suporte Oficina Go - ${user?.nome_oficina || 'Usuário'}: ${newMessage}`);
       
       // Abrir WhatsApp Web (para demonstração)
       // window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
@@ -131,7 +131,7 @@ const LiveSupportChat: React.FC = () => {
             <Phone className="w-5 h-5 text-white" />
           </div>
           <div>
-            <CardTitle className="text-lg">Suporte AutoOficina Pro</CardTitle>
+            <CardTitle className="text-lg">Suporte Oficina Go</CardTitle>
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
               <span className="text-sm text-muted-foreground">
