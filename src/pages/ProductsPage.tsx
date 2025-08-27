@@ -86,7 +86,10 @@ const ProductsPage: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <ImportXMLButton />
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => window.location.href = '/produtos/novo'}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Novo Produto
           </Button>
@@ -119,7 +122,7 @@ const ProductsPage: React.FC = () => {
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Nenhum produto encontrado.</p>
-              <Button>
+              <Button onClick={() => window.location.href = '/produtos/novo'}>
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar Primeiro Produto
               </Button>
@@ -154,7 +157,11 @@ const ProductsPage: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => window.location.href = `/produtos/${product.id}`}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon">

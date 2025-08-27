@@ -19,7 +19,7 @@ const LiveSupportChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Olá! Sou o suporte da AutoOficina Pro. Como posso ajudá-lo hoje?',
+      text: 'Olá! Sou o suporte da Oficina Go. Como posso ajudá-lo hoje?',
       sender: 'support',
       timestamp: new Date(),
       status: 'delivered'

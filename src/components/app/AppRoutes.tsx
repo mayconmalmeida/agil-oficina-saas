@@ -37,6 +37,8 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import IASuportePage from '@/pages/IASuportePage';
 import OrderDetailsPage from '@/pages/OrderDetailsPage';
+import ProductEditPage from '@/pages/ProductEditPage';
+import ServiceEditPage from '@/pages/ServiceEditPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -68,7 +70,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/clientes/novo" element={<NewClientPage />} />
         <Route path="/dashboard/clientes/:id/editar" element={<EditClientPage />} />
         <Route path="/servicos" element={<ServicesPage />} />
+        <Route path="/servicos/:id" element={<ServiceEditPage />} />
         <Route path="/produtos" element={<ProductsPage />} />
+        <Route path="/produtos/:id" element={<ProductEditPage />} />
         <Route path="/orcamentos" element={<BudgetsPage />} />
         <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
         <Route path="/orcamentos/:id" element={<BudgetViewPage />} />

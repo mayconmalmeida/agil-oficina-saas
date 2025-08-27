@@ -99,7 +99,7 @@ export const useManualAuth = (): AuthState => {
       }
     });
 
-    // Timeout de segurança APENAS se não inicializou após 3 segundos
+    // Timeout de segurança apenas se não conseguir inicializar
     const timeout = setTimeout(() => {
       if (isMounted && !isInitializedRef.current) {
         console.log('[useManualAuth] Timeout de segurança - forçando inicialização');
@@ -107,7 +107,7 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 3000); // Aumentado para 3 segundos e só roda se não inicializou
+    }, 1500); // Reduzido para 1.5 segundos
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
