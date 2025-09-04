@@ -8,42 +8,64 @@ export const generateSmartBotResponse = (userMessage: string): string => {
 
   // Como cadastrar um produto
   if (message.includes('cadastrar produto') || message.includes('adicionar produto') || message.includes('novo produto')) {
-    return `Para cadastrar um produto no sistema, siga estes passos:
+    return `## 📦 Como Cadastrar um Produto
 
-1️⃣ Acesse o menu "Produtos" no painel lateral
-2️⃣ Clique no botão "Novo Produto" (ícone +)
-3️⃣ Preencha as informações:
-   • Nome do produto
-   • Código (opcional)
-   • Tipo: Produto ou Serviço
-   • Valor de venda
-   • Preço de custo
-   • Quantidade em estoque
-   • Estoque mínimo
-4️⃣ Clique em "Salvar"
+### Passo a Passo:
 
-💡 Dica: Use códigos únicos para facilitar a busca e controle do estoque!`;
+**1️⃣ Navegação**
+• Acesse o menu "**Produtos**" no painel lateral
+• Clique no botão "**+ Novo Produto**"
+
+**2️⃣ Informações Básicas**
+• **Nome do produto:** Digite o nome completo
+• **Código:** Adicione um código único (opcional, mas recomendado)
+• **Tipo:** Selecione "Produto" ou "Serviço"
+
+**3️⃣ Valores e Estoque**
+• **Valor de venda:** Preço final para o cliente
+• **Preço de custo:** Quanto você pagou pelo produto
+• **Quantidade em estoque:** Quantidade atual disponível
+• **Estoque mínimo:** Alerta quando acabar
+
+**4️⃣ Finalizar**
+• Clique em "**Salvar**" para confirmar
+
+---
+💡 **Dica:** Use códigos únicos para facilitar buscas!
+⚠️ **Importante:** Configure o estoque mínimo para receber alertas`;
   }
 
   // Como cadastrar um cliente
   if (message.includes('cadastrar cliente') || message.includes('adicionar cliente') || message.includes('novo cliente')) {
-    return `Para cadastrar um cliente, siga estes passos:
+    return `## 👤 Como Cadastrar um Cliente
 
-1️⃣ Acesse "Clientes" no menu lateral
-2️⃣ Clique em "Novo Cliente"
-3️⃣ Preencha a aba "Dados do Cliente":
-   • Nome completo
-   • Telefone
-   • E-mail
-   • Tipo (Pessoa Física/Jurídica)
-   • Endereço completo
-4️⃣ Na aba "Dados do Veículo":
-   • Marca, modelo e ano
-   • Placa e cor
-   • Kilometragem
-5️⃣ Clique em "Salvar"
+### Passo a Passo:
 
-✅ Pronto! O cliente estará disponível para agendamentos e ordens de serviço.`;
+**1️⃣ Acessar Menu**
+• Vá em "**Clientes**" no menu lateral
+• Clique em "**+ Novo Cliente**"
+
+**2️⃣ Dados Pessoais**
+• **Nome completo:** Nome do cliente
+• **Telefone:** Para contato
+• **E-mail:** Email válido  
+• **Tipo:** Pessoa Física ou Jurídica
+• **Endereço:** Endereço completo
+
+**3️⃣ Dados do Veículo** *(Nova Aba)*
+• **Marca:** Toyota, Ford, etc.
+• **Modelo:** Corolla, Ka, etc.
+• **Ano:** Ano de fabricação
+• **Placa:** ABC-1234
+• **Cor:** Cor do veículo
+• **Kilometragem:** Km atual
+
+**4️⃣ Salvar**
+• Clique em "**Salvar**" para finalizar
+
+---
+✅ **Resultado:** Cliente disponível para agendamentos e ordens de serviço!
+🚗 **Dica:** Cadastre múltiplos veículos na aba específica`;
   }
 
   // Como criar um orçamento

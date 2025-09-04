@@ -167,14 +167,37 @@ const IASuportePage: React.FC = () => {
                       </Avatar>
                     )}
                     
-                    <div
+                     <div
                       className={`px-3 py-2 rounded-2xl shadow-md ${
                         message.is_bot
                           ? 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
                           : 'bg-green-500 text-white ml-auto'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                        {message.is_bot ? (
+                          <div 
+                            dangerouslySetInnerHTML={{ 
+                              __html: message.content
+                                .replace(/## (.*?)$/gm, '<h3 class="text-base font-semibold mb-2 text-green-700 dark:text-green-400">$1</h3>')
+                                .replace(/### (.*?)$/gm, '<h4 class="text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">$1</h4>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                                .replace(/• (.*?)$/gm, '<li class="ml-4">$1</li>')
+                                .replace(/(\d+️⃣.*?)$/gm, '<div class="mt-2 mb-1 font-medium text-green-600 dark:text-green-400">$1</div>')
+                                .replace(/💡 \*\*(.*?)\*\*/g, '<div class="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-2 border-yellow-400"><span class="font-medium text-yellow-700 dark:text-yellow-400">💡 $1</span></div>')
+                                .replace(/⚠️ \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded border-l-2 border-orange-400"><span class="font-medium text-orange-700 dark:text-orange-400">⚠️ $1</span></div>')
+                                .replace(/✅ \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-green-50 dark:bg-green-900/20 rounded border-l-2 border-green-400"><span class="font-medium text-green-700 dark:text-green-400">✅ $1</span></div>')
+                                .replace(/🚗 \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border-l-2 border-blue-400"><span class="font-medium text-blue-700 dark:text-blue-400">🚗 $1</span></div>')
+                                .replace(/---/g, '<hr class="my-3 border-gray-200 dark:border-gray-600">')
+                                .replace(/\n\n/g, '</p><p class="mb-2">')
+                                .replace(/^/, '<p class="mb-2">')
+                                .replace(/$/, '</p>')
+                            }} 
+                          />
+                        ) : (
+                          <p>{message.content}</p>
+                        )}
+                      </div>
                       <p 
                         className={`text-xs mt-1 ${
                           message.is_bot 

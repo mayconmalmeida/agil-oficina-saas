@@ -37,8 +37,24 @@ export const initializeWhatsAppChat = async (supportNumber: string, message: str
     const formattedNumber = phoneNumber.startsWith('55') ? phoneNumber : `55${phoneNumber}`;
     const encodedMessage = encodeURIComponent(message);
     
-    const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    // Detectar se está em dispositivo móvel
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Em dispositivos móveis, tentar app do WhatsApp primeiro
+      const whatsappAppUrl = `whatsapp://send?phone=${formattedNumber}&text=${encodedMessage}`;
+      window.location.href = whatsappAppUrl;
+      
+      // Fallback para WhatsApp Web após 2 segundos caso o app não abra
+      setTimeout(() => {
+        const whatsappWebUrl = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
+        window.open(whatsappWebUrl, '_blank', 'noopener,noreferrer');
+      }, 2000);
+    } else {
+      // Em desktop, abrir WhatsApp Web diretamente
+      const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodedMessage}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
     
     return true;
   } catch (error) {

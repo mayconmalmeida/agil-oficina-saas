@@ -115,12 +115,13 @@ const NotificationSettings: React.FC = () => {
 
   const testNotification = () => {
     if (Notification.permission === 'granted') {
-      const notification = new Notification('Teste de Notificação - Oficina Go', {
-        body: 'Esta é uma notificação de teste do sistema Oficina Go!',
+      const notification = new Notification('✅ Teste de Notificação - Oficina Go', {
+        body: 'Suas notificações estão funcionando perfeitamente! Sistema configurado com sucesso.',
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         tag: 'test-notification',
         requireInteraction: false,
+        silent: !settings.sound_enabled,
       });
 
       if (settings.sound_enabled) {
@@ -154,8 +155,8 @@ const NotificationSettings: React.FC = () => {
       };
 
       toast({
-        title: "Notificação enviada!",
-        description: "Se você permitiu notificações, deve ter recebido o teste.",
+        title: "✅ Notificação enviada!",
+        description: "Verifique se recebeu a notificação na área de trabalho.",
       });
     } else {
       requestNotificationPermission();

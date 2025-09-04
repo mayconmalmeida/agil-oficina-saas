@@ -107,7 +107,7 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 1500); // Reduzido para 1.5 segundos
+    }, 5000); // 5 segundos - suficiente para carregar mas evita loop infinito
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');

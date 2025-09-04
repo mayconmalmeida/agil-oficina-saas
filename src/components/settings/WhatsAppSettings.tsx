@@ -15,9 +15,10 @@ const WhatsAppSettings: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Apenas admins podem editar o número do WhatsApp
-    // Usuários comuns não podem alterar este número
-    setIsEditable(false); // Sempre não editável para usuários oficina
+    // Apenas admins do sistema podem editar o número do WhatsApp
+    // Usuários oficina não têm permissão para alterar este número
+    const isSystemAdmin = user?.email === 'admin@oficinago.com' || user?.role === 'admin';
+    setIsEditable(isSystemAdmin);
   }, [user]);
 
   const handleSave = () => {
