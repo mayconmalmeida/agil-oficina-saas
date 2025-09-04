@@ -8,7 +8,7 @@ import { Search, Users, Plus, Edit, Trash2, Car, Phone, Mail, MapPin } from 'luc
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import ClientEditDialog from '@/components/clients/ClientEditDialog';
+import ClientEditDialogTabs from '@/components/clients/ClientEditDialogTabs';
 
 interface Client {
   id: string;
@@ -266,7 +266,7 @@ const ClientsPage: React.FC = () => {
       </Card>
 
       {editingClientId && (
-        <ClientEditDialog
+        <ClientEditDialogTabs
           clientId={editingClientId}
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}

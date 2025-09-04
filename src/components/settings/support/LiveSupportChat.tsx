@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Send, Phone, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { initializeWhatsAppChat } from '@/services/whatsappService';
 
 interface Message {
   id: string;
@@ -55,14 +56,13 @@ const LiveSupportChat: React.FC = () => {
     setNewMessage('');
     setIsTyping(true);
 
-    // Simular envio para WhatsApp (integração real seria necessária)
+    // Enviar mensagem para WhatsApp comercial
     try {
-      // Aqui você integraria com a API do WhatsApp Business
-      const whatsappNumber = '5546999324779';
-      const message = encodeURIComponent(`Suporte Oficina Go - ${user?.nome_oficina || 'Usuário'}: ${newMessage}`);
+      const whatsappNumber = '46999324779';
+      const messageText = `🏪 *Suporte Oficina Go*\n\n👤 *Cliente:* ${user?.nome_oficina || 'Usuário'}\n💬 *Mensagem:* ${newMessage}\n\n📅 *Data:* ${new Date().toLocaleString('pt-BR')}`;
       
-      // Abrir WhatsApp Web (para demonstração)
-      // window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+      // Inicializar conversa no WhatsApp
+      const success = await initializeWhatsAppChat(whatsappNumber, messageText);
       
       // Simular resposta automática do suporte
       setTimeout(() => {
@@ -88,10 +88,14 @@ const LiveSupportChat: React.FC = () => {
         );
       }, 1000);
 
-      toast({
-        title: "Mensagem enviada",
-        description: "Sua mensagem foi enviada para nosso WhatsApp comercial.",
-      });
+      if (success) {
+        toast({
+          title: "Redirecionando para WhatsApp",
+          description: "Você será redirecionado para conversar diretamente conosco!",
+        });
+      } else {
+        throw new Error('Falha ao abrir WhatsApp');
+      }
 
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);

@@ -115,22 +115,48 @@ const NotificationSettings: React.FC = () => {
 
   const testNotification = () => {
     if (Notification.permission === 'granted') {
-      const notification = new Notification('Teste de Notificação', {
-        body: 'Esta é uma notificação de teste do AutoOficina Pro!',
+      const notification = new Notification('Teste de Notificação - Oficina Go', {
+        body: 'Esta é uma notificação de teste do sistema Oficina Go!',
         icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'test-notification',
+        requireInteraction: false,
       });
 
       if (settings.sound_enabled) {
-        // Reproduzir som de notificação
-        const audio = new Audio('/notification-sound.mp3');
-        audio.play().catch(() => {
-          // Som não disponível, continuar normalmente
-        });
+        // Criar um tom de notificação usando Web Audio API
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
       }
 
+      // Auto-close notification after 5 seconds
       setTimeout(() => {
         notification.close();
       }, 5000);
+
+      // Handle notification click
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      toast({
+        title: "Notificação enviada!",
+        description: "Se você permitiu notificações, deve ter recebido o teste.",
+      });
     } else {
       requestNotificationPermission();
     }

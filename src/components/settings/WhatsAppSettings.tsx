@@ -16,7 +16,8 @@ const WhatsAppSettings: React.FC = () => {
 
   useEffect(() => {
     // Apenas admins podem editar o número do WhatsApp
-    setIsEditable(user?.role === 'admin' || user?.role === 'superadmin');
+    // Usuários comuns não podem alterar este número
+    setIsEditable(false); // Sempre não editável para usuários oficina
   }, [user]);
 
   const handleSave = () => {
@@ -76,12 +77,10 @@ const WhatsAppSettings: React.FC = () => {
               </Button>
             )}
           </div>
-          {!isEditable && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Shield className="h-4 w-4" />
-              <span>Apenas administradores podem alterar este número</span>
+              <span>Este número é gerenciado pela administração do sistema</span>
             </div>
-          )}
         </div>
 
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">

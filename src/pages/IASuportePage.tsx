@@ -7,6 +7,7 @@ import { Send, Bot, User, Mic, MicOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { generateSmartBotResponse } from '@/services/aiSuportService';
 
 interface Message {
   id: string;
@@ -77,9 +78,9 @@ const IASuportePage: React.FC = () => {
       setMessages(prev => [...prev, savedMessage]);
       setNewMessage('');
 
-      // Simular resposta do bot (em um caso real, chamaria uma API de IA)
+      // Gerar resposta inteligente baseada no contexto do sistema
       setTimeout(async () => {
-        const botResponse = generateBotResponse(newMessage);
+        const botResponse = generateSmartBotResponse(newMessage);
         
         const { data: botMessage, error: botError } = await supabase
           .from('ia_suporte_messages')
@@ -108,26 +109,6 @@ const IASuportePage: React.FC = () => {
     }
   };
 
-  const generateBotResponse = (userMessage: string): string => {
-    const responses = [
-      "Olá! Como posso ajudar você hoje? 😊",
-      "Entendi sua solicitação. Vou verificar isso para você.",
-      "Ótima pergunta! Aqui está o que posso fazer por você...",
-      "Obrigado por entrar em contato. Estou aqui para ajudar!",
-      "Essa é uma questão interessante. Deixe-me explicar...",
-      "Posso te ajudar com isso! Qual informação específica você precisa?",
-    ];
-
-    if (userMessage.toLowerCase().includes('problema')) {
-      return "Vejo que você está enfrentando um problema. Pode me dar mais detalhes para que eu possa ajudar melhor?";
-    }
-    
-    if (userMessage.toLowerCase().includes('como')) {
-      return "Ótima pergunta! Vou te explicar o passo a passo...";
-    }
-
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
