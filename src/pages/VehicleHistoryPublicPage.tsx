@@ -14,10 +14,9 @@ interface VehicleData {
   modelo: string;
   ano: string;
   cor?: string;
-  clients: {
+  owner: {
     nome: string;
     telefone: string;
-    email?: string;
   };
 }
 
@@ -28,9 +27,8 @@ interface HistoricoVeiculo {
   km_proxima?: number;
   tipo_oleo: string;
   observacoes?: string;
-  services?: {
+  service?: {
     nome: string;
-    valor: number;
   } | null;
 }
 
@@ -51,60 +49,39 @@ const VehicleHistoryPublicPage: React.FC = () => {
     if (!placa) return;
 
     try {
-      // Formatar placa para busca (adicionar hífen se necessário)
-      const formattedPlaca = placa.length === 7 ? 
-        `${placa.slice(0, 3)}-${placa.slice(3)}` : 
-        placa;
+      console.log('Buscando dados via edge function para placa:', placa);
 
-      // Buscar dados do veículo
-      const { data: vehicleData, error: vehicleError } = await supabase
-        .from('veiculos')
-        .select(`
-          placa,
-          marca,
-          modelo,
-          ano,
-          cor,
-          clients!inner (
-            nome,
-            telefone,
-            email
-          )
-        `)
-        .eq('placa', formattedPlaca)
-        .single();
-
-      if (vehicleError) {
-        if (vehicleError.code === 'PGRST116') {
-          setError('Veículo não encontrado');
-        } else {
-          throw vehicleError;
+      // Usar a edge function segura para buscar dados
+      const response = await fetch(`https://yjhcozddtbpzvnppcggf.supabase.co/functions/v1/get-vehicle-history?placa=${encodeURIComponent(placa)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0`,
+          'Content-Type': 'application/json'
         }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(errorData.error || 'Erro ao buscar dados do veículo');
+      }
+
+      const data = await response.json();
+
+      if (!data) {
+        setError('Veículo não encontrado');
         return;
       }
 
-      setVehicle(vehicleData);
-
-      // Buscar histórico do veículo
-      const { data: historicoData, error: historicoError } = await supabase
-        .from('historicos_veiculo')
-        .select(`
-          *,
-          services (nome, valor)
-        `)
-        .eq('veiculo_id', (await supabase
-          .from('veiculos')
-          .select('id')
-          .eq('placa', formattedPlaca)
-          .single()
-        ).data?.id)
-        .order('data_troca', { ascending: false });
-
-      if (historicoError) throw historicoError;
-      setHistoricos(historicoData as any || []);
+      console.log('Dados recebidos:', data);
+      setVehicle(data.vehicle);
+      setHistoricos(data.history || []);
     } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
-      setError('Erro ao carregar informações do veículo');
+      if (error.message?.includes('não encontrado')) {
+        setError('Veículo não encontrado');
+      } else {
+        setError('Erro ao carregar informações do veículo');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -208,30 +185,18 @@ const VehicleHistoryPublicPage: React.FC = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Nome:</span>
-                    <span className="font-medium">{vehicle.clients.nome}</span>
+                    <span className="font-medium">{vehicle.owner.nome}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Telefone:</span>
                     <a 
-                      href={`tel:${vehicle.clients.telefone}`}
+                      href={`tel:${vehicle.owner.telefone}`}
                       className="font-medium text-blue-600 hover:underline flex items-center gap-1"
                     >
                       <Phone className="h-3 w-3" />
-                      {vehicle.clients.telefone}
+                      {vehicle.owner.telefone}
                     </a>
                   </div>
-                  {vehicle.clients.email && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Email:</span>
-                      <a 
-                        href={`mailto:${vehicle.clients.email}`}
-                        className="font-medium text-blue-600 hover:underline flex items-center gap-1"
-                      >
-                        <Mail className="h-3 w-3" />
-                        {vehicle.clients.email}
-                      </a>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -289,11 +254,6 @@ const VehicleHistoryPublicPage: React.FC = () => {
                           {format(new Date(historico.data_troca), 'dd/MM/yyyy', { locale: ptBR })}
                         </p>
                       </div>
-                      {historico.services && (
-                        <Badge variant="outline">
-                          R$ {historico.services.valor.toFixed(2)}
-                        </Badge>
-                      )}
                     </div>
                     
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -307,10 +267,10 @@ const VehicleHistoryPublicPage: React.FC = () => {
                           <p className="font-medium">{historico.km_proxima.toLocaleString('pt-BR')} km</p>
                         </div>
                       )}
-                      {historico.services && (
+                      {historico.service && (
                         <div>
                           <span className="text-gray-600">Serviço:</span>
-                          <p className="font-medium">{historico.services.nome}</p>
+                          <p className="font-medium">{historico.service.nome}</p>
                         </div>
                       )}
                     </div>

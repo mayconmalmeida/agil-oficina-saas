@@ -39,3 +39,6 @@ port = 54326
 
 [functions.admin-login]
 verify_jwt = false
+
+[functions.get-vehicle-history]
+verify_jwt = false
