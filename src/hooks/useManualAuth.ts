@@ -39,6 +39,7 @@ export const useManualAuth = (): AuthState => {
               setRole(profileCacheRef.current.profile.role);
               setLoading(false);
               setIsLoadingAuth(false);
+              isInitializedRef.current = true;
             }
             return;
           }
@@ -53,6 +54,9 @@ export const useManualAuth = (): AuthState => {
                 userId: session.user.id,
                 profile
               };
+              setLoading(false);
+              setIsLoadingAuth(false);
+              isInitializedRef.current = true;
               console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
             }
           } catch (error) {
@@ -73,6 +77,9 @@ export const useManualAuth = (): AuthState => {
               };
               setUser(basicProfile);
               setRole('user');
+              setLoading(false);
+              setIsLoadingAuth(false);
+              isInitializedRef.current = true;
             }
           }
         } else {
@@ -81,13 +88,10 @@ export const useManualAuth = (): AuthState => {
             setUser(null);
             setRole(null);
             profileCacheRef.current = null; // Limpar cache
+            setLoading(false);
+            setIsLoadingAuth(false);
+            isInitializedRef.current = true;
           }
-        }
-        
-        if (isMounted) {
-          setLoading(false);
-          setIsLoadingAuth(false);
-          isInitializedRef.current = true;
         }
       }
     );
@@ -107,7 +111,7 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 5000); // 5 segundos - suficiente para carregar mas evita loop infinito
+    }, 10000); // Aumentado para 10 segundos para dar mais tempo ao carregamento do perfil
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
