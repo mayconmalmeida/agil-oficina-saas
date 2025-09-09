@@ -56,14 +56,9 @@ serve(async (req) => {
         modelo,
         ano,
         cor,
-        cliente_id,
-        clients (
-          nome,
-          telefone,
-          email
-        )
+        cliente_id
       `)
-      .or(`placa.ilike.%${placaOriginal}%,placa.ilike.%${placaSemHifen}%,placa.ilike.%${placaComHifen}%`)
+      .or(`placa.eq.${placaOriginal},placa.eq.${placaSemHifen},placa.eq.${placaComHifen}`)
       .limit(1)
       .maybeSingle();
 
@@ -83,6 +78,17 @@ serve(async (req) => {
       );
     }
 
+    // Buscar dados do cliente
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .select('nome, telefone, email')
+      .eq('id', vehicleData.cliente_id)
+      .maybeSingle();
+
+    if (clientError) {
+      console.error('Erro ao buscar cliente:', clientError);
+    }
+
     // Buscar histórico do veículo usando o ID
     const { data: historicoData, error: historicoError } = await supabase
       .from('historicos_veiculo')
@@ -92,8 +98,7 @@ serve(async (req) => {
         km_atual,
         km_proxima,
         tipo_oleo,
-        observacoes,
-        services (nome, valor)
+        observacoes
       `)
       .eq('veiculo_id', vehicleData.id)
       .order('data_troca', { ascending: false });
@@ -113,11 +118,11 @@ serve(async (req) => {
         modelo: vehicleData.modelo,
         ano: vehicleData.ano,
         cor: vehicleData.cor,
-        owner: {
-          nome: vehicleData.clients.nome,
-          telefone: vehicleData.clients.telefone,
+        owner: clientData ? {
+          nome: clientData.nome,
+          telefone: clientData.telefone,
           // Não incluir email para proteger privacidade
-        }
+        } : null
       },
       history: historicoData?.map(item => ({
         id: item.id,
@@ -125,11 +130,7 @@ serve(async (req) => {
         km_atual: item.km_atual,
         km_proxima: item.km_proxima,
         tipo_oleo: item.tipo_oleo,
-        observacoes: item.observacoes,
-        service: item.services ? {
-          nome: item.services.nome,
-          // Não incluir valor do serviço para proteger informações comerciais
-        } : null
+        observacoes: item.observacoes
       })) || []
     };
 
