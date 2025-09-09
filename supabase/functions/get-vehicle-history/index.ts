@@ -89,26 +89,50 @@ serve(async (req) => {
       console.error('Erro ao buscar cliente:', clientError);
     }
 
-    // Buscar histórico do veículo usando o ID
-    const { data: historicoData, error: historicoError } = await supabase
-      .from('historicos_veiculo')
+    // Buscar ordens de serviço concluídas do veículo
+    const { data: ordensData, error: ordensError } = await supabase
+      .from('ordens_servico')
       .select(`
         id,
-        data_troca,
-        km_atual,
-        km_proxima,
-        tipo_oleo,
-        observacoes
+        data_inicio,
+        data_fim,
+        valor_total,
+        observacoes,
+        status
       `)
       .eq('veiculo_id', vehicleData.id)
-      .order('data_troca', { ascending: false });
+      .eq('status', 'Concluída')
+      .order('data_fim', { ascending: false });
 
-    if (historicoError) {
-      console.error('Erro ao buscar histórico:', historicoError);
-      throw historicoError;
+    if (ordensError) {
+      console.error('Erro ao buscar ordens de serviço:', ordensError);
     }
 
-    console.log(`Dados encontrados: veículo ${vehicleData.placa}, ${historicoData?.length || 0} históricos`);
+    // Buscar itens das ordens de serviço
+    let itensData = [];
+    if (ordensData && ordensData.length > 0) {
+      const ordensIds = ordensData.map(ordem => ordem.id);
+      
+      const { data: itens, error: itensError } = await supabase
+        .from('ordem_servico_itens')
+        .select(`
+          ordem_servico_id,
+          nome_item,
+          tipo,
+          quantidade,
+          valor_unitario,
+          valor_total
+        `)
+        .in('ordem_servico_id', ordensIds);
+
+      if (itensError) {
+        console.error('Erro ao buscar itens das ordens:', itensError);
+      } else {
+        itensData = itens || [];
+      }
+    }
+
+    console.log(`Dados encontrados: veículo ${vehicleData.placa}, ${ordensData?.length || 0} ordens concluídas`);
 
     // Retornar dados públicos limitados (sem informações sensíveis)
     const publicData = {
@@ -124,13 +148,20 @@ serve(async (req) => {
           // Não incluir email para proteger privacidade
         } : null
       },
-      history: historicoData?.map(item => ({
-        id: item.id,
-        data_troca: item.data_troca,
-        km_atual: item.km_atual,
-        km_proxima: item.km_proxima,
-        tipo_oleo: item.tipo_oleo,
-        observacoes: item.observacoes
+      serviceOrders: ordensData?.map(ordem => ({
+        id: ordem.id,
+        data_inicio: ordem.data_inicio,
+        data_fim: ordem.data_fim,
+        valor_total: ordem.valor_total,
+        observacoes: ordem.observacoes,
+        status: ordem.status,
+        itens: itensData.filter(item => item.ordem_servico_id === ordem.id).map(item => ({
+          nome_item: item.nome_item,
+          tipo: item.tipo,
+          quantidade: item.quantidade,
+          valor_unitario: item.valor_unitario,
+          valor_total: item.valor_total
+        }))
       })) || []
     };
 

@@ -20,22 +20,26 @@ interface VehicleData {
   };
 }
 
-interface HistoricoVeiculo {
+interface ServiceOrder {
   id: string;
-  data_troca: string;
-  km_atual: number;
-  km_proxima?: number;
-  tipo_oleo: string;
+  data_inicio: string;
+  data_fim: string;
+  valor_total: number;
   observacoes?: string;
-  service?: {
-    nome: string;
-  } | null;
+  status: string;
+  itens: {
+    nome_item: string;
+    tipo: string;
+    quantidade: number;
+    valor_unitario: number;
+    valor_total: number;
+  }[];
 }
 
 const VehicleHistoryPublicPage: React.FC = () => {
   const { placa } = useParams<{ placa: string }>();
   const [vehicle, setVehicle] = useState<VehicleData | null>(null);
-  const [historicos, setHistoricos] = useState<HistoricoVeiculo[]>([]);
+  const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +78,7 @@ const VehicleHistoryPublicPage: React.FC = () => {
 
       console.log('Dados recebidos:', data);
       setVehicle(data.vehicle);
-      setHistoricos(data.history || []);
+      setServiceOrders(data.serviceOrders || []);
     } catch (error: any) {
       console.error('Erro ao carregar dados:', error);
       if (error.message?.includes('não encontrado')) {
@@ -87,19 +91,8 @@ const VehicleHistoryPublicPage: React.FC = () => {
     }
   };
 
-  const getNextOilChange = () => {
-    if (historicos.length === 0) return null;
-    const latest = historicos[0];
-    if (!latest.km_proxima) return null;
-    
-    const kmLeft = latest.km_proxima - latest.km_atual;
-    const isOverdue = kmLeft <= 0;
-    
-    return {
-      km: latest.km_proxima,
-      kmLeft: Math.abs(kmLeft),
-      isOverdue
-    };
+  const getTotalServicesValue = () => {
+    return serviceOrders.reduce((total, order) => total + order.valor_total, 0);
   };
 
   if (isLoading) {
@@ -129,7 +122,7 @@ const VehicleHistoryPublicPage: React.FC = () => {
     );
   }
 
-  const nextOilChange = getNextOilChange();
+  const nextOilChange = null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
@@ -141,7 +134,7 @@ const VehicleHistoryPublicPage: React.FC = () => {
               <Car className="h-8 w-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Oficina Go</h1>
-                <p className="text-sm text-gray-600">Histórico do Veículo</p>
+                <p className="text-sm text-gray-600">Histórico de Serviços</p>
               </div>
             </div>
             <Link to="/">
@@ -203,82 +196,104 @@ const VehicleHistoryPublicPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Próxima Troca de Óleo */}
-        {nextOilChange && (
-          <Card className={nextOilChange.isOverdue ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}>
+        {/* Resumo dos Serviços */}
+        {serviceOrders.length > 0 && (
+          <Card className="border-green-200 bg-green-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-lg">
-                    {nextOilChange.isOverdue ? 'Troca de Óleo Atrasada!' : 'Próxima Troca de Óleo'}
-                  </h3>
+                  <h3 className="font-semibold text-lg">Serviços Realizados</h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    {nextOilChange.isOverdue ? 
-                      `Atrasada em ${nextOilChange.kmLeft.toLocaleString('pt-BR')} km` :
-                      `Faltam ${nextOilChange.kmLeft.toLocaleString('pt-BR')} km`
-                    }
+                    {serviceOrders.length} serviço{serviceOrders.length !== 1 ? 's' : ''} concluído{serviceOrders.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <Badge variant={nextOilChange.isOverdue ? 'destructive' : 'default'}>
-                  {nextOilChange.km.toLocaleString('pt-BR')} km
+                <Badge variant="default">
+                  R$ {getTotalServicesValue().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </Badge>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Histórico de Serviços */}
+        {/* Ordens de Serviço */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <History className="h-5 w-5" />
-              Histórico de Serviços
+              Ordens de Serviço Concluídas
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {historicos.length === 0 ? (
+            {serviceOrders.length === 0 ? (
               <div className="text-center py-8">
                 <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Nenhum serviço realizado</h3>
-                <p className="text-gray-600">Este veículo ainda não possui histórico de serviços.</p>
+                <h3 className="text-lg font-medium mb-2">Nenhum serviço concluído</h3>
+                <p className="text-gray-600">Este veículo ainda não possui serviços concluídos.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {historicos.map((historico) => (
-                  <div key={historico.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
+              <div className="space-y-6">
+                {serviceOrders.map((order) => (
+                  <div key={order.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h4 className="font-semibold">Troca de Óleo - {historico.tipo_oleo}</h4>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(historico.data_troca), 'dd/MM/yyyy', { locale: ptBR })}
-                        </p>
+                        <h4 className="font-semibold text-lg">Ordem de Serviço #{order.id.slice(-8)}</h4>
+                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                          <p className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Início: {format(new Date(order.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}
+                          </p>
+                          {order.data_fim && (
+                            <p className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Fim: {format(new Date(order.data_fim), 'dd/MM/yyyy', { locale: ptBR })}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        R$ {order.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </Badge>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">KM na troca:</span>
-                        <p className="font-medium">{historico.km_atual.toLocaleString('pt-BR')}</p>
+                    {/* Itens da Ordem */}
+                    {order.itens.length > 0 && (
+                      <div className="mb-4">
+                        <h5 className="font-medium mb-2">Serviços e Produtos:</h5>
+                        <div className="space-y-2">
+                          {order.itens.map((item, index) => (
+                            <div key={index} className="flex justify-between items-center bg-white p-3 rounded border text-sm">
+                              <div>
+                                <span className="font-medium">{item.nome_item}</span>
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {item.tipo}
+                                </Badge>
+                                {item.quantidade > 1 && (
+                                  <span className="ml-2 text-gray-600">
+                                    (Qtd: {item.quantidade})
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium">
+                                  R$ {item.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                                {item.quantidade > 1 && (
+                                  <div className="text-xs text-gray-600">
+                                    R$ {item.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      {historico.km_proxima && (
-                        <div>
-                          <span className="text-gray-600">Próxima troca:</span>
-                          <p className="font-medium">{historico.km_proxima.toLocaleString('pt-BR')} km</p>
-                        </div>
-                      )}
-                      {historico.service && (
-                        <div>
-                          <span className="text-gray-600">Serviço:</span>
-                          <p className="font-medium">{historico.service.nome}</p>
-                        </div>
-                      )}
-                    </div>
+                    )}
                     
-                    {historico.observacoes && (
-                      <div className="mt-3 pt-3 border-t">
-                        <span className="text-gray-600 text-sm">Observações:</span>
-                        <p className="text-sm mt-1">{historico.observacoes}</p>
+                    {/* Observações */}
+                    {order.observacoes && (
+                      <div className="pt-3 border-t">
+                        <span className="text-gray-600 text-sm font-medium">Observações:</span>
+                        <p className="text-sm mt-1">{order.observacoes}</p>
                       </div>
                     )}
                   </div>
