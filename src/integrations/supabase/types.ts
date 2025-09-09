@@ -601,6 +601,54 @@ export type Database = {
           },
         ]
       }
+      historicos_veiculo: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_troca: string
+          id: string
+          km_atual: number
+          km_proxima: number | null
+          observacoes: string | null
+          qrcode_url: string | null
+          servico_id: string | null
+          tipo_oleo: string
+          updated_at: string
+          user_id: string
+          veiculo_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_troca: string
+          id?: string
+          km_atual: number
+          km_proxima?: number | null
+          observacoes?: string | null
+          qrcode_url?: string | null
+          servico_id?: string | null
+          tipo_oleo: string
+          updated_at?: string
+          user_id: string
+          veiculo_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_troca?: string
+          id?: string
+          km_atual?: number
+          km_proxima?: number | null
+          observacoes?: string | null
+          qrcode_url?: string | null
+          servico_id?: string | null
+          tipo_oleo?: string
+          updated_at?: string
+          user_id?: string
+          veiculo_id?: string
+        }
+        Relationships: []
+      }
       ia_suporte_messages: {
         Row: {
           content: string

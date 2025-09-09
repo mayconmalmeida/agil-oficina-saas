@@ -40,6 +40,7 @@ import OrderDetailsPage from '@/pages/OrderDetailsPage';
 import ProductEditPage from '@/pages/ProductEditPage';
 import ServiceEditPage from '@/pages/ServiceEditPage';
 import SupplierEditPage from '@/pages/SupplierEditPage';
+import VehicleHistoryPublicPage from '@/pages/VehicleHistoryPublicPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -101,6 +102,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
         <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
       </Route>
+      
+      {/* Rota pública para histórico de veículos via QR Code */}
+      <Route path="/historico/:placa" element={<VehicleHistoryPublicPage />} />
     </Routes>
   );
 };
