@@ -22,12 +22,15 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
   console.log('fetchUserProfile: Buscando perfil para usuário:', userId);
   
   try {
+    console.log('fetchUserProfile: Iniciando busca do perfil...');
     // Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+    
+    console.log('fetchUserProfile: Resultado da consulta profiles:', { profile, profileError });
 
     if (profileError) {
       console.error('fetchUserProfile: Erro ao buscar perfil:', profileError);
@@ -75,6 +78,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     let oficina_id = null;
     if (profile.role === 'oficina' || profile.role === 'admin' || profile.role === 'superadmin') {
       try {
+        console.log('fetchUserProfile: Buscando oficina para role:', profile.role);
         const { data: oficina } = await supabase
           .from('oficinas')
           .select('id')
@@ -82,15 +86,19 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
           .maybeSingle();
         
         oficina_id = oficina?.id || null;
+        console.log('fetchUserProfile: Oficina encontrada:', !!oficina_id);
       } catch (error) {
         console.warn('fetchUserProfile: Erro ao buscar oficina:', error);
       }
+    } else {
+      console.log('fetchUserProfile: Pulando busca de oficina para role:', profile.role);
     }
 
     // Buscar assinatura se tiver oficina
     let subscription: UserSubscription | null = null;
     if (oficina_id) {
       try {
+        console.log('fetchUserProfile: Buscando assinatura para oficina:', oficina_id);
         const { data: subscriptionData } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -100,9 +108,12 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
           .maybeSingle();
         
         subscription = subscriptionData as UserSubscription;
+        console.log('fetchUserProfile: Assinatura encontrada:', !!subscription);
       } catch (error) {
         console.warn('fetchUserProfile: Erro ao buscar assinatura:', error);
       }
+    } else {
+      console.log('fetchUserProfile: Pulando busca de assinatura - sem oficina');
     }
 
     const userProfile: UserProfile = {

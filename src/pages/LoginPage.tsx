@@ -80,27 +80,17 @@ const LoginPage: React.FC = () => {
       }
     };
 
-    // Verificar a cada 500ms se o auth terminou de carregar
+    // Verificar a cada 1 segundo se o auth terminou de carregar
     const interval = setInterval(() => {
       if (!loading && !isLoadingAuth && !hasCheckedSession.current) {
         checkAuthAndRedirect();
         clearInterval(interval);
       }
-    }, 500);
+    }, 1000);
 
-    // Timeout de segurança de 8 segundos (aumentado para aguardar o perfil carregar)
-    const timeout = setTimeout(() => {
-      if (!hasCheckedSession.current) {
-        console.log("LoginPage: Timeout de verificação, assumindo não autenticado");
-        hasCheckedSession.current = true;
-        setCheckingSession(false);
-      }
-      clearInterval(interval);
-    }, 8000);
-
+    // Sem timeout - deixar o useManualAuth gerenciar completamente
     return () => {
       clearInterval(interval);
-      clearTimeout(timeout);
     };
   }, [navigate, loading, isLoadingAuth, user]);
 
