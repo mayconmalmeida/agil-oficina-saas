@@ -86,7 +86,7 @@ const BudgetsPage: React.FC = () => {
           <FileText className="h-8 w-8 text-blue-600" />
           <h1 className="text-3xl font-bold">Orçamentos</h1>
         </div>
-        <Button onClick={() => navigate('/orcamentos/novo')}>
+        <Button onClick={() => navigate('/dashboard/orcamentos/novo')}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Orçamento
         </Button>
@@ -144,14 +144,14 @@ const BudgetsPage: React.FC = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(`/orcamentos/${orcamento.id}`)}
+                        onClick={() => navigate(`/dashboard/orcamentos/${orcamento.id}`)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => navigate(`/orcamentos/editar/${orcamento.id}`)}
+                        onClick={() => navigate(`/dashboard/orcamentos/editar/${orcamento.id}`)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

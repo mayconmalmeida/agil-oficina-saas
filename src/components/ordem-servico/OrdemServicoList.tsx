@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/formatUtils';
 import Loading from '@/components/ui/loading';
+import OrdemServicoViewModal from './OrdemServicoViewModal';
+import OrdemServicoEditModal from './OrdemServicoEditModal';
 
 interface OrdemServico {
   id: string;
@@ -29,6 +31,9 @@ interface OrdemServicoListProps {
 const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrdem, setSelectedOrdem] = useState<OrdemServico | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchOrdens = async () => {
@@ -137,6 +142,22 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
     }
   };
 
+  const handleView = (ordem: OrdemServico) => {
+    setSelectedOrdem(ordem);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEdit = (ordem: OrdemServico) => {
+    setSelectedOrdem(ordem);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false);
+    setSelectedOrdem(null);
+    fetchOrdens();
+  };
+
   const createOSFromBudget = async () => {
     // Implementar lógica para criar OS a partir de orçamento
     toast({
@@ -230,10 +251,18 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleView(ordem)}
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleEdit(ordem)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button 
@@ -249,6 +278,25 @@ const OrdemServicoList: React.FC<OrdemServicoListProps> = ({ searchQuery }) => {
           </Card>
         ))}
       </div>
+
+      <OrdemServicoViewModal
+        ordem={selectedOrdem}
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedOrdem(null);
+        }}
+      />
+
+      <OrdemServicoEditModal
+        ordem={selectedOrdem}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedOrdem(null);
+        }}
+        onSuccess={handleEditSuccess}
+      />
     </>
   );
 };
