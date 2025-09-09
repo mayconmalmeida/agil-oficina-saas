@@ -115,7 +115,7 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 10000); // Aumentado para 10 segundos para dar mais tempo ao carregamento do perfil
+    }, 15000); // Aumentado para 15 segundos para dar mais tempo ao carregamento do perfil
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,132 +8,101 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
 import { useLogin } from '@/hooks/useLogin';
+import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/ui/loading';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isLoading, userId, handleLogin, setUserId, checkConnection } = useLogin();
+  const { user, loading, isLoadingAuth } = useAuth();
   const [checkingSession, setCheckingSession] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'error'>('checking');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const hasCheckedSession = useRef(false);
 
-  // Verificar conexão com o Supabase
+  // Verificar conexão com Supabase
   useEffect(() => {
-    const verifyConnection = async () => {
+    const checkSupabaseConnection = async () => {
+      console.log("LoginPage: Verificando conexão com Supabase...");
       try {
-        setConnectionStatus('checking');
-        console.log("LoginPage: Verificando conexão com Supabase...");
-        const connected = await testSupabaseConnection();
-        setConnectionStatus(connected ? 'connected' : 'error');
-        
-        if (!connected) {
-          setConnectionError("Não foi possível conectar ao servidor. O sistema funcionará em modo de demonstração.");
-          console.log("LoginPage: Conexão com Supabase falhou, usando modo demo");
+        const isConnected = await testSupabaseConnection();
+        if (isConnected) {
+          setConnectionStatus('connected');
+          console.log("LoginPage: Conexão com Supabase estabelecida");
         } else {
-          console.log("LoginPage: Conexão com Supabase estabelecida com sucesso");
-          setConnectionError(null);
+          setConnectionStatus('error');
+          setConnectionError('Não foi possível conectar ao banco de dados. Verificando em modo demo.');
+          console.warn("LoginPage: Falha na conexão com Supabase");
         }
       } catch (error) {
-        console.error("LoginPage: Erro ao verificar conexão:", error);
+        console.error("LoginPage: Erro ao testar conexão:", error);
         setConnectionStatus('error');
-        setConnectionError("Erro ao verificar conexão com o servidor: " + 
-          (error instanceof Error ? error.message : "Erro desconhecido"));
+        setConnectionError('Erro de rede. Verificando configuração...');
       }
     };
-    
-    verifyConnection();
+
+    checkSupabaseConnection();
   }, []);
 
-  // Verificar se já está autenticado - APENAS UMA VEZ
+  // Verificar se já está autenticado usando o contexto de auth
   useEffect(() => {
     if (hasCheckedSession.current) return;
     
-    const checkSession = async () => {
-      try {
-        hasCheckedSession.current = true;
-        setCheckingSession(true);
-        console.log("LoginPage: Verificando sessão existente...");
+    const checkAuthAndRedirect = () => {
+      console.log("LoginPage: Verificando sessão existente...");
+      
+      // Aguardar o contexto de auth carregar
+      if (loading || isLoadingAuth) {
+        console.log("LoginPage: Auth ainda carregando...");
+        return;
+      }
+
+      hasCheckedSession.current = true;
+      
+      // Se tiver usuário autenticado, redirecionar
+      if (user && typeof user === 'object') {
+        console.log("LoginPage: Usuário autenticado encontrado, redirecionando...");
         
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("LoginPage: Erro ao verificar sessão:", error);
-          setCheckingSession(false);
+        // Verificar se é admin
+        if (user.role === 'admin' || user.role === 'superadmin') {
+          console.log("LoginPage: Usuário é admin, redirecionando para /admin");
+          navigate("/admin", { replace: true });
           return;
         }
         
-        if (session?.user) {
-          console.log("LoginPage: Sessão encontrada para:", session.user.email);
-          setUserId(session.user.id);
-          
-          // Verificar perfil com timeout mais agressivo
-          try {
-            const profileTimeout = setTimeout(() => {
-              console.log("LoginPage: Timeout ao verificar perfil, redirecionando para dashboard");
-              navigate('/dashboard', { replace: true });
-            }, 3000);
-
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role, nome_oficina, telefone')
-              .eq('id', session.user.id)
-              .maybeSingle();
-
-            clearTimeout(profileTimeout);
-                
-            // Se é admin, redirecionar para admin
-            if (profileData && (profileData.role === 'admin' || profileData.role === 'superadmin')) {
-              console.log("LoginPage: Usuário é admin, redirecionando para /admin");
-              navigate("/admin", { replace: true });
-              return;
-            }
-            
-            // Para usuários normais, verificar se o perfil está completo
-            if (profileError && profileError.code !== 'PGRST116') {
-              console.log("LoginPage: Erro ao verificar profile, redirecionando para setup");
-              navigate('/perfil-setup', { replace: true });
-              return;
-            }
-            
-            if (!profileData) {
-              console.log("LoginPage: Perfil não encontrado, redirecionando para setup");
-              navigate('/perfil-setup', { replace: true });
-              return;
-            }
-            
-            // Verificar se o perfil está completo
-            const isProfileComplete = profileData.nome_oficina && profileData.telefone &&
-                                    profileData.nome_oficina.trim() !== '' && profileData.telefone.trim() !== '';
-            
-            if (!isProfileComplete) {
-              console.log("LoginPage: Perfil incompleto, redirecionando para setup");
-              navigate('/perfil-setup', { replace: true });
-              return;
-            }
-            
-            console.log("LoginPage: Perfil completo encontrado, redirecionando para dashboard");
-            navigate('/dashboard', { replace: true });
-            
-          } catch (adminCheckError) {
-            console.error("LoginPage: Erro ao verificar perfil:", adminCheckError);
-            // Se deu erro, redirecionar para dashboard mesmo assim
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-        } else {
-          console.log("LoginPage: Nenhuma sessão encontrada, permanecendo na tela de login");
-        }
-      } catch (error) {
-        console.error("LoginPage: Erro ao verificar sessão:", error);
-      } finally {
+        // Para usuários normais, redirecionar para dashboard
+        console.log("LoginPage: Redirecionando para dashboard");
+        navigate('/dashboard', { replace: true });
+      } else {
+        console.log("LoginPage: Nenhum usuário autenticado encontrado");
         setCheckingSession(false);
       }
     };
-    
-    checkSession();
-  }, []); // Array vazio para executar apenas uma vez
+
+    // Verificar a cada 500ms se o auth terminou de carregar
+    const interval = setInterval(() => {
+      if (!loading && !isLoadingAuth && !hasCheckedSession.current) {
+        checkAuthAndRedirect();
+        clearInterval(interval);
+      }
+    }, 500);
+
+    // Timeout de segurança de 5 segundos
+    const timeout = setTimeout(() => {
+      if (!hasCheckedSession.current) {
+        console.log("LoginPage: Timeout de verificação, assumindo não autenticado");
+        hasCheckedSession.current = true;
+        setCheckingSession(false);
+      }
+      clearInterval(interval);
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [navigate, loading, isLoadingAuth, user]);
 
   if (checkingSession) {
     return <Loading fullscreen text="Verificando autenticação..." />;
@@ -144,69 +112,86 @@ const LoginPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <Link to="/" className="text-2xl font-bold text-oficina-dark">
-            Oficina<span className="text-oficina-accent">Ágil</span>
-          </Link>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">OficinaFlow</h1>
+            <p className="text-gray-600">Sistema de Gestão para Oficinas</p>
+          </div>
         </div>
-        
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Entrar</CardTitle>
-            <CardDescription className="text-center">
-              Digite suas credenciais para acessar sua conta
+
+        <Card className="shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Entrar na sua conta</CardTitle>
+            <CardDescription>
+              Digite suas credenciais para acessar o sistema
             </CardDescription>
           </CardHeader>
-          
           <CardContent>
+            {/* Status da Conexão */}
             {connectionStatus === 'checking' && (
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
-                <div className="animate-pulse flex items-center">
-                  <div className="h-4 w-4 bg-blue-400 rounded-full mr-2"></div>
-                  <AlertDescription className="text-blue-600">
-                    Verificando conexão com o servidor...
-                  </AlertDescription>
-                </div>
-              </Alert>
-            )}
-            
-            {connectionStatus === 'error' && (
-              <Alert className="mb-4 bg-yellow-50 border-yellow-300">
-                <WifiOff className="h-4 w-4 text-yellow-600" />
-                <AlertDescription className="text-yellow-700">
-                  <strong>⚠️ Sistema em Modo de Demonstração</strong><br />
-                  Estamos enfrentando problemas de conexão com o servidor.<br />
-                  Algumas funcionalidades podem estar limitadas no momento.<br />
-                  Enquanto isso, você pode explorar o sistema normalmente em modo de demonstração.
-                </AlertDescription>
+              <Alert className="mb-4">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription>Verificando conexão...</AlertDescription>
               </Alert>
             )}
             
             {connectionStatus === 'connected' && (
-              <Alert className="mb-4 bg-green-50 border-green-200">
+              <Alert className="mb-4 border-green-200 bg-green-50">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-600">
-                  Conexão com o servidor estabelecida.
+                <AlertDescription className="text-green-800">
+                  Conectado ao servidor com sucesso
                 </AlertDescription>
               </Alert>
             )}
             
-            <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+            {connectionStatus === 'error' && (
+              <Alert className="mb-4 border-yellow-200 bg-yellow-50" variant="default">
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <div className="space-y-1">
+                    <p><strong>Modo Demo Ativo</strong></p>
+                    <p className="text-sm">{connectionError}</p>
+                    <p className="text-sm">Algumas funcionalidades podem estar limitadas.</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <LoginForm 
+              onSubmit={async (values) => {
+                console.log("LoginPage: Tentativa de login:", values.email);
+                await handleLogin(values);
+              }}
+              isLoading={isLoading}
+            />
           </CardContent>
-          
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm">
-              <Link to="/esqueceu-senha" className="text-oficina hover:underline">
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-center">
+              <Link to="/reset-password" className="text-sm text-blue-600 hover:underline">
                 Esqueceu sua senha?
               </Link>
             </div>
-            <div className="text-center text-sm">
-              Não tem uma conta ainda?{' '}
-              <Link to="/registrar" className="text-oficina hover:underline">
-                Registre-se
+            <div className="text-center">
+              <span className="text-sm text-gray-600">Não tem uma conta? </span>
+              <Link to="/register" className="text-sm text-blue-600 hover:underline">
+                Cadastre-se
               </Link>
             </div>
           </CardFooter>
         </Card>
+
+        {connectionStatus === 'error' && (
+          <div className="mt-4 text-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.reload()}
+              className="text-gray-600"
+            >
+              <WifiOff className="h-4 w-4 mr-2" />
+              Tentar Reconectar
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
