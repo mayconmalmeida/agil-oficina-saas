@@ -26,6 +26,11 @@ interface Client {
   nome: string;
 }
 
+interface Oficina {
+  logo_url: string | null;
+  nome_oficina: string;
+}
+
 const oilTypes = [
   '5W30',
   '5W40',
@@ -59,6 +64,7 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
     observacoes: ''
   });
   const [client, setClient] = useState<Client | null>(null);
+  const [oficina, setOficina] = useState<Oficina | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const { toast } = useToast();
@@ -66,6 +72,7 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
 
   useEffect(() => {
     fetchClient();
+    fetchOficina();
   }, [clientId]);
 
   const fetchClient = async () => {
@@ -80,6 +87,23 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
       setClient(data);
     } catch (error: any) {
       console.error('Erro ao carregar cliente:', error);
+    }
+  };
+
+  const fetchOficina = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('logo_url, nome_oficina')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setOficina(data);
+    } catch (error: any) {
+      console.error('Erro ao carregar oficina:', error);
     }
   };
 
@@ -332,8 +356,18 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                 {/* Lado esquerdo - Informações */}
                 <div className="flex-1 pr-3">
                   {/* Logo da Oficina */}
-                  <div className="text-center font-bold text-lg border-b border-black pb-1 mb-3">
-                    LOGO DA OFICINA
+                  <div className="text-center mb-3 flex flex-col items-center">
+                    {oficina?.logo_url ? (
+                      <img 
+                        src={oficina.logo_url} 
+                        alt="Logo da Oficina" 
+                        className="h-8 w-auto object-contain mb-1"
+                      />
+                    ) : (
+                      <div className="font-bold text-sm mb-1">
+                        {oficina?.nome_oficina || 'LOGO DA OFICINA'}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Última troca de óleo */}
@@ -392,11 +426,6 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  <div className="text-xs mt-2 border-t border-black pt-1">
-                    <div><strong>Veículo:</strong> {vehicleInfo} {vehiclePlate}</div>
-                    <div><strong>Cliente:</strong> {client?.nome}</div>
                   </div>
                 </div>
 

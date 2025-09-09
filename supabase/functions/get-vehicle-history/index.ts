@@ -37,14 +37,16 @@ serve(async (req) => {
       }
     });
 
-    // Formatar placa para busca (adicionar hífen se necessário)
-    const formattedPlaca = placa.length === 7 ? 
-      `${placa.slice(0, 3)}-${placa.slice(3)}` : 
-      placa;
+    // Formatar placa para busca (tentar com e sem hífen)
+    const placaOriginal = placa.toUpperCase();
+    const placaSemHifen = placaOriginal.replace('-', '');
+    const placaComHifen = placaSemHifen.length === 7 ? 
+      `${placaSemHifen.slice(0, 3)}-${placaSemHifen.slice(3)}` : 
+      placaOriginal;
 
-    console.log('Buscando dados para placa:', formattedPlaca);
+    console.log('Buscando dados para placa:', placaOriginal, 'tentativas:', [placaOriginal, placaSemHifen, placaComHifen]);
 
-    // Buscar dados do veículo
+    // Buscar dados do veículo (tentar múltiplos formatos)
     const { data: vehicleData, error: vehicleError } = await supabase
       .from('veiculos')
       .select(`
@@ -60,7 +62,8 @@ serve(async (req) => {
           email
         )
       `)
-      .eq('placa', formattedPlaca)
+      .or(`placa.eq.${placaOriginal},placa.eq.${placaSemHifen},placa.eq.${placaComHifen}`)
+      .limit(1)
       .single();
 
     if (vehicleError) {
