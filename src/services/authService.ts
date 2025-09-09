@@ -23,12 +23,22 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
   
   try {
     console.log('fetchUserProfile: Iniciando busca do perfil...');
-    // Buscar perfil do usuário
-    const { data: profile, error: profileError } = await supabase
+    
+    // Adicionar timeout de 2 segundos para forçar fallback
+    const profilePromise = supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Timeout na consulta do perfil')), 2000)
+    );
+
+    const { data: profile, error: profileError } = await Promise.race([
+      profilePromise,
+      timeoutPromise
+    ]) as any;
     
     console.log('fetchUserProfile: Resultado da consulta profiles:', { profile, profileError });
 
