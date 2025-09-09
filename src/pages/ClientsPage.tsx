@@ -8,7 +8,7 @@ import { Search, Users, Plus, Edit, Trash2, Car, Phone, Mail, MapPin } from 'luc
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ClientEditDialogTabs } from '@/components/clients/ClientEditDialogTabs';
+import ClientEditDialogTabs from '@/components/clients/ClientEditDialogTabs';
 
 interface Client {
   id: string;

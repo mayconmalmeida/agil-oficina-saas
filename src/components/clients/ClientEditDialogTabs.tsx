@@ -80,3 +80,5 @@ export const ClientEditDialogTabs: React.FC<ClientEditDialogTabsProps> = ({
     </Dialog>
   );
 };
+
+export default ClientEditDialogTabs;
