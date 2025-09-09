@@ -41,6 +41,7 @@ import ProductEditPage from '@/pages/ProductEditPage';
 import ServiceEditPage from '@/pages/ServiceEditPage';
 import SupplierEditPage from '@/pages/SupplierEditPage';
 import VehicleHistoryPublicPage from '@/pages/VehicleHistoryPublicPage';
+import GenerateLabelPage from '@/pages/GenerateLabelPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -100,6 +101,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
+        <Route path="/dashboard/gerar-etiqueta" element={<GenerateLabelPage />} />
         <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
       </Route>
       

@@ -24,7 +24,8 @@ import {
   HardDrive,
   UserPlus,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  QrCode
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ const servicesAndBudgetsItems = [
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
   { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
+  { name: 'Gerar Etiqueta', href: '/dashboard/gerar-etiqueta', icon: QrCode },
 ];
 
 const financialItems = [
