@@ -373,26 +373,30 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
           <Card className="w-fit mx-auto">
             <CardContent className="p-0">
               {/* Lado 1 - Frente da etiqueta */}
-              <div id="oil-change-label-front" className="w-[10cm] h-[7cm] border-2 border-black p-3 bg-white text-black flex flex-col items-center justify-center mb-4">
+              <div id="oil-change-label-front" className="w-[10cm] h-[7cm] border-2 border-black p-4 bg-white text-black flex flex-col items-center justify-center mb-4">
                 {/* Logo da Oficina */}
-                <div className="text-center mb-3">
+                <div className="text-center mb-4">
                   {oficina?.logo_url ? (
                     <img 
                       src={oficina.logo_url} 
                       alt="Logo da Oficina" 
-                      className="h-12 w-auto object-contain mb-2"
+                      className="h-16 w-auto object-contain mb-2"
                     />
                   ) : (
-                    <div className="font-bold text-lg mb-2">
-                      {oficina?.nome_oficina || 'LOGO DA OFICINA'}
+                    <div className="font-bold text-xl mb-2 text-center">
+                      {oficina?.nome_oficina || 'AUTO MECÂNICA'}
                     </div>
                   )}
                 </div>
                 
-                {/* Telefone e Cidade */}
-                <div className="text-center text-sm">
-                  {oficina?.telefone && <div className="mb-1">{oficina.telefone}</div>}
-                  {oficina?.cidade && <div>{oficina.cidade}</div>}
+                {/* Telefone */}
+                <div className="text-center text-lg font-semibold mb-2">
+                  {oficina?.telefone || '(00) 0000-0000'}
+                </div>
+                
+                {/* Cidade */}
+                <div className="text-center text-md">
+                  {oficina?.cidade || 'CIDADE - ESTADO'}
                 </div>
               </div>
 
@@ -400,88 +404,78 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
               <div id="oil-change-label" className="w-[10cm] h-[7cm] border-2 border-black p-3 bg-white text-black flex">
                 {/* Lado esquerdo - Informações */}
                 <div className="flex-1 pr-3">
-                  {/* Logo da Oficina */}
-                  <div className="text-center mb-3 flex flex-col items-center">
-                    {oficina?.logo_url ? (
-                      <img 
-                        src={oficina.logo_url} 
-                        alt="Logo da Oficina" 
-                        className="h-8 w-auto object-contain mb-1"
-                      />
-                    ) : (
-                      <div className="font-bold text-sm mb-1">
-                        {oficina?.nome_oficina || 'LOGO DA OFICINA'}
-                      </div>
-                    )}
+                  {/* Header com logo pequeno */}
+                  <div className="text-center mb-2 pb-1 border-b border-black">
+                    <div className="text-xs font-bold">
+                      {oficina?.nome_oficina || 'AUTO MECÂNICA'}
+                    </div>
+                    <div className="text-xs">
+                      {oficina?.telefone || '(00) 0000-0000'}
+                    </div>
                   </div>
                   
                   {/* Última troca de óleo */}
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <div className="text-xs font-bold mb-1">Última troca de óleo:</div>
                     <div className="text-xs flex justify-between">
                       <span>DATA: {format(new Date(formData.data_troca), 'dd/MM/yyyy')}</span>
-                      <span>AOS {parseInt(formData.km_atual).toLocaleString('pt-BR')} KM</span>
+                      <span>AOS {parseInt(formData.km_atual || '0').toLocaleString('pt-BR')} KM</span>
                     </div>
                   </div>
 
                   {/* Próxima troca */}
-                  <div className="mb-2">
-                    <div className="text-xs font-bold mb-1 text-center border-b border-black pb-1">
-                      PRÓXIMA TROCA
+                  <div className="mb-1">
+                    <div className="text-xs font-bold mb-1 text-center bg-black text-white px-1">
+                      PRÓXIMAS TROCAS
                     </div>
                     
-                    <div className="text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span>Marca/Modelo do Óleo</span>
-                        <span className="font-medium">{formData.marca_modelo_oleo || ''}</span>
+                    <div className="text-xs space-y-0.5">
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Marca/Modelo do Óleo:</span>
+                        <span>{formData.marca_modelo_oleo || '_________________'}</span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span>ÓLEO DO MOTOR</span>
-                        <span className="font-medium">
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Motor:</span>
+                        <span>
                           {formData.km_proxima_oleo_motor ? 
                             `${parseInt(formData.km_proxima_oleo_motor).toLocaleString('pt-BR')} KM` : 
-                            'KM'
+                            '_________________'
                           }
                         </span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span>ÓLEO DO CÂMBIO</span>
-                        <span className="font-medium">
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Câmbio:</span>
+                        <span>
                           {formData.km_proxima_oleo_cambio ? 
                             `${parseInt(formData.km_proxima_oleo_cambio).toLocaleString('pt-BR')} KM` : 
-                            'KM'
+                            '_________________'
                           }
                         </span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span>FILTRO DE ÓLEO</span>
-                        <span className="font-medium">
-                          {formData.km_proxima_filtro_oleo ? 
-                            `${parseInt(formData.km_proxima_filtro_oleo).toLocaleString('pt-BR')} KM` : 
-                            'KM'
-                          }
-                        </span>
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Diferencial:</span>
+                        <span>_________________</span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span>FILTRO DE AR</span>
-                        <span className="font-medium">
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Filtro Ar:</span>
+                        <span>
                           {formData.km_proxima_filtro_ar ? 
                             `${parseInt(formData.km_proxima_filtro_ar).toLocaleString('pt-BR')} KM` : 
-                            'KM'
+                            '_________________'
                           }
                         </span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span>FILTRO DE COMBUSTÍVEL</span>
-                        <span className="font-medium">
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Comb.:</span>
+                        <span>
                           {formData.km_proxima_filtro_combustivel ? 
                             `${parseInt(formData.km_proxima_filtro_combustivel).toLocaleString('pt-BR')} KM` : 
-                            'KM'
+                            '_________________'
                           }
                         </span>
                       </div>
@@ -490,8 +484,8 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                 </div>
 
                 {/* Lado direito - QR Code */}
-                <div className="w-20 flex flex-col justify-center items-center border-l border-black pl-3">
-                  <QRCodeSVG value={qrCodeUrl} size={70} />
+                <div className="w-16 flex flex-col justify-center items-center border-l border-black pl-2">
+                  <QRCodeSVG value={qrCodeUrl} size={55} />
                 </div>
               </div>
             </CardContent>
