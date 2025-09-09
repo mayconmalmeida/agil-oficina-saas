@@ -36,6 +36,7 @@ import { useState } from 'react';
 
 const mainNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'Gerar Etiqueta', href: '/dashboard/gerar-etiqueta', icon: QrCode },
 ];
 
 const clientsAndVehiclesItems = [
@@ -48,7 +49,6 @@ const servicesAndBudgetsItems = [
   { name: 'Orçamentos', href: '/dashboard/orcamentos', icon: FileText },
   { name: 'Agendamentos', href: '/dashboard/agendamentos', icon: Calendar },
   { name: 'Ordem de Serviço', href: '/dashboard/ordem-servico', icon: ClipboardList },
-  { name: 'Gerar Etiqueta', href: '/dashboard/gerar-etiqueta', icon: QrCode },
 ];
 
 const financialItems = [
