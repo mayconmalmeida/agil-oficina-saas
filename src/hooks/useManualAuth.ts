@@ -62,7 +62,7 @@ export const useManualAuth = (): AuthState => {
           } catch (error) {
             console.error('[useManualAuth] Erro ao carregar profile:', error);
             if (isMounted) {
-              // Criar perfil básico em caso de erro
+              // Criar perfil básico em caso de erro mas manter a sessão
               const basicProfile: UserProfile = {
                 id: session.user.id,
                 email: session.user.email || '',
@@ -73,13 +73,17 @@ export const useManualAuth = (): AuthState => {
                 subscription: null,
                 oficina_id: null,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                trial_ends_at: null,
+                plano: 'Essencial',
+                trial_started_at: null
               };
               setUser(basicProfile);
               setRole('user');
               setLoading(false);
               setIsLoadingAuth(false);
               isInitializedRef.current = true;
+              console.log('[useManualAuth] Perfil básico criado devido a erro, mas sessão mantida');
             }
           }
         } else {
