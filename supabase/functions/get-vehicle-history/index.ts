@@ -56,13 +56,14 @@ serve(async (req) => {
         modelo,
         ano,
         cor,
+        cliente_id,
         clients!inner (
           nome,
           telefone,
           email
         )
       `)
-      .or(`placa.eq.${placaOriginal},placa.eq.${placaSemHifen},placa.eq.${placaComHifen}`)
+      .or(`placa.ilike.${placaOriginal},placa.ilike.${placaSemHifen},placa.ilike.${placaComHifen}`)
       .limit(1)
       .single();
 
