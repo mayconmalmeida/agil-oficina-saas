@@ -1587,6 +1587,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_current_admin_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_oficina_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1594,6 +1598,10 @@ export type Database = {
       get_user_subscription: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_trial_active: {
         Args: { user_profile_id: string }
