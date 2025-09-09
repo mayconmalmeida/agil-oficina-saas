@@ -57,29 +57,30 @@ serve(async (req) => {
         ano,
         cor,
         cliente_id,
-        clients!inner (
+        clients (
           nome,
           telefone,
           email
         )
       `)
-      .or(`placa.ilike.${placaOriginal},placa.ilike.${placaSemHifen},placa.ilike.${placaComHifen}`)
+      .or(`placa.ilike.%${placaOriginal}%,placa.ilike.%${placaSemHifen}%,placa.ilike.%${placaComHifen}%`)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (vehicleError) {
       console.error('Erro ao buscar veículo:', vehicleError);
-      if (vehicleError.code === 'PGRST116') {
-        return new Response(
-          JSON.stringify({ error: 'Veículo não encontrado' }),
-          { 
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      } else {
-        throw vehicleError;
-      }
+      throw vehicleError;
+    }
+
+    if (!vehicleData) {
+      console.log('Veículo não encontrado para placa:', placaOriginal);
+      return new Response(
+        JSON.stringify({ error: 'Veículo não encontrado' }),
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Buscar histórico do veículo usando o ID

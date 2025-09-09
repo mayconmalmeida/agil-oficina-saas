@@ -431,8 +431,13 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                     
                     <div className="text-xs space-y-0.5">
                       <div className="flex justify-between border-b border-gray-300">
-                        <span className="font-medium">Marca/Modelo do Óleo:</span>
-                        <span>{formData.marca_modelo_oleo || '_________________'}</span>
+                        <span className="font-medium">Óleo Motor:</span>
+                        <span>
+                          {formData.km_proxima_oleo_motor ? 
+                            `${parseInt(formData.km_proxima_oleo_motor).toLocaleString('pt-BR')} KM` : 
+                            '_________________'
+                          }
+                        </span>
                       </div>
                       
                       <div className="flex justify-between border-b border-gray-300">
@@ -458,6 +463,16 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                       <div className="flex justify-between border-b border-gray-300">
                         <span className="font-medium">Diferencial:</span>
                         <span>_________________</span>
+                      </div>
+                      
+                      <div className="flex justify-between border-b border-gray-300">
+                        <span className="font-medium">Filtro Óleo:</span>
+                        <span>
+                          {formData.km_proxima_filtro_oleo ? 
+                            `${parseInt(formData.km_proxima_filtro_oleo).toLocaleString('pt-BR')} KM` : 
+                            '_________________'
+                          }
+                        </span>
                       </div>
                       
                       <div className="flex justify-between border-b border-gray-300">
