@@ -88,7 +88,7 @@ const LoginPage: React.FC = () => {
       }
     }, 500);
 
-    // Timeout de segurança de 5 segundos
+    // Timeout de segurança de 8 segundos (aumentado para aguardar o perfil carregar)
     const timeout = setTimeout(() => {
       if (!hasCheckedSession.current) {
         console.log("LoginPage: Timeout de verificação, assumindo não autenticado");
@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
         setCheckingSession(false);
       }
       clearInterval(interval);
-    }, 5000);
+    }, 8000);
 
     return () => {
       clearInterval(interval);
@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">OficinaFlow</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Oficina Go</h1>
             <p className="text-gray-600">Sistema de Gestão para Oficinas</p>
           </div>
         </div>
