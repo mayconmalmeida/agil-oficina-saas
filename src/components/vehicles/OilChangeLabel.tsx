@@ -50,8 +50,12 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
   const [formData, setFormData] = useState({
     data_troca: format(new Date(), 'yyyy-MM-dd'),
     km_atual: '',
-    km_proxima: '',
-    tipo_oleo: '',
+    km_proxima_oleo_motor: '',
+    km_proxima_oleo_cambio: '',
+    km_proxima_filtro_oleo: '',
+    km_proxima_filtro_ar: '',
+    km_proxima_filtro_combustivel: '',
+    marca_modelo_oleo: '',
     observacoes: ''
   });
   const [client, setClient] = useState<Client | null>(null);
@@ -95,8 +99,8 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
           veiculo_id: vehicleId,
           data_troca: formData.data_troca,
           km_atual: parseInt(formData.km_atual),
-          km_proxima: formData.km_proxima ? parseInt(formData.km_proxima) : null,
-          tipo_oleo: formData.tipo_oleo,
+          km_proxima: formData.km_proxima_oleo_motor ? parseInt(formData.km_proxima_oleo_motor) : null,
+          tipo_oleo: formData.marca_modelo_oleo,
           observacoes: formData.observacoes,
           qrcode_url: qrUrl
         });
@@ -139,12 +143,13 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                   background: white;
                 }
                 .label { 
-                  width: 7cm; 
-                  height: 5cm; 
+                  width: 10cm; 
+                  height: 7cm; 
                   border: 2px solid #000; 
-                  padding: 10px; 
+                  padding: 12px; 
                   box-sizing: border-box;
                   background: white;
+                  display: flex;
                 }
                 .header { 
                   text-align: center; 
@@ -170,9 +175,10 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
                 @media print {
                   body { margin: 0; }
                   .label { 
-                    width: 7cm; 
-                    height: 5cm; 
+                    width: 10cm; 
+                    height: 7cm; 
                     border: 2px solid #000;
+                    display: flex;
                   }
                 }
               </style>
@@ -219,28 +225,69 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="km_proxima">KM Próxima Troca (opcional)</Label>
+              <Label htmlFor="marca_modelo_oleo">Marca/Modelo do Óleo</Label>
               <Input
-                id="km_proxima"
-                type="number"
-                placeholder="Ex: 125450"
-                value={formData.km_proxima}
-                onChange={(e) => setFormData(prev => ({ ...prev, km_proxima: e.target.value }))}
+                id="marca_modelo_oleo"
+                placeholder="Ex: Castrol GTX 20W50"
+                value={formData.marca_modelo_oleo}
+                onChange={(e) => setFormData(prev => ({ ...prev, marca_modelo_oleo: e.target.value }))}
               />
             </div>
 
-            <div>
-              <Label htmlFor="tipo_oleo">Tipo do Óleo</Label>
-              <Select onValueChange={(value) => setFormData(prev => ({ ...prev, tipo_oleo: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de óleo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {oilTypes.map((oil) => (
-                    <SelectItem key={oil} value={oil}>{oil}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="km_proxima_oleo_motor">KM Próxima - Óleo Motor</Label>
+                <Input
+                  id="km_proxima_oleo_motor"
+                  type="number"
+                  placeholder="125450"
+                  value={formData.km_proxima_oleo_motor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, km_proxima_oleo_motor: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="km_proxima_oleo_cambio">KM Próxima - Óleo Câmbio</Label>
+                <Input
+                  id="km_proxima_oleo_cambio"
+                  type="number"
+                  placeholder="125450"
+                  value={formData.km_proxima_oleo_cambio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, km_proxima_oleo_cambio: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label htmlFor="km_proxima_filtro_oleo">KM Filtro Óleo</Label>
+                <Input
+                  id="km_proxima_filtro_oleo"
+                  type="number"
+                  placeholder="125450"
+                  value={formData.km_proxima_filtro_oleo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, km_proxima_filtro_oleo: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="km_proxima_filtro_ar">KM Filtro Ar</Label>
+                <Input
+                  id="km_proxima_filtro_ar"
+                  type="number"
+                  placeholder="125450"
+                  value={formData.km_proxima_filtro_ar}
+                  onChange={(e) => setFormData(prev => ({ ...prev, km_proxima_filtro_ar: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="km_proxima_filtro_combustivel">KM Filtro Combustível</Label>
+                <Input
+                  id="km_proxima_filtro_combustivel"
+                  type="number"
+                  placeholder="125450"
+                  value={formData.km_proxima_filtro_combustivel}
+                  onChange={(e) => setFormData(prev => ({ ...prev, km_proxima_filtro_combustivel: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div>
@@ -259,7 +306,7 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
               </Button>
               <Button 
                 onClick={handleSubmit} 
-                disabled={!formData.km_atual || !formData.tipo_oleo || isLoading}
+                disabled={!formData.km_atual || !formData.marca_modelo_oleo || isLoading}
                 className="flex-1"
               >
                 {isLoading ? 'Gerando...' : 'Gerar Etiqueta'}
@@ -281,53 +328,82 @@ export const OilChangeLabel: React.FC<OilChangeLabelProps> = ({
         <div className="space-y-4">
           <Card className="w-fit mx-auto">
             <CardContent className="p-0">
-              <div id="oil-change-label" className="w-[7cm] h-[5cm] border-2 border-black p-2 bg-white text-black">
-                <div className="text-center font-bold text-lg border-b border-black pb-1 mb-2">
-                  Oficina Go
-                </div>
-                
-                <div className="text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span>Veículo:</span>
-                    <span className="font-medium">{vehicleInfo} {vehiclePlate}</span>
+              <div id="oil-change-label" className="w-[10cm] h-[7cm] border-2 border-black p-3 bg-white text-black flex">
+                {/* Lado esquerdo - Informações */}
+                <div className="flex-1 pr-3">
+                  {/* Logo da Oficina */}
+                  <div className="text-center font-bold text-lg border-b border-black pb-1 mb-3">
+                    LOGO DA OFICINA
                   </div>
                   
-                  <div className="flex justify-between">
-                    <span>Cliente:</span>
-                    <span className="font-medium">{client?.nome}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>Óleo:</span>
-                    <span className="font-medium">{formData.tipo_oleo}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>Data:</span>
-                    <span className="font-medium">
-                      {format(new Date(formData.data_troca), 'dd/MM/yyyy')}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span>KM:</span>
-                    <span className="font-medium">
-                      {parseInt(formData.km_atual).toLocaleString('pt-BR')}
-                    </span>
-                  </div>
-                  
-                  {formData.km_proxima && (
-                    <div className="flex justify-between">
-                      <span>Próx. Troca:</span>
-                      <span className="font-medium">
-                        {parseInt(formData.km_proxima).toLocaleString('pt-BR')} km
-                      </span>
+                  {/* Última troca de óleo */}
+                  <div className="mb-3">
+                    <div className="text-xs font-bold mb-1">Última troca de óleo:</div>
+                    <div className="text-xs flex justify-between">
+                      <span>DATA: {format(new Date(formData.data_troca), 'dd/MM/yyyy')}</span>
+                      <span>AOS {parseInt(formData.km_atual).toLocaleString('pt-BR')} KM</span>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Próxima troca */}
+                  <div className="mb-2">
+                    <div className="text-xs font-bold mb-1 text-center border-b border-black pb-1">
+                      PRÓXIMA TROCA
+                    </div>
+                    
+                    <div className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span>Marca/Modelo do Óleo</span>
+                        <span className="font-medium">{formData.marca_modelo_oleo}</span>
+                      </div>
+                      
+                      {formData.km_proxima_oleo_motor && (
+                        <div className="flex justify-between">
+                          <span>ÓLEO DO MOTOR</span>
+                          <span className="font-medium">{parseInt(formData.km_proxima_oleo_motor).toLocaleString('pt-BR')} KM</span>
+                        </div>
+                      )}
+                      
+                      {formData.km_proxima_oleo_cambio && (
+                        <div className="flex justify-between">
+                          <span>ÓLEO DO CÂMBIO</span>
+                          <span className="font-medium">{parseInt(formData.km_proxima_oleo_cambio).toLocaleString('pt-BR')} KM</span>
+                        </div>
+                      )}
+                      
+                      {formData.km_proxima_filtro_oleo && (
+                        <div className="flex justify-between">
+                          <span>FILTRO DE ÓLEO</span>
+                          <span className="font-medium">{parseInt(formData.km_proxima_filtro_oleo).toLocaleString('pt-BR')} KM</span>
+                        </div>
+                      )}
+                      
+                      {formData.km_proxima_filtro_ar && (
+                        <div className="flex justify-between">
+                          <span>FILTRO DE AR</span>
+                          <span className="font-medium">{parseInt(formData.km_proxima_filtro_ar).toLocaleString('pt-BR')} KM</span>
+                        </div>
+                      )}
+                      
+                      {formData.km_proxima_filtro_combustivel && (
+                        <div className="flex justify-between">
+                          <span>FILTRO DE COMBUSTÍVEL</span>
+                          <span className="font-medium">{parseInt(formData.km_proxima_filtro_combustivel).toLocaleString('pt-BR')} KM</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-xs mt-2 border-t border-black pt-1">
+                    <div><strong>Veículo:</strong> {vehicleInfo} {vehiclePlate}</div>
+                    <div><strong>Cliente:</strong> {client?.nome}</div>
+                  </div>
                 </div>
 
-                <div className="text-center mt-2">
-                  <QRCodeSVG value={qrCodeUrl} size={60} />
+                {/* Lado direito - QR Code */}
+                <div className="w-20 flex flex-col justify-center items-center border-l border-black pl-3">
+                  <QRCodeSVG value={qrCodeUrl} size={70} />
+                  <div className="text-xs mt-1 text-center">Histórico</div>
                 </div>
               </div>
             </CardContent>
