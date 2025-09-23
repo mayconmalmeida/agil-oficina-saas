@@ -14,7 +14,7 @@ const AppContent: React.FC = () => {
     const timeout = setTimeout(() => {
       console.log('AppContent: Timeout de loading atingido, forçando carregamento do app');
       setForceLoad(true);
-    }, 1000); // Reduzido para 1 segundo
+    }, 800); // Reduzido para 800ms
 
     return () => clearTimeout(timeout);
   }, []);

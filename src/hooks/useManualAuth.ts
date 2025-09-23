@@ -107,7 +107,7 @@ export const useManualAuth = (): AuthState => {
       }
     });
 
-    // Timeout de segurança reduzido para forçar fallback mais rápido
+    // Timeout de segurança mais agressivo para evitar loading infinito
     const timeout = setTimeout(() => {
       if (isMounted && !isInitializedRef.current) {
         console.log('[useManualAuth] Timeout de segurança - forçando inicialização');
@@ -115,7 +115,7 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 3000); // Reduzido para 3 segundos para forçar fallback rapidamente
+    }, 1500); // Reduzido para 1.5 segundos
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
