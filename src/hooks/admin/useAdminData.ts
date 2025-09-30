@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminUser, AdminSubscription, AdminStats } from './types/adminTypes';
 import { fetchUsersData } from './services/usersService';
@@ -10,7 +10,7 @@ export const useAdminData = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
   const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
+    totalOficinas: 0,
     activeSubscriptions: 0,
     trialingUsers: 0,
     totalRevenue: 0,
@@ -89,11 +89,14 @@ export const useAdminData = () => {
     try {
       loadingStatsRef.current = true;
       setIsLoadingStats(true);
+      console.log('🔄 useAdminData: Carregando estatísticas...');
+      
       const statsData = await fetchStatsData();
+      console.log('📊 useAdminData: Estatísticas carregadas:', statsData);
+      
       setStats(statsData);
-      console.log('Estatísticas carregadas:', statsData);
     } catch (error: any) {
-      console.error('Erro ao carregar estatísticas:', error);
+      console.error('❌ useAdminData: Erro ao carregar estatísticas:', error);
       
       if (error.message?.includes('503')) {
         toast({

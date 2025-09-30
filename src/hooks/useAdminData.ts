@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAdminContext } from '@/contexts/AdminContext';
 import { AdminStats } from '@/types/admin';
 import { supabase } from '@/lib/supabase';
@@ -11,9 +11,17 @@ export const useAdminData = () => {
 
   const fetchStats = useCallback(async () => {
     console.log('🔍 Iniciando busca de estatísticas admin...');
+    console.log('👤 Usuário atual:', user);
     
-    if (!user || !user.isAdmin) {
-      console.log('❌ Usuário admin não fornecido ou inválido:', user);
+    if (!user) {
+      console.log('❌ Usuário admin não fornecido:', user);
+      setError('Usuário administrador não autenticado');
+      return;
+    }
+
+    // Verificar se é admin baseado no role ao invés de isAdmin
+    if (!user.role || (user.role !== 'admin' && user.role !== 'superadmin')) {
+      console.log('❌ Usuário não tem permissões de admin:', user.role);
       setError('Usuário administrador não autenticado');
       return;
     }
@@ -22,16 +30,16 @@ export const useAdminData = () => {
     setError(null);
 
     try {
-      console.log('📊 Buscando dados de usuários...');
+      console.log('📊 Buscando dados de oficinas...');
       
-      // Buscar total de usuários
-      const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
+      // Buscar total de oficinas
+      const { count: totalOficinas, error: oficinasError } = await supabase
+        .from('oficinas')
         .select('*', { count: 'exact', head: true });
 
-      if (usersError) {
-        console.error('Erro ao buscar usuários:', usersError);
-        throw usersError;
+      if (oficinasError) {
+        console.error('Erro ao buscar oficinas:', oficinasError);
+        throw oficinasError;
       }
 
       // Buscar assinaturas ativas
@@ -73,7 +81,7 @@ export const useAdminData = () => {
       }
 
       const statsData: AdminStats = {
-        totalUsers: totalUsers || 0,
+        totalOficinas: totalOficinas || 0,
         activeSubscriptions: activeSubscriptions || 0,
         trialingUsers: trialingUsers || 0,
         totalRevenue,

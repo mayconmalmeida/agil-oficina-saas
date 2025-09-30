@@ -183,23 +183,23 @@ const NotificationsSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium flex items-center text-gray-900 dark:text-white">
+        <h2 className="text-lg font-medium flex items-center text-gray-900
           <Bell className="mr-2 h-5 w-5" />
           Notificações
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Configure como deseja receber notificações</p>
+        <p className="text-sm text-gray-500 como deseja receber notificações</p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-white">Notificações por Email</CardTitle>
+            <CardTitle className="text-gray-900 por Email</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Agendamentos</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails sobre novos agendamentos</div>
+                <div className="font-medium text-gray-900
+                <div className="text-sm text-gray-500 emails sobre novos agendamentos</div>
               </div>
               <Switch
                 checked={settings.email_agendamentos}
@@ -209,8 +209,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Pagamentos</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails sobre pagamentos recebidos</div>
+                <div className="font-medium text-gray-900
+                <div className="text-sm text-gray-500 emails sobre pagamentos recebidos</div>
               </div>
               <Switch
                 checked={settings.email_pagamentos}
@@ -220,8 +220,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Novos Clientes</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber emails quando novos clientes se cadastrarem</div>
+                <div className="font-medium text-gray-900 Clientes</div>
+                <div className="text-sm text-gray-500 emails quando novos clientes se cadastrarem</div>
               </div>
               <Switch
                 checked={settings.email_clientes}
@@ -233,16 +233,16 @@ const NotificationsSettings: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-white">Notificações Push</CardTitle>
+            <CardTitle className="text-gray-900 Push</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white flex items-center">
+                <div className="font-medium text-gray-900 flex items-center">
                   {settings.push_sound_enabled ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
                   Som das Notificações
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Reproduzir som ao receber notificações push</div>
+                <div className="text-sm text-gray-500 som ao receber notificações push</div>
               </div>
               <Switch
                 checked={settings.push_sound_enabled}
@@ -252,8 +252,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Agendamentos</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre agendamentos</div>
+                <div className="font-medium text-gray-900
+                <div className="text-sm text-gray-500 notificações push sobre agendamentos</div>
               </div>
               <Switch
                 checked={settings.push_agendamentos}
@@ -263,8 +263,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Pagamentos</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre pagamentos</div>
+                <div className="font-medium text-gray-900
+                <div className="text-sm text-gray-500 notificações push sobre pagamentos</div>
               </div>
               <Switch
                 checked={settings.push_pagamentos}
@@ -274,8 +274,8 @@ const NotificationsSettings: React.FC = () => {
 
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">Novos Clientes</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Receber notificações push sobre novos clientes</div>
+                <div className="font-medium text-gray-900 Clientes</div>
+                <div className="text-sm text-gray-500 notificações push sobre novos clientes</div>
               </div>
               <Switch
                 checked={settings.push_clientes}

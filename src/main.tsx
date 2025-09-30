@@ -1,51 +1,62 @@
 
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { StrictMode } from 'react';
 import App from './App.tsx';
 import './index.css';
 
-// Create error handler
 const handleRenderError = (error: Error) => {
-  console.error("Rendering error:", error);
-  const rootElement = document.getElementById('root');
+  console.error('Render error:', error);
   
   // Special handling for Supabase errors
-  const isSupabaseError = error.message.includes('supabase') || 
-                          error.stack?.includes('supabase');
-                          
-  if (rootElement) {
-    rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
-        <h2>Algo deu errado</h2>
-        <p>${isSupabaseError 
-          ? 'Não foi possível conectar ao Supabase. O aplicativo está rodando em modo de demonstração.' 
-          : 'O aplicativo encontrou um problema. Por favor, recarregue a página.'}</p>
-        ${isSupabaseError ? `
-          <div style="max-width: 500px; margin: 20px auto; text-align: left; background: #f8f8f8; padding: 15px; border-radius: 8px;">
-            <p><strong>Configuração do Supabase:</strong></p>
-            <ol style="padding-left: 20px; line-height: 1.6;">
-              <li>Clique no botão verde Supabase no canto superior direito desta interface.</li>
-              <li>Conecte ao Supabase para ativar funcionalidades de backend.</li>
-              <li>Uma vez conectado, este erro desaparecerá automaticamente.</li>
-            </ol>
-          </div>
-        ` : ''}
-        <button onclick="window.location.reload()" style="padding: 8px 16px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
-          Recarregar
-        </button>
-        <p style="margin-top: 10px; font-size: 12px; color: #666;">
-          Erro: ${error.message}
-        </p>
-      </div>
-    `;
+  if (error.message.includes('supabase')) {
+    console.error('Supabase configuration error. Please check your environment variables.');
   }
+  
+  // Create error display
+  const errorContainer = document.createElement('div');
+  errorContainer.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1a1a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      z-index: 9999;
+    ">
+      <h1 style="font-size: 2rem; margin-bottom: 1rem;">Application Error</h1>
+      <p style="margin-bottom: 1rem; text-align: center; max-width: 600px;">
+        ${error.message}
+      </p>
+      <button 
+        onclick="window.location.reload()" 
+        style="
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          font-size: 1rem;
+        "
+      >
+        Reload Page
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(errorContainer);
 };
 
 try {
-  createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
+  createRoot(document.getElementById('root')!).render(
+    <App />
   );
 } catch (error) {
   handleRenderError(error as Error);

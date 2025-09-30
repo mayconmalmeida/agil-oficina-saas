@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Eye, Edit, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Orcamento {
   id: string;
@@ -26,26 +27,47 @@ const BudgetsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    carregarOrcamentos();
-  }, []);
+    if (user?.id) {
+      carregarOrcamentos();
+    }
+  }, [user?.id]);
 
   const carregarOrcamentos = async () => {
     try {
-      const { data, error } = await supabase
+      if (!user?.id) {
+        console.log('Usuário não autenticado');
+        return;
+      }
+
+      // Adicionar timeout para evitar travamentos
+      const orcamentosPromise = supabase
         .from('orcamentos')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout na consulta dos orçamentos')), 15000);
+      });
+
+      const { data, error } = await Promise.race([
+        orcamentosPromise,
+        timeoutPromise
+      ]) as any;
 
       if (error) throw error;
       setOrcamentos(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar orçamentos:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar os orçamentos."
+        description: error.message === 'Timeout na consulta dos orçamentos'
+          ? "A consulta demorou muito para responder. Tente novamente."
+          : "Não foi possível carregar os orçamentos."
       });
     } finally {
       setIsLoading(false);

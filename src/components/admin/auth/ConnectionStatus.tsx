@@ -37,13 +37,13 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ status, errorMessag
   const getStatusColor = () => {
     switch (status) {
       case 'checking':
-        return 'text-amber-600 dark:text-amber-400';
+        return 'text-amber-600
       case 'connected':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-green-600
       case 'error':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-red-600
       default:
-        return 'text-slate-600 dark:text-slate-400';
+        return 'text-slate-600
     }
   };
 

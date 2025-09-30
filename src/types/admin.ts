@@ -1,6 +1,6 @@
 
 export interface AdminStats {
-  totalUsers: number;
+  totalOficinas: number;
   activeSubscriptions: number;
   trialingUsers: number;
   totalRevenue: number;

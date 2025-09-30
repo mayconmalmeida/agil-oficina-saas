@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/button';
 const AdminLayout: React.FC = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const displayName = user?.nome_oficina || user?.email || 'Admin';
 
   const menuItems = [
     {
@@ -78,11 +81,11 @@ const AdminLayout: React.FC = () => {
             <div className="flex items-center">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-medium">
-                  {user?.email?.charAt(0).toUpperCase()}
+                  {displayName?.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">Admin</p>
+                <p className="text-sm font-medium text-gray-700">{displayName}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
             </div>

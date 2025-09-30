@@ -347,7 +347,7 @@ const ReportsPage: React.FC = () => {
               <CardContent>
                 <div className="space-y-3">
                   {reportData.faturamento.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
                       <span className="font-medium">{item.mes}</span>
                       <span className="text-lg font-bold text-green-600">
                         R$ {item.valor.toLocaleString('pt-BR')}
@@ -400,13 +400,13 @@ const ReportsPage: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   {reportData.produtosMaisUsados.map((item, index) => (
-                    <div key={index} className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
+                    <div key={index} className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
                       <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">
                         {index + 1}
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{item.nome}</p>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                           <div 
                             className="bg-primary h-2 rounded-full transition-all duration-500" 
                             style={{width: `${(item.quantidade / Math.max(...reportData.produtosMaisUsados.map(p => p.quantidade))) * 100}%`}}

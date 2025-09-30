@@ -21,7 +21,7 @@ const SuportePage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center space-x-2">
         <Headphones className="h-6 w-6 text-pink-600" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Suporte</h1>
+        <h1 className="text-2xl font-bold text-gray-900
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -64,24 +64,24 @@ const SuportePage: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="text-center p-4 border rounded-lg dark:border-gray-700">
+            <div className="text-center p-4 border rounded-lg
               <Phone className="h-8 w-8 text-green-600 mx-auto mb-2" />
               <h3 className="font-medium mb-1">1. Contato Direto</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600
                 Entre em contato via telefone para suporte personalizado
               </p>
             </div>
-            <div className="text-center p-4 border rounded-lg dark:border-gray-700">
+            <div className="text-center p-4 border rounded-lg
               <MessageSquare className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <h3 className="font-medium mb-1">2. WhatsApp Business</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600
                 Use o WhatsApp Business para tirar dúvidas rapidamente
               </p>
             </div>
-            <div className="text-center p-4 border rounded-lg dark:border-gray-700">
+            <div className="text-center p-4 border rounded-lg
               <CheckCircle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
               <h3 className="font-medium mb-1">3. Resolução Rápida</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600
                 Nossa equipe especializada resolve suas dúvidas rapidamente
               </p>
             </div>

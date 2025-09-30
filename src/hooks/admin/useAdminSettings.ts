@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAdminContext } from "@/contexts/AdminContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";

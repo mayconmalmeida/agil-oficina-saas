@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -25,7 +25,9 @@ import {
   Target,
   TrendingUp,
   Award,
-  CheckCircle
+  CheckCircle,
+  ArrowRight,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,8 +38,8 @@ import { Pricing } from '@/components/ui/pricing';
 const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
 
-  // Dados dos planos para o novo componente
   const pricingPlans = [
     {
       name: "Premium Mensal",
@@ -51,10 +53,8 @@ const LandingPage = () => {
         "Agendamentos inteligentes",
         "Controle de estoque completo",
         "Relatórios avançados",
-        "Marketing automático",
         "Suporte prioritário",
         "Integração contábil",
-        "App mobile",
         "Backup automático"
       ],
       description: "Gestão completa para sua oficina",
@@ -103,11 +103,6 @@ const LandingPage = () => {
       icon: <BarChart3 className="h-8 w-8" />,
       title: "Relatórios Avançados",
       description: "Acompanhe o desempenho do seu negócio com relatórios detalhados."
-    },
-    {
-      icon: <Smartphone className="h-8 w-8" />,
-      title: "Acesso Mobile",
-      description: "Gerencie sua oficina de qualquer lugar com nosso app mobile."
     },
     {
       icon: <Shield className="h-8 w-8" />,
@@ -161,7 +156,6 @@ const LandingPage = () => {
     }
   ];
 
-  // Componente para números animados
   const AnimatedCounter = ({ end, duration = 2000, prefix = "", suffix = "" }: { 
     end: number; 
     duration?: number; 
@@ -169,174 +163,185 @@ const LandingPage = () => {
     suffix?: string; 
   }) => {
     const [count, setCount] = useState(0);
-    const [hasAnimated, setHasAnimated] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
-    React.useEffect(() => {
-      if (hasAnimated) return;
+    useEffect(() => {
+      if (!isVisible) return;
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            setHasAnimated(true);
-            let startTime: number;
-            const animate = (currentTime: number) => {
-              if (!startTime) startTime = currentTime;
-              const progress = Math.min((currentTime - startTime) / duration, 1);
-              setCount(Math.floor(progress * end));
-              if (progress < 1) {
-                requestAnimationFrame(animate);
-              }
-            };
-            requestAnimationFrame(animate);
-          }
-        },
-        { threshold: 0.5 }
-      );
+      let startTime: number;
+      let animationFrame: number;
 
-      const element = document.getElementById(`counter-${end}`);
-      if (element) observer.observe(element);
+      const animate = (timestamp: number) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        
+        // Easing function for smoother animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        setCount(Math.floor(easeOutQuart * end));
 
-      return () => observer.disconnect();
-    }, [end, duration, hasAnimated]);
+        if (progress < 1) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(animationFrame);
+    }, [end, duration, isVisible]);
 
     return (
-      <span id={`counter-${end}`}>
-        {prefix}{count.toLocaleString('pt-BR')}{suffix}
-      </span>
+      <motion.span
+        initial={{ scale: 0.5, opacity: 0 }}
+        whileInView={{ 
+          scale: 1, 
+          opacity: 1,
+          transition: { 
+            duration: 0.5,
+            type: "spring",
+            stiffness: 100
+          }
+        }}
+        viewport={{ once: true }}
+        onViewportEnter={() => setIsVisible(true)}
+        className="inline-block"
+      >
+        {prefix}{count.toLocaleString()}{suffix}
+      </motion.span>
     );
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white shadow-sm fixed w-full top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Wrench className="h-8 w-8 text-blue-600 mr-2" />
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <Wrench className="h-8 w-8 text-blue-600" />
               <span className="text-2xl font-bold text-gray-900">Oficina Go</span>
             </div>
-            
+
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Funcionalidades
+            <nav className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Recursos
               </a>
-              <a href="#precos" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Preços
+              </a>
+              <a href="#faq" className="text-gray-600 hover:text-blue-600 transition-colors">
+                FAQ
               </a>
               <a href="#contato" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Contato
               </a>
-            </nav>
-
-            <div className="hidden md:flex items-center space-x-4">
-              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Entrar
+              <Link to="/login">
+                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                  Entrar
+                </Button>
               </Link>
               <Link to="/register">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  Teste Grátis
+                  Começar Grátis
                 </Button>
               </Link>
-            </div>
+            </nav>
 
-            {/* Mobile menu button */}
+            {/* Mobile Menu Button */}
             <button
-              className="md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
-          {/* Mobile Navigation */}
+          {/* Mobile Menu */}
           {isMenuOpen && (
-            <motion.div 
-              className="md:hidden py-4 border-t"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4"
             >
-              <nav className="flex flex-col space-y-4">
-                <a href="#funcionalidades" className="text-gray-600 hover:text-blue-600">
-                  Funcionalidades
+              <div className="flex flex-col space-y-4">
+                <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  Recursos
                 </a>
-                <a href="#precos" className="text-gray-600 hover:text-blue-600">
+                <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                   Preços
                 </a>
-                <a href="#contato" className="text-gray-600 hover:text-blue-600">
+                <a href="#faq" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  FAQ
+                </a>
+                <a href="#contato" className="text-gray-600 hover:text-blue-600 transition-colors">
                   Contato
                 </a>
-                <Link to="/login" className="text-gray-600 hover:text-blue-600">
-                  Entrar
-                </Link>
-                <Link to="/register">
-                  <Button className="bg-blue-600 hover:bg-blue-700 w-full">
-                    Teste Grátis
-                  </Button>
-                </Link>
-              </nav>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">
+                    Tema
+                  </span>
+                </div>
+                <div className="flex flex-col space-y-2 pt-2">
+                  <Link to="/login">
+                    <Button variant="outline" className="w-full border-blue-600 text-blue-600 hover:bg-blue-50">
+                      Entrar
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      Começar Grátis
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </motion.div>
           )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 to-white">
+      <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
+          <div className="text-center">
             <motion.h1 
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+              className="text-4xl md:text-6xl font-bold text-gray-900 mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              Transforme a gestão da sua oficina com o{' '}
-              <span className="text-blue-600">Oficina Go</span>
+              Gerencie sua oficina com
+              <span className="text-blue-600"> inteligência</span>
             </motion.h1>
             
             <motion.p 
-              className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto"
+              className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              Sistema completo para gerenciar clientes, orçamentos, agendamentos e muito mais. 
-              Tudo online, fácil e intuitivo.
+              Sistema completo para gestão de oficinas mecânicas. Controle de serviços, 
+              estoque, clientes e muito mais em uma plataforma moderna e intuitiva.
             </motion.p>
-
+            
             <motion.div 
-              className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <Link to="/register">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
-                  Começar Teste Grátis
-                  <ChevronRight className="ml-2 h-5 w-5" />
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
+                  Começar Grátis
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
-                Ver Demonstração
-              </Button>
             </motion.div>
-
-            <motion.p 
-              className="text-sm text-gray-500"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
-              ✅ 7 dias grátis • ✅ Sem cartão de crédito • ✅ Suporte incluído
-            </motion.p>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-12"
@@ -345,123 +350,204 @@ const LandingPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Números que comprovam nossa eficiência
             </h2>
-            <p className="text-lg text-gray-600">
-              Milhares de oficinas já confiam no Oficina Go
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Resultados reais de oficinas que confiam no Oficina Go
             </p>
           </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
+              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-3">
                 <AnimatedCounter end={100} suffix="+" />
               </div>
-              <p className="text-lg text-gray-600">Oficinas Ativas</p>
+              <p className="text-gray-600 font-medium">Oficinas Ativas</p>
+              <div className="mt-4 w-16 h-1 bg-blue-600 mx-auto rounded-full"></div>
             </motion.div>
-
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+            
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-green-600 mb-3">
                 <AnimatedCounter end={300} suffix="+" />
               </div>
-              <p className="text-lg text-gray-600">Usuários Cadastrados</p>
+              <p className="text-gray-600 font-medium">Usuários Cadastrados</p>
+              <div className="mt-4 w-16 h-1 bg-green-600 mx-auto rounded-full"></div>
             </motion.div>
-
-            <motion.div 
-              className="text-center"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+            
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
+              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-purple-600 mb-3">
                 <AnimatedCounter end={5000} suffix="+" />
               </div>
-              <p className="text-lg text-gray-600">Orçamentos Criados</p>
+              <p className="text-gray-600 font-medium">Orçamentos Criados</p>
+              <div className="mt-4 w-16 h-1 bg-purple-600 mx-auto rounded-full"></div>
             </motion.div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="funcionalidades" className="py-16 bg-gray-50">
+      <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Tudo que sua oficina precisa em um só lugar
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Recursos que fazem a diferença
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Recursos completos para automatizar e otimizar todos os processos da sua oficina
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Tudo que você precisa para gerenciar sua oficina de forma eficiente e profissional
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
+                className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="hover-scale"
               >
-                <Card className="h-full hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="text-blue-600 mb-4">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600">
-                      {feature.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 text-blue-600">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">
+                  {feature.description}
+                </p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* AI Section */}
+      {/* Oil Change Label Highlight Section */}
+      <section className="py-16 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-b border-amber-200">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mr-4">
+                <FileText className="h-8 w-8 text-amber-600" />
+              </div>
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                <Wrench className="h-8 w-8 text-orange-600" />
+              </div>
+            </div>
+            
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              🏷️ Destaque Especial: Gerar Etiqueta
+            </h2>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-lg border-2 border-amber-200">
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                  IMPORTANTE
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Etiquetas de Troca de Óleo - Essencial para sua Oficina
+              </h3>
+              
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
+                O menu <strong>"Gerar Etiqueta"</strong> é uma funcionalidade fundamental do sistema. 
+                A geração de etiquetas para troca de óleo é <strong>extremamente importante</strong> para:
+              </p>
+              
+              <div className="grid md:grid-cols-2 gap-6 text-left">
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Controle de Manutenção</h4>
+                    <p className="text-gray-600">Acompanhe quando foi realizada a última troca de óleo</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Fidelização do Cliente</h4>
+                    <p className="text-gray-600">Lembre o cliente sobre a próxima manutenção necessária</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Profissionalismo</h4>
+                    <p className="text-gray-600">Demonstre organização e cuidado com o veículo</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Histórico Completo</h4>
+                    <p className="text-gray-600">Mantenha registro detalhado de todas as manutenções</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <p className="text-amber-800 font-medium text-center">
+                  💡 <strong>Dica:</strong> Use as etiquetas para criar um diferencial competitivo e aumentar a confiança dos seus clientes!
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+
+
+      {/* AI Support Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
+              <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+                <Bot className="h-8 w-8 text-blue-600" />
+              </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 IA para Diagnóstico de Problemas Mecânicos
               </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Nossa inteligência artificial ajuda você a diagnosticar problemas de forma mais rápida e precisa, 
-                aumentando a eficiência do seu atendimento.
+              <p className="text-lg text-gray-600 mb-8">
+                Nossa inteligência artificial ajuda você a diagnosticar problemas de 
+                forma mais rápida e precisa, aumentando a eficiência do seu 
+                atendimento.
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
                   <span className="text-gray-700">Diagnósticos mais precisos</span>
@@ -484,30 +570,35 @@ const LandingPage = () => {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-8">
-                <Bot className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Diagnóstico</h3>
-                  <p className="text-gray-600">Tecnologia avançada para sua oficina</p>
-                </div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8">
+                <img 
+                  src="/ia-diagnostico.svg" 
+                  alt="IA Diagnóstico" 
+                  className="rounded-lg w-full h-auto"
+                />
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mt-16">
+      {/* Support Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="order-2 lg:order-1 relative"
+              className="relative"
             >
-              <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-2xl p-8">
-                <Zap className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Suporte</h3>
-                  <p className="text-gray-600">Assistente inteligente 24/7</p>
-                </div>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-8">
+                <img 
+                  src="/ia-suporte.svg" 
+                  alt="IA Suporte" 
+                  className="rounded-lg w-full h-auto"
+                />
               </div>
             </motion.div>
 
@@ -516,16 +607,18 @@ const LandingPage = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="order-1 lg:order-2"
             >
+              <div className="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mb-6">
+                <Clock className="h-8 w-8 text-green-600" />
+              </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
                 IA para Suporte Inteligente no Sistema
               </h2>
-              <p className="text-lg text-gray-600 mb-6">
-                Assistente virtual disponível 24 horas para tirar suas dúvidas e ajudar você a 
-                usar todas as funcionalidades do sistema.
+              <p className="text-lg text-gray-600 mb-8">
+                Assistente virtual disponível 24 horas para tirar suas dúvidas e ajudar 
+                você a usar todas as funcionalidades do sistema.
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 <li className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
                   <span className="text-gray-700">Suporte 24/7 automatizado</span>
@@ -593,7 +686,7 @@ const LandingPage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gray-50">
+      <section id="faq" className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -734,30 +827,63 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Wrench className="h-8 w-8 text-blue-400 mr-2" />
-                <span className="text-2xl font-bold">Oficina Go</span>
+                <Wrench className="h-8 w-8 text-blue-400" />
+                <span className="text-2xl font-bold ml-2">Oficina Go</span>
               </div>
               <p className="text-gray-400">
-                Sistema completo para gestão de oficinas mecânicas. 
-                Simplifique seu negócio e aumente seus resultados.
+                Sistema completo para gestão de oficinas mecânicas.
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold mb-4">Produto</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#funcionalidades" className="hover:text-white transition-colors">Funcionalidades</a></li>
-                <li><a href="#precos" className="hover:text-white transition-colors">Preços</a></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Teste Grátis</Link></li>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Recursos</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Preços</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Integrações</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Empresa</h3>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Sobre</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Carreiras</a></li>
+                <li><a href="#contato" className="text-gray-400 hover:text-white transition-colors">Contato</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Suporte</h3>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Central de Ajuda</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentação</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contato</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Oficina Go. Todos os direitos reservados.</p>
+          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400">
+              © 2024 Oficina Go. Todos os direitos reservados.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Privacidade
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Termos
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                Cookies
+              </a>
+            </div>
           </div>
         </div>
       </footer>

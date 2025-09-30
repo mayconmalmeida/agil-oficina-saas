@@ -1,6 +1,6 @@
 
 import { useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";

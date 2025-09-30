@@ -142,7 +142,7 @@ const SupportChat: React.FC = () => {
 
       <CardContent className="p-0">
         {/* Área de mensagens */}
-        <div className="h-80 overflow-y-auto p-4 bg-gradient-to-b from-green-50/30 to-white dark:from-green-900/10 dark:to-gray-800">
+        <div className="h-80 overflow-y-auto p-4 bg-gradient-to-b from-green-50/30 to-white">
           {!isConnected ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -169,7 +169,7 @@ const SupportChat: React.FC = () => {
                     <div
                       className={`px-3 py-2 rounded-2xl shadow-md ${
                         message.isSupport
-                          ? 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+                          ? 'bg-white border border-gray-200'
                           : 'bg-green-500 text-white'
                       }`}
                     >
@@ -177,7 +177,7 @@ const SupportChat: React.FC = () => {
                       <p 
                         className={`text-xs mt-1 ${
                           message.isSupport 
-                            ? 'text-gray-500 dark:text-gray-400' 
+                            ? 'text-gray-500'
                             : 'text-green-100'
                         }`}
                       >
@@ -204,7 +204,7 @@ const SupportChat: React.FC = () => {
                         S
                       </AvatarFallback>
                     </Avatar>
-                    <div className="bg-white dark:bg-gray-700 px-3 py-2 rounded-2xl border border-gray-200 dark:border-gray-600">
+                    <div className="bg-white px-3 py-2 rounded-2xl border border-gray-200">
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
@@ -222,7 +222,7 @@ const SupportChat: React.FC = () => {
 
         {/* Input de mensagem */}
         {isConnected && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+          <div className="p-4 border-t border-gray-200 bg-white">
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <Input

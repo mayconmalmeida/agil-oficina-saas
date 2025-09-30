@@ -1,94 +1,291 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SubscriptionsTable from "@/components/admin/SubscriptionsTable";
-import EditSubscriptionModal from '@/components/admin/subscriptions/EditSubscriptionModal';
-import AdminSubscriptionsHeader from '@/components/admin/AdminSubscriptionsHeader';
-import AdminSubscriptionsError from '@/components/admin/AdminSubscriptionsError';
-import Loading from '@/components/ui/loading';
-import { useSubscriptionsData } from '@/hooks/useSubscriptionsData';
-import { useOficinasData } from '@/hooks/useOficinasData';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, RefreshCw, Calendar, User, CreditCard } from 'lucide-react';
+import { useAdminManagement } from '@/hooks/admin/useAdminManagement';
+import { Subscription } from '@/services/admin/adminService';
 
 const AdminSubscriptions = () => {
-  const [editingSubscription, setEditingSubscription] = useState<any>(null);
-  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
+  const {
+    subscriptions,
+    workshops,
+    isLoading,
+    error,
+    fetchSubscriptions,
+    fetchWorkshops,
+    updateSubscriptionStatus,
+    createManualSubscription
+  } = useAdminManagement();
 
-  const { subscriptions, isLoading, error, fetchSubscriptions } = useSubscriptionsData();
-  const { 
-    oficinas, 
-    isLoading: oficinasLoading, 
-    error: oficinasError, 
-    fetchOficinas 
-  } = useOficinasData();
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    user_id: '',
+    plan_type: 'premium_mensal',
+    status: 'active' as 'active' | 'cancelled' | 'expired' | 'trialing',
+    starts_at: new Date().toISOString().split('T')[0],
+    ends_at: ''
+  });
 
   useEffect(() => {
     fetchSubscriptions();
-    fetchOficinas();
-  }, [fetchSubscriptions, fetchOficinas]);
+    fetchWorkshops();
+  }, [fetchSubscriptions, fetchWorkshops]);
 
-  const handleBack = () => {
-    navigate('/admin');
+  const handleCreateSubscription = async () => {
+    try {
+      await createManualSubscription(formData);
+      setIsCreating(false);
+      resetForm();
+    } catch (error) {
+      console.error('Erro ao criar assinatura:', error);
+    }
   };
 
-  const handleCreateNew = () => {
+  const handleStatusChange = async (id: string, newStatus: 'active' | 'cancelled' | 'expired' | 'trialing') => {
+    try {
+      await updateSubscriptionStatus(id, newStatus);
+    } catch (error) {
+      console.error('Erro ao alterar status da assinatura:', error);
+    }
+  };
+
+  const startCreating = () => {
     setIsCreating(true);
+    resetForm();
   };
 
-  const handleEdit = (subscription: any) => {
-    setEditingSubscription(subscription);
+  const resetForm = () => {
+    setFormData({
+      user_id: '',
+      plan_type: 'essencial',
+      status: 'active',
+      starts_at: new Date().toISOString().split('T')[0],
+      ends_at: ''
+    });
   };
 
-  const handleModalClose = () => {
+  const cancelEditing = () => {
     setEditingSubscription(null);
     setIsCreating(false);
+    resetForm();
   };
 
-  const handleModalSuccess = () => {
-    fetchSubscriptions();
-    handleModalClose();
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: { label: 'Ativa', variant: 'default' as const },
+      trialing: { label: 'Trial', variant: 'secondary' as const },
+      cancelled: { label: 'Cancelada', variant: 'destructive' as const },
+      expired: { label: 'Expirada', variant: 'outline' as const }
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || { label: status, variant: 'outline' as const };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getWorkshopName = (userId: string) => {
+    const workshop = workshops.find(w => w.user_id === userId);
+    return workshop?.nome_oficina || 'Oficina não encontrada';
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   if (isLoading) {
-    return <Loading fullscreen text="Carregando assinaturas..." />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Carregando assinaturas...</p>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <AdminSubscriptionsError 
-        error={error} 
-        onRetry={fetchSubscriptions}
-      />
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-red-600 text-lg font-semibold mb-2">Erro ao carregar assinaturas:</p>
+        <p className="text-gray-600">{error}</p>
+        <Button onClick={() => fetchSubscriptions()} className="mt-4">
+          Tentar Novamente
+        </Button>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminSubscriptionsHeader
-        onBack={handleBack}
-        onRefresh={fetchSubscriptions}
-        onCreateNew={handleCreateNew}
-        isLoading={isLoading}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <SubscriptionsTable
-            subscriptions={subscriptions}
-            isLoading={isLoading}
-            onEdit={handleEdit}
-          />
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Gerenciar Assinaturas</h1>
+            <p className="text-gray-600">Visualize e gerencie todas as assinaturas do sistema</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/admin')}>
+              Voltar
+            </Button>
+            <Button variant="outline" onClick={() => fetchSubscriptions()}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Atualizar
+            </Button>
+            <Button onClick={startCreating}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Assinatura
+            </Button>
+          </div>
         </div>
-      </main>
 
-      <EditSubscriptionModal
-        subscription={editingSubscription}
-        isOpen={isCreating || !!editingSubscription}
-        onClose={handleModalClose}
-        onSuccess={handleModalSuccess}
-        isCreating={isCreating}
-        oficinas={oficinas}
-      />
+        {/* Subscriptions List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Assinaturas Ativas</CardTitle>
+            <CardDescription>
+              Lista de todas as assinaturas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {subscriptions.map((subscription) => (
+                <div key={subscription.id} className="border rounded-lg p-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <h3 className="text-lg font-semibold">{getWorkshopName(subscription.user_id)}</h3>
+                        {getStatusBadge(subscription.status)}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-4 h-4" />
+                          <span>Plano: {subscription.plan_type}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>Início: {formatDate(subscription.starts_at)}</span>
+                        </div>
+                        {subscription.ends_at && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>Fim: {formatDate(subscription.ends_at)}</span>
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-400">
+                          ID: {subscription.id.slice(0, 8)}...
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={subscription.status}
+                        onChange={(e) => handleStatusChange(subscription.id, e.target.value as any)}
+                        className="border rounded px-2 py-1 text-sm"
+                      >
+                        <option value="active">Ativa</option>
+                        <option value="trialing">Trial</option>
+                        <option value="cancelled">Cancelada</option>
+                        <option value="expired">Expirada</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {subscriptions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhuma assinatura encontrada.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Create Manual Subscription Modal */}
+        {isCreating && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">Criar Assinatura Manual</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Oficina</label>
+                  <select
+                    value={formData.user_id}
+                    onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+                    className="w-full border rounded-md px-3 py-2"
+                  >
+                    <option value="">Selecione uma oficina</option>
+                    {workshops.map((workshop) => (
+                      <option key={workshop.id} value={workshop.user_id}>
+                        {workshop.nome_oficina || 'Oficina sem nome'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tipo de Plano</label>
+                  <select
+                    value={formData.plan_type}
+                    onChange={(e) => setFormData({ ...formData, plan_type: e.target.value })}
+                    className="w-full border rounded-md px-3 py-2"
+                  >
+                    <option value="premium_mensal">Premium Mensal</option>
+                    <option value="premium_anual">Premium Anual</option>
+                    <option value="free_trial_premium">Trial Premium</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className="w-full border rounded-md px-3 py-2"
+                  >
+                    <option value="active">Ativa</option>
+                    <option value="trialing">Trial</option>
+                    <option value="cancelled">Cancelada</option>
+                    <option value="expired">Expirada</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Data de Início</label>
+                  <input
+                    type="date"
+                    value={formData.starts_at}
+                    onChange={(e) => setFormData({ ...formData, starts_at: e.target.value })}
+                    className="w-full border rounded-md px-3 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Data de Fim (opcional)</label>
+                  <input
+                    type="date"
+                    value={formData.ends_at}
+                    onChange={(e) => setFormData({ ...formData, ends_at: e.target.value })}
+                    className="w-full border rounded-md px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="outline" onClick={cancelEditing}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateSubscription}>
+                  Criar Assinatura
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

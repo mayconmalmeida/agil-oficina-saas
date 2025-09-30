@@ -170,12 +170,12 @@ const SimplifiedAdminDashboard: React.FC = () => {
 
       {/* Ações rápidas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/users')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/admin/oficinas')}>
           <CardHeader>
-            <CardTitle className="text-blue-900">Gerenciar Usuários</CardTitle>
+            <CardTitle className="text-blue-900">Gerenciar Oficinas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-blue-700">Visualizar e editar usuários do sistema</p>
+            <p className="text-sm text-blue-700">Visualizar e editar oficinas do sistema</p>
           </CardContent>
         </Card>
 

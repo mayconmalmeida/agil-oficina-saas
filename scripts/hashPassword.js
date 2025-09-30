@@ -2,7 +2,7 @@
 // Script para gerar hash bcrypt de senhas de admin
 // Execute com: node scripts/hashPassword.js "sua_senha_aqui"
 
-const bcrypt = require('bcryptjs');
+import bcrypt from 'bcryptjs';
 
 async function hashPassword(password) {
   if (!password) {

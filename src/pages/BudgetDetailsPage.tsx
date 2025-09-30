@@ -30,11 +30,21 @@ const BudgetDetailsPage: React.FC = () => {
 
     const fetchBudget = async () => {
       try {
-        const { data, error } = await supabase
+        // Adicionar timeout para evitar travamentos
+        const budgetPromise = supabase
           .from('orcamentos')
           .select('*')
           .eq('id', id)
           .single();
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout na consulta do orçamento')), 15000);
+        });
+
+        const { data, error } = await Promise.race([
+          budgetPromise,
+          timeoutPromise
+        ]) as any;
 
         if (error) throw error;
         setBudget(data);
@@ -43,7 +53,9 @@ const BudgetDetailsPage: React.FC = () => {
         toast({
           variant: "destructive",
           title: "Erro ao carregar orçamento",
-          description: error.message,
+          description: error.message === 'Timeout na consulta do orçamento'
+            ? "A consulta demorou muito para responder. Tente novamente."
+            : error.message,
         });
         navigate('/dashboard/orcamentos');
       } finally {

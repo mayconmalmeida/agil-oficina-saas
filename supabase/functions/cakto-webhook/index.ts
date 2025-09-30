@@ -4,8 +4,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cakto-signature',
 }
+
+// Chave secreta do Cakto para validação do webhook
+const CAKTO_SECRET_KEY = '69f9efc6-0d22-4b91-9542-23720a5cb0d7';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -30,11 +33,24 @@ serve(async (req) => {
       );
     }
 
+    // Validar assinatura do webhook (opcional, mas recomendado)
+    const signature = req.headers.get('x-cakto-signature');
+    if (signature && signature !== CAKTO_SECRET_KEY) {
+      console.error('Invalid webhook signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     const body = await req.json();
     console.log('Cakto webhook received:', body);
 
     // Validar dados necessários do webhook
-    const { user_email, plan_type, status, transaction_id } = body;
+    const { user_email, plan_type, status, transaction_id, amount, product_id } = body;
 
     if (!user_email || !plan_type || !status) {
       return new Response(
@@ -77,12 +93,31 @@ serve(async (req) => {
 
     // Mapear status da Cakto para nosso sistema
     let subscriptionStatus = 'active';
-    if (status === 'paid' || status === 'completed') {
+    if (status === 'paid' || status === 'completed' || status === 'approved') {
       subscriptionStatus = 'active';
     } else if (status === 'cancelled' || status === 'refunded') {
       subscriptionStatus = 'cancelled';
     } else if (status === 'expired') {
       subscriptionStatus = 'expired';
+    } else if (status === 'pending') {
+      subscriptionStatus = 'trialing';
+    }
+
+    // Mapear product_id para plan_type se necessário
+    let finalPlanType = plan_type;
+    if (product_id) {
+      // Mapear IDs dos produtos Cakto para tipos de plano
+      const productMapping: { [key: string]: string } = {
+        // Adicionar mapeamentos conforme necessário
+        'cakto_premium_mensal': 'premium_mensal',
+        'cakto_premium_anual': 'premium_anual',
+        'cakto_essencial_mensal': 'essencial_mensal',
+        'cakto_essencial_anual': 'essencial_anual'
+      };
+      
+      if (productMapping[product_id]) {
+        finalPlanType = productMapping[product_id];
+      }
     }
 
     // Validar plan_type
@@ -93,9 +128,9 @@ serve(async (req) => {
       'premium_anual'
     ];
 
-    if (!validPlanTypes.includes(plan_type)) {
+    if (!validPlanTypes.includes(finalPlanType)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid plan_type' }),
+        JSON.stringify({ error: `Invalid plan_type: ${finalPlanType}` }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -109,7 +144,7 @@ serve(async (req) => {
         'update_subscription_after_payment',
         {
           p_user_id: user.id,
-          p_plan_type: plan_type
+          p_plan_type: finalPlanType
         }
       );
 
@@ -149,13 +184,39 @@ serve(async (req) => {
       console.log('Subscription status updated to:', subscriptionStatus);
     }
 
+    // Registrar transação para auditoria
+    const { error: transactionError } = await supabase
+      .from('payment_transactions')
+      .insert([
+        {
+          user_id: user.id,
+          transaction_id: transaction_id || `cakto_${Date.now()}`,
+          amount: amount || 0,
+          currency: 'BRL',
+          status: subscriptionStatus,
+          plan_type: finalPlanType,
+          payment_method: 'cakto',
+          metadata: {
+            product_id,
+            original_status: status,
+            webhook_data: body
+          }
+        }
+      ]);
+
+    if (transactionError) {
+      console.error('Error recording transaction:', transactionError);
+      // Não falhar o webhook por erro de auditoria
+    }
+
     // Log da transação para auditoria
     console.log('Payment processed:', {
       user_id: user.id,
       user_email,
-      plan_type,
+      plan_type: finalPlanType,
       status: subscriptionStatus,
-      transaction_id
+      transaction_id,
+      amount
     });
 
     return new Response(
@@ -163,8 +224,9 @@ serve(async (req) => {
         success: true, 
         message: 'Webhook processed successfully',
         user_id: user.id,
-        plan_type,
-        status: subscriptionStatus
+        plan_type: finalPlanType,
+        status: subscriptionStatus,
+        transaction_id: transaction_id || `cakto_${Date.now()}`
       }),
       { 
         status: 200, 

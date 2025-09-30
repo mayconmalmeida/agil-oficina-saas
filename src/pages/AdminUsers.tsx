@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -59,28 +59,27 @@ const AdminUsers = () => {
     setError(null);
 
     try {
-      // Buscar oficinas
-      const { data: oficinasData, error: oficinasError } = await supabase
-        .from("oficinas")
+      // Buscar oficinas da tabela profiles (incluindo email que já está armazenado lá)
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
         .select(`
           id,
-          user_id,
-          email,
+          created_at,
           nome_oficina,
           cnpj,
           telefone,
+          email,
           responsavel,
           is_active,
-          created_at,
-          trial_ends_at,
           plano
         `)
+        .not('nome_oficina', 'is', null) // Only get profiles that have workshop names
         .order("created_at", { ascending: false });
 
-      if (oficinasError) throw oficinasError;
+      if (profilesError) throw profilesError;
 
-      // Buscar assinaturas mais recentes para cada usuário
-      const userIds = oficinasData?.map(o => o.user_id) || [];
+      // Buscar assinaturas mais recentes para cada oficina
+      const userIds = profilesData?.map(p => p.id) || [];
       const { data: subscriptionsData, error: subscriptionsError } = await supabase
         .from("user_subscriptions")
         .select("user_id, plan_type, status, created_at")
@@ -91,7 +90,7 @@ const AdminUsers = () => {
         console.error("Erro ao buscar assinaturas:", subscriptionsError);
       }
 
-      // Criar mapa de assinaturas mais recentes por usuário
+      // Criar mapa de assinaturas mais recentes por oficina
       const subscriptionMap = new Map();
       subscriptionsData?.forEach(sub => {
         if (!subscriptionMap.has(sub.user_id)) {
@@ -100,8 +99,8 @@ const AdminUsers = () => {
       });
 
       // Mapear dados para o formato esperado com plano baseado na assinatura
-      const mappedData = (oficinasData || []).map(oficina => {
-        const subscription = subscriptionMap.get(oficina.user_id);
+      const mappedData = (profilesData || []).map(profile => {
+        const subscription = subscriptionMap.get(profile.id);
         let planDisplayName = "Inativo";
         
         if (subscription) {
@@ -117,18 +116,18 @@ const AdminUsers = () => {
         }
 
         return {
-          id: oficina.id,
-          user_id: oficina.user_id,
-          nome_oficina: oficina.nome_oficina,
-          cnpj: oficina.cnpj,
-          telefone: oficina.telefone,
-          email: oficina.email,
-          responsavel: oficina.responsavel,
-          is_active: oficina.is_active,
-          ativo: oficina.is_active,
-          created_at: oficina.created_at,
-          trial_ends_at: oficina.trial_ends_at,
-          plano: oficina.plano,
+          id: profile.id,
+          user_id: profile.id, // In profiles table, id is the user_id
+          nome_oficina: profile.nome_oficina,
+          cnpj: profile.cnpj,
+          telefone: profile.telefone,
+          email: profile.email || null,
+          responsavel: profile.responsavel,
+          is_active: profile.is_active ?? true, // Default to true if null
+          ativo: profile.is_active ?? true,
+          created_at: profile.created_at,
+          trial_ends_at: null, // Not available in profiles
+          plano: profile.plano,
           subscription_plan: planDisplayName,
           subscription_status: subscription?.status || 'inactive'
         };
@@ -152,10 +151,9 @@ const AdminUsers = () => {
 
   const toggleStatus = async (id: string, currentStatus: boolean | null | undefined) => {
     const { error } = await supabase
-      .from("oficinas")
+      .from("profiles")
       .update({
         is_active: !currentStatus,
-        ativo: !currentStatus,
       })
       .eq("id", id);
 
@@ -175,33 +173,18 @@ const AdminUsers = () => {
   };
 
   const updateExpiryDate = async (id: string, newDate: string) => {
-    const { error } = await supabase
-      .from("oficinas")
-      .update({
-        trial_ends_at: new Date(newDate).toISOString(),
-      })
-      .eq("id", id);
-
-    if (error) {
-      toast({
-        title: "Erro ao atualizar data de expiração",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Data de expiração atualizada!",
-        variant: "default"
-      });
-      setEditingExpiry(null);
-      setNewExpiryDate("");
-      fetchOficinas();
-    }
+    // Note: trial_ends_at is not available in profiles table
+    // This functionality might need to be handled differently or removed
+    toast({
+      title: "Funcionalidade não disponível",
+      description: "A data de expiração não está disponível na tabela de perfis",
+      variant: "destructive"
+    });
   };
 
   const updatePlan = async (id: string, newPlan: string) => {
     const { error } = await supabase
-      .from("oficinas")
+      .from("profiles")
       .update({
         plano: newPlan,
       })

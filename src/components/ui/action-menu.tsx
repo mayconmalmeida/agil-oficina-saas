@@ -40,7 +40,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="end" 
-        className="w-[160px] bg-white dark:bg-gray-800 z-50"
+        className="w-[160px] bg-white z-50"
       >
         {items.map((item, index) => (
           <React.Fragment key={index}>
@@ -49,8 +49,8 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
               disabled={item.disabled}
               className={`cursor-pointer ${
                 item.variant === 'destructive' 
-                  ? 'text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/20' 
-                  : 'focus:bg-gray-100 dark:focus:bg-gray-700'
+                  ? 'text-red-600 focus:text-red-600 focus:bg-red-50 
+                  : 'focus:bg-gray-100
               }`}
             >
               {item.icon && <item.icon className="mr-2 h-4 w-4" />}

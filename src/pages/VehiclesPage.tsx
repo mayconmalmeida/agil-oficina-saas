@@ -159,7 +159,7 @@ const VehiclesPage: React.FC = () => {
             {filteredVehicles.length === 0 ? (
               <div className="text-center py-8">
                 <Car className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium">
+                <h3 className="text-lg font-medium text-gray-900">
                   {searchTerm ? 'Nenhum veículo encontrado' : 'Nenhum veículo cadastrado'}
                 </h3>
                 <p className="text-gray-500 mt-2">
@@ -196,7 +196,9 @@ const VehiclesPage: React.FC = () => {
                       <TableCell className="font-medium">
                         <div>
                           <div>{vehicle.cliente?.nome}</div>
-                          <div className="text-sm text-gray-500">{vehicle.cliente?.telefone}</div>
+                          <div className="text-sm text-gray-500">
+                            {vehicle.cliente?.telefone}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>{formatVehicleInfo(vehicle)}</TableCell>

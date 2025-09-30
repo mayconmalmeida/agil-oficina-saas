@@ -53,7 +53,7 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (oficina && (oficina.is_active || oficina.ativo)) {
+    if (oficina && oficina.is_active) {
       console.log('[validatePlanAccess] 🏢 Oficina detectada, liberando acesso Premium automático');
       return {
         isActive: true,

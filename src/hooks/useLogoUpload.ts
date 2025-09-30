@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
@@ -21,6 +21,11 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
   }, [initialLogo]);
 
   const checkBucket = async () => {
+    if (!userId) {
+      console.warn("userId não fornecido para checkBucket");
+      return;
+    }
+    
     try {
       console.log("Verificando se o bucket 'logos' existe");
       
@@ -39,7 +44,10 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
   };
 
   const handleFileUpload = async (file: File) => {
-    if (!file) return;
+    if (!file || !userId) {
+      console.warn("Arquivo ou userId não fornecido");
+      return;
+    }
     
     // Validação
     if (!file.type.startsWith('image/')) {
@@ -145,7 +153,7 @@ export const useLogoUpload = ({ userId, initialLogo, onSave }: UseLogoUploadProp
   };
   
   const handleRemoveLogo = async () => {
-    if (!logoUrl || !window.confirm('Tem certeza que deseja remover o logo?')) {
+    if (!logoUrl || !userId || !window.confirm('Tem certeza que deseja remover o logo?')) {
       return;
     }
     

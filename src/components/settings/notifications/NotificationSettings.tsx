@@ -7,22 +7,12 @@ import { Bell, Volume2, Mail, MessageSquare, Smartphone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { notificationService, NotificationSettings as INotificationSettings } from '@/services/notificationService';
 
-interface NotificationSettings {
-  push_clientes: boolean;
-  email_clientes: boolean;
-  sms_agendamentos: boolean;
-  push_agendamentos: boolean;
-  email_agendamentos: boolean;
-  sms_pagamentos: boolean;
-  push_pagamentos: boolean;
-  email_pagamentos: boolean;
-  sound_enabled: boolean;
-  desktop_notifications: boolean;
-}
+
 
 const NotificationSettings: React.FC = () => {
-  const [settings, setSettings] = useState<NotificationSettings>({
+  const [settings, setSettings] = useState<INotificationSettings>({
     push_clientes: false,
     email_clientes: false,
     sms_agendamentos: false,
@@ -59,111 +49,40 @@ const NotificationSettings: React.FC = () => {
     if (!user?.id) return;
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('notification_settings')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data?.notification_settings) {
-        setSettings(prev => ({
-          ...prev,
-          ...(typeof data.notification_settings === 'object' ? data.notification_settings : {}),
-        }));
-      }
+      const loadedSettings = await notificationService.loadSettings(user.id);
+      setSettings(loadedSettings);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as configurações de notificação.",
+        variant: "destructive",
+      });
     }
   };
 
-  const requestNotificationPermission = async () => {
-    if (!('Notification' in window)) {
-      toast({
-        variant: "destructive",
-        title: "Notificações não suportadas",
-        description: "Seu navegador não suporta notificações.",
-      });
-      return false;
-    }
-
-    if (Notification.permission === 'granted') {
-      return true;
-    }
-
-    if (Notification.permission === 'denied') {
-      toast({
-        variant: "destructive",
-        title: "Notificações bloqueadas",
-        description: "As notificações estão bloqueadas. Ative-as nas configurações do navegador.",
-      });
-      return false;
-    }
-
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      toast({
-        title: "Notificações ativadas",
-        description: "Você receberá notificações importantes do sistema.",
-      });
-      return true;
-    }
-
-    return false;
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    return await notificationService.requestPermission();
   };
 
-  const testNotification = () => {
-    if (Notification.permission === 'granted') {
-      const notification = new Notification('✅ Teste de Notificação - Oficina Go', {
-        body: 'Suas notificações estão funcionando perfeitamente! Sistema configurado com sucesso.',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'test-notification',
-        requireInteraction: false,
-        silent: !settings.sound_enabled,
-      });
-
-      if (settings.sound_enabled) {
-        // Criar um tom de notificação usando Web Audio API
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-      }
-
-      // Auto-close notification after 5 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
-
-      // Handle notification click
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-
+  const testNotification = async () => {
+    const success = await notificationService.testNotification();
+    
+    if (success) {
       toast({
         title: "✅ Notificação enviada!",
         description: "Verifique se recebeu a notificação na área de trabalho.",
       });
     } else {
-      requestNotificationPermission();
+      toast({
+        title: "❌ Erro ao enviar notificação",
+        description: "Verifique se as permissões estão habilitadas.",
+        variant: "destructive",
+      });
     }
   };
 
-  const updateSettings = async (newSettings: Partial<NotificationSettings>) => {
+  const updateSettings = async (newSettings: Partial<INotificationSettings>) => {
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -196,13 +115,12 @@ const NotificationSettings: React.FC = () => {
     }
   };
 
-  const handleSwitchChange = (key: keyof NotificationSettings, value: boolean) => {
+  const handleSwitchChange = async (key: keyof INotificationSettings, value: boolean) => {
     if ((key === 'desktop_notifications' || key === 'push_agendamentos' || key === 'push_clientes' || key === 'push_pagamentos') && value) {
-      requestNotificationPermission().then((granted) => {
-        if (granted) {
-          updateSettings({ [key]: value });
-        }
-      });
+      const granted = await requestNotificationPermission();
+      if (granted) {
+        updateSettings({ [key]: value });
+      }
     } else {
       updateSettings({ [key]: value });
     }
@@ -211,8 +129,8 @@ const NotificationSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Notificações</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-medium text-gray-900">Configurações de Notificações</h2>
+        <p className="text-sm text-gray-500">
           Configure como e quando você deseja receber notificações
         </p>
       </div>

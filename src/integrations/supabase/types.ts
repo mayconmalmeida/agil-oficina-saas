@@ -25,6 +25,39 @@ export type Database = {
           role: string
           updated_at: string | null
         }
+      global_configurations: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
         Insert: {
           created_at?: string | null
           email: string
@@ -925,6 +958,56 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamento_itens: {
+        Row: {
+          created_at: string | null
+          id: string
+          item_id: string
+          nome: string
+          orcamento_id: string
+          quantidade: number
+          tipo: string
+          updated_at: string | null
+          user_id: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          item_id: string
+          nome: string
+          orcamento_id: string
+          quantidade?: number
+          tipo: string
+          updated_at?: string | null
+          user_id: string
+          valor_total: number
+          valor_unitario: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          item_id?: string
+          nome?: string
+          orcamento_id?: string
+          quantidade?: number
+          tipo?: string
+          updated_at?: string | null
+          user_id?: string
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_itens_orcamento_id_fkey"
+            columns: ["orcamento_id"]
+            isOneToOne: false
+            referencedRelation: "orcamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordem_servico_itens: {
         Row: {
           created_at: string | null
@@ -1469,6 +1552,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      global_configurations: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
     }
     Views: {

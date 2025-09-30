@@ -7,7 +7,7 @@ import { AdminStats } from '@/types/admin';
 export const useOptimizedAdminData = () => {
   const { user: adminUser } = useAdminContext();
   const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
+    totalOficinas: 0,
     activeSubscriptions: 0,
     trialingUsers: 0,
     totalRevenue: 0,
@@ -40,8 +40,8 @@ export const useOptimizedAdminData = () => {
       
       console.log('🔍 Iniciando busca de estatísticas administrativas com admin:', adminUser.email);
 
-      // Usar o serviço com o usuário admin
-      const statsData = await fetchStatsData(adminUser);
+      // Usar o serviço sem o usuário admin (função é SECURITY DEFINER)
+      const statsData = await fetchStatsData();
       
       console.log('📊 Estatísticas recebidas:', statsData);
       setStats(statsData);
@@ -53,7 +53,7 @@ export const useOptimizedAdminData = () => {
       
       // Stats de fallback em caso de erro
       setStats({
-        totalUsers: 0,
+        totalOficinas: 0,
         activeSubscriptions: 0,
         trialingUsers: 0,
         totalRevenue: 0,

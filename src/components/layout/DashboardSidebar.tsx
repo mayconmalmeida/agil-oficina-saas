@@ -38,7 +38,7 @@ const DashboardSidebar: React.FC = () => {
     { icon: Package, label: 'Produtos', path: '/dashboard/produtos' },
     { icon: Layers, label: 'Categorias', path: '/dashboard/categorias' },
     { icon: Truck, label: 'Fornecedores', path: '/dashboard/fornecedores' },
-    { icon: UserCheck, label: 'Colaboradores', path: '/dashboard/colaboradores' },
+
     { icon: Database, label: 'Financeiro', path: '/dashboard/financeiro' },
     { icon: BarChart3, label: 'Relatórios', path: '/dashboard/relatorios' },
     { icon: Building2, label: 'Empresa', path: '/dashboard/empresa' },

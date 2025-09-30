@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { Separator } from '@/components/ui/separator';
 
 interface FormSectionProps {

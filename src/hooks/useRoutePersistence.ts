@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export const useRoutePersistence = () => {

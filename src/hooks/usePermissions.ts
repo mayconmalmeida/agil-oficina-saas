@@ -1,5 +1,5 @@
 
-import { useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const usePermissions = () => {

@@ -337,7 +337,7 @@ const CollaboratorsPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant={collaborator.ativo ? 'default' : 'destructive'}>
-                        {collaborator.ativo ? 'Ativo' : 'Inativo'}
+                    {collaborator.ativo ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

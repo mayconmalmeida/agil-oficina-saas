@@ -1,0 +1,56 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8F5E8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C8E6C9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="iconGradientGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#388E3C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="300" rx="20" fill="url(#bgGradientGreen)"/>
+  
+  <!-- Lightning Bolt Icon -->
+  <g transform="translate(200, 100)">
+    <path d="M -15 -30 L 5 -10 L -5 -10 L 15 30 L -5 10 L 5 10 Z" fill="url(#iconGradientGreen)"/>
+    
+    <!-- Energy particles -->
+    <circle cx="-25" cy="-20" r="2" fill="#4CAF50" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="25" cy="-15" r="1.5" fill="#66BB6A" opacity="0.6">
+      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="-20" cy="20" r="1" fill="#81C784" opacity="0.7">
+      <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="20" cy="25" r="2.5" fill="#4CAF50" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;0.1;0.5" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+  
+  <!-- Title -->
+  <text x="200" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#388E3C">IA Suporte</text>
+  
+  <!-- Subtitle -->
+  <text x="200" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666">Assistente inteligente 24/7</text>
+  
+  <!-- Decorative Elements -->
+  <circle cx="80" cy="80" r="3" fill="#4CAF50" opacity="0.6"/>
+  <circle cx="320" cy="220" r="4" fill="#66BB6A" opacity="0.6"/>
+  <circle cx="350" cy="80" r="2" fill="#81C784" opacity="0.6"/>
+  <circle cx="50" cy="220" r="3" fill="#A5D6A7" opacity="0.6"/>
+  
+  <!-- Tech Lines -->
+  <path d="M 60 150 Q 120 140 180 150" stroke="#4CAF50" stroke-width="2" fill="none" opacity="0.4"/>
+  <path d="M 220 150 Q 280 140 340 150" stroke="#4CAF50" stroke-width="2" fill="none" opacity="0.4"/>
+  
+  <!-- Animated pulse effect -->
+  <circle cx="200" cy="100" r="50" fill="none" stroke="#4CAF50" stroke-width="1" opacity="0.3">
+    <animate attributeName="r" values="50;70;50" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0;0.3" dur="3s" repeatCount="indefinite"/>
+  </circle>
+</svg>

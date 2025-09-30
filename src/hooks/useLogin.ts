@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, testSupabaseConnection } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -110,6 +110,50 @@ export const useLogin = () => {
           setIsLoading(false);
           return;
         }
+
+        // ✅ VALIDAÇÃO ESPECÍFICA DA TABELA OFICINAS para usuários não-admin
+        console.log('useLogin: Validando usuário na tabela oficinas...');
+        const { data: oficinaData, error: oficinaError } = await supabase
+          .from('oficinas')
+          .select('id, nome_oficina, is_active, ativo, user_id')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
+        if (oficinaError && oficinaError.code !== 'PGRST116') {
+          console.error('useLogin: Erro ao validar oficina:', oficinaError);
+          toast({
+            variant: "destructive",
+            title: "Erro de validação",
+            description: "Não foi possível validar seus dados de oficina. Tente novamente.",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!oficinaData) {
+          console.log('useLogin: Usuário não encontrado na tabela oficinas, redirecionando para setup');
+          toast({
+            variant: "destructive",
+            title: "Acesso negado",
+            description: "Sua conta não está registrada como uma oficina válida. Entre em contato com o suporte.",
+          });
+          navigate('/perfil-setup', { replace: true });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!oficinaData.is_active) {
+          console.log('useLogin: Oficina inativa na tabela oficinas');
+          toast({
+            variant: "destructive",
+            title: "Conta inativa",
+            description: "Sua oficina está inativa. Entre em contato com o suporte para reativar.",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('useLogin: ✅ Validação da tabela oficinas bem-sucedida:', oficinaData.nome_oficina);
 
         // Verificar se perfil está completo
         const isProfileComplete = profileData.nome_oficina && profileData.telefone &&

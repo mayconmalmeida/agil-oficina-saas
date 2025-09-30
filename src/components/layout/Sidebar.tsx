@@ -16,7 +16,8 @@ import {
   Truck,
   Brain,
   Stethoscope,
-  UserPlus
+  UserPlus,
+  QrCode
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -60,6 +61,11 @@ const Sidebar: React.FC = () => {
       icon: ClipboardList,
     },
     {
+      name: 'Gerar Etiqueta',
+      href: '/dashboard/gerar-etiqueta',
+      icon: QrCode,
+    },
+    {
       name: 'Financeiro',
       href: '/financeiro',
       icon: DollarSign,
@@ -69,11 +75,7 @@ const Sidebar: React.FC = () => {
       href: '/dashboard/fornecedores',
       icon: Truck,
     },
-    {
-      name: 'Colaboradores',
-      href: '/colaboradores',
-      icon: UserPlus,
-    },
+
     {
       name: 'Relatórios',
       href: '/relatorios',

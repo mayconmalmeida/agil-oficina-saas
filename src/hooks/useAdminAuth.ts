@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { testSupabaseConnection, supabase } from '@/lib/supabase';
 import type { FormValues } from './admin/types';

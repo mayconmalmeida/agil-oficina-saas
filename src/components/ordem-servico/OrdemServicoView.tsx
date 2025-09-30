@@ -17,6 +17,7 @@ import {
   Edit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateServiceOrderPDF } from '@/utils/pdfUtils';
 
 interface OrdemServico {
   id: string;
@@ -73,14 +74,11 @@ const OrdemServicoView: React.FC<OrdemServicoViewProps> = ({
   const handleImprimirPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      // Simular geração de PDF
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      generateServiceOrderPDF(ordem);
       toast({
         title: "PDF gerado com sucesso",
         description: "A ordem de serviço foi preparada para impressão.",
       });
-      // Aqui implementaria a lógica real de geração de PDF
-      window.print();
     } catch (error) {
       toast({
         variant: "destructive",

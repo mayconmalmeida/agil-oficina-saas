@@ -3,25 +3,25 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Users, Building, CreditCard, Settings, FileText, BarChart3 } from 'lucide-react';
+import { Users, Building, CreditCard, Settings, FileText, BarChart3, Cog, Activity } from 'lucide-react';
 
 const AdminDashboardActions: React.FC = () => {
   const navigate = useNavigate();
 
   const quickActions = [
     {
-      title: 'Gerenciar Usuários',
-      description: 'Visualizar e editar informações de usuários',
+      title: 'Gerenciar Oficinas',
+      description: 'Visualizar e editar informações de oficinas',
       icon: Users,
       color: 'bg-blue-50 border-blue-200 text-blue-900',
-      onClick: () => navigate('/admin/users')
+      onClick: () => navigate('/admin/oficinas')
     },
     {
       title: 'Gerenciar Oficinas',
       description: 'Visualizar todas as oficinas cadastradas',
       icon: Building,
       color: 'bg-green-50 border-green-200 text-green-900',
-      onClick: () => navigate('/admin/users') // Redireciona para users que contém as oficinas
+      onClick: () => navigate('/admin/oficinas')
     },
     {
       title: 'Gerenciar Assinaturas',
@@ -33,21 +33,28 @@ const AdminDashboardActions: React.FC = () => {
     {
       title: 'Gerenciar Planos',
       description: 'Configurar planos e preços',
-      icon: Settings,
+      icon: BarChart3,
       color: 'bg-orange-50 border-orange-200 text-orange-900',
       onClick: () => navigate('/admin/plans')
     },
     {
-      title: 'Relatórios',
-      description: 'Acessar relatórios detalhados',
-      icon: BarChart3,
+      title: 'Configurações Globais',
+      description: 'Configurar links de checkout, WhatsApp e mensagens',
+      icon: Cog,
       color: 'bg-indigo-50 border-indigo-200 text-indigo-900',
-      onClick: () => navigate('/admin/settings') // Placeholder
+      onClick: () => navigate('/admin/configuracoes')
     },
     {
-      title: 'Configurações',
+      title: 'Monitoramento do Sistema',
+      description: 'Métricas em tempo real e saúde do sistema',
+      icon: Activity,
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-900',
+      onClick: () => navigate('/admin/monitoring')
+    },
+    {
+      title: 'Configurações do Sistema',
       description: 'Configurações gerais do sistema',
-      icon: FileText,
+      icon: Settings,
       color: 'bg-gray-50 border-gray-200 text-gray-900',
       onClick: () => navigate('/admin/settings')
     }

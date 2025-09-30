@@ -107,23 +107,23 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white">Aparência</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Personalize a aparência da plataforma</p>
+        <h2 className="text-lg font-medium text-gray-900">Aparência</h2>
+        <p className="text-sm text-gray-500">Personalize a aparência da plataforma</p>
       </div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {isDarkMode ? (
-              <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+              <Moon className="h-5 w-5 text-gray-600" />
             ) : (
-              <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+              <Sun className="h-5 w-5 text-gray-600" />
             )}
             <div>
-              <div className="font-medium text-gray-900 dark:text-white">
+              <div className="font-medium text-gray-900">
                 Modo {isDarkMode ? 'Escuro' : 'Claro'}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500">
                 {isDarkMode 
                   ? 'Interface escura para reduzir o cansaço visual'
                   : 'Interface clara padrão do sistema'
@@ -139,23 +139,23 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
         </div>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900 dark:text-white mb-2">Preview</h3>
-        <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-50 rounded-lg p-4">
+        <h3 className="font-medium text-gray-900 mb-2">Preview</h3>
+        <div className="bg-white rounded border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-gray-900 dark:text-white">Exemplo de Card</h4>
+            <h4 className="font-medium text-gray-900">Exemplo de Card</h4>
             <Button size="sm" variant="outline">
               Ação
             </Button>
           </div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm">
+          <p className="text-gray-600 text-sm">
             Este é um exemplo de como o conteúdo aparecerá com o tema selecionado.
           </p>
         </div>
       </div>
 
       {isSaving && (
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-center text-sm text-gray-500">
           Salvando configurações...
         </div>
       )}

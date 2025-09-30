@@ -1,25 +1,29 @@
 
-import React from "react";
-import { Switch } from "@/components/ui/switch";
-import { useTheme } from "@/contexts/ThemeContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 interface AdminAppearanceSectionProps {
   theme: "light" | "dark";
   onThemeToggle: () => void;
 }
 
-const AdminAppearanceSection: React.FC<AdminAppearanceSectionProps> = () => {
-  const { theme, toggleTheme } = useTheme();
-  
+export function AdminAppearanceSection({ theme, onThemeToggle }: AdminAppearanceSectionProps) {
   return (
-    <div className="flex items-center space-x-4">
-      <span className="font-medium">Modo Escuro</span>
-      <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
-      <span className="text-muted-foreground text-sm">
-        {theme === "dark" ? "Ativado" : "Desativado"}
-      </span>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Aparência</CardTitle>
+        <CardDescription>
+          Configurações de aparência do sistema
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Tema</Label>
+          <p className="text-sm text-muted-foreground">
+            O sistema utiliza apenas o tema claro.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
-};
-
-export default AdminAppearanceSection;
+}

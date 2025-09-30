@@ -2,44 +2,44 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, Home, ArrowLeft } from 'lucide-react';
 
-const ThankYouPage: React.FC = () => {
+const ThankYouPage = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
-      <Card className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-oficina-dark">
-            Obrigado por confirmar seu e-mail!
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6 text-center">
-          <div className="rounded-full bg-green-100 w-20 h-20 flex items-center justify-center mx-auto">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-10 w-10 text-green-500" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M5 13l4 4L19 7" 
-              />
-            </svg>
+          <div className="mx-auto mb-4 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          
-          <p className="text-gray-600">
-            Seu cadastro foi concluído com sucesso.
+          <CardTitle className="text-2xl font-bold text-gray-900">
+            Obrigado!
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Sua mensagem foi enviada com sucesso
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-600 text-center">
+            Entraremos em contato em breve. Agradecemos seu interesse em nossos serviços!
           </p>
-          
-          <Button asChild className="w-full bg-oficina hover:bg-oficina-dark">
-            <Link to="/login">
-              Fazer login no site
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button asChild className="flex-1">
+              <Link to="/">
+                <Home className="w-4 h-4 mr-2" />
+                Início
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -4,23 +4,15 @@ import { AdminStats } from '@/types/admin';
 
 // Interface para tipificar o retorno da função RPC
 interface StatsResponse {
-  totalUsers: number;
+  totalOficinas: number;
   activeSubscriptions: number;
   trialingUsers: number;
   totalRevenue: number;
   newUsersThisMonth: number;
 }
 
-export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
+export const fetchStatsData = async (): Promise<AdminStats> => {
   console.log('🔍 Iniciando busca de estatísticas admin...');
-  
-  // Verificar se temos usuário admin válido
-  if (!adminUser || !adminUser.isAdmin) {
-    console.error('❌ Usuário admin não fornecido ou inválido:', adminUser);
-    throw new Error('Usuário administrador não autenticado');
-  }
-
-  console.log('✅ Usuário admin válido:', adminUser.email);
 
   try {
     // Usar a função RPC do banco para buscar estatísticas
@@ -42,7 +34,7 @@ export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
     } else {
       console.warn('⚠️ Dados de estatística inválidos recebidos:', statsData);
       parsedStats = {
-        totalUsers: 0,
+        totalOficinas: 0,
         activeSubscriptions: 0,
         trialingUsers: 0,
         totalRevenue: 0,
@@ -51,7 +43,7 @@ export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
     }
 
     const stats: AdminStats = {
-      totalUsers: parsedStats.totalUsers || 0,
+      totalOficinas: parsedStats.totalOficinas || 0,
       activeSubscriptions: parsedStats.activeSubscriptions || 0,
       trialingUsers: parsedStats.trialingUsers || 0,
       totalRevenue: parsedStats.totalRevenue || 0,
@@ -61,7 +53,7 @@ export const fetchStatsData = async (adminUser?: any): Promise<AdminStats> => {
     console.log('✅ Estatísticas finais calculadas:', stats);
 
     // Log de debug se não há dados
-    if (stats.totalUsers === 0 && stats.activeSubscriptions === 0) {
+    if (stats.totalOficinas === 0 && stats.activeSubscriptions === 0) {
       console.warn('⚠️ ATENÇÃO: Nenhum dado encontrado! Possíveis causas:');
       console.warn('  1. Sistema realmente não tem dados cadastrados');
       console.warn('  2. Problema nas políticas RLS das tabelas');

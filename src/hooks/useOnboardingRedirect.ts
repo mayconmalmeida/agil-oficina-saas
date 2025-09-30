@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from './use-toast';
 import { getNextOnboardingStep } from '@/utils/onboardingUtils';

@@ -153,7 +153,7 @@ const LiveSupportChat: React.FC = () => {
 
       <CardContent className="flex-1 flex flex-col p-0">
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-green-50 to-white dark:from-green-900/10 dark:to-background">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-green-50 to-white">
           {messages.map((message) => (
             <div
               key={message.id}

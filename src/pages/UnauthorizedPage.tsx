@@ -1,45 +1,44 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldX, Home, ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
 
-const UnauthorizedPage: React.FC = () => {
+const UnauthorizedPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center">
-        <CardHeader className="pb-4">
-          <div className="mx-auto bg-red-100 rounded-full p-3 w-16 h-16 flex items-center justify-center mb-4">
-            <ShieldX className="h-8 w-8 text-red-600" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
             Acesso Negado
           </CardTitle>
+          <CardDescription className="text-gray-600">
+            Você não tem permissão para acessar esta página
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-gray-600">
-            Você não tem permissão para visualizar esta página. Esta área é restrita para administradores do sistema.
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-600 text-center">
+            Entre em contato com o administrador do sistema se você acredita que deveria ter acesso a esta funcionalidade.
           </p>
-          
-          <div className="space-y-3">
-            <Button asChild className="w-full">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button asChild className="flex-1">
               <Link to="/">
-                <Home className="h-4 w-4 mr-2" />
-                Ir para Página Inicial
+                <Home className="w-4 h-4 mr-2" />
+                Início
               </Link>
             </Button>
-            
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/dashboard">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar ao Dashboard
-              </Link>
-            </Button>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <p>Se você acredita que deveria ter acesso a esta área, entre em contato com o administrador do sistema.</p>
           </div>
         </CardContent>
       </Card>

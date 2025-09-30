@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAdminContext } from '@/contexts/AdminContext';
 import { Loader2, Shield } from 'lucide-react';
 
-const AdminLoginPage: React.FC = () => {
+const AdminLoginPage = memo(() => {
   const { user, isLoading: isLoadingContext, error, loginAdmin } = useAdminContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,15 +17,8 @@ const AdminLoginPage: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  console.log('AdminLoginPage: Estado:', {
-    user: user?.email,
-    isAdmin: user?.isAdmin,
-    isLoadingContext
-  });
-
   // Se já está logado como admin, redirecionar
   if (!isLoadingContext && user && user.isAdmin) {
-    console.log('AdminLoginPage: Admin já logado, redirecionando para /admin');
     return <Navigate to="/admin" replace />;
   }
 
@@ -48,9 +41,11 @@ const AdminLoginPage: React.FC = () => {
 
     try {
       const success = await loginAdmin(email, password);
+      
       if (success) {
-        console.log('AdminLoginPage: Login bem-sucedido, redirecionando');
         navigate('/admin');
+      } else {
+        setLoginError('Falha na autenticação. Verifique suas credenciais.');
       }
     } catch (err: any) {
       console.error('AdminLoginPage: Erro no submit:', err);
@@ -139,6 +134,6 @@ const AdminLoginPage: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default AdminLoginPage;

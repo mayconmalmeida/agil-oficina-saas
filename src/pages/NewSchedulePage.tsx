@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar, Clock, ArrowLeft, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,10 +26,24 @@ interface Service {
   valor: number;
 }
 
+interface OrdemServico {
+  id: string;
+  cliente_id: string;
+  status: string;
+  observacoes: string;
+  valor_total: number;
+  clients?: {
+    nome: string;
+    telefone: string;
+  };
+}
+
 const NewSchedulePage: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [ordensAprovadas, setOrdensAprovadas] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [criarDeOrdem, setCriarDeOrdem] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -36,6 +51,7 @@ const NewSchedulePage: React.FC = () => {
   const [formData, setFormData] = useState({
     cliente_id: '',
     servico_id: '',
+    ordem_servico_id: '',
     data_agendamento: '',
     horario: '',
     observacoes: ''
@@ -44,6 +60,7 @@ const NewSchedulePage: React.FC = () => {
   useEffect(() => {
     loadClients();
     loadServices();
+    loadOrdensAprovadas();
   }, []);
 
   const loadClients = async () => {
@@ -87,6 +104,41 @@ const NewSchedulePage: React.FC = () => {
     }
   };
 
+  const loadOrdensAprovadas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ordens_servico')
+        .select(`
+          id,
+          cliente_id,
+          status,
+          observacoes,
+          valor_total,
+          clients:cliente_id(nome, telefone)
+        `)
+        .eq('status', 'Aprovado')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Transform data to fix clients type
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        clients: Array.isArray(item.clients) ? item.clients[0] : item.clients
+      }));
+      
+      setOrdensAprovadas(transformedData);
+    } catch (error) {
+      console.error('Erro ao carregar ordens aprovadas:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível carregar as ordens de serviço aprovadas."
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,17 +154,29 @@ const NewSchedulePage: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const agendamentoData: any = {
+        user_id: user.id,
+        data_agendamento: formData.data_agendamento,
+        horario: formData.horario,
+        observacoes: formData.observacoes,
+        status: 'agendado'
+      };
+
+      if (criarDeOrdem && formData.ordem_servico_id) {
+        // Buscar dados da ordem de serviço selecionada
+        const ordemSelecionada = ordensAprovadas.find(ordem => ordem.id === formData.ordem_servico_id);
+        if (ordemSelecionada) {
+          agendamentoData.cliente_id = ordemSelecionada.cliente_id;
+          agendamentoData.observacoes = `Agendamento criado a partir da Ordem de Serviço #${ordemSelecionada.id.slice(-8)}. ${formData.observacoes}`.trim();
+        }
+      } else {
+        agendamentoData.cliente_id = formData.cliente_id;
+        agendamentoData.servico_id = formData.servico_id;
+      }
+
       const { error } = await supabase
         .from('agendamentos')
-        .insert({
-          user_id: user.id,
-          data_agendamento: formData.data_agendamento,
-          horario: formData.horario,
-          cliente_id: formData.cliente_id,
-          servico_id: formData.servico_id,
-          observacoes: formData.observacoes,
-          status: 'agendado'
-        });
+        .insert(agendamentoData);
 
       if (error) throw error;
 
@@ -153,49 +217,99 @@ const NewSchedulePage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Opção para criar a partir de ordem de serviço */}
+            <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg">
+              <Checkbox
+                id="criar-de-ordem"
+                checked={criarDeOrdem}
+                onCheckedChange={(checked) => {
+                  setCriarDeOrdem(checked as boolean);
+                  if (!checked) {
+                    setFormData({...formData, ordem_servico_id: ''});
+                  }
+                }}
+              />
+              <Label htmlFor="criar-de-ordem" className="flex items-center cursor-pointer">
+                <FileText className="h-4 w-4 mr-2" />
+                Criar agendamento a partir de uma Ordem de Serviço Aprovada
+              </Label>
+            </div>
+
+            {criarDeOrdem && (
+              <div>
+                <Label htmlFor="ordem_servico_id">Ordem de Serviço Aprovada</Label>
+                <Select 
+                  onValueChange={(value) => setFormData({...formData, ordem_servico_id: value})} 
+                  required={criarDeOrdem}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma ordem de serviço aprovada" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ordensAprovadas.map((ordem) => (
+                      <SelectItem key={ordem.id} value={ordem.id}>
+                        <div>
+                          <div className="font-medium">
+                            OS #{ordem.id.slice(-8)} - {ordem.clients?.nome}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            Valor: R$ {ordem.valor_total.toFixed(2)}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {!criarDeOrdem && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="cliente_id">Cliente</Label>
+                  <Select onValueChange={(value) => setFormData({...formData, cliente_id: value})} required={!criarDeOrdem}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          <div>
+                            <div className="font-medium">{client.nome}</div>
+                            <div className="text-sm text-gray-500">
+                              {client.telefone} - {client.veiculo}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="servico_id">Serviço</Label>
+                  <Select onValueChange={(value) => setFormData({...formData, servico_id: value})} required={!criarDeOrdem}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um serviço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          <div>
+                            <div className="font-medium">{service.nome}</div>
+                            <div className="text-sm text-gray-500">
+                              R$ {service.valor.toFixed(2)}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="cliente_id">Cliente</Label>
-                <Select onValueChange={(value) => setFormData({...formData, cliente_id: value})} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        <div>
-                          <div className="font-medium">{client.nome}</div>
-                          <div className="text-sm text-gray-500">
-                            {client.telefone} - {client.veiculo}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="servico_id">Serviço</Label>
-                <Select onValueChange={(value) => setFormData({...formData, servico_id: value})} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um serviço" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id}>
-                        <div>
-                          <div className="font-medium">{service.nome}</div>
-                          <div className="text-sm text-gray-500">
-                            R$ {service.valor.toFixed(2)}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div>
                 <Label htmlFor="data_agendamento">Data do Agendamento</Label>
                 <Input

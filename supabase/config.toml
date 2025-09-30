@@ -10,17 +10,17 @@ max_rows = 1000
 
 [auth]
 enabled = true
-port = 54324
+# port = 54324  # Removido - não é mais suportado
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
+# enable_confirmations = false  # Removido - não é mais suportado
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+# enable_confirmations = false  # Removido - não é mais suportado
 
 [db]
 port = 54322
@@ -35,7 +35,7 @@ port = 54325
 
 [storage]
 enabled = true
-port = 54326
+# port = 54326  # Removido - não é mais suportado
 
 [functions.admin-login]
 verify_jwt = false

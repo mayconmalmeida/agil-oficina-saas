@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { fetchUserProfile, signOutUser, UserProfile } from '@/services/authService';
@@ -33,20 +33,18 @@ export const useManualAuth = (): AuthState => {
           
           // Verificar cache primeiro
           if (profileCacheRef.current?.userId === session.user.id) {
-            console.log('[useManualAuth] Usando perfil do cache');
-            if (isMounted) {
-              setUser(profileCacheRef.current.profile);
-              setRole(profileCacheRef.current.profile.role);
-              setLoading(false);
-              setIsLoadingAuth(false);
-              isInitializedRef.current = true;
-            }
-            return;
+            console.log('[useManualAuth] Cache encontrado, mas recarregando perfil para garantir dados atualizados');
+            // Limpar cache para forçar recarregamento
+            profileCacheRef.current = null;
           }
 
           try {
+            // Buscar perfil diretamente sem timeout - fetchUserProfile já tem seus próprios tratamentos de erro
+            console.log('[useManualAuth] Buscando perfil do usuário...');
             const profile = await fetchUserProfile(session.user.id);
-            if (isMounted) {
+            console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
+            
+            if (isMounted && profile) {
               setUser(profile);
               setRole(profile.role);
               // Salvar no cache
@@ -57,7 +55,6 @@ export const useManualAuth = (): AuthState => {
               setLoading(false);
               setIsLoadingAuth(false);
               isInitializedRef.current = true;
-              console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
             }
           } catch (error) {
             console.error('[useManualAuth] Erro ao carregar profile:', error);
@@ -75,7 +72,7 @@ export const useManualAuth = (): AuthState => {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 trial_ends_at: null,
-                plano: 'Essencial',
+                plano: 'Free',
                 trial_started_at: null
               };
               setUser(basicProfile);
@@ -107,21 +104,10 @@ export const useManualAuth = (): AuthState => {
       }
     });
 
-    // Timeout de segurança mais agressivo para evitar loading infinito
-    const timeout = setTimeout(() => {
-      if (isMounted && !isInitializedRef.current) {
-        console.log('[useManualAuth] Timeout de segurança - forçando inicialização');
-        setLoading(false);
-        setIsLoadingAuth(false);
-        isInitializedRef.current = true;
-      }
-    }, 1500); // Reduzido para 1.5 segundos
-
     return () => {
       console.log('[useManualAuth] Limpando recursos');
       isMounted = false;
       subscription.unsubscribe();
-      clearTimeout(timeout);
     };
   }, []);
 

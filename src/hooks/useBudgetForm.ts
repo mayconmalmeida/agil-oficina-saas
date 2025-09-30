@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -52,13 +52,21 @@ export const useBudgetForm = () => {
         totalValue = values.itens.reduce((sum, item) => sum + item.valor_total, 0);
       }
       
-      // Create budget using RPC function
-      const { error } = await safeRpc("create_budget", {
+      // Create budget using RPC function with items
+      const { error } = await safeRpc("create_budget_with_items", {
         p_user_id: userId,
         p_cliente: values.cliente,
         p_veiculo: values.veiculo,
         p_descricao: values.descricao,
-        p_valor_total: totalValue
+        p_valor_total: totalValue,
+        p_itens: values.itens ? JSON.stringify(values.itens.map(item => ({
+          item_id: item.id,
+          nome: item.nome,
+          tipo: item.tipo,
+          quantidade: item.quantidade,
+          valor_unitario: item.valor_unitario,
+          valor_total: item.valor_total
+        }))) : JSON.stringify([])
       });
       
       if (error) {

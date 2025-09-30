@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorkshopsList } from './workshop/useWorkshopsList';
 import { useWorkshopDetails } from './workshop/useWorkshopDetails';
 import { useWorkshopEdit } from './workshop/useWorkshopEdit';

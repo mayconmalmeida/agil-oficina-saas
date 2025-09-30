@@ -96,12 +96,25 @@ const AssinaturaPage: React.FC = () => {
   };
 
   const handlePlanClick = (plan: any) => {
-    if (plan.affiliate_link) {
-      window.open(plan.affiliate_link, '_blank');
-    } else {
+    try {
+      console.log('handlePlanClick called with plan:', plan);
+      
+      if (plan.affiliate_link) {
+        console.log('Opening affiliate link:', plan.affiliate_link);
+        window.open(plan.affiliate_link, '_blank');
+      } else {
+        console.log('Showing toast for plan without affiliate link');
+        toast({
+          title: "Em breve",
+          description: "Sistema de pagamento em desenvolvimento"
+        });
+      }
+    } catch (error) {
+      console.error('Error in handlePlanClick:', error);
       toast({
-        title: "Em breve",
-        description: "Sistema de pagamento em desenvolvimento"
+        title: "Erro",
+        description: "Ocorreu um erro ao processar o plano",
+        variant: "destructive"
       });
     }
   };

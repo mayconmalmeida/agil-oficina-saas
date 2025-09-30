@@ -35,12 +35,12 @@ const AdminDashboard: React.FC = () => {
 
   const metrics = [
     {
-      title: 'Total de Usuários',
-      value: stats.totalUsers.toString(),
+      title: 'Total de Oficinas',
+      value: stats.totalOficinas.toString(),
       icon: Users,
       change: `+${stats.newUsersThisMonth}`,
       changeType: 'positive' as const,
-      description: `${stats.totalUsers} usuários registrados no sistema`
+      description: `${stats.totalOficinas} oficinas cadastradas no sistema`
     },
     {
       title: 'Assinaturas Ativas',
@@ -113,15 +113,15 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Cards de ações rápidas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-900">Gerenciar Usuários</h4>
-              <p className="text-sm text-blue-700">Visualize e edite informações de usuários</p>
+              <h4 className="font-medium text-blue-900">Gerenciar Oficinas</h4>
+              <p className="text-sm text-blue-700">Visualize e edite informações de oficinas</p>
             </div>
             <div className="p-3 bg-green-50 rounded-lg border border-green-200">
               <h4 className="font-medium text-green-900">Relatórios</h4>
@@ -130,37 +130,6 @@ const AdminDashboard: React.FC = () => {
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
               <h4 className="font-medium text-purple-900">Campanhas</h4>
               <p className="text-sm text-purple-700">Crie e gerencie campanhas de marketing</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo do Sistema</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Usuários com Assinatura Ativa</span>
-                <span className="text-xs text-gray-500">{stats.activeSubscriptions}</span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Usuários em Período de Teste</span>
-                <span className="text-xs text-gray-500">{stats.trialingUsers}</span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Total de Usuários Registrados</span>
-                <span className="text-xs text-gray-500">{stats.totalUsers}</span>
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <span className="text-sm">Taxa de Conversão</span>
-                <span className="text-xs text-gray-500">
-                  {stats.totalUsers > 0 ? 
-                    ((stats.activeSubscriptions / stats.totalUsers) * 100).toFixed(1) + '%' : 
-                    '0%'
-                  }
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>

@@ -167,19 +167,19 @@ const IASuporteInteligentePage: React.FC = () => {
 
   if (isLoadingHistory) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-green-100
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-green-600" />
-          <p className="text-green-700 dark:text-green-300">Carregando conversa...</p>
+          <p className="text-green-700 conversa...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-green-50 to-green-100
       {/* Header estilo WhatsApp */}
-      <div className="bg-green-600 dark:bg-green-700 text-white px-4 py-3 shadow-md">
+      <div className="bg-green-600 text-white px-4 py-3 shadow-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="relative">
@@ -219,7 +219,7 @@ const IASuporteInteligentePage: React.FC = () => {
               <div
                 className={`px-4 py-2 rounded-2xl shadow-sm relative ${
                   message.isBot
-                    ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-sm'
+                    ? 'bg-white text-gray-800 rounded-bl-sm'
                     : 'bg-green-500 text-white rounded-br-sm'
                 }`}
               >
@@ -227,7 +227,7 @@ const IASuporteInteligentePage: React.FC = () => {
                 <div
                   className={`absolute bottom-0 w-3 h-3 ${
                     message.isBot
-                      ? '-left-1 bg-white dark:bg-gray-800'
+                      ? '-left-1 bg-white
                       : '-right-1 bg-green-500'
                   }`}
                   style={{
@@ -239,7 +239,7 @@ const IASuporteInteligentePage: React.FC = () => {
                 
                 <p className="text-sm whitespace-pre-wrap leading-5">{message.content}</p>
                 <p className={`text-xs mt-1 ${
-                  message.isBot ? 'text-gray-400 dark:text-gray-500' : 'text-green-100'
+                  message.isBot ? 'text-gray-400 : 'text-green-100'
                 }`}>
                   {formatTime(message.timestamp)}
                 </p>
@@ -254,8 +254,8 @@ const IASuporteInteligentePage: React.FC = () => {
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1">
                 <Bot className="h-4 w-4 text-white" />
               </div>
-              <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm relative">
-                <div className="absolute bottom-0 -left-1 w-3 h-3 bg-white dark:bg-gray-800" 
+              <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm relative">
+                <div className="absolute bottom-0 -left-1 w-3 h-3 bg-white 
                      style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }} />
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
@@ -271,16 +271,16 @@ const IASuporteInteligentePage: React.FC = () => {
       </div>
 
       {/* Input Area estilo WhatsApp */}
-      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-50 border-t border-gray-200 p-4">
         <div className="flex items-end space-x-3">
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-full border border-gray-300 dark:border-gray-600 px-4 py-2 min-h-[44px] flex items-center">
+          <div className="flex-1 bg-white rounded-full border border-gray-300 px-4 py-2 min-h-[44px] flex items-center">
             <Input
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Digite uma mensagem..."
               disabled={isLoading}
-              className="border-0 p-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+              className="border-0 p-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-gray-500
             />
           </div>
           <Button

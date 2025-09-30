@@ -10,6 +10,8 @@ import AdminSubscriptions from '@/pages/AdminSubscriptions';
 import AdminPlansPage from '@/pages/AdminPlansPage';
 import AdminSettingsPage from '@/pages/AdminSettingsPage';
 import AdminOficinas from '@/pages/AdminOficinas';
+import AdminConfiguracoes from '@/pages/AdminConfiguracoes';
+import SystemMonitoring from '@/components/admin/SystemMonitoring';
 
 export const AdminRoutes = () => {
   return [
@@ -32,6 +34,8 @@ export const AdminRoutes = () => {
       <Route path="oficinas" element={<AdminOficinas />} />
       <Route path="subscriptions" element={<AdminSubscriptions />} />
       <Route path="plans" element={<AdminPlansPage />} />
+      <Route path="configuracoes" element={<AdminConfiguracoes />} />
+      <Route path="monitoring" element={<SystemMonitoring />} />
       <Route path="settings" element={<AdminSettingsPage />} />
     </Route>
   ];

@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building, Shield, Briefcase } from "lucide-react";
 import AdminProfileSection from "@/components/admin/settings/AdminProfileSection";
 import AdminSecuritySection from "@/components/admin/settings/AdminSecuritySection";
-import AdminAppearanceSection from "@/components/admin/settings/AdminAppearanceSection";
+import { AdminAppearanceSection } from "@/components/admin/settings/AdminAppearanceSection";
 import { useAdminSettings } from "@/hooks/admin/useAdminSettings";
 
 const AdminSettingsPage: React.FC = () => {

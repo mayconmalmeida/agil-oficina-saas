@@ -114,10 +114,7 @@ const PlanInfoCard: React.FC = () => {
             </p>
           </div>
 
-          <div>
-            <p className="text-sm text-muted-foreground">Recursos disponíveis</p>
-            <p className="font-medium">{planStatus.permissions.length} funcionalidades</p>
-          </div>
+
 
           {planStatus.source !== 'admin' && (
             <div className="pt-2 border-t">

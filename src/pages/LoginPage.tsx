@@ -52,12 +52,13 @@ const LoginPage: React.FC = () => {
     const checkAuthAndRedirect = () => {
       console.log("LoginPage: Verificando sessão existente...");
       
-      // Aguardar o contexto de auth carregar
+      // Aguardar o contexto de auth carregar completamente
       if (loading || isLoadingAuth) {
         console.log("LoginPage: Auth ainda carregando...");
         return;
       }
 
+      // Marcar como verificado ANTES de fazer a verificação para evitar loops
       hasCheckedSession.current = true;
       
       // Se tiver usuário autenticado, redirecionar
@@ -80,17 +81,13 @@ const LoginPage: React.FC = () => {
       }
     };
 
-    // Verificar a cada 1 segundo se o auth terminou de carregar
-    const interval = setInterval(() => {
-      if (!loading && !isLoadingAuth && !hasCheckedSession.current) {
-        checkAuthAndRedirect();
-        clearInterval(interval);
-      }
-    }, 1000);
+    // Só verificar se auth não está carregando
+    if (!loading && !isLoadingAuth) {
+      checkAuthAndRedirect();
+    }
 
-    // Sem timeout - deixar o useManualAuth gerenciar completamente
     return () => {
-      clearInterval(interval);
+      // Cleanup se necessário
     };
   }, [navigate, loading, isLoadingAuth, user]);
 
@@ -154,18 +151,7 @@ const LoginPage: React.FC = () => {
               isLoading={isLoading}
             />
           </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <div className="text-center">
-              <Link to="/reset-password" className="text-sm text-blue-600 hover:underline">
-                Esqueceu sua senha?
-              </Link>
-            </div>
-            <div className="text-center">
-              <span className="text-sm text-gray-600">Não tem uma conta? </span>
-              <Link to="/register" className="text-sm text-blue-600 hover:underline">
-                Cadastre-se
-              </Link>
-            </div>
+          <CardFooter>
           </CardFooter>
         </Card>
 

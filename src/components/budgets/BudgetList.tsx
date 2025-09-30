@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/supabaseTypes';
 import Loading from '@/components/ui/loading';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Budget {
   id: string;
@@ -30,14 +31,21 @@ const BudgetList: React.FC<BudgetListProps> = ({ searchQuery, filter }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const fetchBudgets = async () => {
     try {
       setIsLoading(true);
       
+      if (!user?.id) {
+        console.log('Usuário não autenticado');
+        return;
+      }
+      
       let query = supabase
         .from('orcamentos')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (filter !== 'todos') {
@@ -61,8 +69,10 @@ const BudgetList: React.FC<BudgetListProps> = ({ searchQuery, filter }) => {
   };
 
   useEffect(() => {
-    fetchBudgets();
-  }, [filter]);
+    if (user?.id) {
+      fetchBudgets();
+    }
+  }, [filter, user?.id]);
 
   const handleConvertToOS = async (budgetId: string) => {
     try {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
@@ -143,6 +143,9 @@ export const useSettingsPage = () => {
         });
         return;
       }
+
+      // Forçar recarregamento da página para atualizar o contexto de autenticação
+      window.location.reload();
       
       toast({
         title: "Perfil atualizado",

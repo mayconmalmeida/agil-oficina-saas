@@ -18,11 +18,18 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const displayName = user?.nome_oficina || user?.email || 'Admin';
+
   const menuItems = [
     {
       title: 'Dashboard',
       href: '/admin',
       icon: LayoutDashboard
+    },
+    {
+      title: 'Oficinas',
+      href: '/admin/oficinas',
+      icon: Users
     },
     {
       title: 'Usuários',
@@ -86,7 +93,7 @@ const AdminLayout: React.FC = () => {
                   </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">Admin</p>
+                  <p className="text-sm font-medium text-gray-700">{displayName}</p>
                   <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
               </div>
@@ -142,7 +149,7 @@ const AdminLayout: React.FC = () => {
                     </span>
                   </div>
                   <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-gray-700">Admin</p>
+                    <p className="text-sm font-medium text-gray-700">{displayName}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                   <Button

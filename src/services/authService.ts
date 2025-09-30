@@ -24,12 +24,21 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
   try {
     console.log('fetchUserProfile: Iniciando busca do perfil...');
     
-    // Busca direta sem timeout para evitar problemas de conexão lenta
-    const { data: profile, error: profileError } = await supabase
+    // Adicionar timeout de 15 segundos para evitar travamentos
+    const profilePromise = supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout na consulta do perfil')), 30000);
+    });
+
+    const { data: profile, error: profileError } = await Promise.race([
+      profilePromise,
+      timeoutPromise
+    ]) as any;
     
     console.log('fetchUserProfile: Resultado da consulta profiles:', { profile, profileError });
 
@@ -80,11 +89,22 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     if (profile.role === 'oficina' || profile.role === 'admin' || profile.role === 'superadmin') {
       try {
         console.log('fetchUserProfile: Buscando oficina para role:', profile.role);
-        const { data: oficina } = await supabase
+        
+        // Adicionar timeout para consulta da oficina
+        const oficinaPromise = supabase
           .from('oficinas')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
+
+        const oficinaTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout na consulta da oficina')), 20000);
+        });
+
+        const { data: oficina } = await Promise.race([
+          oficinaPromise,
+          oficinaTimeoutPromise
+        ]) as any;
         
         oficina_id = oficina?.id || null;
         console.log('fetchUserProfile: Oficina encontrada:', !!oficina_id);
@@ -100,13 +120,24 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     if (oficina_id) {
       try {
         console.log('fetchUserProfile: Buscando assinatura para oficina:', oficina_id);
-        const { data: subscriptionData } = await supabase
+        
+        // Adicionar timeout para consulta da assinatura
+        const subscriptionPromise = supabase
           .from('user_subscriptions')
           .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        const subscriptionTimeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout na consulta da assinatura')), 20000);
+        });
+
+        const { data: subscriptionData } = await Promise.race([
+          subscriptionPromise,
+          subscriptionTimeoutPromise
+        ]) as any;
         
         subscription = subscriptionData as UserSubscription;
         console.log('fetchUserProfile: Assinatura encontrada:', !!subscription);

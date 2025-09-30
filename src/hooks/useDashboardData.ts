@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardData } from '@/types/dashboardTypes';
 import { useDashboardCounts } from '@/hooks/dashboard/useDashboardCounts';

@@ -14,18 +14,20 @@ const DashboardHeader: React.FC = () => {
     navigate('/');
   };
 
+  const displayName = user?.nome_oficina || user?.email || 'Usuário';
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Bem-vindo</h1>
           <p className="text-sm text-gray-600">Bem-vindo ao seu sistema de gestão</p>
         </div>
         
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <User className="h-5 w-5 text-gray-500" />
-            <span className="text-sm text-gray-700">{user?.email}</span>
+            <span className="text-sm text-gray-700">{displayName}</span>
           </div>
           
           <Button

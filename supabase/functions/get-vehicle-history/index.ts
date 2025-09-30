@@ -108,6 +108,26 @@ serve(async (req) => {
       console.error('Erro ao buscar ordens de serviço:', ordensError);
     }
 
+    // Buscar orçamentos pendentes do cliente
+    const { data: orcamentosData, error: orcamentosError } = await supabase
+      .from('orcamentos')
+      .select(`
+        id,
+        cliente,
+        veiculo,
+        descricao,
+        valor_total,
+        status,
+        created_at
+      `)
+      .eq('cliente', clientData?.nome || '')
+      .eq('status', 'pendente')
+      .order('created_at', { ascending: false });
+
+    if (orcamentosError) {
+      console.error('Erro ao buscar orçamentos pendentes:', orcamentosError);
+    }
+
     // Buscar itens das ordens de serviço
     let itensData = [];
     if (ordensData && ordensData.length > 0) {
@@ -132,7 +152,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Dados encontrados: veículo ${vehicleData.placa}, ${ordensData?.length || 0} ordens concluídas`);
+    console.log(`Dados encontrados: veículo ${vehicleData.placa}, ${ordensData?.length || 0} ordens concluídas, ${orcamentosData?.length || 0} orçamentos pendentes`);
 
     // Retornar dados públicos limitados (sem informações sensíveis)
     const publicData = {
@@ -162,6 +182,15 @@ serve(async (req) => {
           valor_unitario: item.valor_unitario,
           valor_total: item.valor_total
         }))
+      })) || [],
+      pendingBudgets: orcamentosData?.map(orcamento => ({
+        id: orcamento.id,
+        cliente: orcamento.cliente,
+        veiculo: orcamento.veiculo,
+        descricao: orcamento.descricao,
+        valor_total: orcamento.valor_total,
+        status: orcamento.status,
+        created_at: orcamento.created_at
       })) || []
     };
 

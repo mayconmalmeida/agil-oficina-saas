@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { fetchAddressByCEP } from '@/utils/validationUtils';
 
 export const useAddressLookup = (form: any, cep: string) => {

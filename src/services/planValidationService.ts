@@ -110,12 +110,11 @@ export const validateUserPlan = async (userId: string): Promise<PlanValidationRe
     } else if (oficina) {
       console.log('[validateUserPlan] Oficina encontrada:', {
         plano: oficina.plano,
-        is_active: oficina.is_active,
-        ativo: oficina.ativo
+        is_active: oficina.is_active
       });
 
       // Se a oficina está ativa e tem plano definido
-      if ((oficina.is_active || oficina.ativo) && oficina.plano) {
+      if (oficina.is_active && oficina.plano) {
         console.log('[validateUserPlan] ✅ Plano ativo encontrado na oficina:', oficina.plano);
         const planType: PlanType = oficina.plano.toLowerCase() === 'premium' ? 'premium' : 'essencial';
         return {

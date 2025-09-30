@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { Toaster } from '@/components/ui/toaster';
 
 const Layout: React.FC = () => {
   const { user } = useAuth();
@@ -26,6 +27,7 @@ const Layout: React.FC = () => {
           </main>
         </div>
       </div>
+      <Toaster />
     </ProtectedRoute>
   );
 };

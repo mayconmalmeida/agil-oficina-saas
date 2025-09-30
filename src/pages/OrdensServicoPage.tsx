@@ -115,35 +115,12 @@ const OrdensServicoPage: React.FC = () => {
         return;
       }
 
-      // Buscar cliente por nome no orçamento
-      const { data: clienteData, error: clienteError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('nome', orcamento.cliente)
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (clienteError) throw clienteError;
-
-      const cliente_id = clienteData?.[0]?.id;
-      if (!cliente_id) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Cliente não encontrado para este orçamento",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('ordens_servico')
-        .insert({
-          user_id: user.id,
-          cliente_id: cliente_id,
-          orcamento_id: orcamento.id,
-          valor_total: orcamento.valor_total,
-          status: 'Aberta',
-          observacoes: `Criada a partir do orçamento: ${orcamento.cliente} - ${orcamento.veiculo}`
+      // Usar a função RPC do Supabase para criar ordem de serviço a partir do orçamento
+      const { data: novaOrdemId, error } = await supabase
+        .rpc('create_ordem_servico_from_orcamento', {
+          p_user_id: user.id,
+          p_orcamento_id: selectedOrcamento,
+          p_observacoes: `Criada a partir do orçamento: ${orcamento.cliente} - ${orcamento.veiculo}`
         });
 
       if (error) throw error;
@@ -152,7 +129,8 @@ const OrdensServicoPage: React.FC = () => {
       await supabase
         .from('orcamentos')
         .update({ status: 'usado' })
-        .eq('id', orcamento.id);
+        .eq('id', orcamento.id)
+        .eq('user_id', user.id);
 
       toast({
         title: "Ordem de serviço criada",

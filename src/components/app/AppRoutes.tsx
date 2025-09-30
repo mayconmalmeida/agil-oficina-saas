@@ -7,7 +7,6 @@ import RegisterPage from '@/pages/RegisterPage';
 import SupportPage from '@/pages/SupportPage';
 import DashboardPage from '@/pages/DashboardPage';
 import Layout from '@/components/layout/Layout';
-import OptimizedAdminGuard from '@/components/admin/OptimizedAdminGuard';
 import AgendaPage from '@/pages/AgendaPage';
 import NewSchedulePage from '@/pages/NewSchedulePage';
 import OrdemServicoPage from '@/pages/OrdemServicoPage';
@@ -18,30 +17,29 @@ import NewClientPage from '@/pages/NewClientPage';
 import FinanceiroPage from '@/pages/FinanceiroPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import NewBudgetPage from '@/pages/NewBudgetPage';
+import EditBudgetPage from '@/pages/EditBudgetPage';
 import NewServiceOrderPage from '@/pages/NewServiceOrderPage';
-
-// Import pages
 import ClientsPage from '@/pages/ClientsPage';
 import ServicesPage from '@/pages/ServicesPage';
 import BudgetsPage from '@/pages/BudgetsPage';
 import ProductsPage from '@/pages/ProductsPage';
 import CategoriesPage from '@/pages/CategoriesPage';
 import SuppliersPage from '@/pages/SuppliersPage';
+import SupplierEditPage from '@/pages/SupplierEditPage';
 import ReportsPage from '@/pages/ReportsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import SettingsPage from '@/pages/SettingsPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
 import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
-import AdminDashboard from '@/pages/AdminDashboard';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
 import IASuportePage from '@/pages/IASuportePage';
 import OrderDetailsPage from '@/pages/OrderDetailsPage';
 import ProductEditPage from '@/pages/ProductEditPage';
 import ServiceEditPage from '@/pages/ServiceEditPage';
-import SupplierEditPage from '@/pages/SupplierEditPage';
 import VehicleHistoryPublicPage from '@/pages/VehicleHistoryPublicPage';
 import GenerateLabelPage from '@/pages/GenerateLabelPage';
+import { AdminRoutes } from '@/routes/AdminRoutes';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -54,12 +52,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/support" element={<SupportPage />} />
       
       {/* Admin Routes */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin/*" element={
-        <OptimizedAdminGuard>
-          <AdminDashboard />
-        </OptimizedAdminGuard>
-      } />
+      {AdminRoutes()}
 
       {/* Protected Routes */}
       <Route element={<Layout />}>
@@ -79,14 +72,14 @@ const AppRoutes: React.FC = () => {
         <Route path="/orcamentos" element={<BudgetsPage />} />
         <Route path="/orcamentos/novo" element={<NewBudgetPage />} />
         <Route path="/orcamentos/:id" element={<BudgetViewPage />} />
-        <Route path="/orcamentos/editar/:id" element={<NewBudgetPage />} />
+        <Route path="/orcamentos/editar/:id" element={<EditBudgetPage />} />
         <Route path="/ordens-servico" element={<OrdemServicoPage />} />
         <Route path="/ordens-servico/nova" element={<NewServiceOrderPage />} />
         <Route path="/ordens-servico/:id" element={<OrdemServicoDetailPage />} />
         <Route path="/dashboard/ordens-servico" element={<OrdemServicoPage />} />
         <Route path="/dashboard/ordens-servico/:id" element={<OrderDetailsPage />} />
         <Route path="/financeiro" element={<FinanceiroPage />} />
-        <Route path="/colaboradores" element={<CollaboratorsPage />} />
+        
         <Route path="/relatorios" element={<ReportsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
         
@@ -94,11 +87,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/produtos" element={<ProductsPage />} />
         <Route path="/dashboard/categorias" element={<CategoriesPage />} />
         <Route path="/dashboard/fornecedores" element={<SuppliersPage />} />
+        <Route path="/dashboard/fornecedores/:id" element={<SupplierEditPage />} />
+        <Route path="/dashboard/orcamentos" element={<BudgetsPage />} />
+        <Route path="/dashboard/orcamentos/novo" element={<NewBudgetPage />} />
+        <Route path="/dashboard/orcamentos/:id" element={<BudgetViewPage />} />
+        <Route path="/dashboard/orcamentos/editar/:id" element={<EditBudgetPage />} />
         <Route path="/dashboard/relatorios" element={<ReportsPage />} />
         <Route path="/dashboard/empresa" element={<CompanyPage />} />
         <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
         <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
-        <Route path="/dashboard/colaboradores" element={<CollaboratorsPage />} />
+        
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
         <Route path="/dashboard/gerar-etiqueta" element={<GenerateLabelPage />} />

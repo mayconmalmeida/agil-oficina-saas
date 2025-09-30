@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLogoUpload } from '@/hooks/useLogoUpload';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
@@ -12,6 +12,22 @@ const LogoSettingsSection: React.FC<LogoSettingsSectionProps> = ({
   userId, 
   initialLogo 
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Verificar se userId existe antes de usar o hook
+  if (!userId) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-medium mb-2">Logo da Oficina</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Carregando configurações...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const { 
     logoUrl, 
     isUploading, 
@@ -20,12 +36,10 @@ const LogoSettingsSection: React.FC<LogoSettingsSectionProps> = ({
     handleFileUpload, 
     handleRemoveLogo 
   } = useLogoUpload({ 
-    userId: userId || '', 
+    userId: userId, 
     initialLogo: initialLogo || null, 
     onSave: () => console.log('Logo saved') 
   });
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (userId) {

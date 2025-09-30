@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Edit, FileText, Download, Check, X } from 'lucide-react';
+import { ArrowLeft, Edit, FileText, Download, Check, X, Printer } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateBudgetPDF } from '@/utils/pdfUtils';
 
 interface BudgetData {
   id: string;
@@ -39,12 +40,23 @@ const BudgetViewPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Adicionar timeout para evitar travamentos
+      const budgetPromise = supabase
         .from('orcamentos')
         .select('*')
         .eq('id', id)
         .eq('user_id', user.id)
         .single();
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout na consulta do orçamento')), 15000);
+      });
+
+      const { data, error } = await Promise.race([
+        budgetPromise,
+        timeoutPromise
+      ]) as any;
 
       if (error) throw error;
       setBudget(data);
@@ -53,7 +65,9 @@ const BudgetViewPage: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Não foi possível carregar o orçamento."
+        description: error.message === 'Timeout na consulta do orçamento' 
+          ? "A consulta demorou muito para responder. Tente novamente."
+          : "Não foi possível carregar o orçamento."
       });
       navigate('/orcamentos');
     } finally {
@@ -92,13 +106,32 @@ const BudgetViewPage: React.FC = () => {
     }
   };
 
+  const handlePrint = () => {
+    if (!budget) return;
+    
+    try {
+      generateBudgetPDF(budget);
+      toast({
+        title: "Impressão iniciada",
+        description: "O orçamento foi enviado para impressão."
+      });
+    } catch (error: any) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error.message || "Não foi possível gerar o PDF do orçamento."
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pendente': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'aprovado': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'rejeitado': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'enviado': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'aprovado': return 'bg-green-100 text-green-800';
+      case 'rejeitado': return 'bg-red-100 text-red-800';
+      case 'enviado': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -147,6 +180,13 @@ const BudgetViewPage: React.FC = () => {
           <Badge className={getStatusColor(budget.status)}>
             {budget.status}
           </Badge>
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
           <Button
             variant="outline"
             onClick={() => navigate(`/orcamentos/editar/${budget.id}`)}

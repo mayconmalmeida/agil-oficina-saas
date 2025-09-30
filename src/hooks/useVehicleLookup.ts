@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { searchVehicleByPlateReal } from '@/services/realVehicleDataService';
 import { useToast } from '@/hooks/use-toast';

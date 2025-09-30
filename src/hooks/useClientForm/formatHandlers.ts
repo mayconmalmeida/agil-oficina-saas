@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { formatCPF, formatCEP, formatPhoneNumber } from '@/utils/formatUtils';
 import { formatLicensePlate } from '@/utils/formatUtils';
 
