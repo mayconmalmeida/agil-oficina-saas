@@ -6,17 +6,17 @@ import { supabase, testSupabaseConnection } from "@/lib/supabase";
  */
 export const verifyConnection = async () => {
   try {
-    console.log("Verificando conexão com Supabase...");
+    console.log("Checking connection with Supabase...");
     const isConnected = await testSupabaseConnection();
     
     if (isConnected) {
-      console.log("Conexão Supabase bem-sucedida");
+      console.log("Supabase connection successful");
       
-      // Verificar se já existe uma sessão
+      // Check if a session already exists
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        console.log("Sessão existente encontrada", session);
+        console.log("Existing session found", session);
         return { success: true, session };
       }
       
@@ -24,14 +24,14 @@ export const verifyConnection = async () => {
     } else {
       return { 
         success: false, 
-        error: 'Não foi possível conectar ao serviço de autenticação.'
+        error: 'Could not connect to authentication service.'
       };
     }
   } catch (error: any) {
-    console.error("Erro ao verificar conexão com Supabase:", error);
+    console.error("Error checking connection with Supabase:", error);
     return { 
       success: false, 
-      error: 'Falha ao verificar a conexão com o serviço de autenticação.'
+      error: 'Failed to verify connection with authentication service.'
     };
   }
 };

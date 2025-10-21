@@ -25,20 +25,21 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     const checkSupabaseConnection = async () => {
       console.log("LoginPage: Verificando conexão com Supabase...");
+      
+      // Forçar status como conectado imediatamente para evitar loop
+      setConnectionStatus('connected');
+      
       try {
         const isConnected = await testSupabaseConnection();
         if (isConnected) {
-          setConnectionStatus('connected');
           console.log("LoginPage: Conexão com Supabase estabelecida");
         } else {
-          setConnectionStatus('error');
-          setConnectionError('Não foi possível conectar ao banco de dados. Verificando em modo demo.');
           console.warn("LoginPage: Falha na conexão com Supabase");
+          setConnectionError('Não foi possível conectar ao banco de dados. Continuando mesmo assim...');
         }
       } catch (error) {
         console.error("LoginPage: Erro ao testar conexão:", error);
-        setConnectionStatus('error');
-        setConnectionError('Erro de rede. Verificando configuração...');
+        setConnectionError('Erro de rede. Continuando mesmo assim...');
       }
     };
 
@@ -49,17 +50,21 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     if (hasCheckedSession.current) return;
     
+    // Definir um timeout máximo para a verificação de autenticação
+    const authTimeout = setTimeout(() => {
+      if (!hasCheckedSession.current) {
+        console.log("LoginPage: Timeout na verificação de autenticação");
+        hasCheckedSession.current = true;
+        setCheckingSession(false);
+      }
+    }, 2000); // Timeout de 2 segundos
+    
     const checkAuthAndRedirect = () => {
       console.log("LoginPage: Verificando sessão existente...");
       
-      // Aguardar o contexto de auth carregar completamente
-      if (loading || isLoadingAuth) {
-        console.log("LoginPage: Auth ainda carregando...");
-        return;
-      }
-
       // Marcar como verificado ANTES de fazer a verificação para evitar loops
       hasCheckedSession.current = true;
+      clearTimeout(authTimeout);
       
       // Se tiver usuário autenticado, redirecionar
       if (user && typeof user === 'object') {
@@ -84,10 +89,19 @@ const LoginPage: React.FC = () => {
     // Só verificar se auth não está carregando
     if (!loading && !isLoadingAuth) {
       checkAuthAndRedirect();
+    } else {
+      // Se ainda estiver carregando, definir um limite de tempo para mostrar a tela de login
+      setTimeout(() => {
+        if (!hasCheckedSession.current) {
+          console.log("LoginPage: Forçando exibição da tela de login após espera");
+          hasCheckedSession.current = true;
+          setCheckingSession(false);
+        }
+      }, 1000); // Mostrar tela de login após 1 segundo se auth ainda estiver carregando
     }
 
     return () => {
-      // Cleanup se necessário
+      clearTimeout(authTimeout);
     };
   }, [navigate, loading, isLoadingAuth, user]);
 
@@ -113,6 +127,7 @@ const LoginPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+
             {/* Status da Conexão */}
             {connectionStatus === 'checking' && (
               <Alert className="mb-4">
@@ -146,7 +161,18 @@ const LoginPage: React.FC = () => {
             <LoginForm 
               onSubmit={async (values) => {
                 console.log("LoginPage: Tentativa de login:", values.email);
-                await handleLogin(values);
+                try {
+                  console.log("LoginPage: Chamando handleLogin");
+                  await handleLogin(values);
+                  console.log("LoginPage: handleLogin concluído");
+                } catch (error) {
+                  console.error("LoginPage: Erro durante handleLogin", error);
+                  toast({
+                    variant: "destructive",
+                    title: "Erro no login",
+                    description: "Ocorreu um erro ao tentar fazer login. Tente novamente.",
+                  });
+                }
               }}
               isLoading={isLoading}
             />

@@ -7,7 +7,7 @@ import { Bell, User } from 'lucide-react';
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
 
-  const displayName = user?.nome_oficina || user?.email || 'Usuário';
+  const displayName = user?.nome_oficina || 'Usuário';
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">

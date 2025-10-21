@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Eye, Edit, FileText } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { FileText, Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import queryService from '@/services/queryService';
 
 interface Orcamento {
   id: string;
@@ -42,32 +43,30 @@ const BudgetsPage: React.FC = () => {
         return;
       }
 
-      // Adicionar timeout para evitar travamentos
-      const orcamentosPromise = supabase
-        .from('orcamentos')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const result = await queryService.fetchBudgets(user.id);
+      
+      if (result.error && !result.fromFallback) {
+        throw result.error;
+      }
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout na consulta dos orçamentos')), 15000);
-      });
+      setOrcamentos((result.data || []) as Orcamento[]);
 
-      const { data, error } = await Promise.race([
-        orcamentosPromise,
-        timeoutPromise
-      ]) as any;
-
-      if (error) throw error;
-      setOrcamentos(data || []);
+      // Mostrar aviso se usando dados em cache ou fallback
+      if (result.fromCache) {
+        console.log('[BudgetsPage] Dados carregados do cache');
+      } else if (result.fromFallback) {
+        toast({
+          variant: "destructive",
+          title: "Conexão instável",
+          description: "Não foi possível carregar os orçamentos. Tente novamente em alguns instantes."
+        });
+      }
     } catch (error: any) {
       console.error('Erro ao carregar orçamentos:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message === 'Timeout na consulta dos orçamentos'
-          ? "A consulta demorou muito para responder. Tente novamente."
-          : "Não foi possível carregar os orçamentos."
+        description: "Não foi possível carregar os orçamentos. Verifique sua conexão."
       });
     } finally {
       setIsLoading(false);

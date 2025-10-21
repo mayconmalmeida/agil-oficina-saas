@@ -22,14 +22,19 @@ export const useLogin = () => {
   };
 
   const handleLogin = async (values: LoginFormValues) => {
+    console.log('useLogin: handleLogin INICIADO', { email: values.email });
     setIsLoading(true);
     
     try {
       console.log('useLogin: Iniciando processo de login para:', values.email);
       
       // Verificar conexão primeiro
+      console.log('useLogin: Verificando conexão com Supabase...');
       const connected = await checkConnection();
+      console.log('useLogin: Resultado da verificação de conexão:', connected);
+      
       if (!connected) {
+        console.error('useLogin: Falha na conexão com Supabase');
         toast({
           variant: "destructive",
           title: "Erro de conexão",
@@ -38,11 +43,21 @@ export const useLogin = () => {
         setIsLoading(false);
         return;
       }
+      
+      console.log('useLogin: Conexão com Supabase estabelecida com sucesso');
 
       // Tentar fazer login
+      console.log('useLogin: Tentando fazer login com Supabase.auth.signInWithPassword...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
+      });
+      
+      console.log('useLogin: Resposta do signInWithPassword recebida', { 
+        success: !error, 
+        hasSession: !!data?.session,
+        hasUser: !!data?.user,
+        errorMessage: error?.message
       });
 
       if (error) {
@@ -98,7 +113,10 @@ export const useLogin = () => {
             title: "Login realizado com sucesso",
             description: "Bem-vindo ao painel administrativo!",
           });
-          navigate('/admin', { replace: true });
+          // Usar window.location para garantir refresh completo
+          setTimeout(() => {
+            window.location.href = '/admin';
+          }, 500);
           setIsLoading(false);
           return;
         }
@@ -190,17 +208,18 @@ export const useLogin = () => {
         });
 
         console.log('useLogin: Redirecionando para dashboard principal');
-        // Aguardar um pouco para garantir que o contexto de auth seja atualizado
+        // Aumentar o timeout para garantir que o contexto de auth seja atualizado
+        // e forçar o redirecionamento com window.location para garantir refresh completo
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
+          window.location.href = '/dashboard';
+        }, 500);
 
       } catch (adminCheckError) {
         console.error('useLogin: Erro ao verificar dados do usuário:', adminCheckError);
-        // Em caso de erro, redirecionar para dashboard mesmo assim
+        // Em caso de erro, redirecionar para dashboard mesmo assim usando window.location
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
-        }, 100);
+          window.location.href = '/dashboard';
+        }, 500);
       }
 
     } catch (error) {

@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Building, User, Bell, Palette, Phone } from 'lucide-react';
+import { Settings, Building, User, Bell, Palette, Phone, CreditCard } from 'lucide-react';
 import { ProfileSection } from '@/components/settings/ProfileSection';
 import { SecuritySection } from '@/components/settings/SecuritySection';
 import LogoSettingsSection from '@/components/settings/LogoSettingsSection';
 import AppearanceSection from '@/components/settings/AppearanceSection';
 import NotificationsSettings from '@/components/settings/NotificationsSettings';
 import SupportSettings from '@/components/settings/support/SupportSettings';
+import PlanSection from '@/components/settings/PlanSection';
 import { useSettingsPage } from '@/hooks/useSettingsPage';
 
 const ConfiguracoesPage: React.FC = () => {
@@ -46,7 +47,7 @@ const ConfiguracoesPage: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-6 gap-1">
+            <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-7 gap-1">
               <TabsTrigger value="perfil" className="flex items-center">
                 <Building className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Oficina</span>
@@ -66,6 +67,10 @@ const ConfiguracoesPage: React.FC = () => {
               <TabsTrigger value="notificacoes" className="flex items-center">
                 <Bell className="w-4 h-4 mr-2" />
                 <span className="hidden md:inline">Notificações</span>
+              </TabsTrigger>
+              <TabsTrigger value="planos" className="flex items-center">
+                <CreditCard className="w-4 h-4 mr-2" />
+                <span className="hidden md:inline">Planos</span>
               </TabsTrigger>
               <TabsTrigger value="suporte" className="flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
@@ -113,6 +118,10 @@ const ConfiguracoesPage: React.FC = () => {
                 userId={userId}
                 initialValues={{ whatsapp_suporte: userProfile?.whatsapp_suporte }}
               />
+            </TabsContent>
+            
+            <TabsContent value="planos">
+              <PlanSection />
             </TabsContent>
           </Tabs>
         </CardContent>

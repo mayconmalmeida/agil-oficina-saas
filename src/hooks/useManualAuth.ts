@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { fetchUserProfile, signOutUser, UserProfile } from '@/services/authService';
+import { fetchUserProfile, signOutUser, UserProfile, MOCK_PROFILE } from '@/services/authService';
 import { AuthState } from '@/types/auth';
 
 export const useManualAuth = (): AuthState => {
@@ -18,6 +18,7 @@ export const useManualAuth = (): AuthState => {
     console.log('[useManualAuth] Iniciando configuração de autenticação');
     
     let isMounted = true;
+    let currentSession: Session | null = null;
 
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -26,6 +27,7 @@ export const useManualAuth = (): AuthState => {
 
         console.log('[useManualAuth] Auth state changed:', { event, hasSession: !!session });
         
+        currentSession = session; // Armazenar sessão atual
         setSession(session);
         
         if (session?.user) {
@@ -59,28 +61,19 @@ export const useManualAuth = (): AuthState => {
           } catch (error) {
             console.error('[useManualAuth] Erro ao carregar profile:', error);
             if (isMounted) {
-              // Criar perfil básico em caso de erro mas manter a sessão
-              const basicProfile: UserProfile = {
+              // Em caso de erro, usar o perfil offline
+              console.log('[useManualAuth] Usando perfil offline após erro');
+              const offlineProfile = {
+                ...MOCK_PROFILE,
                 id: session.user.id,
-                email: session.user.email || '',
-                role: 'user',
-                nome_oficina: null,
-                telefone: null,
-                is_active: true,
-                subscription: null,
-                oficina_id: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                trial_ends_at: null,
-                plano: 'Free',
-                trial_started_at: null
+                email: session.user.email || MOCK_PROFILE.email
               };
-              setUser(basicProfile);
-              setRole('user');
+              
+              setUser(offlineProfile);
+              setRole(offlineProfile.role);
               setLoading(false);
               setIsLoadingAuth(false);
               isInitializedRef.current = true;
-              console.log('[useManualAuth] Perfil básico criado devido a erro, mas sessão mantida');
             }
           }
         } else {
@@ -101,13 +94,49 @@ export const useManualAuth = (): AuthState => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (isMounted) {
         console.log('[useManualAuth] Sessão inicial verificada:', !!session);
+        currentSession = session; // Armazenar sessão inicial
       }
     });
+
+    // Adicionar timeout de segurança para garantir que o loading termine
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && (loading || isLoadingAuth)) {
+        console.log('[useManualAuth] Timeout de segurança atingido - finalizando loading');
+        
+        // Sempre aplicar o perfil offline quando o timeout é atingido e temos uma sessão
+        if (currentSession?.user) {
+          console.log('[useManualAuth] Criando perfil offline após timeout para usuário:', currentSession.user.id);
+          
+          // Usar o perfil mock para garantir que o usuário tenha acesso
+          const offlineProfile = {
+            ...MOCK_PROFILE,
+            id: currentSession.user.id,
+            email: currentSession.user.email || MOCK_PROFILE.email
+          };
+          
+          setUser(offlineProfile);
+          setRole(offlineProfile.role);
+          // Salvar no cache para uso futuro
+          profileCacheRef.current = {
+            userId: currentSession.user.id,
+            profile: offlineProfile
+          };
+          console.log('[useManualAuth] Perfil offline aplicado após timeout:', offlineProfile);
+        } else {
+          console.log('[useManualAuth] Nenhuma sessão disponível para aplicar perfil offline');
+        }
+        
+        setLoading(false);
+        setIsLoadingAuth(false);
+        isInitializedRef.current = true;
+      }
+    }, 15000); // Reduzindo para 15 segundos para melhorar a experiência do usuário
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
       isMounted = false;
       subscription.unsubscribe();
+      clearTimeout(safetyTimeout);
     };
   }, []);
 

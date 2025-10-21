@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Eye, Edit, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Plus, Eye, Edit, FileText, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import Loading from '@/components/ui/loading';
+import queryService from '@/services/queryService';
 
 interface OrdemServico {
   id: string;
@@ -51,34 +55,37 @@ const OrdensServicoPage: React.FC = () => {
   }, [user?.id]);
 
   const fetchOrdens = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ordens_servico')
-        .select(`
-          *,
-          clients (
-            nome,
-            telefone
-          )
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+    if (!user?.id) return;
 
-      if (error) throw error;
+    try {
+      const result = await queryService.fetchOrders(user.id);
       
+      if (result.error && !result.fromFallback) {
+        throw result.error;
+      }
+
       // Transform data to fix clients type
-      const transformedData = (data || []).map(item => ({
+      const transformedData = ((result.data || []) as any[]).map(item => ({
         ...item,
         clients: Array.isArray(item.clients) ? item.clients[0] : item.clients
       }));
       
       setOrdens(transformedData);
+
+      // Show cache warning if needed
+      if (result.fromCache) {
+        console.log('[OrdensServicoPage] Dados carregados do cache');
+        toast({
+          title: "Dados do cache",
+          description: "Ordens de serviço carregadas do cache devido à conexão instável.",
+        });
+      }
     } catch (error: any) {
       console.error('Erro ao carregar ordens:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar ordens de serviço",
-        description: error.message,
+        description: "Não foi possível carregar as ordens de serviço. Verifique sua conexão.",
       });
     } finally {
       setIsLoading(false);

@@ -8,10 +8,14 @@ import { MessageCircle, Headphones } from 'lucide-react';
 
 interface SupportSettingsProps {
   userId?: string;
+  initialValues?: {
+    whatsapp_suporte?: string;
+  };
 }
 
 const SupportSettings: React.FC<SupportSettingsProps> = ({ 
-  userId
+  userId,
+  initialValues
 }) => {
   const { userProfile } = useUserProfile();
   

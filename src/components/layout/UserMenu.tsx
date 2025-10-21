@@ -33,7 +33,7 @@ const UserMenu: React.FC = () => {
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-1 leading-none">
             <p className="font-medium text-sm">
-              {user?.nome_oficina || user?.email || 'Usuário'}
+              {user?.nome_oficina || 'Usuário'}
             </p>
             <p className="text-xs text-muted-foreground">
               {user?.email}

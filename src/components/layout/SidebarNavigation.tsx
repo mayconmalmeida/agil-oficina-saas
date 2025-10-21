@@ -33,6 +33,17 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState } from 'react';
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarFooter,
+  useSidebar
+} from '@/components/ui/sidebar';
 
 const mainNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -114,60 +125,70 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
                    (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
     
     return (
-      <NavLink
-        key={item.name}
-        to={item.href}
-        onClick={handleNavClick}
-        className={cn(
-          'flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-          isActive 
-            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-        )}
-      >
-        <div className="flex items-center space-x-3">
-          <Icon className="h-4 w-4 flex-shrink-0" />
-          <span>{item.name}</span>
-        </div>
-        {item.isPremium && (
-          <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
-            Premium
-          </Badge>
-        )}
-      </NavLink>
+      <SidebarMenuItem key={item.name}>
+        <SidebarMenuButton asChild isActive={isActive}>
+          <NavLink
+            to={item.href}
+            onClick={handleNavClick}
+            className="flex items-center justify-between w-full"
+          >
+            <div className="flex items-center space-x-3">
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span>{item.name}</span>
+            </div>
+            {item.isPremium && (
+              <Badge variant="outline" className="ml-2 text-xs bg-yellow-100 text-yellow-800 border-yellow-300">
+                Premium
+              </Badge>
+            )}
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     );
   };
 
   const renderCollapsibleSection = (title: string, items: any[], isOpen: boolean, setIsOpen: (open: boolean) => void) => (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700">
-        <span>{title}</span>
-        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-1 ml-2">
-        {items.map(renderNavigationItem)}
-      </CollapsibleContent>
-    </Collapsible>
+    <SidebarGroup>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <SidebarGroupLabel className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-500 hover:text-gray-700 cursor-pointer">
+            <span>{title}</span>
+            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map(renderNavigationItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </SidebarGroup>
   );
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
+    <>
       {/* Logo */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
+      <SidebarHeader>
+        <div className="flex items-center space-x-2 p-4">
           <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">O</span>
           </div>
-          <span className="font-semibold text-lg text-gray-900">Oficina Go</span>
+          <span className="font-semibold text-lg text-gray-900 group-data-[collapsible=icon]:hidden">Oficina Go</span>
         </div>
-      </div>
+      </SidebarHeader>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         {/* Main Dashboard */}
-        <div className="space-y-1">
-          {mainNavigationItems.map(renderNavigationItem)}
-        </div>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainNavigationItems.map(renderNavigationItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
         {/* Clients & Vehicles */}
         {renderCollapsibleSection('Clientes & Veículos', clientsAndVehiclesItems, isClientsOpen, setIsClientsOpen)}
@@ -194,35 +215,39 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
         {renderCollapsibleSection('Suporte & Backup', supportItems, isSupportOpen, setIsSupportOpen)}
 
         {/* Configuration */}
-        <div className="space-y-1">
-          {configItems.map(renderNavigationItem)}
-        </div>
-      </nav>
-
-      {/* Subscription info */}
-      <div className="p-4 border-t border-gray-200">
-        <NavLink
-          to="/dashboard/assinatura"
-          onClick={handleNavClick}
-          className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-        >
-          <CreditCard className="h-5 w-5" />
-          <span>Assinatura</span>
-        </NavLink>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {configItems.map(renderNavigationItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </div>
 
-      {/* Logout button */}
-      <div className="p-4 border-t border-gray-200">
-        <Button
-          variant="ghost"
-          onClick={onLogout}
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <LogOut className="h-5 w-5 mr-3" />
-          Sair
-        </Button>
-      </div>
-    </div>
+      {/* Footer with Subscription and Logout */}
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to="/dashboard/assinatura"
+                onClick={handleNavClick}
+                className="flex items-center space-x-3"
+              >
+                <CreditCard className="h-5 w-5" />
+                <span className="group-data-[collapsible=icon]:hidden">Assinatura</span>
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={onLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <LogOut className="h-5 w-5" />
+              <span className="group-data-[collapsible=icon]:hidden">Sair</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </>
   );
 };
 

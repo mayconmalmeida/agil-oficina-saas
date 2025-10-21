@@ -32,16 +32,26 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
   });
 
   const handleSubmit = async (values: LoginFormValues) => {
+    console.log('LoginForm: Botão Entrar clicado', { email: values.email });
     const sanitizedValues = {
       ...values,
       email: sanitizeInput(values.email),
     };
-    await onSubmit(sanitizedValues);
+    console.log('LoginForm: Valores sanitizados, chamando onSubmit');
+    try {
+      await onSubmit(sanitizedValues);
+      console.log('LoginForm: onSubmit concluído com sucesso');
+    } catch (error) {
+      console.error('LoginForm: Erro durante onSubmit', error);
+    }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={(e) => {
+        console.log('LoginForm: Form onSubmit acionado');
+        form.handleSubmit(handleSubmit)(e);
+      }} className="space-y-4">
         <FormField
           control={form.control}
           name="email"
@@ -91,6 +101,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => {
           type="submit" 
           className="w-full bg-blue-600 hover:bg-blue-700"
           disabled={isLoading}
+          onClick={() => {
+            console.log('LoginForm: Botão Entrar clicado diretamente');
+          }}
         >
           {isLoading ? (
             <>

@@ -77,7 +77,7 @@ export const useAuthState = () => {
       setIsLoadingAuth(false);
       setProfileLoading(false);
       setInitialLoad(false);
-    }, 1500); // Reduzido para 1.5 segundos
+    }, 1000); // Reduzido para 1 segundo para melhorar a performance
 
     return () => {
       subscription.unsubscribe();

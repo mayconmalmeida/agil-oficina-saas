@@ -10,62 +10,80 @@ export interface ConnectionResult {
 /**
  * Testa a conectividade básica com o Supabase
  */
-export const testBasicConnection = async (): Promise<ConnectionResult> => {
-  try {
-    console.log('Testando conectividade básica com Supabase...');
-    
-    // Timeout mais agressivo para detectar problemas rapidamente
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos
-    
-    const { data, error } = await supabase.auth.getSession();
-    clearTimeout(timeoutId);
-    
-    if (error) {
-      console.error('Erro na conexão básica:', error);
+export const testBasicConnection = async (maxRetries = 2): Promise<ConnectionResult> => {
+  let retries = 0;
+  
+  const attemptConnection = async (): Promise<ConnectionResult> => {
+    try {
+      console.log(`Testando conectividade básica com Supabase... (tentativa ${retries + 1}/${maxRetries + 1})`);
+      
+      // Timeout ajustado para dar mais tempo à conexão
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos
+      
+      const { data, error } = await supabase.auth.getSession();
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        console.error('Erro na conexão básica:', error);
+        return {
+          isConnected: false,
+          error: error.message,
+          statusCode: (error as any).status
+        };
+      }
+      
+      console.log('Conectividade básica OK');
+      return { isConnected: true };
+    } catch (error: any) {
+      console.error('Erro de conectividade:', error);
+      
+      // Detectar tipos específicos de erro
+      if (error.name === 'AbortError') {
+        return {
+          isConnected: false,
+          error: 'Timeout de conexão (>30s)',
+          statusCode: 408
+        };
+      }
+      
+      if (error.message?.includes('CORS') || error.message?.includes('Access-Control-Allow-Origin')) {
+        return {
+          isConnected: false,
+          error: 'Erro de CORS - verifique as configurações no Supabase',
+          statusCode: 400
+        };
+      }
+      
+      if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
+        return {
+          isConnected: false,
+          error: 'Erro de rede - verifique sua conexão',
+          statusCode: 0
+        };
+      }
+      
       return {
         isConnected: false,
-        error: error.message,
-        statusCode: (error as any).status
+        error: error.message || 'Erro desconhecido',
+        statusCode: (error as any).status || 500
       };
     }
-    
-    console.log('Conectividade básica OK');
-    return { isConnected: true };
-  } catch (error: any) {
-    console.error('Erro de conectividade:', error);
-    
-    // Detectar tipos específicos de erro
-    if (error.name === 'AbortError') {
-      return {
-        isConnected: false,
-        error: 'Timeout de conexão (>5s)',
-        statusCode: 408
-      };
-    }
-    
-    if (error.message?.includes('CORS') || error.message?.includes('Access-Control-Allow-Origin')) {
-      return {
-        isConnected: false,
-        error: 'Erro de CORS - verifique as configurações no Supabase',
-        statusCode: 400
-      };
-    }
-    
-    if (error.message?.includes('NetworkError') || error.message?.includes('fetch')) {
-      return {
-        isConnected: false,
-        error: 'Erro de rede - verifique sua conexão',
-        statusCode: 0
-      };
-    }
-    
-    return {
-      isConnected: false,
-      error: error.message || 'Erro desconhecido',
-      statusCode: (error as any).status || 500
-    };
+  };
+  
+  // Primeira tentativa
+  let result = await attemptConnection();
+  
+  // Tentativas adicionais se necessário
+  while (!result.isConnected && retries < maxRetries) {
+    retries++;
+    console.log(`Tentando reconectar (${retries}/${maxRetries})...`);
+    // Esperar um pouco antes de tentar novamente (backoff exponencial)
+    await waitWithBackoff(retries);
+    result = await attemptConnection();
   }
+  
+  return result;
 };
 
 /**

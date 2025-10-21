@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import ServiceForm from '@/components/services/ServiceForm';
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import Loading from '@/components/ui/loading';
+import queryService from '@/services/queryService';
 
 interface Service {
   id: string;
@@ -46,29 +48,40 @@ const ServicesPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchServices();
   }, []);
 
   const fetchServices = async () => {
+    if (!user?.id) return;
+
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('tipo', 'servico') // Apenas serviços
-        .eq('is_active', true)
-        .order('nome', { ascending: true });
+      
+      const result = await queryService.fetchServices(user.id);
+      
+      if (result.error && !result.fromFallback) {
+        throw result.error;
+      }
 
-      if (error) throw error;
-      setServices(data || []);
+      setServices((result.data || []) as Service[]);
+
+      // Mostrar aviso se usando dados em cache
+      if (result.fromCache) {
+        console.log('[ServicesPage] Dados carregados do cache');
+        toast({
+          title: "Dados do cache",
+          description: "Serviços carregados do cache devido à conexão instável.",
+        });
+      }
     } catch (error: any) {
       console.error('Error fetching services:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar serviços",
-        description: error.message,
+        description: "Não foi possível carregar os serviços. Verifique sua conexão.",
       });
     } finally {
       setIsLoading(false);

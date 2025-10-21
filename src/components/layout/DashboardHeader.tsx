@@ -14,7 +14,8 @@ const DashboardHeader: React.FC = () => {
     navigate('/');
   };
 
-  const displayName = user?.nome_oficina || user?.email || 'Usuário';
+  // Garantindo que o nome da oficina seja exibido prioritariamente
+  const displayName = user?.nome_oficina || 'Usuário';
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">

@@ -7,6 +7,7 @@ import BudgetHeader from '@/components/budget/details/BudgetHeader';
 import BudgetInfo from '@/components/budget/details/BudgetInfo';
 import Loading from '@/components/ui/loading';
 import { generateBudgetPDF } from '@/utils/pdfUtils';
+import queryService from '@/services/queryService';
 
 interface Budget {
   id: string;
@@ -30,32 +31,30 @@ const BudgetDetailsPage: React.FC = () => {
 
     const fetchBudget = async () => {
       try {
-        // Adicionar timeout para evitar travamentos
-        const budgetPromise = supabase
-          .from('orcamentos')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const result = await queryService.fetchBudget(id!, ''); // Sem user_id para esta consulta específica
+        
+        if (result.error && !result.fromFallback) {
+          throw result.error;
+        }
 
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout na consulta do orçamento')), 15000);
-        });
+        if (result.data) {
+          setBudget(result.data as Budget);
+        } else {
+          throw new Error('Orçamento não encontrado');
+        }
 
-        const { data, error } = await Promise.race([
-          budgetPromise,
-          timeoutPromise
-        ]) as any;
-
-        if (error) throw error;
-        setBudget(data);
+        // Mostrar aviso se usando dados em cache
+        if (result.fromCache) {
+          console.log('[BudgetDetailsPage] Dados carregados do cache');
+        }
       } catch (error: any) {
         console.error('Error fetching budget:', error);
         toast({
           variant: "destructive",
           title: "Erro ao carregar orçamento",
-          description: error.message === 'Timeout na consulta do orçamento'
-            ? "A consulta demorou muito para responder. Tente novamente."
-            : error.message,
+          description: error.message === 'Orçamento não encontrado'
+            ? "Orçamento não encontrado."
+            : "Não foi possível carregar o orçamento. Verifique sua conexão.",
         });
         navigate('/dashboard/orcamentos');
       } finally {

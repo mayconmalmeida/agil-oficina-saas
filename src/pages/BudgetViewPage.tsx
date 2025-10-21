@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Edit, FileText, Download, Check, X, Printer } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { ArrowLeft, Edit, Printer, FileText, Check, X, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { generateBudgetPDF } from '@/utils/pdfUtils';
+import queryService from '@/services/queryService';
 
 interface BudgetData {
   id: string;
@@ -41,33 +41,30 @@ const BudgetViewPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Adicionar timeout para evitar travamentos
-      const budgetPromise = supabase
-        .from('orcamentos')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .single();
+      const result = await queryService.fetchBudget(id, user.id);
+      
+      if (result.error && !result.fromFallback) {
+        throw result.error;
+      }
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout na consulta do orçamento')), 15000);
-      });
+      if (result.data) {
+        setBudget(result.data as BudgetData);
+      } else {
+        throw new Error('Orçamento não encontrado');
+      }
 
-      const { data, error } = await Promise.race([
-        budgetPromise,
-        timeoutPromise
-      ]) as any;
-
-      if (error) throw error;
-      setBudget(data);
+      // Mostrar aviso se usando dados em cache
+      if (result.fromCache) {
+        console.log('[BudgetViewPage] Dados carregados do cache');
+      }
     } catch (error: any) {
       console.error('Erro ao carregar orçamento:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error.message === 'Timeout na consulta do orçamento' 
-          ? "A consulta demorou muito para responder. Tente novamente."
-          : "Não foi possível carregar o orçamento."
+        description: error.message === 'Orçamento não encontrado' 
+          ? "Orçamento não encontrado."
+          : "Não foi possível carregar o orçamento. Verifique sua conexão."
       });
       navigate('/orcamentos');
     } finally {

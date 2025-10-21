@@ -7,6 +7,13 @@ import DashboardHeader from './DashboardHeader';
 import MobileHeader from './MobileHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarInset, 
+  SidebarProvider, 
+  SidebarTrigger 
+} from '@/components/ui/sidebar';
 
 const DashboardLayout: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -36,43 +43,52 @@ const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
-      {!isMobile && (
-        <div className="w-64 flex-shrink-0">
-          <SidebarNavigation onLogout={handleLogout} />
-        </div>
-      )}
-
-      {/* Mobile Menu Sheet */}
-      {isMobile && (
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetContent side="left" className="w-64 p-0">
-            <SidebarNavigation 
-              onLogout={handleLogout} 
-              onNavigate={handleMobileNavigate}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile Header */}
-        {isMobile && (
-          <MobileHeader 
-            onMenuClick={handleMobileMenuToggle}
-            onLogout={handleLogout}
-          />
+    <SidebarProvider>
+      <div className="flex h-screen bg-background">
+        {/* Desktop Sidebar */}
+        {!isMobile && (
+          <Sidebar variant="sidebar" collapsible="icon">
+            <SidebarContent>
+              <SidebarNavigation onLogout={handleLogout} />
+            </SidebarContent>
+          </Sidebar>
         )}
-        
-        {/* Desktop Header */}
-        {!isMobile && <DashboardHeader />}
-        
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
-          <Outlet />
-        </main>
+
+        {/* Mobile Menu Sheet */}
+        {isMobile && (
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetContent side="left" className="w-64 p-0">
+              <SidebarNavigation 
+                onLogout={handleLogout} 
+                onNavigate={handleMobileNavigate}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
+
+        <SidebarInset className="flex-1 flex flex-col overflow-hidden">
+          {/* Mobile Header */}
+          {isMobile && (
+            <MobileHeader 
+              onMenuClick={handleMobileMenuToggle}
+              onLogout={handleLogout}
+            />
+          )}
+          
+          {/* Desktop Header with Sidebar Toggle */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 px-4 py-2 border-b">
+              <SidebarTrigger />
+              <DashboardHeader />
+            </div>
+          )}
+          
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
+            <Outlet />
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

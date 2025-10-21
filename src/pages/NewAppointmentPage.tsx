@@ -7,12 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import SchedulingForm from '@/components/scheduling/SchedulingForm';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { safeRpc } from '@/utils/supabaseTypes';
 import Loading from '@/components/ui/loading';
+import queryService from '@/services/queryService';
 
 const NewAppointmentPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
@@ -23,40 +26,44 @@ const NewAppointmentPage: React.FC = () => {
   }, []);
 
   const fetchInitialData = async () => {
+    if (!user?.id) return;
+
     try {
       setLoadingData(true);
       
-      // Fetch clients
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('is_active', true)
-        .order('nome');
+      // Fetch clients and services using queryService
+      const [clientsResult, servicesResult] = await Promise.all([
+        queryService.fetchClients(user.id),
+        queryService.fetchServices(user.id)
+      ]);
 
-      if (clientsError) {
-        console.error('Error fetching clients:', clientsError);
+      // Handle clients
+      if (clientsResult.error && !clientsResult.fromFallback) {
+        console.error('Error fetching clients:', clientsResult.error);
       } else {
-        setClients(clientsData || []);
+        setClients((clientsResult.data || []) as any[]);
       }
 
-      // Fetch services
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('nome');
-
-      if (servicesError) {
-        console.error('Error fetching services:', servicesError);
+      // Handle services
+      if (servicesResult.error && !servicesResult.fromFallback) {
+        console.error('Error fetching services:', servicesResult.error);
       } else {
-        setServices(servicesData || []);
+        setServices((servicesResult.data || []) as any[]);
+      }
+
+      // Show cache warning if needed
+      if (clientsResult.fromCache || servicesResult.fromCache) {
+        toast({
+          title: "Dados do cache",
+          description: "Alguns dados foram carregados do cache devido à conexão instável.",
+        });
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar dados",
-        description: "Não foi possível carregar clientes e serviços.",
+        description: "Não foi possível carregar clientes e serviços. Verifique sua conexão.",
       });
     } finally {
       setLoadingData(false);

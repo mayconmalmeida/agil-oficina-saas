@@ -277,9 +277,7 @@ const LandingPage = () => {
                   Contato
                 </a>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">
-                    Tema
-                  </span>
+                  {/* Tema removido conforme solicitado */}
                 </div>
                 <div className="flex flex-col space-y-2 pt-2">
                   <Link to="/login">

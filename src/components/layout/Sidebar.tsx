@@ -97,8 +97,8 @@ const Sidebar: React.FC = () => {
       icon: Building2,
     },
     {
-      name: 'Configurações',
-      href: '/configuracoes',
+      name: 'Perfil & Configurações',
+      href: '/dashboard/perfil',
       icon: Settings,
     },
   ];

@@ -138,7 +138,7 @@ const OptimizedAdminLayout: React.FC = () => {
                   </span>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700">{displayName}</p>
+                  <p className="text-sm font-medium text-gray-700">{user?.nome_oficina || 'Usuário'}</p>
                   <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
               </div>

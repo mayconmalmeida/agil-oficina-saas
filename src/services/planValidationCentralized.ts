@@ -22,6 +22,22 @@ export const validatePlanAccess = async (userId: string): Promise<PlanStatus> =>
   console.log('[validatePlanAccess] 🔍 Validando plano para userId:', userId);
 
   try {
+    // Verificar se userId é válido
+    if (!userId) {
+      console.log('[validatePlanAccess] ⚠️ userId inválido:', userId);
+      return {
+        isActive: false,
+        plan: 'free',
+        planName: 'Gratuito',
+        permissions: ['clientes', 'orcamentos'],
+        daysRemaining: 0,
+        source: 'none',
+        isAdmin: false,
+        isPremium: false,
+        canAccessFeatures: false
+      };
+    }
+    
     // ✅ PRIMEIRO: Verificar se é admin
     const { data: profile } = await supabase
       .from('profiles')

@@ -29,6 +29,7 @@ import SupplierEditPage from '@/pages/SupplierEditPage';
 import ReportsPage from '@/pages/ReportsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import SubscriptionPage from '@/pages/SubscriptionPage';
 import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
@@ -82,6 +83,7 @@ const AppRoutes: React.FC = () => {
         
         <Route path="/relatorios" element={<ReportsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
+        <Route path="/perfil" element={<ProfileSettingsPage />} />
         
         {/* Dashboard specific routes */}
         <Route path="/dashboard/produtos" element={<ProductsPage />} />
@@ -95,6 +97,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/relatorios" element={<ReportsPage />} />
         <Route path="/dashboard/empresa" element={<CompanyPage />} />
         <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
+        <Route path="/dashboard/perfil" element={<ProfileSettingsPage />} />
         <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
         
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
