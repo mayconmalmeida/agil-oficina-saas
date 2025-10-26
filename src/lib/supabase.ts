@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/integrations/supabase/types'
 
-const supabaseUrl = 'https://yjhcozddtbpzvnppcggf.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0'
+// Usar variáveis de ambiente quando disponíveis (fallback para valores atuais)
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL ?? 'https://yjhcozddtbpzvnppcggf.supabase.co'
+const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0'
 
 // Configuração de debug
 const DEBUG = true;
@@ -61,39 +62,40 @@ export const testSupabaseConnection = async (maxRetries = 2): Promise<boolean> =
   }
 
   let retries = 0;
-  
+
   const attemptConnection = async (): Promise<boolean> => {
     try {
       console.log(`[Supabase] Testando conexão... (tentativa ${retries + 1}/${maxRetries + 1})`);
-      
-      // Adicionar timeout para evitar espera infinita
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.log('[Supabase] Timeout de conexão atingido (180s)');
-      }, 180000); // 180 segundos de timeout (aumentado para 3 minutos)
-      
-      // Usar uma tabela pública para teste de conexão
-      const { data, error } = await supabase.from('plan_configurations').select('id').limit(1).abortSignal(controller.signal);
-      
-      clearTimeout(timeoutId);
-      
+
+      // Timeout seguro para auth.getSession() sem bloquear a UI
+      const timeoutMs = 8000;
+      const withTimeout = <T>(promise: Promise<T>, ms: number) => {
+        return new Promise<T>((resolve, reject) => {
+          const t = setTimeout(() => reject(new Error('timeout')), ms);
+          promise.then((v) => { clearTimeout(t); resolve(v); })
+                 .catch((e) => { clearTimeout(t); reject(e); });
+        });
+      };
+
+      // Verificar conectividade via endpoint de auth (não depende de RLS de tabelas)
+      const { data, error } = await withTimeout(supabase.auth.getSession(), timeoutMs) as any;
+
       if (error) {
-        console.error('[Supabase] Erro na conexão:', error.message);
+        console.error('[Supabase] Erro na conexão (auth):', error.message || error);
         return false;
       }
-      
-      console.log('[Supabase] Conexão estabelecida com sucesso!', data);
+
+      console.log('[Supabase] Conexão de auth verificada com sucesso', !!data?.session);
       return true;
-    } catch (error) {
-      console.error('[Supabase] Erro ao testar conexão:', error);
+    } catch (error: any) {
+      console.error('[Supabase] Erro ao testar conexão (timeout/exec):', error?.message || error);
       return false;
     }
   };
-  
+
   // Primeira tentativa
   let connected = await attemptConnection();
-  
+
   // Tentativas adicionais se necessário
   while (!connected && retries < maxRetries) {
     retries++;
@@ -102,6 +104,6 @@ export const testSupabaseConnection = async (maxRetries = 2): Promise<boolean> =
     await new Promise(resolve => setTimeout(resolve, 1000 * retries));
     connected = await attemptConnection();
   }
-  
+
   return connected;
 }
