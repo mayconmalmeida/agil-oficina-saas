@@ -53,7 +53,7 @@ const isAuthOperation = (url = '') => {
   return url.includes('/auth/') || url.includes('auth');
 };
 
-export const testSupabaseConnection = async (maxRetries = 2): Promise<boolean> => {
+export const testSupabaseConnection = async (maxRetries = 0): Promise<boolean> => {
   // Se o modo offline estiver ativado, retorna true imediatamente
   // Exceto para operações de autenticação
   if (OFFLINE_MODE && !AUTH_ALWAYS_ONLINE) {
@@ -61,49 +61,38 @@ export const testSupabaseConnection = async (maxRetries = 2): Promise<boolean> =
     return true;
   }
 
-  let retries = 0;
-
   const attemptConnection = async (): Promise<boolean> => {
     try {
-      console.log(`[Supabase] Testando conexão... (tentativa ${retries + 1}/${maxRetries + 1})`);
+      console.log('[Supabase] Testando conexão (não bloqueante)...');
 
-      // Timeout seguro para auth.getSession() sem bloquear a UI
-      const timeoutMs = 8000;
-      const withTimeout = <T>(promise: Promise<T>, ms: number) => {
-        return new Promise<T>((resolve, reject) => {
-          const t = setTimeout(() => reject(new Error('timeout')), ms);
-          promise.then((v) => { clearTimeout(t); resolve(v); })
-                 .catch((e) => { clearTimeout(t); reject(e); });
-        });
-      };
+      // Timeout curto; se exceder, seguimos sem bloquear login
+      const timeoutMs = 2000;
+      const timeoutSentinel = Symbol('timeout');
+      const timeoutPromise = new Promise<typeof timeoutSentinel>((resolve) => {
+        setTimeout(() => resolve(timeoutSentinel), timeoutMs);
+      });
 
-      // Verificar conectividade via endpoint de auth (não depende de RLS de tabelas)
-      const { data, error } = await withTimeout(supabase.auth.getSession(), timeoutMs) as any;
+      const result = await Promise.race([supabase.auth.getSession(), timeoutPromise]);
 
+      if (result === timeoutSentinel) {
+        console.warn('[Supabase] Conexão lenta/bloqueada; prosseguindo sem travar login');
+        return true;
+      }
+
+      const { data, error } = result as any;
       if (error) {
         console.error('[Supabase] Erro na conexão (auth):', error.message || error);
         return false;
       }
 
-      console.log('[Supabase] Conexão de auth verificada com sucesso', !!data?.session);
+      console.log('[Supabase] Conexão de auth verificada', !!data?.session);
       return true;
     } catch (error: any) {
-      console.error('[Supabase] Erro ao testar conexão (timeout/exec):', error?.message || error);
-      return false;
+      console.error('[Supabase] Erro ao testar conexão (exec):', error?.message || error);
+      return true; // Em erro inesperado, não bloquear login
     }
   };
 
-  // Primeira tentativa
-  let connected = await attemptConnection();
-
-  // Tentativas adicionais se necessário
-  while (!connected && retries < maxRetries) {
-    retries++;
-    console.log(`[Supabase] Tentando reconectar (${retries}/${maxRetries})...`);
-    // Esperar um pouco antes de tentar novamente (backoff exponencial)
-    await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-    connected = await attemptConnection();
-  }
-
-  return connected;
+  // Executar uma única tentativa não bloqueante
+  return await attemptConnection();
 }
