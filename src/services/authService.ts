@@ -64,11 +64,11 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       const timeoutId = setTimeout(() => {
         console.log('fetchUserProfile: TIMEOUT atingido na busca do perfil - abortando requisição');
         abortController.abort();
-      }, 10000); // Reduzindo para 10 segundos para evitar espera excessiva
+      }, 5000); // Timeout reduzido para 5 segundos
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, role, nome_oficina, telefone, is_active, created_at, updated_at, trial_ends_at, plano, trial_started_at')
         .eq('id', userId)
         .abortSignal(abortController.signal)
         .single();
@@ -88,7 +88,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
             
             // Usar AbortController para timeout
             const abortController = new AbortController();
-            const timeoutId = setTimeout(() => abortController.abort(), 5000);
+            const timeoutId = setTimeout(() => abortController.abort(), 2500);
             
             const { data: oficina } = await supabase
               .from('oficinas')
@@ -116,7 +116,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
             
             // Usar AbortController para timeout
             const abortController = new AbortController();
-            const timeoutId = setTimeout(() => abortController.abort(), 5000);
+            const timeoutId = setTimeout(() => abortController.abort(), 2500);
             
             const { data: subscriptionData } = await supabase
               .from('user_subscriptions')
