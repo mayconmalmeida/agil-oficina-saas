@@ -66,10 +66,31 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         abortController.abort();
       }, 5000); // Timeout reduzido para 5 segundos
       
-      const { data: profile, error: profileError } = await supabase
+      // Usando Promise.race para timebox da consulta de perfil
+      const profilePromise = supabase
         .from('profiles')
         .select('id, email, role, nome_oficina, telefone, is_active, created_at, updated_at, trial_ends_at, plano, trial_started_at')
         .eq('id', userId)
+        .maybeSingle();
+      
+      const timeoutMs = 4000;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.log(`fetchUserProfile: TIMEBOX atingido (${timeoutMs}ms) - abortando espera do perfil`);
+          reject(new Error('TIMEBOX_PROFILE'));
+        }, timeoutMs);
+      });
+      
+      let profile: any = null;
+      let profileError: any = null;
+      try {
+        const result: any = await Promise.race([profilePromise, timeoutPromise]);
+        profile = result?.data ?? result ?? null;
+        profileError = result?.error ?? null;
+      } catch (e) {
+        console.warn('fetchUserProfile: Tempo limite na busca de perfil:', e);
+        throw e;
+      }
         .abortSignal(abortController.signal)
         .single();
         
