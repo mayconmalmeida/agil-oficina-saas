@@ -36,11 +36,9 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         </Button>
         
         <div className="flex-1 flex justify-center">
-          <Link to="/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg sm:text-xl">O</span>
-            </div>
-            <span className="text-lg sm:text-xl font-bold text-gray-900">Oficina Go</span>
+          <Link to="/dashboard" className="flex items-center">
+            {/* Logo oficial */}
+            <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 sm:h-10 w-auto" />
           </Link>
         </div>
         

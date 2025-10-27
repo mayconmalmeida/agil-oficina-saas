@@ -52,7 +52,8 @@ const DashboardSidebar: React.FC = () => {
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200">
       <div className="h-16 flex items-center justify-center border-b border-gray-200">
-        <span className="text-lg font-semibold text-blue-600">Oficina Go</span>
+        {/* Substitui título por logotipo oficial */}
+        <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 w-auto" />
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
         <nav className="space-y-1">

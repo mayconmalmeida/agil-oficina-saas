@@ -62,7 +62,7 @@ const AdminSubscriptions = () => {
   const resetForm = () => {
     setFormData({
       user_id: '',
-      plan_type: 'essencial',
+      plan_type: 'premium_mensal',
       status: 'active',
       starts_at: new Date().toISOString().split('T')[0],
       ends_at: ''
@@ -94,6 +94,27 @@ const AdminSubscriptions = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const calculateDaysRemaining = (sub: Subscription) => {
+    const now = new Date();
+    let end: Date | null = sub.ends_at ? new Date(sub.ends_at) : null;
+    if (!end && sub.starts_at) {
+      const s = new Date(sub.starts_at);
+      end = new Date(s);
+      end.setMonth(end.getMonth() + 1);
+    }
+    if (!end) return null;
+    const diffMs = end.getTime() - now.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  };
+
+  const getRenewalBadge = (days: number | null) => {
+    if (days === null) return null;
+    if (days <= 0) return <Badge variant="destructive">Vencida</Badge>;
+    if (days <= 3) return <Badge variant="destructive">Renova em {days}d</Badge>;
+    if (days <= 7) return <Badge variant="secondary">Renova em {days}d</Badge>;
+    return <Badge variant="outline">Renova em {days}d</Badge>;
   };
 
   if (isLoading) {
@@ -133,6 +154,9 @@ const AdminSubscriptions = () => {
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
             </Button>
+            <Button variant="outline" onClick={() => navigate('/admin/webhook-asaas')}>
+              Webhook Asaas
+            </Button>
             <Button onClick={startCreating}>
               <Plus className="w-4 h-4 mr-2" />
               Nova Assinatura
@@ -150,50 +174,59 @@ const AdminSubscriptions = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {subscriptions.map((subscription) => (
-                <div key={subscription.id} className="border rounded-lg p-4 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <h3 className="text-lg font-semibold">{getWorkshopName(subscription.user_id)}</h3>
-                        {getStatusBadge(subscription.status)}
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-4 h-4" />
-                          <span>Plano: {subscription.plan_type}</span>
+              {subscriptions.map((subscription) => {
+                const daysRemaining = calculateDaysRemaining(subscription);
+                return (
+                  <div key={subscription.id} className="border rounded-lg p-4 bg-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <h3 className="text-lg font-semibold">{getWorkshopName(subscription.user_id)}</h3>
+                          {getStatusBadge(subscription.status)}
+                          {getRenewalBadge(daysRemaining)}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>Início: {formatDate(subscription.starts_at)}</span>
-                        </div>
-                        {subscription.ends_at && (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4" />
+                            <span>Plano: {subscription.plan_type}</span>
+                          </div>
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            <span>Fim: {formatDate(subscription.ends_at)}</span>
+                            <span>Início: {formatDate(subscription.starts_at)}</span>
                           </div>
-                        )}
-                        <div className="text-xs text-gray-400">
-                          ID: {subscription.id.slice(0, 8)}...
+                          {subscription.ends_at && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>Fim: {formatDate(subscription.ends_at)}</span>
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-400">
+                            ID: {subscription.id.slice(0, 8)}...
+                          </div>
+                          {subscription.user_email && (
+                            <div className="text-xs text-gray-400">
+                              {subscription.user_email}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={subscription.status}
-                        onChange={(e) => handleStatusChange(subscription.id, e.target.value as any)}
-                        className="border rounded px-2 py-1 text-sm"
-                      >
-                        <option value="active">Ativa</option>
-                        <option value="trialing">Trial</option>
-                        <option value="cancelled">Cancelada</option>
-                        <option value="expired">Expirada</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={subscription.status}
+                          onChange={(e) => handleStatusChange(subscription.id, e.target.value as any)}
+                          className="border rounded px-2 py-1 text-sm"
+                        >
+                          <option value="active">Ativa</option>
+                          <option value="trialing">Trial</option>
+                          <option value="cancelled">Cancelada</option>
+                          <option value="expired">Expirada</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {subscriptions.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   Nenhuma assinatura encontrada.

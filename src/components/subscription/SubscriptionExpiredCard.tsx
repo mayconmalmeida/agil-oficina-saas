@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, LogOut } from 'lucide-react';
 import PlanCard from './PlanCard';
+import { ASAAS_MONTHLY_URL, ASAAS_ANNUAL_URL, CHECKOUT_PROVIDER } from '@/config/checkout';
 
 interface SubscriptionExpiredCardProps {
   hasSubscription: boolean;
@@ -41,21 +42,17 @@ const SubscriptionExpiredCard: React.FC<SubscriptionExpiredCardProps> = ({
           <div className="grid gap-6 md:grid-cols-2">
             <PlanCard
               title="Premium Mensal"
-              description="Gestão completa para sua oficina"
+              description="Recursos completos para sua oficina, mês a mês"
               price="R$ 197,00"
               period="por mês"
               features={[
-                'Gestão completa de clientes',
-                'Orçamentos digitais profissionais',
-                'IA para diagnóstico avançado',
-                'Agendamentos inteligentes',
-                'Controle de estoque completo',
-                'Relatórios avançados',
-                'Marketing automático',
-                'Suporte prioritário'
+                'Acesso completo a todas as funcionalidades',
+                'Suporte premium prioritário',
+                'Relatórios e dashboards avançados',
+                'Automação de processos e integrações'
               ]}
-              monthlyUrl="https://pay.cakto.com.br/premium-mensal"
-              annualUrl="https://pay.cakto.com.br/premium-anual"
+              monthlyUrl={ASAAS_MONTHLY_URL || 'https://pay.cakto.com.br/premium-mensal'}
+              annualUrl={ASAAS_ANNUAL_URL || 'https://pay.cakto.com.br/premium-anual'}
               annualPrice="Anual - R$ 1.970,00 (2 meses grátis)"
             />
 
@@ -73,8 +70,8 @@ const SubscriptionExpiredCard: React.FC<SubscriptionExpiredCardProps> = ({
                 'Migração gratuita de dados',
                 'Customizações exclusivas'
               ]}
-              monthlyUrl="https://pay.cakto.com.br/premium-mensal"
-              annualUrl="https://pay.cakto.com.br/premium-anual"
+              monthlyUrl={ASAAS_MONTHLY_URL || 'https://pay.cakto.com.br/premium-mensal'}
+              annualUrl={ASAAS_ANNUAL_URL || 'https://pay.cakto.com.br/premium-anual'}
               annualPrice="Mensal - R$ 197,00"
             />
           </div>

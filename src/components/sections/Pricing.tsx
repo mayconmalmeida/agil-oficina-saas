@@ -26,8 +26,7 @@ export default function Pricing() {
         "Marketing automático",
         "Suporte prioritário",
         "Integração contábil",
-        "App mobile",
-        "Backup automático"
+        "App mobile"
       ]
     },
     {
@@ -156,7 +155,7 @@ export default function Pricing() {
                 </Button>
                 
                 <p className="text-center text-xs sm:text-sm text-gray-500 mt-3">
-                  7 dias grátis • Sem cartão de crédito
+                  7 dias grátis ou até registrar 10 clientes • Sem cartão de crédito
                 </p>
               </CardContent>
             </Card>

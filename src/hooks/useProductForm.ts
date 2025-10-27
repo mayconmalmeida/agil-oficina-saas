@@ -65,6 +65,9 @@ export const useProductForm = (productId?: string, onSaveSuccess?: () => void) =
     try {
       console.log('Submitting product values:', values);
       
+      // Enforce product type to avoid creating services through Products flow
+      values.tipo = 'produto';
+      
       // Get the user ID
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {

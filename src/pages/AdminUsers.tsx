@@ -8,6 +8,7 @@ import Loading from "@/components/ui/loading";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Oficina {
   id: string;
@@ -33,6 +34,7 @@ const AdminUsers = () => {
   const [search, setSearch] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -206,8 +208,8 @@ const AdminUsers = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    await signOut();
+    // O signOut do AuthContext já redireciona para /login
   };
 
   // Filtro de busca (por nome ou CNPJ)

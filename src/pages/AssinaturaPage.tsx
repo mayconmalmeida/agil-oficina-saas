@@ -7,6 +7,8 @@ import { CreditCard, Check, Crown, Calendar, AlertTriangle, ExternalLink, Copy }
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanConfigurations } from '@/hooks/usePlanConfigurations';
+import { CHECKOUT_PROVIDER, getCheckoutUrl } from '@/config/checkout';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Subscription {
   id: string;
@@ -22,10 +24,38 @@ const AssinaturaPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { plans, loading: plansLoading } = usePlanConfigurations();
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
 
   useEffect(() => {
     loadSubscription();
   }, []);
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (!user?.id) return;
+      setLoadingTransactions(true);
+      try {
+        const { data, error } = await supabase
+          .from('payment_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setTransactions(data || []);
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao carregar pagamentos',
+          description: error.message,
+        });
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+    loadTransactions();
+  }, [user?.id]);
 
   const loadSubscription = async () => {
     try {
@@ -98,23 +128,30 @@ const AssinaturaPage: React.FC = () => {
   const handlePlanClick = (plan: any) => {
     try {
       console.log('handlePlanClick called with plan:', plan);
-      
-      if (plan.affiliate_link) {
-        console.log('Opening affiliate link:', plan.affiliate_link);
-        window.open(plan.affiliate_link, '_blank');
+
+      // Prefer Asaas checkout if configured
+      const checkoutUrl = getCheckoutUrl(
+        plan.billing_cycle === 'anual' ? 'anual' : 'mensal',
+        plan.affiliate_link,
+        { userId: user?.id, email: user?.email }
+      );
+
+      if (checkoutUrl) {
+        console.log('Opening checkout URL:', checkoutUrl, 'provider:', CHECKOUT_PROVIDER);
+        window.open(checkoutUrl, '_blank');
       } else {
-        console.log('Showing toast for plan without affiliate link');
+        console.log('No checkout URL available');
         toast({
-          title: "Em breve",
-          description: "Sistema de pagamento em desenvolvimento"
+          title: 'Em breve',
+          description: 'Sistema de pagamento em desenvolvimento'
         });
       }
     } catch (error) {
       console.error('Error in handlePlanClick:', error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao processar o plano",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Ocorreu um erro ao processar o plano',
+        variant: 'destructive'
       });
     }
   };
@@ -128,10 +165,10 @@ const AssinaturaPage: React.FC = () => {
   };
 
   const getPlansGroupedByType = () => {
-    const essencialPlans = plans.filter(p => p.plan_type === 'essencial');
+    // Focar apenas nos planos Premium
     const premiumPlans = plans.filter(p => p.plan_type === 'premium');
     
-    return { essencialPlans, premiumPlans };
+    return { premiumPlans };
   };
 
   const isCurrentPlan = (planType: string, billingCycle: string) => {
@@ -152,15 +189,23 @@ const AssinaturaPage: React.FC = () => {
 
   const daysRemaining = getDaysRemaining(subscription?.ends_at || subscription?.trial_ends_at);
   const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7;
-  const { essencialPlans, premiumPlans } = getPlansGroupedByType();
+  const { premiumPlans } = getPlansGroupedByType();
+
+  // Calcular economia do plano anual
+  const monthlyPlan = premiumPlans.find(p => p.billing_cycle === 'mensal');
+  const annualPlan = premiumPlans.find(p => p.billing_cycle === 'anual');
+  const annualSavings = monthlyPlan && annualPlan ? 
+    (monthlyPlan.price * 12) - annualPlan.price : 0;
+  const savingsPercentage = monthlyPlan && annualSavings > 0 ? 
+    Math.round((annualSavings / (monthlyPlan.price * 12)) * 100) : 0;
 
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center space-x-2">
         <CreditCard className="h-8 w-8 text-blue-600" />
         <div>
-          <h1 className="text-3xl font-bold">Assinatura</h1>
-          <p className="text-gray-600">Gerencie sua assinatura e explore nossos planos</p>
+          <h1 className="text-3xl font-bold">Assinatura Premium</h1>
+          <p className="text-gray-600">Gerencie sua assinatura e explore nossos planos Premium</p>
         </div>
       </div>
       
@@ -234,182 +279,130 @@ const AssinaturaPage: React.FC = () => {
             </>
           ) : (
             <div className="text-center py-8">
-              <CreditCard className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <Crown className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
               <p className="text-lg font-medium text-gray-900 mb-2">Nenhuma assinatura ativa</p>
               <p className="text-gray-600 mb-4">
-                Você não possui uma assinatura ativa no momento.
+                Assine o plano Premium e tenha acesso completo a todos os recursos do OficinaGO.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Planos Disponíveis */}
+      {/* Planos Premium */}
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Planos Disponíveis</h2>
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-2 flex items-center justify-center">
+            <Crown className="h-8 w-8 text-yellow-500 mr-3" />
+            Planos Premium
+          </h2>
+          <p className="text-gray-600 text-lg">
+            Escolha o plano que melhor se adapta às suas necessidades
+          </p>
+          {savingsPercentage > 0 && (
+            <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full">
+              <span className="font-semibold">
+                Economize {savingsPercentage}% no plano anual - R$ {annualSavings.toFixed(2)} de desconto!
+              </span>
+            </div>
+          )}
+        </div>
         
-        {/* Planos Essencial */}
-        {essencialPlans.length > 0 && (
-          <div>
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Check className="h-5 w-5 text-green-600 mr-2" />
-              Plano Essencial
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {essencialPlans.map((plan) => (
-                <Card key={plan.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{plan.name}</span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{plan.billing_cycle}</Badge>
-                        {isCurrentPlan('essencial', plan.billing_cycle) && (
-                          <Badge className="bg-green-100 text-green-800">Atual</Badge>
-                        )}
-                      </div>
+        {premiumPlans.length > 0 ? (
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {premiumPlans.map((plan) => {
+              const isAnnual = plan.billing_cycle === 'anual';
+              const isCurrentUserPlan = isCurrentPlan('premium', plan.billing_cycle);
+              const hasCheckoutLink = Boolean(
+                getCheckoutUrl(isAnnual ? 'anual' : 'mensal', plan.affiliate_link, { userId: user?.id, email: user?.email })
+              );
+              
+              return (
+                <Card 
+                  key={plan.id} 
+                  className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                    isAnnual 
+                      ? 'border-2 border-green-500 shadow-lg transform hover:scale-105' 
+                      : 'border-2 border-blue-500 hover:shadow-lg'
+                  }`}
+                >
+                  {isAnnual && (
+                    <div className="absolute top-0 right-0 bg-green-500 text-white px-3 py-1 text-sm font-semibold">
+                      Mais Popular
+                    </div>
+                  )}
+                  
+                  <CardHeader className="text-center pb-4">
+                    <CardTitle className="flex items-center justify-center mb-2">
+                      <Crown className="h-6 w-6 text-yellow-500 mr-2" />
+                      <span className="text-2xl">{plan.name}</span>
                     </CardTitle>
-                    <CardDescription>
-                      <div className="flex items-center justify-between">
-                        <span>{formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}</span>
-                        <span className="text-xs text-gray-500">essencial - {plan.billing_cycle}</span>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-center">
+                        <span className="text-4xl font-bold text-gray-900">
+                          R$ {plan.price.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                        </span>
+                        <span className="text-gray-600 ml-2">
+                          /{plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}
+                        </span>
                       </div>
-                    </CardDescription>
+                      
+                      {isAnnual && monthlyPlan && (
+                        <div className="text-sm text-green-600 font-medium">
+                          Equivale a R$ {(plan.price / 12).toFixed(2)}/mês
+                        </div>
+                      )}
+                      
+                      {isCurrentUserPlan && (
+                        <Badge className="bg-green-100 text-green-800 mt-2">
+                          Plano Atual
+                        </Badge>
+                      )}
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 mb-4">
+                  
+                  <CardContent className="space-y-6">
+                    <div className="space-y-3">
                       {plan.features.map((feature, index) => (
-                        <p key={index} className="flex items-center text-sm">
-                          <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                          {feature}
-                        </p>
+                        <div key={index} className="flex items-start">
+                          <Check className="h-5 w-5 text-green-600 mr-3 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </div>
                       ))}
                     </div>
                     
-                    {plan.affiliate_link && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Link de Afiliado:</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyAffiliateLink(plan.affiliate_link!)}
-                          >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Copiar
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1 truncate">{plan.affiliate_link}</p>
-                      </div>
-                    )}
+                    {/* Link de pagamento ocultado: direcionamento apenas via botão */}
                     
                     <Button 
-                      className="w-full" 
-                      variant={isCurrentPlan('essencial', plan.billing_cycle) ? "secondary" : "outline"}
+                      className={`w-full py-3 text-lg font-semibold transition-all duration-300 ${
+                        isAnnual 
+                          ? 'bg-green-600 hover:bg-green-700 text-white' 
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                      variant={isCurrentUserPlan ? "secondary" : "default"}
                       onClick={() => handlePlanClick(plan)}
-                      disabled={isCurrentPlan('essencial', plan.billing_cycle)}
+                      disabled={isCurrentUserPlan}
                     >
-                      {isCurrentPlan('essencial', plan.billing_cycle) ? (
+                      {isCurrentUserPlan ? (
                         'Plano Atual'
-                      ) : plan.affiliate_link ? (
-                        <>
-                          Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
-                        </>
+                      ) : hasCheckoutLink ? (
+                        <>Assinar {plan.name} <ExternalLink className="h-4 w-4 ml-2" /></>
                       ) : (
                         'Em Breve'
                       )}
                     </Button>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
-
-        {/* Planos Premium */}
-        {premiumPlans.length > 0 && (
-          <div>
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <Crown className="h-5 w-5 text-yellow-500 mr-2" />
-              Plano Premium
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {premiumPlans.map((plan) => (
-                <Card key={plan.id} className="border-2 border-blue-500 hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center">
-                        <Crown className="h-5 w-5 text-yellow-500 mr-2" />
-                        {plan.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{plan.billing_cycle}</Badge>
-                        {isCurrentPlan('premium', plan.billing_cycle) && (
-                          <Badge className="bg-green-100 text-green-800">Atual</Badge>
-                        )}
-                      </div>
-                    </CardTitle>
-                    <CardDescription>
-                      <div className="flex items-center justify-between">
-                        <span>{formatPrice(plan.price)} por {plan.billing_cycle === 'mensal' ? 'mês' : 'ano'}</span>
-                        <span className="text-xs text-gray-500">premium - {plan.billing_cycle}</span>
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 mb-4">
-                      {plan.features.map((feature, index) => (
-                        <p key={index} className="flex items-center text-sm">
-                          <Check className="h-4 w-4 text-green-600 mr-2 flex-shrink-0" />
-                          {feature}
-                        </p>
-                      ))}
-                    </div>
-                    
-                    {plan.affiliate_link && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Link de Afiliado:</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyAffiliateLink(plan.affiliate_link!)}
-                          >
-                            <Copy className="h-3 w-3 mr-1" />
-                            Copiar
-                          </Button>
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1 truncate">{plan.affiliate_link}</p>
-                      </div>
-                    )}
-                    
-                    <Button 
-                      className="w-full"
-                      variant={isCurrentPlan('premium', plan.billing_cycle) ? "secondary" : "default"}
-                      onClick={() => handlePlanClick(plan)}
-                      disabled={isCurrentPlan('premium', plan.billing_cycle)}
-                    >
-                      {isCurrentPlan('premium', plan.billing_cycle) ? (
-                        'Plano Atual'
-                      ) : plan.affiliate_link ? (
-                        <>
-                          Assinar Agora <ExternalLink className="h-4 w-4 ml-2" />
-                        </>
-                      ) : (
-                        'Em Breve'
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Fallback quando não há planos */}
-        {essencialPlans.length === 0 && premiumPlans.length === 0 && (
+        ) : (
           <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-gray-600">Nenhum plano disponível no momento.</p>
+            <CardContent className="text-center py-12">
+              <Crown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg text-gray-600">Nenhum plano Premium disponível no momento.</p>
+              <p className="text-sm text-gray-500 mt-2">Entre em contato conosco para mais informações.</p>
             </CardContent>
           </Card>
         )}
@@ -427,9 +420,38 @@ const AssinaturaPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-600">Nenhum histórico de pagamento encontrado.</p>
-          </div>
+          {loadingTransactions ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Carregando histórico de pagamentos...</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Nenhum histórico de pagamento encontrado.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Plano</TableHead>
+                  <TableHead>Método</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell>{formatDate(tx.created_at)}</TableCell>
+                    <TableCell>{formatPrice(tx.amount || 0, tx.currency || 'BRL')}</TableCell>
+                    <TableCell>{tx.status}</TableCell>
+                    <TableCell>{getPlanName(tx.plan_type)}</TableCell>
+                    <TableCell className="uppercase">{tx.payment_method || 'asaas'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

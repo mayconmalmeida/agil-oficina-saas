@@ -31,7 +31,7 @@ const DashboardLayout: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    navigate('/login');
   };
 
   const handleMobileMenuToggle = () => {

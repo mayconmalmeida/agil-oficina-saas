@@ -71,6 +71,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         .from('profiles')
         .select('id, email, role, nome_oficina, telefone, is_active, created_at, updated_at, trial_ends_at, plano, trial_started_at')
         .eq('id', userId)
+        .abortSignal(abortController.signal)
         .maybeSingle();
       
       const timeoutMs = 4000;
@@ -90,11 +91,9 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       } catch (e) {
         console.warn('fetchUserProfile: Tempo limite na busca de perfil:', e);
         throw e;
+      } finally {
+        clearTimeout(timeoutId);
       }
-        .abortSignal(abortController.signal)
-        .single();
-        
-      clearTimeout(timeoutId);
       
       console.log('fetchUserProfile: Resultado da consulta profiles:', { profile, profileError });
 

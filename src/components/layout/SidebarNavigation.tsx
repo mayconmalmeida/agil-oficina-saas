@@ -64,6 +64,7 @@ const servicesAndBudgetsItems = [
 
 const financialItems = [
   { name: 'Financeiro', href: '/dashboard/financeiro', icon: TrendingUp },
+  { name: 'Integração Contábil', href: '/dashboard/integracao-contabil', icon: FileX, isPremium: true },
 ];
 
 const inventoryItems = [
@@ -79,7 +80,7 @@ const reportsItems = [
 
 const businessItems = [
   { name: 'Empresa', href: '/dashboard/empresa', icon: Building2 },
-  { name: 'Integração Contábil', href: '/dashboard/integracao-contabil', icon: FileX, isPremium: true },
+  { name: 'Planos', href: '/dashboard/assinatura', icon: CreditCard },
 ];
 
 const aiItems = [
@@ -89,7 +90,6 @@ const aiItems = [
 
 const supportItems = [
   { name: 'Suporte', href: '/dashboard/suporte', icon: Headphones },
-  { name: 'Backup Automático', href: '/dashboard/backup', icon: HardDrive, isPremium: true },
 ];
 
 const configItems = [
@@ -171,11 +171,9 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
     <>
       {/* Logo */}
       <SidebarHeader>
-        <div className="flex items-center space-x-2 p-4">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">O</span>
-          </div>
-          <span className="font-semibold text-lg text-gray-900 group-data-[collapsible=icon]:hidden">Oficina Go</span>
+        <div className="flex items-center justify-center p-4">
+          {/* Logo oficial */}
+          <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 w-auto" />
         </div>
       </SidebarHeader>
       
@@ -230,19 +228,14 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <NavLink
-                to="/dashboard/assinatura"
-                onClick={handleNavClick}
-                className="flex items-center space-x-3"
+                to="/dashboard/configuracoes"
+                className={cn(
+                  'group w-full flex items-center justify-between',
+                  isActive('/dashboard/configuracoes') ? 'text-blue-700' : ''
+                )}
               >
-                <CreditCard className="h-5 w-5" />
-                <span className="group-data-[collapsible=icon]:hidden">Assinatura</span>
+                <span>Configurações</span>
               </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-              <LogOut className="h-5 w-5" />
-              <span className="group-data-[collapsible=icon]:hidden">Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

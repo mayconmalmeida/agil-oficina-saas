@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ interface UserProfile {
 
 export const useUserProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,19 +106,21 @@ export const useUserProfile = () => {
   const handleLogout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
+      navigate('/login');
       toast({
         title: "Logout realizado",
         description: "Você foi desconectado com sucesso."
       });
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+      navigate('/login');
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Erro ao realizar logout."
       });
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   return {
     profile,

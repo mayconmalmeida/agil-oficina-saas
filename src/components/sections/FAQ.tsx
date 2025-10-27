@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 const faqs = [
   {
     question: "Como funciona o período de teste grátis?",
-    answer: "Você terá acesso completo a todas as funcionalidades do OficinaÁgil durante 7 dias, sem qualquer compromisso. Após esse período, você pode optar por continuar usando o sistema mediante assinatura mensal ou cancelar sem custos."
+    answer: "Você terá acesso completo a todas as funcionalidades do OficinaÁgil durante 7 dias ou até registrar 10 clientes, sem qualquer compromisso. Após esse período, você pode optar por continuar usando o sistema mediante assinatura mensal ou cancelar sem custos."
   },
   {
     question: "Preciso instalar algum software no meu computador?",

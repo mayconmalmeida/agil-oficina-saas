@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import NotificationSettings from '@/components/settings/notifications/NotificationSettings';
+import { MessageCircle, Phone } from 'lucide-react';
 
 const ProfileSettingsPage: React.FC = () => {
   const { user } = useAuth();
@@ -18,7 +20,8 @@ const ProfileSettingsPage: React.FC = () => {
     full_name: '',
     email: '',
     telefone: '',
-    logo_url: ''
+    logo_url: '',
+    nome_oficina: ''
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -45,7 +48,8 @@ const ProfileSettingsPage: React.FC = () => {
             full_name: data.full_name || '',
             email: user.email || '',
             telefone: data.telefone || '',
-            logo_url: data.logo_url || ''
+            logo_url: data.logo_url || '',
+            nome_oficina: data.nome_oficina || ''
           });
         }
       } catch (error) {
@@ -152,6 +156,14 @@ const ProfileSettingsPage: React.FC = () => {
     }
   };
 
+  const handleWhatsAppSupport = () => {
+    const whatsappNumber = '5546999324779';
+    const workshopName = profileData.nome_oficina || profileData.full_name || 'Oficina';
+    const message = `Olá, preciso de suporte no OficinaGO. Oficina: ${workshopName}`;
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold mb-6">Configurações e Perfil</h1>
@@ -161,6 +173,7 @@ const ProfileSettingsPage: React.FC = () => {
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="password">Senha</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
+          <TabsTrigger value="support">Suporte</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile">
@@ -276,23 +289,43 @@ const ProfileSettingsPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="notifications">
+          <NotificationSettings />
+        </TabsContent>
+
+        <TabsContent value="support">
           <Card>
             <CardHeader>
-              <CardTitle>Preferências de Notificação</CardTitle>
+              <CardTitle>Suporte</CardTitle>
               <CardDescription>
-                Configure como deseja receber notificações do sistema.
+                Fale com nosso suporte via WhatsApp. A mensagem inclui o nome da sua oficina.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Configurações de notificação serão implementadas em breve.
-                </p>
+                <div className="p-4 border rounded-lg bg-green-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium">WhatsApp Suporte</p>
+                      <p className="text-sm text-gray-600">(46) 9 9932-4779</p>
+                    </div>
+                  </div>
+                  <Button onClick={handleWhatsAppSupport} className="bg-green-600 hover:bg-green-700">
+                    Solicitar Suporte
+                  </Button>
+                </div>
+                <div className="p-4 border rounded-lg bg-blue-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium">Telefone</p>
+                      <p className="text-sm text-gray-600">(46) 9 9932-4779</p>
+                    </div>
+                  </div>
+                  <Button variant="outline">Ligar</Button>
+                </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button disabled>Salvar preferências</Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

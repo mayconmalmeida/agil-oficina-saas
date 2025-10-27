@@ -68,7 +68,7 @@ export default function Hero() {
 
             <div className="text-center lg:text-left pt-4">
               <p className="text-gray-500 text-sm">
-                ✨ <strong>Teste grátis por 14 dias</strong> • Sem cartão de crédito • Cancele quando quiser
+                ✨ <strong>Teste grátis por 7 dias ou até 10 clientes</strong> • Sem cartão de crédito • Cancele quando quiser
               </p>
             </div>
           </div>

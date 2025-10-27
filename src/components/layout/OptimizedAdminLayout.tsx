@@ -64,6 +64,11 @@ const OptimizedAdminLayout: React.FC = () => {
 
   const menuItems = [
     {
+      name: 'Dashboard',
+      href: '/admin',
+      icon: LayoutDashboard,
+    },
+    {
       name: 'Gerenciar Oficinas',
       href: '/admin/oficinas',
       icon: Building,
@@ -77,6 +82,11 @@ const OptimizedAdminLayout: React.FC = () => {
       name: 'Gerenciar Assinaturas',
       href: '/admin/subscriptions',
       icon: CreditCard,
+    },
+    {
+      name: 'Gerenciar Clientes',
+      href: '/admin/clients',
+      icon: Users,
     },
     {
       name: 'Configurações Globais',
@@ -104,8 +114,7 @@ const OptimizedAdminLayout: React.FC = () => {
         <div className="flex flex-col flex-grow bg-white shadow-lg border-r border-gray-200">
           {/* Header da Sidebar */}
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
-            <p className="text-sm text-gray-600">Painel Administrativo</p>
+            <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
           </div>
           
           {/* 🔥 BOTÕES VERTICAIS NA SIDEBAR */}
@@ -154,7 +163,7 @@ const OptimizedAdminLayout: React.FC = () => {
       <div className="lg:hidden w-full flex flex-col">
         <div className="bg-white shadow-sm border-b border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
+            <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 w-auto" />
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-medium">

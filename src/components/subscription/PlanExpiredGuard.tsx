@@ -1,8 +1,10 @@
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/components/ui/loading';
+import { useDaysRemaining } from '@/hooks/useDaysRemaining';
+import { supabase } from '@/lib/supabase';
 
 interface PlanExpiredGuardProps {
   children: React.ReactNode;
@@ -10,12 +12,36 @@ interface PlanExpiredGuardProps {
 
 const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
   const { user, isLoadingAuth, isAdmin, planActive } = useAuth();
+  const { diasRestantes, loading: daysLoading } = useDaysRemaining();
+  const [clientsCount, setClientsCount] = useState<number>(0);
+  const [countsLoading, setCountsLoading] = useState<boolean>(true);
   const lastDecisionRef = useRef<string>('');
   const lastLogRef = useRef<string>('');
 
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!user?.id) {
+        setCountsLoading(false);
+        return;
+      }
+      try {
+        const { count } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        setClientsCount(count || 0);
+      } catch (err) {
+        console.error('PlanExpiredGuard: erro ao contar clientes', err);
+      } finally {
+        setCountsLoading(false);
+      }
+    };
+    fetchCounts();
+  }, [user?.id]);
+
   // Memoizar a decisão para evitar re-renders desnecessários
   const accessDecision = useMemo(() => {
-    const decisionKey = `${user?.id}-${isLoadingAuth}-${isAdmin}-${planActive}`;
+    const decisionKey = `${user?.id}-${isLoadingAuth}-${isAdmin}-${planActive}-${diasRestantes}-${clientsCount}-${daysLoading}-${countsLoading}`;
     
     // Evitar logs duplicados
     if (lastLogRef.current !== decisionKey) {
@@ -23,12 +49,16 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
         hasUser: !!user,
         isAdmin,
         planActive,
-        isLoadingAuth
+        diasRestantes,
+        clientsCount,
+        isLoadingAuth,
+        daysLoading,
+        countsLoading
       });
       lastLogRef.current = decisionKey;
     }
 
-    if (isLoadingAuth) {
+    if (isLoadingAuth || daysLoading || countsLoading) {
       return 'loading';
     }
 
@@ -42,25 +72,43 @@ const PlanExpiredGuard: React.FC<PlanExpiredGuardProps> = ({ children }) => {
       return 'allowed';
     }
 
-    // Oficinas sempre têm acesso (validação já feita no AuthContext)
-    console.log('PlanExpiredGuard: Acesso liberado, plano ativo');
-    return 'allowed';
-  }, [user?.id, isLoadingAuth, isAdmin, planActive]); // Dependências mais específicas
+    // Se possui assinatura ativa, acesso liberado
+    if (planActive) {
+      console.log('PlanExpiredGuard: Assinatura ativa, acesso liberado');
+      return 'allowed';
+    }
+
+    // Trial: 7 dias OU até 10 clientes
+    const hasTrialAccess = diasRestantes > 0 && clientsCount < 10;
+    if (hasTrialAccess) {
+      console.log('PlanExpiredGuard: Trial ativo dentro dos limites, acesso liberado');
+      return 'allowed';
+    }
+
+    console.log('PlanExpiredGuard: Bloqueado, redirecionar para Assinatura', {
+      diasRestantes,
+      clientsCount,
+      planActive
+    });
+    return 'blocked';
+  }, [user?.id, isLoadingAuth, isAdmin, planActive, diasRestantes, clientsCount, daysLoading, countsLoading]);
 
   // Evitar re-renderizações desnecessárias
   useEffect(() => {
-    const currentDecision = `${accessDecision}-${user?.id}-${isAdmin}-${planActive}`;
+    const currentDecision = `${accessDecision}-${user?.id}-${isAdmin}-${planActive}-${diasRestantes}-${clientsCount}`;
     if (lastDecisionRef.current === currentDecision) {
       return;
     }
     lastDecisionRef.current = currentDecision;
-  }, [accessDecision, user?.id, isAdmin, planActive]);
+  }, [accessDecision, user?.id, isAdmin, planActive, diasRestantes, clientsCount]);
 
   if (accessDecision === 'loading') {
     return <Loading fullscreen text="Verificando plano..." />;
   }
 
-  // Não há mais redirecionamentos - oficinas sempre têm acesso Premium
+  if (accessDecision === 'blocked') {
+    return <Navigate to="/dashboard/assinatura" replace />;
+  }
 
   return <>{children}</>;
 };

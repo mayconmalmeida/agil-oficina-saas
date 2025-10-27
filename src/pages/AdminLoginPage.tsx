@@ -59,8 +59,9 @@ const AdminLoginPage = memo(() => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Shield className="mx-auto h-12 w-12 text-blue-600" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Painel Administrativo</h2>
+          {/* Inserir logotipo oficial no topo da tela de login admin */}
+          <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="mx-auto h-12 w-auto" />
+          <h2 className="mt-4 text-3xl font-bold text-gray-900">Painel Administrativo</h2>
           <p className="mt-2 text-sm text-gray-600">
             Faça login para acessar o painel de administração
           </p>

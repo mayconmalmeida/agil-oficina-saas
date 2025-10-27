@@ -11,7 +11,7 @@ export default function CTA() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-8 border border-white/20">
             <Zap className="h-5 w-5 text-oficina-accent mr-2" />
-            <span className="text-white font-medium">Experimente por 7 dias grátis!</span>
+            <span className="text-white font-medium">Experimente por 7 dias grátis ou até 10 clientes!</span>
           </div>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-poppins text-white mb-8">

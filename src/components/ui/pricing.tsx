@@ -56,8 +56,7 @@ export function Pricing({
       "Marketing automático",
       "Suporte prioritário",
       "Integração contábil",
-      "App mobile",
-      "Backup automático"
+      "App mobile"
     ],
     description: "Gestão completa para sua oficina",
     buttonText: "Começar Teste Grátis",
@@ -235,7 +234,7 @@ export function Pricing({
             </Link>
             
             <p className="text-center text-xs text-gray-500 mt-3">
-              7 dias grátis • Sem cartão de crédito
+              7 dias grátis ou até registrar 10 clientes • Sem cartão de crédito
             </p>
           </div>
         </motion.div>

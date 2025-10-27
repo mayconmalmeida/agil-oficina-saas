@@ -17,7 +17,9 @@ import {
   Brain,
   Stethoscope,
   UserPlus,
-  QrCode
+  QrCode,
+  Database,
+  CreditCard
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -70,6 +72,12 @@ const Sidebar: React.FC = () => {
       href: '/financeiro',
       icon: DollarSign,
     },
+    // Integração Contábil abaixo de Financeiro
+    {
+      name: 'Integração Contábil',
+      href: '/dashboard/integracao-contabil',
+      icon: Database,
+    },
     {
       name: 'Fornecedores',
       href: '/dashboard/fornecedores',
@@ -97,6 +105,11 @@ const Sidebar: React.FC = () => {
       icon: Building2,
     },
     {
+      name: 'Planos',
+      href: '/dashboard/assinatura',
+      icon: CreditCard,
+    },
+    {
       name: 'Perfil & Configurações',
       href: '/dashboard/perfil',
       icon: Settings,
@@ -106,7 +119,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:block border-r border-gray-200">
       <div className="flex h-16 items-center justify-center border-b border-gray-200">
-        <h1 className="text-xl font-bold text-blue-600">Oficina Go</h1>
+        <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 w-auto" />
       </div>
       
       <ScrollArea className="h-[calc(100vh-4rem)] px-3 py-4">

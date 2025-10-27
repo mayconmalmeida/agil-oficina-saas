@@ -17,14 +17,8 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-2 sm:py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg sm:text-xl">O</span>
-              </div>
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                Oficina Go
-              </span>
-            </div>
+            {/* Substitui marca por imagem oficial */}
+            <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 sm:h-12 w-auto" />
           </Link>
         </div>
 
@@ -39,13 +33,7 @@ export default function Navbar() {
           <a href="#faq" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
             FAQ
           </a>
-          <a href="#contato" className="text-gray-600 hover:text-blue-800 transition-colors text-sm xl:text-base font-medium">
-            Contato
-          </a>
-          <div className="flex space-x-2 xl:space-x-3">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-lg text-xs xl:text-sm px-4 xl:px-6">
-              <Link to="/workshop-registration">Teste Grátis</Link>
-            </Button>
+          <div className="flex items-center space-x-2">
             <Button 
               variant="outline" 
               size="sm"

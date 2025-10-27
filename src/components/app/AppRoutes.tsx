@@ -30,7 +30,7 @@ import ReportsPage from '@/pages/ReportsPage';
 import CompanyPage from '@/pages/CompanyPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
-import SubscriptionPage from '@/pages/SubscriptionPage';
+import AssinaturaPage from '@/pages/AssinaturaPage';
 import CollaboratorsPage from '@/pages/CollaboratorsPage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import IADiagnosticoPage from '@/pages/IADiagnosticoPage';
@@ -40,6 +40,7 @@ import ProductEditPage from '@/pages/ProductEditPage';
 import ServiceEditPage from '@/pages/ServiceEditPage';
 import VehicleHistoryPublicPage from '@/pages/VehicleHistoryPublicPage';
 import GenerateLabelPage from '@/pages/GenerateLabelPage';
+import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
 import { AdminRoutes } from '@/routes/AdminRoutes';
 
 const AppRoutes: React.FC = () => {
@@ -97,13 +98,15 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/relatorios" element={<ReportsPage />} />
         <Route path="/dashboard/empresa" element={<CompanyPage />} />
         <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
++       <Route path="/assinatura" element={<AssinaturaPage />} />
         <Route path="/dashboard/perfil" element={<ProfileSettingsPage />} />
-        <Route path="/dashboard/assinatura" element={<SubscriptionPage />} />
+        <Route path="/dashboard/assinatura" element={<AssinaturaPage />} />
         
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />
         <Route path="/dashboard/gerar-etiqueta" element={<GenerateLabelPage />} />
         <Route path="/dashboard/financeiro" element={<FinanceiroPage />} />
+        <Route path="/dashboard/integracao-contabil" element={<IntegracaoContabilPage />} />
       </Route>
       
       {/* Rota pública para histórico de veículos via QR Code */}

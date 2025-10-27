@@ -120,7 +120,8 @@ const AdminLayout: React.FC = () => {
             </div>
             <div className="pt-5 pb-4">
               <div className="flex items-center flex-shrink-0 px-4">
-                <h1 className="text-xl font-bold text-gray-800">OficinaGO</h1>
+                {/* Substitui título do admin por logotipo oficial */}
+                <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-8 w-auto" />
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {menuItems.map((item) => (

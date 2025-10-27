@@ -11,7 +11,7 @@ const DashboardHeader: React.FC = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    // O signOut do AuthContext já redireciona para /login, não precisamos navegar novamente
   };
 
   // Garantindo que o nome da oficina seja exibido prioritariamente

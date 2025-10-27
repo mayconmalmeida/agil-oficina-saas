@@ -54,8 +54,7 @@ const LandingPage = () => {
         "Controle de estoque completo",
         "Relatórios avançados",
         "Suporte prioritário",
-        "Integração contábil",
-        "Backup automático"
+        "Integração contábil"
       ],
       description: "Gestão completa para sua oficina",
       buttonText: "Começar Teste Grátis",
@@ -152,7 +151,7 @@ const LandingPage = () => {
     },
     {
       question: "Como migrar meus dados atuais?",
-      answer: "Nossa equipe te ajuda gratuitamente na migração dos seus dados. É um processo simples e rápido."
+      answer: "Nossa equipe te ajuda na migração dos seus dados. Para fazer backup terá custos adicionais e você terá que entrar em contato através do formulário abaixo para nosso suporte entrar em contato. É um processo simples e rápido."
     }
   ];
 
@@ -215,9 +214,8 @@ const LandingPage = () => {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <Wrench className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">Oficina Go</span>
+            <div className="flex items-center cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
             </div>
 
             {/* Desktop Navigation */}
@@ -381,7 +379,8 @@ const LandingPage = () => {
               <div className="text-4xl md:text-5xl font-bold text-green-600 mb-3">
                 <AnimatedCounter end={300} suffix="+" />
               </div>
-              <p className="text-gray-600 font-medium">Usuários Cadastrados</p>
+-             <p className="text-gray-600 font-medium">Usuários Cadastrados</p>
++             <p className="text-gray-600 font-medium">Clientes Cadastrados</p>
               <div className="mt-4 w-16 h-1 bg-green-600 mx-auto rounded-full"></div>
             </motion.div>
             
@@ -828,8 +827,7 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Wrench className="h-8 w-8 text-blue-400" />
-                <span className="text-2xl font-bold ml-2">Oficina Go</span>
+                <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
               </div>
               <p className="text-gray-400">
                 Sistema completo para gestão de oficinas mecânicas.
