@@ -98,7 +98,7 @@ export default function SocialProof() {
           <StatCard
             icon={<Users size={48} />}
             value={300}
-            label="Usuários Cadastrados"
+            label="Clientes Cadastrados"
             description="Donos e funcionários trabalhando com mais eficiência e menos burocracia."
           />
           <StatCard

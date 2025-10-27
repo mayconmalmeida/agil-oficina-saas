@@ -379,8 +379,7 @@ const LandingPage = () => {
               <div className="text-4xl md:text-5xl font-bold text-green-600 mb-3">
                 <AnimatedCounter end={300} suffix="+" />
               </div>
--             <p className="text-gray-600 font-medium">Usuários Cadastrados</p>
-+             <p className="text-gray-600 font-medium">Clientes Cadastrados</p>
+              <p className="text-gray-600 font-medium">Clientes Cadastrados</p>
               <div className="mt-4 w-16 h-1 bg-green-600 mx-auto rounded-full"></div>
             </motion.div>
             
