@@ -8,7 +8,11 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release:auto": "node scripts/semver-bump.cjs --auto",
+    "release:patch": "node scripts/semver-bump.cjs --type patch",
+    "release:minor": "node scripts/semver-bump.cjs --type minor",
+    "release:major": "node scripts/semver-bump.cjs --type major"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
