@@ -21,13 +21,11 @@ const WebhookAsaasPage: React.FC = () => {
   };
 
   const handleSaveToken = () => {
-    // Placeholder: persist token em storage local (somente expositivo por enquanto)
-    try {
-      localStorage.setItem('asaas_webhook_token', token);
-      toast({ title: 'Token salvo', description: 'Seu token foi salvo localmente.' });
-    } catch (e) {
-      toast({ title: 'Erro ao salvar', description: 'Não foi possível salvar o token.', variant: 'destructive' });
-    }
+    // Segurança: não persistir tokens sensíveis no frontend
+    toast({ 
+      title: 'Configuração necessária no backend', 
+      description: 'Por segurança, configure o token do webhook diretamente nos secrets da função serverless (Supabase). Este valor não será salvo no navegador.',
+    });
   };
 
   return (
@@ -84,7 +82,7 @@ const WebhookAsaasPage: React.FC = () => {
               onChange={(e) => setToken(e.target.value)}
             />
             <Button onClick={handleSaveToken}>
-              <CheckCircle2 className="h-4 w-4 mr-2" /> Salvar Token Localmente
+              <CheckCircle2 className="h-4 w-4 mr-2" /> Orientar configuração segura
             </Button>
             <p className="text-sm text-gray-500">
               Este campo é apenas ilustrativo nesta etapa. A persistência definitiva

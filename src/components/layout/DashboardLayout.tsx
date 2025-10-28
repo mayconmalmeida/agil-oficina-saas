@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import SidebarNavigation from './SidebarNavigation';
 import DashboardHeader from './DashboardHeader';
 import MobileHeader from './MobileHeader';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { 
   Sidebar, 
@@ -18,7 +17,6 @@ import {
 const DashboardLayout: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!user) {
@@ -45,17 +43,17 @@ const DashboardLayout: React.FC = () => {
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-background">
-        {/* Desktop Sidebar */}
-        {!isMobile && (
+        {/* Sidebar visível apenas em telas md+ */}
+        <div className="hidden md:block">
           <Sidebar variant="sidebar" collapsible="icon">
             <SidebarContent>
               <SidebarNavigation onLogout={handleLogout} />
             </SidebarContent>
           </Sidebar>
-        )}
+        </div>
 
-        {/* Mobile Menu Sheet */}
-        {isMobile && (
+        {/* Menu mobile via Sheet, apenas em telas menores que md */}
+        <div className="md:hidden">
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetContent side="left" className="w-64 p-0">
               <SidebarNavigation 
@@ -64,24 +62,22 @@ const DashboardLayout: React.FC = () => {
               />
             </SheetContent>
           </Sheet>
-        )}
+        </div>
 
         <SidebarInset className="flex-1 flex flex-col overflow-hidden">
-          {/* Mobile Header */}
-          {isMobile && (
+          {/* Mobile Header: renderizado em telas menores que md */}
+          <div className="md:hidden">
             <MobileHeader 
               onMenuClick={handleMobileMenuToggle}
               onLogout={handleLogout}
             />
-          )}
+          </div>
           
-          {/* Desktop Header with Sidebar Toggle */}
-          {!isMobile && (
-            <div className="flex items-center gap-2 px-4 py-2 border-b">
-              <SidebarTrigger />
-              <DashboardHeader />
-            </div>
-          )}
+          {/* Desktop Header com botão de sidebar: visível apenas em md+ */}
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 border-b">
+            <SidebarTrigger />
+            <DashboardHeader />
+          </div>
           
           <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6">
             <Outlet />

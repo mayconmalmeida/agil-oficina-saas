@@ -42,6 +42,7 @@ import VehicleHistoryPublicPage from '@/pages/VehicleHistoryPublicPage';
 import GenerateLabelPage from '@/pages/GenerateLabelPage';
 import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
 import { AdminRoutes } from '@/routes/AdminRoutes';
+import AjudaPage from '@/pages/AjudaPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -98,9 +99,10 @@ const AppRoutes: React.FC = () => {
         <Route path="/dashboard/relatorios" element={<ReportsPage />} />
         <Route path="/dashboard/empresa" element={<CompanyPage />} />
         <Route path="/dashboard/configuracoes" element={<SettingsPage />} />
-+       <Route path="/assinatura" element={<AssinaturaPage />} />
+        <Route path="/assinatura" element={<AssinaturaPage />} />
         <Route path="/dashboard/perfil" element={<ProfileSettingsPage />} />
         <Route path="/dashboard/assinatura" element={<AssinaturaPage />} />
+        <Route path="/dashboard/ajuda" element={<AjudaPage />} />
         
         <Route path="/dashboard/ia-diagnostico" element={<IADiagnosticoPage />} />
         <Route path="/dashboard/ia-suporte-inteligente" element={<IASuportePage />} />

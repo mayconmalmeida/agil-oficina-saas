@@ -19,7 +19,8 @@ import {
   UserPlus,
   QrCode,
   Database,
-  CreditCard
+  CreditCard,
+  LifeBuoy
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -108,6 +109,11 @@ const Sidebar: React.FC = () => {
       name: 'Planos',
       href: '/dashboard/assinatura',
       icon: CreditCard,
+    },
+    {
+      name: 'Ajuda',
+      href: '/dashboard/ajuda',
+      icon: LifeBuoy,
     },
     {
       name: 'Perfil & Configurações',

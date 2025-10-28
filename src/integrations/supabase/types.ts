@@ -1450,6 +1450,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          transaction_id: string
+          amount: number | null
+          currency: string | null
+          status: string
+          plan_type: string
+          payment_method: string | null
+          metadata: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          transaction_id: string
+          amount?: number | null
+          currency?: string | null
+          status: string
+          plan_type: string
+          payment_method?: string | null
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          transaction_id?: string
+          amount?: number | null
+          currency?: string | null
+          status?: string
+          plan_type?: string
+          payment_method?: string | null
+          metadata?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       usuarios_colaboradores: {
         Row: {
           ativo: boolean | null

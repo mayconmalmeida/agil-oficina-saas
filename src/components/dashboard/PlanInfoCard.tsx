@@ -66,6 +66,13 @@ const PlanInfoCard: React.FC = () => {
       return <Badge variant="default" className="bg-purple-100 text-purple-800">Administrador</Badge>;
     }
     
+    // Verificar se está em período trial
+    const isTrial = planStatus.planName.includes('período de teste') || planStatus.planName.includes('Trial');
+    
+    if (isTrial) {
+      return <Badge variant="default" className="bg-orange-100 text-orange-800">Período Trial</Badge>;
+    }
+    
     if (planStatus.isActive) {
       return <Badge variant="default" className="bg-green-100 text-green-800">Ativo</Badge>;
     }
@@ -79,7 +86,14 @@ const PlanInfoCard: React.FC = () => {
     }
     
     if (planStatus.daysRemaining > 0) {
-      return `${planStatus.daysRemaining} ${planStatus.daysRemaining === 1 ? 'dia restante' : 'dias restantes'}`;
+      const isTrial = planStatus.planName.includes('período de teste') || planStatus.planName.includes('Trial');
+      const daysText = `${planStatus.daysRemaining} ${planStatus.daysRemaining === 1 ? 'dia restante' : 'dias restantes'}`;
+      
+      if (isTrial) {
+        return `${daysText} do período trial`;
+      }
+      
+      return daysText;
     }
     
     return "Expirado";
@@ -108,7 +122,9 @@ const PlanInfoCard: React.FC = () => {
                 ? 'text-orange-600' 
                 : planStatus.daysRemaining === 0 
                   ? 'text-red-600' 
-                  : 'text-green-600'
+                  : (planStatus.planName.includes('período de teste') || planStatus.planName.includes('Trial'))
+                    ? 'text-blue-600'
+                    : 'text-green-600'
             }`}>
               {getDaysText()}
             </p>

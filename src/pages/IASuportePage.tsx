@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { generateSmartBotResponse } from '@/services/aiSuportService';
+import { sanitizeInput } from '@/utils/sanitize';
 
 interface Message {
   id: string;
@@ -178,19 +179,21 @@ const IASuportePage: React.FC = () => {
                         {message.is_bot ? (
                           <div 
                             dangerouslySetInnerHTML={{ 
-                              __html: message.content
-                                .replace(/## (.*?)$/gm, '<h3 class="text-base font-semibold mb-2 text-green-700">$1</h3>')
-                                .replace(/### (.*?)$/gm, '<h4 class="text-sm font-medium mb-1 text-gray-700">$1</h4>')
-                                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-                                .replace(/• (.*?)$/gm, '<li class="ml-4">$1</li>')
-                                .replace(/(\d+️⃣.*?)$/gm, '<div class="mt-2 mb-1 font-medium text-green-600">$1</div>')
-                                .replace(/💡 \*\*(.*?)\*\*/g, '<div class="mt-3 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400"><span class="font-medium text-yellow-700">$1</span></div>')
-                                .replace(/✅ \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-green-50 rounded border-l-2 border-green-400"><span class="font-medium text-green-700">$1</span></div>')
-                                .replace(/🚗 \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-blue-50 rounded border-l-2 border-blue-400"><span class="font-medium text-blue-700">$1</span></div>')
-                                .replace(/---/g, '<hr class="my-3 border-gray-200" />')
-                                .replace(/\n\n/g, '</p><p class="mb-2">')
-                                .replace(/^/, '<p class="mb-2">')
-                                .replace(/$/, '</p>')
+                              __html: sanitizeInput(
+                                message.content
+                                  .replace(/## (.*?)$/gm, '<h3 class="text-base font-semibold mb-2 text-green-700">$1</h3>')
+                                  .replace(/### (.*?)$/gm, '<h4 class="text-sm font-medium mb-1 text-gray-700">$1</h4>')
+                                  .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                                  .replace(/• (.*?)$/gm, '<li class="ml-4">$1</li>')
+                                  .replace(/(\d+️⃣.*?)$/gm, '<div class="mt-2 mb-1 font-medium text-green-600">$1</div>')
+                                  .replace(/💡 \*\*(.*?)\*\*/g, '<div class="mt-3 p-2 bg-yellow-50 rounded border-l-2 border-yellow-400"><span class="font-medium text-yellow-700">$1</span></div>')
+                                  .replace(/✅ \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-green-50 rounded border-l-2 border-green-400"><span class="font-medium text-green-700">$1</span></div>')
+                                  .replace(/🚗 \*\*(.*?)\*\*/g, '<div class="mt-2 p-2 bg-blue-50 rounded border-l-2 border-blue-400"><span class="font-medium text-blue-700">$1</span></div>')
+                                  .replace(/---/g, '<hr class="my-3 border-gray-200" />')
+                                  .replace(/\n\n/g, '</p><p class="mb-2">')
+                                  .replace(/^/, '<p class="mb-2">')
+                                  .replace(/$/, '</p>')
+                              )
                             }} 
                           />
                         ) : (

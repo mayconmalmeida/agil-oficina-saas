@@ -6,6 +6,10 @@ import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +33,7 @@ interface Agendamento {
   horario: string;
   observacoes?: string;
   status: string;
+  descricao_servico?: string;
   clients?: {
     nome: string;
   };
@@ -40,6 +45,9 @@ interface Agendamento {
 const AgendaPage: React.FC = () => {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAgendamento, setSelectedAgendamento] = useState<Agendamento | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ descricao_servico: '', data_agendamento: '', horario: '', observacoes: '' });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -72,6 +80,30 @@ const AgendaPage: React.FC = () => {
     }
   };
 
+  const handleUpdateAgendamento = async () => {
+    if (!selectedAgendamento) return;
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update({
+          descricao_servico: editForm.descricao_servico,
+          data_agendamento: editForm.data_agendamento,
+          horario: editForm.horario,
+          observacoes: editForm.observacoes,
+        })
+        .eq('id', selectedAgendamento.id);
+
+      if (error) throw error;
+      toast({ title: 'Agendamento atualizado', description: 'As alterações foram salvas.' });
+      await carregarAgendamentos();
+      setIsEditOpen(false);
+      setSelectedAgendamento(null);
+    } catch (error) {
+      console.error('Erro ao atualizar agendamento:', error);
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível salvar as alterações.' });
+    }
+  };
+
   const events = agendamentos.map(agendamento => {
     const [hours, minutes] = agendamento.horario.split(':').map(Number);
     const date = new Date(agendamento.data_agendamento);
@@ -79,7 +111,7 @@ const AgendaPage: React.FC = () => {
     
     return {
       id: agendamento.id,
-      title: `${agendamento.clients?.nome || 'Cliente'} - ${agendamento.services?.nome || 'Serviço'}`,
+      title: agendamento.descricao_servico || `${agendamento.clients?.nome || 'Cliente'} - ${agendamento.services?.nome || 'Serviço'}`,
       start: date,
       end: new Date(date.getTime() + 60 * 60 * 1000), // 1 hora de duração
       resource: agendamento,
@@ -137,12 +169,52 @@ const AgendaPage: React.FC = () => {
                 showMore: (total) => `+ Ver mais (${total})`
               }}
               onSelectEvent={(event) => {
-                navigate(`/ordens-servico/${event.resource.id}`);
+                const ag = event.resource as Agendamento;
+                setSelectedAgendamento(ag);
+                setEditForm({
+                  descricao_servico: ag.descricao_servico || '',
+                  data_agendamento: ag.data_agendamento || '',
+                  horario: ag.horario || '',
+                  observacoes: ag.observacoes || ''
+                });
+                setIsEditOpen(true);
               }}
             />
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) setSelectedAgendamento(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Agendamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="descricao_servico">Título/Descrição</Label>
+              <Input id="descricao_servico" value={editForm.descricao_servico} onChange={(e) => setEditForm(prev => ({ ...prev, descricao_servico: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="data_agendamento">Data</Label>
+                <Input id="data_agendamento" type="date" value={editForm.data_agendamento} onChange={(e) => setEditForm(prev => ({ ...prev, data_agendamento: e.target.value }))} />
+              </div>
+              <div>
+                <Label htmlFor="horario">Horário</Label>
+                <Input id="horario" type="time" value={editForm.horario} onChange={(e) => setEditForm(prev => ({ ...prev, horario: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea id="observacoes" value={editForm.observacoes} onChange={(e) => setEditForm(prev => ({ ...prev, observacoes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setIsEditOpen(false); setSelectedAgendamento(null); }}>Cancelar</Button>
+              <Button onClick={handleUpdateAgendamento}>Salvar</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

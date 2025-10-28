@@ -67,7 +67,7 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (fornecedorSearch.length >= 2) {
@@ -79,12 +79,18 @@ const ContasPagar: React.FC<ContasPagarProps> = ({ onUpdateResumo }) => {
 
   const carregarDados = async () => {
     try {
+      if (!user?.id) {
+        setContas([]);
+        calcularResumo([]);
+        return;
+      }
       const { data, error } = await supabase
         .from('contas_pagar')
         .select(`
           *,
           fornecedores(nome)
         `)
+        .eq('user_id', user.id)
         .order('data_vencimento', { ascending: true });
 
       if (error) throw error;

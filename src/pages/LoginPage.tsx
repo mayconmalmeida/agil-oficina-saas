@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertTriangle, WifiOff } from "lucide-react";
+import { CheckCircle2, AlertTriangle, WifiOff, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import LoginForm from '@/components/auth/LoginForm';
@@ -110,24 +110,33 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="text-center">
-            {/* Inserir logotipo oficial no topo da tela de login */}
-            <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="mx-auto h-12 w-auto mb-2" />
-            <p className="text-gray-600">Sistema de Gestão para Oficinas</p>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+      {/* Coluna esquerda: Branding Oficina Go */}
+      <div className="hidden md:flex items-center justify-center bg-white p-8">
+        <div className="text-center max-w-md">
+          <img src="/oficinago-logo-backup.png" alt="Logo" className="mx-auto h-20 w-auto mb-4" />
+          <p className="text-gray-600 text-lg">Sistema completo para gestão de oficinas mecânicas.</p>
         </div>
+      </div>
 
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Entrar na sua conta</CardTitle>
-            <CardDescription>
-              Digite suas credenciais para acessar o sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Coluna direita: Cartão de login sobre fundo azul */}
+      <div className="flex items-center justify-center bg-blue-900 p-6">
+        <div className="w-full max-w-md">
+          <div className="mb-4">
+            <Link to="/" className="inline-flex items-center text-white/90 hover:text-white">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Link>
+          </div>
+
+          <Card className="shadow-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Login</CardTitle>
+              <CardDescription>
+                Informe suas credenciais para acessar a aplicação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
 
             {/* Status da Conexão */}
             {connectionStatus === 'checking' && (
@@ -177,24 +186,31 @@ const LoginPage: React.FC = () => {
               }}
               isLoading={isLoading}
             />
-          </CardContent>
-          <CardFooter>
-          </CardFooter>
-        </Card>
+            </CardContent>
+            <CardFooter>
+            </CardFooter>
+          </Card>
 
-        {connectionStatus === 'error' && (
-          <div className="mt-4 text-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => window.location.reload()}
-              className="text-gray-600"
-            >
-              <WifiOff className="h-4 w-4 mr-2" />
-              Tentar Reconectar
-            </Button>
+          {/* Rodapé de suporte */}
+          <div className="mt-6 text-center text-white/90">
+            <div className="text-sm">Suporte: suporte@oficinago.com</div>
+            <div className="text-sm">Versão 1.0.0</div>
           </div>
-        )}
+
+          {connectionStatus === 'error' && (
+            <div className="mt-4 text-center">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+                className="text-white bg-transparent border-white/40 hover:bg-white/10"
+              >
+                <WifiOff className="h-4 w-4 mr-2" />
+                Tentar Reconectar
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

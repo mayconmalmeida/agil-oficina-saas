@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { 
@@ -17,8 +17,12 @@ import {
 } from "lucide-react";
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/contexts/AuthContext";
 
 type QuickAction = {
+  id?: string;
   title: string;
   icon: React.ElementType;
   href: string;
@@ -31,10 +35,15 @@ const QuickActions = () => {
   const navigate = useNavigate();
   const { hasPermission, canAccessPremiumFeatures } = usePermissions();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const storageKey = useMemo(() => `quickActions:${user?.id ?? 'anon'}`, [user?.id]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
-  // Ações rápidas disponíveis no dashboard
-  const quickActions: QuickAction[] = [
+  // Ações rápidas disponíveis no dashboard (catálogo completo)
+  const allActions: QuickAction[] = [
     {
+      id: "orcamentos",
       title: "Novo Orçamento",
       icon: FileText,
       href: "/dashboard/orcamentos",
@@ -42,6 +51,7 @@ const QuickActions = () => {
       feature: "orcamentos"
     },
     {
+      id: "agendamentos",
       title: "Agendamentos",
       icon: CalendarClock,
       href: "/dashboard/agendamentos",
@@ -50,6 +60,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "clientes",
       title: "Clientes",
       icon: Users,
       href: "/dashboard/clientes",
@@ -57,6 +68,7 @@ const QuickActions = () => {
       feature: "clientes"
     },
     {
+      id: "produtos",
       title: "Produtos",
       icon: Package,
       href: "/dashboard/produtos",
@@ -64,6 +76,7 @@ const QuickActions = () => {
       feature: "produtos"
     },
     {
+      id: "veiculos",
       title: "Veículos",
       icon: Car,
       href: "/dashboard/veiculos",
@@ -71,6 +84,7 @@ const QuickActions = () => {
       feature: "veiculos"
     },
     {
+      id: "integracao_contabil",
       title: "Integração Contábil",
       icon: Database,
       href: "/dashboard/integracao-contabil",
@@ -79,6 +93,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "diagnostico_ia",
       title: "IA Diagnóstico",
       icon: Bot,
       href: "/dashboard/ia-diagnostico",
@@ -87,6 +102,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "suporte_inteligente",
       title: "IA Suporte",
       icon: MessageCircle,
       href: "/dashboard/ia-suporte-inteligente",
@@ -95,6 +111,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "backup",
       title: "Backup",
       icon: Shield,
       href: "/dashboard/backup",
@@ -103,6 +120,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "suporte_prioritario",
       title: "Suporte",
       icon: Headphones,
       href: "/dashboard/suporte",
@@ -111,6 +129,7 @@ const QuickActions = () => {
       requiresPremium: true
     },
     {
+      id: "configuracoes",
       title: "Configurações",
       icon: Settings,
       href: "/dashboard/configuracoes",
@@ -118,6 +137,24 @@ const QuickActions = () => {
       feature: "configuracoes"
     }
   ];
+
+  // Carregar seleção salva ao montar e quando o usuário mudar
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const ids = JSON.parse(raw);
+        if (Array.isArray(ids)) {
+          setSelectedIds(ids.filter((id: string) => allActions.some((a) => a.id === id)));
+          return;
+        }
+      }
+      setSelectedIds(allActions.map((a) => a.id!));
+    } catch {
+      setSelectedIds(allActions.map((a) => a.id!));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
   
   const handleQuickAction = (action: QuickAction) => {
     // Verificar se tem permissão para a feature
@@ -143,11 +180,60 @@ const QuickActions = () => {
     navigate(action.href);
   };
   
+  const visibleActions = useMemo(
+    () => allActions.filter((a) => a.id && selectedIds.includes(a.id)),
+    [allActions, selectedIds]
+  );
+  
+  const toggleSelection = (id: string) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+  
+  const handleSave = () => {
+    localStorage.setItem(storageKey, JSON.stringify(selectedIds));
+    toast({ title: "Acessos Rápidos atualizados", description: "Sua seleção foi salva." });
+    setOpen(false);
+  };
+  
   return (
     <section className="mb-8">
-      <h2 className="text-lg font-medium mb-4">Acesso Rápido</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-medium">Acesso Rápido</h2>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm">Editar Acessos Rápidos</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Personalizar Acessos Rápidos</DialogTitle>
+              <DialogDescription>Selecione os atalhos que deseja exibir no seu dashboard.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+              {allActions.map((action) => (
+                <label key={action.id} className="flex items-center gap-3 p-2 border rounded-md">
+                  <Checkbox
+                    checked={!!action.id && selectedIds.includes(action.id)}
+                    onCheckedChange={() => action.id && toggleSelection(action.id)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <action.icon className="h-4 w-4" />
+                    <span className="text-sm">{action.title}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSave}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {quickActions.map((action) => {
+        {visibleActions.length === 0 && (
+          <div className="col-span-full text-sm text-muted-foreground">Nenhum atalho selecionado. Clique em "Editar Acessos Rápidos" para adicionar.</div>
+        )}
+        {visibleActions.map((action) => {
           const hasAccess = !action.feature || hasPermission(action.feature);
           const isPremiumAvailable = !action.requiresPremium || canAccessPremiumFeatures();
           const isAccessible = hasAccess && isPremiumAvailable;

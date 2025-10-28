@@ -13,6 +13,19 @@ export const useManualAuth = (): AuthState => {
   const [role, setRole] = useState<string | null>(null);
   const isInitializedRef = useRef(false);
   const profileCacheRef = useRef<{ userId: string; profile: UserProfile } | null>(null);
+  const isFetchingRef = useRef(false);
+  const eventDebounceRef = useRef<number | null>(null);
+  const safetyTimeoutRef = useRef<number | null>(null);
+  const loadingRef = useRef(true);
+  const isLoadingAuthRef = useRef(true);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    isLoadingAuthRef.current = isLoadingAuth;
+  }, [isLoadingAuth]);
 
   useEffect(() => {
     console.log('[useManualAuth] Iniciando configuração de autenticação');
@@ -22,71 +35,108 @@ export const useManualAuth = (): AuthState => {
 
     // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!isMounted) return;
 
-        console.log('[useManualAuth] Auth state changed:', { event, hasSession: !!session });
-        
-        currentSession = session; // Armazenar sessão atual
-        setSession(session);
-        
-        if (session?.user) {
-          console.log('[useManualAuth] Buscando perfil para:', session.user.id);
-          
-          // Verificar cache primeiro
-          if (profileCacheRef.current?.userId === session.user.id) {
-            console.log('[useManualAuth] Cache encontrado, mas recarregando perfil para garantir dados atualizados');
-            // Limpar cache para forçar recarregamento
-            profileCacheRef.current = null;
-          }
-
-          try {
-            // Buscar perfil diretamente sem timeout - fetchUserProfile já tem seus próprios tratamentos de erro
-            console.log('[useManualAuth] Buscando perfil do usuário...');
-            const profile = await fetchUserProfile(session.user.id);
-            console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
-            
-            if (isMounted && profile) {
-              setUser(profile);
-              setRole(profile.role);
-              // Salvar no cache
-              profileCacheRef.current = {
-                userId: session.user.id,
-                profile
-              };
-              setLoading(false);
-              setIsLoadingAuth(false);
-              isInitializedRef.current = true;
-            }
-          } catch (error) {
-            console.error('[useManualAuth] Erro ao carregar profile:', error);
-            if (isMounted) {
-              // Em caso de erro, usar o perfil offline
-              console.log('[useManualAuth] Usando perfil offline após erro');
-              const offlineProfile = {
-                ...MOCK_PROFILE,
-                id: session.user.id,
-                email: session.user.email || MOCK_PROFILE.email
-              };
-              
-              setUser(offlineProfile);
-              setRole(offlineProfile.role);
-              setLoading(false);
-              setIsLoadingAuth(false);
-              isInitializedRef.current = true;
-            }
-          }
-        } else {
-          console.log('[useManualAuth] Sem sessão, limpando estados');
-          if (isMounted) {
-            setUser(null);
-            setRole(null);
-            profileCacheRef.current = null; // Limpar cache
-            setLoading(false);
-            setIsLoadingAuth(false);
-            isInitializedRef.current = true;
-          }
+        // Debounce rápido para evitar múltiplos disparos consecutivos
+        if (eventDebounceRef.current) {
+          clearTimeout(eventDebounceRef.current);
         }
+        eventDebounceRef.current = window.setTimeout(async () => {
+          console.log('[useManualAuth] Auth state changed:', { event, hasSession: !!session });
+          
+          currentSession = session; // Armazenar sessão atual
+          setSession(session);
+
+          // Limpar timeout de segurança se tivermos finalizado o loading
+          if (!loadingRef.current && !isLoadingAuthRef.current && safetyTimeoutRef.current) {
+            clearTimeout(safetyTimeoutRef.current);
+            safetyTimeoutRef.current = null;
+          }
+          
+          if (session?.user) {
+            const userId = session.user.id;
+            console.log('[useManualAuth] Processando sessão para usuário:', userId);
+
+            // Evitar múltiplas buscas concorrentes
+            if (isFetchingRef.current) {
+              console.log('[useManualAuth] Busca de perfil já em andamento, ignorando evento');
+              return;
+            }
+            isFetchingRef.current = true;
+
+            try {
+              // Usar cache se disponível e recente
+              if (profileCacheRef.current?.userId === userId) {
+                console.log('[useManualAuth] Usando perfil do cache');
+                const cached = profileCacheRef.current.profile;
+                setUser(cached);
+                setRole(cached.role);
+                setLoading(false);
+                setIsLoadingAuth(false);
+                isInitializedRef.current = true;
+              } else {
+                // Buscar perfil diretamente - fetchUserProfile trata timebox/erros
+                console.log('[useManualAuth] Buscando perfil do usuário...');
+                const profile = await fetchUserProfile(userId);
+                console.log('[useManualAuth] Profile carregado com sucesso:', profile.email);
+                
+                if (isMounted && profile) {
+                  setUser(profile);
+                  setRole(profile.role);
+                  // Salvar no cache
+                  profileCacheRef.current = {
+                    userId,
+                    profile
+                  };
+                  setLoading(false);
+                  setIsLoadingAuth(false);
+                  isInitializedRef.current = true;
+                }
+              }
+            } catch (error) {
+              console.error('[useManualAuth] Erro ao carregar profile:', error);
+              if (isMounted) {
+                // Em caso de erro, usar o perfil offline
+                console.log('[useManualAuth] Usando perfil offline após erro');
+                const offlineProfile = {
+                  ...MOCK_PROFILE,
+                  id: userId,
+                  email: session.user.email || MOCK_PROFILE.email
+                };
+                setUser(offlineProfile);
+                setRole(offlineProfile.role);
+                setLoading(false);
+                setIsLoadingAuth(false);
+                isInitializedRef.current = true;
+                // Cachear para estabilizar a UI
+                profileCacheRef.current = { userId, profile: offlineProfile };
+              }
+            } finally {
+              isFetchingRef.current = false;
+              // Garantir que o timeout de segurança não aplique offline após sucesso
+              if (!loadingRef.current && !isLoadingAuthRef.current && safetyTimeoutRef.current) {
+                clearTimeout(safetyTimeoutRef.current);
+                safetyTimeoutRef.current = null;
+              }
+            }
+          } else {
+            console.log('[useManualAuth] Sem sessão, limpando estados');
+            if (isMounted) {
+              setUser(null);
+              setRole(null);
+              profileCacheRef.current = null; // Limpar cache
+              setLoading(false);
+              setIsLoadingAuth(false);
+              isInitializedRef.current = true;
+              // Cancelar timeout de segurança se ativo
+              if (safetyTimeoutRef.current) {
+                clearTimeout(safetyTimeoutRef.current);
+                safetyTimeoutRef.current = null;
+              }
+            }
+          }
+        }, 250);
       }
     );
 
@@ -99,8 +149,8 @@ export const useManualAuth = (): AuthState => {
     });
 
     // Adicionar timeout de segurança para garantir que o loading termine
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && (loading || isLoadingAuth)) {
+    safetyTimeoutRef.current = window.setTimeout(() => {
+      if (isMounted && (loadingRef.current || isLoadingAuthRef.current)) {
         console.log('[useManualAuth] Timeout de segurança atingido - finalizando loading');
         
         // Sempre aplicar o perfil offline quando o timeout é atingido e temos uma sessão
@@ -130,13 +180,20 @@ export const useManualAuth = (): AuthState => {
         setIsLoadingAuth(false);
         isInitializedRef.current = true;
       }
-    }, 15000); // Reduzindo para 15 segundos para melhorar a experiência do usuário
+    }, 15000); // Timeout de segurança para finalizar loading em redes lentas
 
     return () => {
       console.log('[useManualAuth] Limpando recursos');
       isMounted = false;
       subscription.unsubscribe();
-      clearTimeout(safetyTimeout);
+      if (eventDebounceRef.current) {
+        clearTimeout(eventDebounceRef.current);
+        eventDebounceRef.current = null;
+      }
+      if (safetyTimeoutRef.current) {
+        clearTimeout(safetyTimeoutRef.current);
+        safetyTimeoutRef.current = null;
+      }
     };
   }, []);
 

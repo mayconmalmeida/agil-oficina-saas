@@ -54,7 +54,8 @@ const NewSchedulePage: React.FC = () => {
     ordem_servico_id: '',
     data_agendamento: '',
     horario: '',
-    observacoes: ''
+    observacoes: '',
+    descricao_servico: ''
   });
 
   useEffect(() => {
@@ -159,6 +160,7 @@ const NewSchedulePage: React.FC = () => {
         data_agendamento: formData.data_agendamento,
         horario: formData.horario,
         observacoes: formData.observacoes,
+        descricao_servico: formData.descricao_servico || null,
         status: 'agendado'
       };
 
@@ -168,10 +170,13 @@ const NewSchedulePage: React.FC = () => {
         if (ordemSelecionada) {
           agendamentoData.cliente_id = ordemSelecionada.cliente_id;
           agendamentoData.observacoes = `Agendamento criado a partir da Ordem de Serviço #${ordemSelecionada.id.slice(-8)}. ${formData.observacoes}`.trim();
+          if (!agendamentoData.descricao_servico) {
+            agendamentoData.descricao_servico = `OS #${ordemSelecionada.id.slice(-8)}`;
+          }
         }
       } else {
-        agendamentoData.cliente_id = formData.cliente_id;
-        agendamentoData.servico_id = formData.servico_id;
+        if (formData.cliente_id) agendamentoData.cliente_id = formData.cliente_id;
+        if (formData.servico_id) agendamentoData.servico_id = formData.servico_id;
       }
 
       const { error } = await supabase
@@ -267,9 +272,9 @@ const NewSchedulePage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="cliente_id">Cliente</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, cliente_id: value})} required={!criarDeOrdem}>
+                  <Select onValueChange={(value) => setFormData({...formData, cliente_id: value})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente" />
+                      <SelectValue placeholder="Selecione um cliente (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {clients.map((client) => (
@@ -288,9 +293,9 @@ const NewSchedulePage: React.FC = () => {
 
                 <div>
                   <Label htmlFor="servico_id">Serviço</Label>
-                  <Select onValueChange={(value) => setFormData({...formData, servico_id: value})} required={!criarDeOrdem}>
+                  <Select onValueChange={(value) => setFormData({...formData, servico_id: value})}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um serviço" />
+                      <SelectValue placeholder="Selecione um serviço (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {services.map((service) => (
@@ -336,6 +341,17 @@ const NewSchedulePage: React.FC = () => {
                   />
                 </div>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="descricao_servico">Título/Descrição do Agendamento</Label>
+              <Input
+                id="descricao_servico"
+                type="text"
+                value={formData.descricao_servico}
+                onChange={(e) => setFormData({...formData, descricao_servico: e.target.value})}
+                placeholder="Ex.: Fazer banco, evento X, revisão geral"
+              />
             </div>
 
             <div>

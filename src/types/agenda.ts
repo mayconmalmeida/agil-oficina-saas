@@ -8,6 +8,7 @@ export interface Agendamento {
   veiculo_id?: string;
   servico_id?: string;
   observacoes?: string;
+  descricao_servico?: string;
   status: string;
   created_at: string;
   updated_at: string;

@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ContasReceber from '@/components/financeiro/ContasReceber';
 import ContasPagar from '@/components/financeiro/ContasPagar';
 import FechamentoCaixa from '@/components/financeiro/FechamentoCaixa';
 import RelatoriosFinanceiros from '@/components/financeiro/RelatoriosFinanceiros';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ResumoFinanceiro {
   totalReceber: number;
@@ -15,6 +17,7 @@ interface ResumoFinanceiro {
 }
 
 const FinanceiroPage: React.FC = () => {
+  const { user } = useAuth();
   const [resumoFinanceiro, setResumoFinanceiro] = useState<ResumoFinanceiro>({
     totalReceber: 0,
     totalPagar: 0,
@@ -29,6 +32,85 @@ const FinanceiroPage: React.FC = () => {
       return updated;
     });
   };
+
+  // Carregar totais diretamente (robusto mesmo sem interação nas abas)
+  useEffect(() => {
+    const carregarTotais = async () => {
+      if (!user?.id) return;
+
+      try {
+        const [receberRes, pagarRes] = await Promise.all([
+          supabase
+            .from('contas_receber')
+            .select('valor, status')
+            .eq('user_id', user.id),
+          supabase
+            .from('contas_pagar')
+            .select('valor, status')
+            .eq('user_id', user.id)
+        ]);
+
+        const totalReceber = (receberRes.data || [])
+          .filter((c: any) => (c.status || 'pendente') !== 'pago')
+          .reduce((sum: number, c: any) => sum + (Number(c.valor) || 0), 0);
+
+        const totalPagar = (pagarRes.data || [])
+          .filter((c: any) => (c.status || 'pendente') !== 'pago')
+          .reduce((sum: number, c: any) => sum + (Number(c.valor) || 0), 0);
+
+        setResumoFinanceiro(prev => ({
+          ...prev,
+          totalReceber,
+          totalPagar,
+          saldoPrevisto: totalReceber - totalPagar,
+        }));
+      } catch (err) {
+        console.error('Erro ao carregar totais financeiros:', err);
+      }
+    };
+
+    carregarTotais();
+  }, [user?.id]);
+
+  // Calcular movimentações do mês (pagamentos realizados)
+  useEffect(() => {
+    const calcMovimentacoesMes = async () => {
+      if (!user?.id) return;
+
+      try {
+        const now = new Date();
+        const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
+        const fimMes = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        fimMes.setHours(23, 59, 59, 999);
+
+        const [receberRes, pagarRes] = await Promise.all([
+          supabase
+            .from('contas_receber')
+            .select('valor')
+            .eq('user_id', user.id)
+            .eq('status', 'pago')
+            .gte('data_pagamento', inicioMes.toISOString())
+            .lte('data_pagamento', fimMes.toISOString()),
+          supabase
+            .from('contas_pagar')
+            .select('valor')
+            .eq('user_id', user.id)
+            .eq('status', 'pago')
+            .gte('data_pagamento', inicioMes.toISOString())
+            .lte('data_pagamento', fimMes.toISOString())
+        ]);
+
+        const totalRecebidoMes = (receberRes.data || []).reduce((sum: number, r: any) => sum + (r.valor || 0), 0);
+        const totalPagoMes = (pagarRes.data || []).reduce((sum: number, p: any) => sum + (p.valor || 0), 0);
+        // Movimentações do mês representam o fluxo líquido (entradas - saídas)
+        setResumoFinanceiro(prev => ({ ...prev, movimentacoesMes: totalRecebidoMes - totalPagoMes }));
+      } catch (err) {
+        console.error('Erro ao calcular movimentações do mês:', err);
+      }
+    };
+
+    calcMovimentacoesMes();
+  }, [user?.id]);
 
   return (
     <div className="space-y-6">
@@ -77,7 +159,7 @@ const FinanceiroPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {resumoFinanceiro.movimentacoesMes}
+              R$ {resumoFinanceiro.movimentacoesMes.toFixed(2)}
             </div>
           </CardContent>
         </Card>

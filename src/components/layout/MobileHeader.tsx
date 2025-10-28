@@ -3,7 +3,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -14,16 +13,14 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   onMenuClick,
   onLogout
 }) => {
-  const isMobile = useIsMobile();
-  
   return (
     <div className={`
       bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 
-      ${isMobile ? 'block' : 'lg:hidden'}
+      block md:hidden
     `}>
       <div className={`
         flex items-center justify-between 
-        ${isMobile ? 'px-2 py-2' : 'px-3 py-2 sm:px-4 sm:py-3'}
+        px-2 py-2
       `}>
         <Button
           variant="ghost"

@@ -64,17 +64,17 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       const timeoutId = setTimeout(() => {
         console.log('fetchUserProfile: TIMEOUT atingido na busca do perfil - abortando requisição');
         abortController.abort();
-      }, 5000); // Timeout reduzido para 5 segundos
+      }, 15000); // Timeout ajustado para 15 segundos para redes lentas
       
       // Usando Promise.race para timebox da consulta de perfil
       const profilePromise = supabase
         .from('profiles')
-        .select('id, email, role, nome_oficina, telefone, is_active, created_at, updated_at, trial_ends_at, plano, trial_started_at')
+        .select('id, email, role, nome_oficina, telefone, is_active, created_at, trial_ends_at, plano, trial_started_at')
         .eq('id', userId)
         .abortSignal(abortController.signal)
         .maybeSingle();
       
-      const timeoutMs = 4000;
+      const timeoutMs = 12000;
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
           console.log(`fetchUserProfile: TIMEBOX atingido (${timeoutMs}ms) - abortando espera do perfil`);
@@ -95,9 +95,46 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
         clearTimeout(timeoutId);
       }
       
+      // Log detalhado do erro, se existir
+      if (profileError) {
+        console.warn('fetchUserProfile: Erro na consulta profiles:', {
+          message: profileError?.message,
+          code: profileError?.code,
+          details: profileError?.details,
+          hint: profileError?.hint
+        });
+      }
+
       console.log('fetchUserProfile: Resultado da consulta profiles:', { profile, profileError });
 
-      if (!profileError && profile) {
+      // Fallback: se houve erro ou perfil vazio, tentar consulta com select('*')
+      if ((!profile && profileError)) {
+        console.log('fetchUserProfile: Tentando fallback select(*) para profiles');
+        try {
+          const { data: fallbackProfile, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .abortSignal(abortController.signal)
+            .maybeSingle();
+
+          if (fallbackError) {
+            console.warn('fetchUserProfile: Fallback também falhou:', {
+              message: fallbackError?.message,
+              code: fallbackError?.code,
+              details: fallbackError?.details,
+              hint: fallbackError?.hint
+            });
+          } else {
+            profile = fallbackProfile as any;
+            console.log('fetchUserProfile: Fallback de perfil bem-sucedido');
+          }
+        } catch (fallbackCatchError) {
+          console.warn('fetchUserProfile: Erro no fallback select(*)', fallbackCatchError);
+        }
+      }
+
+      if (profile && !profileError) {
         console.log('fetchUserProfile: Perfil encontrado online');
         
         // Buscar oficina se existir
@@ -183,7 +220,75 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 
         return userProfile;
       } else {
-        throw new Error('Perfil não encontrado ou erro na consulta');
+        console.log('fetchUserProfile: Perfil não encontrado - tentando criar perfil básico automaticamente');
+        // Cache curto de getUser para reduzir chamadas repetidas
+        let cachedAuthUser: { user: any } | null = null;
+        let cachedAt: number | null = null;
+        const getCachedAuthUser = async (): Promise<{ user: any }> => {
+          const now = Date.now();
+          if (cachedAuthUser && cachedAt && now - cachedAt < 10000) {
+            return cachedAuthUser;
+          }
+          const { data } = await supabase.auth.getUser();
+          cachedAuthUser = { user: data.user };
+          cachedAt = now;
+          return cachedAuthUser;
+        };
+
+        try {
+          const { user: authUser } = await getCachedAuthUser();
+          if (authUser?.id === userId) {
+            const now = new Date().toISOString();
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert(
+                {
+                  id: userId,
+                  email: authUser.email,
+                  role: 'user',
+                  is_active: true,
+                  created_at: now
+                },
+                { returning: 'minimal' }
+              );
+
+            let createdProfile: any = null;
+            if (!createError) {
+              const { data: fetchedCreated, error: fetchCreatedError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+              if (!fetchCreatedError) {
+                createdProfile = fetchedCreated as any;
+              } else {
+                console.warn('fetchUserProfile: Erro ao buscar perfil recém-criado:', fetchCreatedError);
+              }
+            }
+
+            if (createError) {
+              console.warn('fetchUserProfile: Falha ao criar perfil automaticamente:', {
+                message: createError?.message,
+                code: createError?.code,
+                details: createError?.details,
+                hint: createError?.hint
+              });
+              throw new Error('Perfil não encontrado ou erro na consulta');
+            }
+
+            profile = createdProfile as any;
+            console.log('fetchUserProfile: Perfil criado automaticamente com sucesso');
+
+            // Prosseguir com fluxo normal usando o perfil criado
+            // (o restante do código abaixo montará o objeto UserProfile)
+          } else {
+            console.warn('fetchUserProfile: Não foi possível obter usuário autenticado para criar perfil');
+            throw new Error('Perfil não encontrado ou erro na consulta');
+          }
+        } catch (createCatchError) {
+          console.warn('fetchUserProfile: Erro na tentativa de criar perfil automaticamente', createCatchError);
+          throw new Error('Perfil não encontrado ou erro na consulta');
+        }
       }
     } catch (error) {
       console.error('fetchUserProfile: Erro ao buscar perfil online:', error);

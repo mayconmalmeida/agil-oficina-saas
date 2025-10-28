@@ -2,12 +2,17 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/integrations/supabase/types'
 
-// Usar variáveis de ambiente quando disponíveis (fallback para valores atuais)
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL ?? 'https://yjhcozddtbpzvnppcggf.supabase.co'
-const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0'
+// Usar variáveis de ambiente - sem fallback hardcoded
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL
+// Preferir VITE_SUPABASE_ANON_KEY; aceitar VITE_SUPABASE_PUBLISHABLE_KEY como alternativa
+const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY ?? import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY
 
-// Configuração de debug
-const DEBUG = true;
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('[Supabase] Configuração ausente: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env')
+}
+
+// Debug apenas em modo de desenvolvimento
+const DEBUG = !!import.meta.env?.DEV;
 
 // Modo offline para debug - quando true, simula uma conexão bem-sucedida sem acessar o Supabase
 // A autenticação sempre será online, independente do modo offline
@@ -29,7 +34,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     },
     fetch: (url, options) => {
       if (DEBUG) {
-        console.log(`[Supabase] Requisição para: ${url}`);
+        console.log(`[Supabase] Requisição para: ${url}`)
       }
       return fetch(url, {
         ...options,
@@ -37,12 +42,20 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
         mode: 'cors'
       }).then(response => {
         if (DEBUG) {
-          console.log(`[Supabase] Resposta de ${url}: ${response.status}`);
+          console.log(`[Supabase] Resposta de ${url}: ${response.status}`)
+          if (!response.ok) {
+            // Clonar a resposta para logar corpo de erro sem consumir o stream original
+            response.clone().text().then(body => {
+              // Limitar tamanho para evitar logs enormes
+              const snippet = body?.slice(0, 500) ?? '';
+              console.warn(`[Supabase] Corpo de erro (${response.status}) em ${url}:`, snippet);
+            }).catch(() => { /* ignore */ });
+          }
         }
-        return response;
+        return response
       }).catch(error => {
-        console.error(`[Supabase] Erro na requisição para ${url}:`, error);
-        throw error;
+        console.error(`[Supabase] Erro na requisição para ${url}:`, error)
+        throw error
       });
     }
   }

@@ -90,6 +90,7 @@ const aiItems = [
 
 const supportItems = [
   { name: 'Suporte', href: '/dashboard/suporte', icon: Headphones },
+  { name: 'Ajuda', href: '/dashboard/ajuda', icon: Headphones },
 ];
 
 const configItems = [
@@ -117,6 +118,11 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
     if (onNavigate) {
       onNavigate();
     }
+  };
+
+  const isPathActive = (href: string) => {
+    return location.pathname === href ||
+      (href !== '/dashboard' && location.pathname.startsWith(href));
   };
 
   const renderNavigationItem = (item: any) => {
@@ -229,9 +235,9 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ onLogout, onNavig
             <SidebarMenuButton asChild>
               <NavLink
                 to="/dashboard/configuracoes"
-                className={cn(
+                className={({ isActive }) => cn(
                   'group w-full flex items-center justify-between',
-                  isActive('/dashboard/configuracoes') ? 'text-blue-700' : ''
+                  isActive || isPathActive('/dashboard/configuracoes') ? 'text-blue-700' : ''
                 )}
               >
                 <span>Configurações</span>
