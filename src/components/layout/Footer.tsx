@@ -8,9 +8,11 @@ const Footer: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">Oficina Go</h3>
+            <div className="flex items-center mb-4">
+              <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
+            </div>
             <p className="text-gray-300 mb-4">
-              Sistema completo de gestão para oficinas automotivas
+              Sistema completo de gestão para oficinas mecânicas.
             </p>
           </div>
           

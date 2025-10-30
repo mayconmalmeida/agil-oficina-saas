@@ -43,6 +43,9 @@ import GenerateLabelPage from '@/pages/GenerateLabelPage';
 import IntegracaoContabilPage from '@/pages/IntegracaoContabilPage';
 import { AdminRoutes } from '@/routes/AdminRoutes';
 import AjudaPage from '@/pages/AjudaPage';
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
+import TermsPage from '@/pages/TermsPage';
+import CookiesPage from '@/pages/CookiesPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -53,6 +56,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/esqueceu-senha" element={<ForgotPasswordPage />} />
       <Route path="/support" element={<SupportPage />} />
+      <Route path="/privacidade" element={<PrivacyPolicyPage />} />
+      <Route path="/termos" element={<TermsPage />} />
+      <Route path="/cookies" element={<CookiesPage />} />
       
       {/* Admin Routes */}
       {AdminRoutes()}

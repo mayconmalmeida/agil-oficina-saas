@@ -823,7 +823,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center mb-4">
                 <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
@@ -838,17 +838,7 @@ const LandingPage = () => {
               <ul className="space-y-2">
                 <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Recursos</a></li>
                 <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Preços</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Integrações</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Empresa</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Sobre</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Carreiras</a></li>
+                <li><a href="/support" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
                 <li><a href="#contato" className="text-gray-400 hover:text-white transition-colors">Contato</a></li>
               </ul>
             </div>
@@ -859,7 +849,6 @@ const LandingPage = () => {
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Central de Ajuda</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentação</a></li>
                 <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Contato</a></li>
               </ul>
             </div>
           </div>
@@ -869,13 +858,13 @@ const LandingPage = () => {
               © 2024 Oficina Go. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="/privacidade" className="text-gray-400 hover:text-white transition-colors">
                 Privacidade
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="/termos" className="text-gray-400 hover:text-white transition-colors">
                 Termos
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="/cookies" className="text-gray-400 hover:text-white transition-colors">
                 Cookies
               </a>
             </div>
