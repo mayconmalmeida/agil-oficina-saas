@@ -44,13 +44,23 @@ interface PendingBudget {
   valor_total: number;
   status: string;
   created_at: string;
+  itens?: {
+    nome: string;
+    tipo: string;
+    quantidade: number;
+    valor_unitario: number;
+    valor_total: number;
+  }[];
 }
+interface ApprovedBudget extends PendingBudget {}
 
 const VehicleHistoryPublicPage = () => {
   const { placa } = useParams<{ placa: string }>();
   const [vehicle, setVehicle] = useState<any>(null);
   const [serviceOrders, setServiceOrders] = useState<any[]>([]);
   const [pendingBudgets, setPendingBudgets] = useState<PendingBudget[]>([]);
+  const [approvedBudgets, setApprovedBudgets] = useState<ApprovedBudget[]>([]);
+  const [workshopPhone, setWorkshopPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -67,7 +77,7 @@ const VehicleHistoryPublicPage = () => {
     try {
       console.log('Buscando dados via edge function para placa:', placa);
 
-      const response = await fetch(`https://yjhcozddtbpzvnppcggf.supabase.co/functions/v1/get-vehicle-history?placa=${encodeURIComponent(placa)}`, {
+      const response = await fetch(`https://yjhcozddtbpzvnppcggf.supabase.co/functions/v1/get-vehicle-history?placa=${encodeURIComponent(placa.toUpperCase())}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqaGNvemRkdGJwenZucHBjZ2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNjY0NTAsImV4cCI6MjA2Mjg0MjQ1MH0.oO2SwcWl3BPrLqmPE5FVJh3ISmAXhr8KyMJ9jwTkAO0`,
@@ -76,13 +86,20 @@ const VehicleHistoryPublicPage = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-        throw new Error(errorData.error || 'Erro ao buscar dados do veículo');
+        let errorMsg = 'Erro ao buscar dados do veículo';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (_) {
+          // Ignora falha ao parsear JSON de erro
+        }
+        setError(errorMsg);
+        return;
       }
 
       const data = await response.json();
 
-      if (!data) {
+      if (!data || !data.vehicle) {
         setError('Veículo não encontrado');
         return;
       }
@@ -91,13 +108,11 @@ const VehicleHistoryPublicPage = () => {
       setVehicle(data.vehicle);
       setServiceOrders(data.serviceOrders || []);
       setPendingBudgets(data.pendingBudgets || []);
+      setApprovedBudgets(data.approvedBudgets || []);
+      setWorkshopPhone(data.workshop?.telefone || null);
     } catch (error: any) {
-      console.error('Erro ao carregar dados:', error);
-      if (error.message?.includes('não encontrado')) {
-        setError('Veículo não encontrado');
-      } else {
-        setError('Erro ao carregar informações do veículo');
-      }
+      console.error('Falha ao carregar dados do veículo:', error);
+      setError('Erro ao carregar informações do veículo');
     } finally {
       setLoading(false);
     }
@@ -140,15 +155,24 @@ const VehicleHistoryPublicPage = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+      const getWhatsAppUrl = () => {
+    if (!workshopPhone) return '/';
+    const digits = workshopPhone.replace(/\D/g, '');
+    const phoneWithCountry = digits.length <= 11 ? `55${digits}` : digits;
+    const plate = vehicle?.placa ? vehicle.placa.toUpperCase() : '';
+    const text = encodeURIComponent(`Olá! Gostaria de agendar um serviço para o veículo placa ${plate}.`);
+    return `https://wa.me/${phoneWithCountry}?text=${text}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Car className="h-8 w-8 text-blue-600" />
+              <img src="/oficinago-logo-backup.png" alt="OficinaGo" className="h-8" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Oficina Go</h1>
+                <h1 className="text-2xl font-bold text-gray-900">OficinaGo</h1>
                 <p className="text-sm text-gray-600">Histórico de Serviços</p>
               </div>
             </div>
@@ -161,15 +185,14 @@ const VehicleHistoryPublicPage = () => {
               >
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              <Link to="/">
-                <Button variant="outline">Agendar Serviço</Button>
-              </Link>
+              <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer"><Button variant="outline">Agendar Serviço</Button></a>
             </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+
         {pendingBudgets.length > 0 && (
           <Card>
             <CardHeader>
@@ -196,16 +219,41 @@ const VehicleHistoryPublicPage = () => {
                         R$ {budget.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </Badge>
                     </div>
-                    
+
                     <div className="mb-3">
                       <h5 className="font-medium mb-1 text-gray-900">Veículo:</h5>
                       <p className="text-sm text-gray-700">{budget.veiculo}</p>
                     </div>
-                    
+
                     {budget.descricao && (
                       <div className="pt-3 border-t border-orange-200">
                         <span className="text-gray-600 text-sm font-medium">Descrição:</span>
                         <p className="text-sm mt-1 text-gray-900">{budget.descricao}</p>
+                      </div>
+                    )}
+
+                    {budget.itens && budget.itens.length > 0 && (
+                      <div className="pt-3 border-t border-orange-200">
+                        <h5 className="font-medium mb-2 text-gray-900">Itens do Orçamento:</h5>
+                        <div className="space-y-2">
+                          {budget.itens.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center bg-white p-3 rounded border border-orange-200 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-900">{item.nome}</span>
+                                <Badge variant="outline" className="ml-2 text-xs">{item.tipo}</Badge>
+                                {item.quantidade > 1 && (
+                                  <span className="ml-2 text-gray-600">(Qtd: {item.quantidade})</span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium text-gray-900">R$ {item.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                                {item.quantidade > 1 && (
+                                  <div className="text-xs text-gray-600">R$ {item.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -265,23 +313,65 @@ const VehicleHistoryPublicPage = () => {
           </CardContent>
         </Card>
 
-        {pendingBudgets.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">Orçamentos Pendentes</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {pendingBudgets.length} orçamento{pendingBudgets.length !== 1 ? 's' : ''} aguardando aprovação
-                  </p>
-                </div>
-                <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
-                  R$ {pendingBudgets.reduce((total, budget) => total + budget.valor_total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </Badge>
+        
+        {approvedBudgets.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-600" />
+                Orçamentos Aprovados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {approvedBudgets.map((budget) => (
+                  <div key={budget.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold text-lg text-gray-900">Orçamento #{budget.id.slice(-8)}</h4>
+                        <div className="flex gap-4 text-sm text-gray-600 mt-1">
+                          <p className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Data: {format(new Date(budget.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                        R$ {budget.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </Badge>
+                    </div>
+
+                    {budget.itens && budget.itens.length > 0 && (
+                      <div className="pt-3 border-t border-green-200">
+                        <h5 className="font-medium mb-2 text-gray-900">Itens do Orçamento:</h5>
+                        <div className="space-y-2">
+                          {budget.itens.map((item, idx) => (
+                            <div key={idx} className="flex justify-between items-center bg-white p-3 rounded border border-green-200 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-900">{item.nome}</span>
+                                <Badge variant="outline" className="ml-2 text-xs">{item.tipo}</Badge>
+                                {item.quantidade > 1 && (
+                                  <span className="ml-2 text-gray-600">(Qtd: {item.quantidade})</span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium text-gray-900">R$ {item.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                                {item.quantidade > 1 && (
+                                  <div className="text-xs text-gray-600">R$ {item.valor_unitario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} cada</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
+
 
         {serviceOrders.length > 0 && (
           <Card className="border-green-200 bg-green-50">
@@ -389,10 +479,8 @@ const VehicleHistoryPublicPage = () => {
         <Card className="bg-blue-600 text-white">
           <CardContent className="p-6 text-center">
             <h3 className="text-xl font-bold mb-2">Precisa de manutenção?</h3>
-            <p className="mb-4">Agende seu próximo serviço na Oficina Go</p>
-            <Link to="/">
-              <Button variant="secondary">Agendar Agora</Button>
-            </Link>
+            <p className="mb-4">Agende seu próximo serviço na OficinaGo</p>
+            <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer"><Button variant="secondary">Agendar Agora</Button></a>
           </CardContent>
         </Card>
       </div>
@@ -401,3 +489,6 @@ const VehicleHistoryPublicPage = () => {
 };
 
 export default VehicleHistoryPublicPage;
+
+
+

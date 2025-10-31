@@ -823,7 +823,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
               <div className="flex items-center mb-4">
                 <img src="/oficinago-logo-backup.png" alt="OficinaGO" className="h-10 w-auto" />
@@ -843,14 +843,7 @@ const LandingPage = () => {
               </ul>
             </div>
             
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Suporte</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Central de Ajuda</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Documentação</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Status</a></li>
-              </ul>
-            </div>
+            
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">

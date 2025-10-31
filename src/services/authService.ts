@@ -241,16 +241,13 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
             const now = new Date().toISOString();
             const { error: createError } = await supabase
               .from('profiles')
-              .insert(
-                {
-                  id: userId,
-                  email: authUser.email,
-                  role: 'user',
-                  is_active: true,
-                  created_at: now
-                },
-                { returning: 'minimal' }
-              );
+              .insert({
+                id: userId,
+                email: authUser.email,
+                role: 'user',
+                is_active: true,
+                created_at: now
+              });
 
             let createdProfile: any = null;
             if (!createError) {
