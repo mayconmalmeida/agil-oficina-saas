@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
-import { Car, Calendar, Settings, History, Phone, Sun, Moon, FileText } from 'lucide-react';
+import { Car, Calendar, Settings, History, Phone, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -63,7 +63,7 @@ const VehicleHistoryPublicPage = () => {
   const [workshopPhone, setWorkshopPhone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [expandedPending, setExpandedPending] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (placa) {
@@ -151,8 +151,8 @@ const VehicleHistoryPublicPage = () => {
 
   const nextOilChange = null;
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const togglePending = (id: string) => {
+    setExpandedPending(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
       const getWhatsAppUrl = () => {
@@ -172,19 +172,10 @@ const VehicleHistoryPublicPage = () => {
             <div className="flex items-center gap-3">
               <img src="/oficinago-logo-backup.png" alt="OficinaGo" className="h-8" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">OficinaGo</h1>
                 <p className="text-sm text-gray-600">Histórico de Serviços</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="p-2"
-              >
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
               <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer"><Button variant="outline">Agendar Serviço</Button></a>
             </div>
           </div>
@@ -204,7 +195,11 @@ const VehicleHistoryPublicPage = () => {
             <CardContent>
               <div className="space-y-4">
                 {pendingBudgets.map((budget) => (
-                  <div key={budget.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
+                  <div
+                    key={budget.id}
+                    className="border border-orange-200 rounded-lg p-4 bg-orange-50 cursor-pointer"
+                    onClick={() => togglePending(budget.id)}
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-semibold text-lg text-gray-900">Orçamento #{budget.id.slice(-8)}</h4>
@@ -214,6 +209,7 @@ const VehicleHistoryPublicPage = () => {
                             Criado em: {format(new Date(budget.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                           </p>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">Clique para ver o que está incluso</p>
                       </div>
                       <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">
                         R$ {budget.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -232,7 +228,7 @@ const VehicleHistoryPublicPage = () => {
                       </div>
                     )}
 
-                    {budget.itens && budget.itens.length > 0 && (
+                    {expandedPending[budget.id] && budget.itens && budget.itens.length > 0 && (
                       <div className="pt-3 border-t border-orange-200">
                         <h5 className="font-medium mb-2 text-gray-900">Itens do Orçamento:</h5>
                         <div className="space-y-2">
@@ -479,7 +475,7 @@ const VehicleHistoryPublicPage = () => {
         <Card className="bg-blue-600 text-white">
           <CardContent className="p-6 text-center">
             <h3 className="text-xl font-bold mb-2">Precisa de manutenção?</h3>
-            <p className="mb-4">Agende seu próximo serviço na OficinaGo</p>
+            <p className="mb-4">Agende seu próximo serviço</p>
             <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer"><Button variant="secondary">Agendar Agora</Button></a>
           </CardContent>
         </Card>
